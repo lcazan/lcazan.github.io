@@ -15,9 +15,9 @@
         * { 
             box-sizing: border-box; 
             touch-action: manipulation; 
-            -webkit-user-select: none; /* Safari */
-            user-select: none;         /* Standard */
-            -webkit-touch-callout: none; /* Disable callouts/menus */
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
         }
         
         body, html { 
@@ -62,7 +62,7 @@
             transition: background 0.2s ease;
         }
         
-        .history-item span { pointer-events: none; } /* Ensures interaction hits the container */
+        .history-item span { pointer-events: none; }
         .history-item span:first-child { align-self: flex-start; text-align: left; }
         .history-item span:last-child { align-self: flex-end; text-align: right; font-weight: bold; color: #33ffcc; }
 
@@ -119,9 +119,7 @@
             -webkit-tap-highlight-color: transparent;
         }
         
-        /* Protect button labels from selection */
         button * { pointer-events: none; }
-
         button:not(.shift-btn):active { filter: brightness(1.6); }
         .nav-btn { color: #33ffcc; background: #181818; }
         .eq { background: #003328; color: #33ffcc; border: 1px solid #1a8a7a; }
@@ -276,6 +274,7 @@
             else {
                 if (entryArr.length === 0 && ['+', '-', '*', '/', '^'].includes(val)) { entryArr = ['A','N','S']; cursorIdx = 3; }
                 let toAdd = val;
+                if (val === 'ans') toAdd = 'ANS';
                 if (['sin','cos','tan'].includes(val)) toAdd = (shiftMode ? 'A' : '') + val.toUpperCase() + '(';
                 if (val === 'exp') toAdd = shiftMode ? 'LN(' : 'e^';
                 entryArr.splice(cursorIdx, 0, ...toAdd.split(''));
