@@ -3,139 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
     <title>VFD Pro</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#050505">
-    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-        
-        * { 
-            box-sizing: border-box; 
-            touch-action: manipulation; 
-            -webkit-user-select: none;
-            user-select: none;
-            -webkit-touch-callout: none;
-        }
-        
-        body, html { 
-            background-color: #050505; 
-            height: 100vh; 
-            width: 100vw; 
-            margin: 0; 
-            font-family: 'Share Tech Mono', monospace; 
-            overflow: hidden; 
-            position: fixed; 
-        }
-
-        .display-area { 
-            background: #010808; 
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 45vh; 
-            padding: 15px; 
-            display: flex; 
-            flex-direction: column; 
-            z-index: 10;
-        }
-
+        * { box-sizing: border-box; touch-action: manipulation; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+        body, html { background-color: #050505; height: 100vh; width: 100vw; margin: 0; font-family: 'Share Tech Mono', monospace; overflow: hidden; position: fixed; }
+        .display-area { background: #010808; position: absolute; top: 0; left: 0; width: 100%; height: 45vh; padding: 15px; display: flex; flex-direction: column; z-index: 10; }
         .display-area::after { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.7) 70%); background-size: 2px 2px; pointer-events: none; z-index: 20; }
-        
         .history-viewport { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; scroll-behavior: smooth; }
         #history-container { margin-top: auto; display: flex; flex-direction: column; }
-        
-        .history-item { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: stretch; 
-            justify-content: center; 
-            min-height: 55px; 
-            padding: 5px 15px; 
-            margin: 2px 0; 
-            font-size: 1.2rem; 
-            color: #26bf9e; 
-            flex-shrink: 0; 
-            transition: background 0.2s ease;
-        }
-        
+        .history-item { display: flex; flex-direction: column; align-items: stretch; justify-content: center; min-height: 55px; padding: 5px 15px; margin: 2px 0; font-size: 1.2rem; color: #26bf9e; flex-shrink: 0; transition: background 0.2s ease; }
         .history-item span { pointer-events: none; }
         .history-item span:first-child { align-self: flex-start; text-align: left; }
         .history-item span:last-child { align-self: flex-end; text-align: right; font-weight: bold; color: #33ffcc; }
-
-        .history-item.selected { 
-            color: #004d40 !important; 
-            background: #33ffcc; 
-            border-radius: 4px; 
-            box-shadow: 0 0 15px rgba(51, 255, 204, 0.6); 
-        }
-        .history-item.selected span:last-child { 
-            color: #ffffff !important; 
-            text-shadow: 0 0 5px rgba(0,0,0,0.3);
-        }
-
+        .history-item.selected { color: #004d40 !important; background: #33ffcc; border-radius: 4px; box-shadow: 0 0 15px rgba(51, 255, 204, 0.6); }
+        .history-item.selected span:last-child { color: #ffffff !important; text-shadow: 0 0 5px rgba(0,0,0,0.3); }
         .divider { height: 3px; width: 100%; background: #33ffcc; box-shadow: 0 0 10px rgba(51, 255, 204, 0.5); margin: 8px 0; flex-shrink: 0; z-index: 21; }
         .extra-line { position: absolute; top: 45vh; left: 0; width: 100%; height: 1px; background: #2a2a2a; z-index: 22; }
-        
         .tag-container { display: flex; justify-content: flex-start; align-items: center; padding-left: 15px; margin-top: 2px; z-index: 23; }
         .version-tag { font-size: 0.7rem; color: #1a6354; letter-spacing: 1px; }
         .status-tag { font-size: 0.7rem; color: #33ffcc; letter-spacing: 1px; margin-left: 30px; min-width: 50px; }
-
         .current-line { display: flex; align-items: center; justify-content: flex-end; color: #33ffcc; font-size: 3rem; font-weight: bold; text-shadow: 0 0 8px rgba(51, 255, 204, 0.5); white-space: pre; min-height: 5.5rem; flex-shrink: 0; z-index: 15; }
-        
         .cursor { display: inline-block; width: 18px; height: 2.6rem; background-color: #33ffcc; margin-left: 4px; animation: blink 0.5s step-end infinite; }
         @keyframes blink { from, to { opacity: 1; } 50% { opacity: 0; } }
-        
-        .grid { 
-            display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
-            grid-template-rows: 0.5fr repeat(8, 1fr);
-            gap: 6px; 
-            padding: 10px; 
-            background: #0a0a0a; 
-            position: absolute;
-            bottom: 0; 
-            left: 0;
-            width: 100%;
-            height: 55vh; 
-            z-index: 5;
-            padding-bottom: calc(10px + env(safe-area-inset-bottom));
-        }
-
-        button { 
-            height: 100%; 
-            font-size: 1.8rem; 
-            font-weight: bold; 
-            background: linear-gradient(145deg, #222, #111); 
-            color: #fff; 
-            border: 1px solid #000; 
-            border-radius: 4px; 
-            box-shadow: 0 3px #000; 
-            font-family: 'Share Tech Mono', monospace; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            transition: filter 0.05s ease, background 0.2s ease;
-            outline: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .util-btn { 
-            font-size: 1rem; 
-            background: linear-gradient(145deg, #1a3a4a, #0d1d25); 
-            color: #7ab8d6; 
-            border-color: #244d61;
-        }
-        
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: 0.5fr repeat(8, 1fr); gap: 6px; padding: 10px; background: #0a0a0a; position: absolute; bottom: 0; left: 0; width: 100%; height: 55vh; z-index: 5; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+        button { height: 100%; font-size: 1.8rem; font-weight: bold; background: linear-gradient(145deg, #222, #111); color: #fff; border: 1px solid #000; border-radius: 4px; box-shadow: 0 3px #000; font-family: 'Share Tech Mono', monospace; display: flex; align-items: center; justify-content: center; transition: filter 0.05s ease, background 0.2s ease; outline: none; -webkit-tap-highlight-color: transparent; }
+        .util-btn { font-size: 1rem; background: linear-gradient(145deg, #1a3a4a, #0d1d25); color: #7ab8d6; border-color: #244d61; }
         button * { pointer-events: none; }
         button:not(.shift-btn):active { filter: brightness(1.6); }
         .nav-btn { color: #33ffcc; background: #181818; }
         .eq { background: #003328; color: #33ffcc; border: 1px solid #1a8a7a; }
         .shift-btn { background: #f5a623 !important; color: #fff !important; font-size: 1.2rem; }
         .shift-active { background: #ff8c00 !important; box-shadow: 0 0 12px #ff8c00 !important; }
-        
         .ac { background: #330000; color: #ff9999; }
         .ac-shift { background: #990000 !important; color: #fff !important; filter: brightness(1.4); }
         .sci-active { color: #ffcc00 !important; text-shadow: 0 0 12px #ff8c00, 0 0 20px rgba(255, 140, 0, 0.4); }
@@ -147,19 +48,17 @@
         <div class="history-viewport" id="viewport"><div id="history-container"></div></div>
         <div class="divider"></div>
         <div class="tag-container">
-            <div class="version-tag">VERSION 2.8</div>
+            <div class="version-tag">VERSION 3.1</div>
             <div class="status-tag" id="status-tag">RND 9</div>
         </div>
         <div id="input-line-container" class="current-line"></div>
     </div>
     <div class="extra-line"></div>
-
     <div class="grid" id="main-grid">
-        <button class="util-btn" data-val="rnd_mode">RND</button>
+        <button id="rndBtn" class="util-btn" data-val="rnd_mode">RND</button>
         <button class="util-btn" data-val="n64">n/64</button>
-        <button class="util-btn" data-val="root">√</button>
+        <button id="sqrtBtn" class="util-btn" data-val="root">√</button>
         <button class="util-btn" data-val="recip">1/x</button>
-
         <button id="shiftBtn" class="shift-btn" data-val="shift">SHIFT</button>
         <button class="nav-btn" data-val="left">◀</button>
         <button class="nav-btn" data-val="right">▶</button>
@@ -179,8 +78,7 @@
         <button data-val="7">7</button><button data-val="8">8</button><button data-val="9">9</button><button data-val="*">×</button>
         <button data-val="4">4</button><button data-val="5">5</button><button data-val="6">6</button><button data-val="-">-</button>
         <button data-val="1">1</button><button data-val="2">2</button><button data-val="3">3</button><button data-val="+">+</button>
-        <button data-val="0">0</button>
-        <button data-val=".">.</button>
+        <button data-val="0">0</button><button data-val=".">.</button>
         <button id="ansBtn" data-val="ans">ANS</button>
         <button class="eq" data-val="=">EXE</button>
     </div>
@@ -196,16 +94,8 @@
     const inputDisplay = document.getElementById('input-line-container'), statusTag = document.getElementById('status-tag');
 
     function triggerHaptic(strong = false) { if (navigator.vibrate) navigator.vibrate(strong ? 15 : 1); }
-    
-    function updateStatus() {
-        if (sciMode) statusTag.innerText = "SCI";
-        else statusTag.innerText = "RND " + currentRnd;
-    }
-
-    function toScientific(num) { 
-        let n = Number(num);
-        return (n === 0) ? "0.0000e+0" : n.toExponential(4); 
-    }
+    function updateStatus() { statusTag.innerText = sciMode ? "SCI" : "RND " + currentRnd; }
+    function toScientific(num) { let n = Number(num); return (n === 0) ? "0.0000e+0" : n.toExponential(4); }
     
     function formatVal(val) {
         if (typeof val === 'string' && val.includes('/')) return val;
@@ -217,17 +107,13 @@
     function getFraction(decimal) {
         let val = parseFloat(decimal);
         if (isNaN(val)) return "0";
-        let whole = Math.floor(Math.abs(val));
-        let frac = Math.abs(val) - whole;
+        let whole = Math.floor(Math.abs(val)), frac = Math.abs(val) - whole;
         let numerator = Math.round(frac * 64);
         if (numerator === 0) return (val < 0 ? "-" : "") + whole.toString();
         if (numerator === 64) return (val < 0 ? "-" : "") + (whole + 1).toString();
         const gcd = (a, b) => b ? gcd(b, a % b) : a;
-        let common = gcd(numerator, 64);
-        let n = numerator / common;
-        let d = 64 / common;
-        let res = (whole > 0 ? whole + " " : "") + n + "/" + d;
-        return (val < 0 ? "-" : "") + res;
+        let common = gcd(numerator, 64), n = numerator / common, d = 64 / common;
+        return (val < 0 ? "-" : "") + (whole > 0 ? whole + " " : "") + n + "/" + d;
     }
 
     function initHistory() {
@@ -248,9 +134,11 @@
         inputDisplay.innerHTML = left + cursorHtml + right;
         inputDisplay.style.opacity = (historyIndex !== -1) ? '0.4' : '1';
         
-        const ansBtn = document.getElementById('ansBtn'), acBtn = document.getElementById('acBtn'), shiftBtn = document.getElementById('shiftBtn');
+        const ansBtn = document.getElementById('ansBtn'), acBtn = document.getElementById('acBtn'), rndBtn = document.getElementById('rndBtn'), sqrtBtn = document.getElementById('sqrtBtn');
         ansBtn.innerText = shiftMode ? 'SCI' : 'ANS';
         ansBtn.classList.toggle('sci-active', sciMode);
+        rndBtn.innerText = shiftMode ? 'AVG' : 'RND';
+        sqrtBtn.innerText = shiftMode ? 'TAX' : '√';
         
         if (shiftMode) { acBtn.innerText = 'CLS'; acBtn.classList.add('ac-shift'); } 
         else { acBtn.innerText = 'CLR'; acBtn.classList.remove('ac-shift'); }
@@ -267,7 +155,6 @@
         const val = btn.getAttribute('data-val');
         const items = Array.from(document.querySelectorAll('.history-item')).reverse();
         triggerHaptic(); isHolding = false;
-        
         if (val === 'ans' || val === '=') {
             holdTimer = setTimeout(() => {
                 isHolding = true;
@@ -275,17 +162,11 @@
                     if (historyIndex !== -1) {
                         stickyMemory = items[historyIndex].getAttribute('data-ans');
                         triggerHaptic(true);
-                    } else if (entryArr.length > 0) {
-                        solve();
-                        stickyMemory = lastAnswer.toString();
-                        triggerHaptic(true);
-                    }
+                    } else if (entryArr.length > 0) { solve(); stickyMemory = lastAnswer.toString(); triggerHaptic(true); }
                     localStorage.setItem('vfdStickyMemory', stickyMemory);
                 } else if (val === 'ans') {
                     entryArr.splice(cursorIdx, 0, ...stickyMemory.split(''));
-                    cursorIdx += stickyMemory.length;
-                    triggerHaptic(true);
-                    renderEntry();
+                    cursorIdx += stickyMemory.length; triggerHaptic(true); renderEntry();
                 }
             }, 500);
         }
@@ -300,25 +181,25 @@
 
     function handleInput(val) {
         if (rndMode && !isNaN(val)) {
-            currentRnd = parseInt(val);
-            localStorage.setItem('vfdRnd', currentRnd);
-            rndMode = false;
-            initHistory();
-            updateStatus();
-            return;
+            currentRnd = parseInt(val); localStorage.setItem('vfdRnd', currentRnd);
+            rndMode = false; initHistory(); updateStatus(); return;
         }
         
-        if (val === 'rnd_mode') { rndMode = true; statusTag.innerText = "RND _"; return; }
+        if (val === 'rnd_mode') { 
+            if (shiftMode) {
+                let toAdd = 'AVG('; entryArr.splice(cursorIdx, 0, ...toAdd.split(''));
+                cursorIdx += toAdd.length; shiftMode = false; renderEntry(); return;
+            } else { rndMode = true; statusTag.innerText = "RND _"; return; }
+        }
+
         if (entryArr.join('') === 'ERROR') { entryArr = []; cursorIdx = 0; }
         const items = Array.from(document.querySelectorAll('.history-item')).reverse();
         
         if (val === 'shift') { shiftMode = !shiftMode; document.getElementById('shiftBtn').classList.toggle('shift-active', shiftMode); renderEntry(); return; }
         
         if (val === 'ans' && shiftMode) { 
-            sciMode = !sciMode; 
-            localStorage.setItem('vfdSciMode', sciMode); 
-            shiftMode = false; 
-            document.getElementById('shiftBtn').classList.remove('shift-active'); 
+            sciMode = !sciMode; localStorage.setItem('vfdSciMode', sciMode); 
+            shiftMode = false; document.getElementById('shiftBtn').classList.remove('shift-active'); 
             initHistory(); renderEntry(); return; 
         }
 
@@ -346,7 +227,7 @@
                 if (entryArr.length === 0 && ['+', '-', '*', '/', '^'].includes(val)) { entryArr = ['A','N','S']; cursorIdx = 3; }
                 let toAdd = val;
                 if (val === 'ans') toAdd = 'ANS';
-                if (val === 'root') toAdd = '√(';
+                if (val === 'root') toAdd = shiftMode ? 'TAX(' : '√(';
                 if (['sin','cos','tan'].includes(val)) toAdd = (shiftMode ? 'A' : '') + val.toUpperCase() + '(';
                 if (val === 'exp') toAdd = shiftMode ? 'LN(' : 'e^';
                 entryArr.splice(cursorIdx, 0, ...toAdd.split(''));
@@ -398,8 +279,28 @@
             let expr = entryArr.join(''); if (!expr) return;
             let open = (expr.match(/\(/g) || []).length, close = (expr.match(/\)/g) || []).length;
             while (open > close) { expr += ')'; close++; }
-            let s = expr.replace(/ANS/gi, `(${lastAnswer})`).replace(/π/g, 'Math.PI').replace(/e\^/g, `(${Math.E})**`).replace(/×/g, '*').replace(/÷/g, '/').replace(/\^/g, '**').replace(/√\(/g, 'Math.sqrt(');
             
+            // Helper for sub-expressions in AVG and TAX
+            const evalSub = (p) => {
+                let sp = p.replace(/ANS/gi, `(${lastAnswer})`).replace(/π/g, 'Math.PI').replace(/e\^/g, `(${Math.E})**`).replace(/×/g, '*').replace(/÷/g, '/').replace(/\^/g, '**').replace(/√\(/g, 'Math.sqrt(');
+                const D2R = (Math.PI / 180);
+                sp = sp.replace(/SIN\(/gi, `Math.sin(${D2R}*`).replace(/COS\(/gi, `Math.cos(${D2R}*`).replace(/TAN\(/gi, `Math.tan(${D2R}*`).replace(/LN\(/gi, 'Math.log(');
+                return eval(sp);
+            };
+
+            // AVG logic
+            let processed = expr.replace(/AVG\(([^)]+)\)/g, (m, inner) => {
+                const numbers = inner.split('+').map(part => evalSub(part));
+                return `(${numbers.reduce((a, b) => a + b, 0) / numbers.length})`;
+            });
+
+            // TAX logic (Sum * 0.06)
+            processed = processed.replace(/TAX\(([^)]+)\)/g, (m, inner) => {
+                const numbers = inner.split('+').map(part => evalSub(part));
+                return `(${numbers.reduce((a, b) => a + b, 0) * 0.06})`;
+            });
+
+            let s = processed.replace(/ANS/gi, `(${lastAnswer})`).replace(/π/g, 'Math.PI').replace(/e\^/g, `(${Math.E})**`).replace(/×/g, '*').replace(/÷/g, '/').replace(/\^/g, '**').replace(/√\(/g, 'Math.sqrt(');
             const R2D = (180 / Math.PI), D2R = (Math.PI / 180);
             const invFunctions = { 'ASIN': Math.asin, 'ACOS': Math.acos, 'ATAN': Math.atan };
             for (let [key, func] of Object.entries(invFunctions)) {
@@ -407,6 +308,7 @@
                 s = s.replace(regex, (match, inner) => `(${func(eval(inner.replace(/Math.PI/g, Math.PI))) * R2D})`);
             }
             s = s.replace(/SIN\(/gi, `Math.sin(${D2R}*`).replace(/COS\(/gi, `Math.cos(${D2R}*`).replace(/TAN\(/gi, `Math.tan(${D2R}*`).replace(/LN\(/gi, 'Math.log(');
+            
             let result = eval(s);
             lastAnswer = (Number.isInteger(result) ? result : parseFloat(result.toFixed(10)));
             fullHistory.push({expr: expr, res: lastAnswer});
