@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <title>VFD Pro</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#050505">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        * { box-sizing: border-box; touch-action: manipulation; }
+        
+        body, html { 
+            background-color: #050505; 
+            height: 100vh; 
+            width: 100vw; 
+            margin: 0; 
+            font-family: 'Share Tech Mono', monospace; 
+            overflow: hidden; 
+            position: fixed; 
+        }
+
+        .display-area { 
+            background: #010808; 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 45vh; 
+            padding: 15px; 
+            display: flex; 
+            flex-direction: column; 
+            z-index: 10;
+        }
+
+        .display-area::after { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.7) 70%); background-size: 2px 2px; pointer-events: none; z-index: 20; }
+        
+        .history-viewport { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; scroll-behavior: smooth; }
+        #history-container { margin-top: auto; display: flex; flex-direction: column; }
+        
+        .history-item { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: stretch; 
+            justify-content: center; 
+            min-height: 55px; 
+            padding: 5px 15px; 
+            margin: 2px 0; 
+            font-size: 1.2rem; 
+            color: #26bf9e; 
+            opacity: 1; 
+            flex-shrink: 0; 
+        }
+        
+        .history-item span:first-child { align-self: flex-start; text-align: left; }
+        .history-item span:last-child { align-self: flex-end; text-align: right; font-weight: bold; color: #33ffcc; }
+
+        .history-item.selected { color: #000 !important; background: #33ffcc; opacity: 1; box-shadow: 0 0 15px rgba(51, 255, 204, 0.6); border-radius: 4px; }
+        .history-item.selected span:first-child { color: #aaffee !important; }
+        .history-item.selected span:last-child { color: #fff !important; text-shadow: 0 0 5px rgba(255, 255, 255, 0.5); }
+
+        .divider { height: 3px; width: 100%; background: #33ffcc; box-shadow: 0 0 10px rgba(51, 255, 204, 0.5); margin: 8px 0; flex-shrink: 0; z-index: 21; }
+        
+        .extra-line { 
+            position: absolute; 
+            top: 45vh; 
+            left: 0; 
+            width: 100%; 
+            height: 1px; 
+            background: #2a2a2a; 
+            z-index: 22; 
+        }
+
+        .current-line { display: flex; align-items: center; justify-content: flex-end; color: #33ffcc; font-size: 3rem; font-weight: bold; text-shadow: 0 0 8px rgba(51, 255, 204, 0.5); white-space: pre; min-height: 5.5rem; flex-shrink: 0; z-index: 15; }
+        
+        .cursor { display: inline-block; width: 18px; height: 2.6rem; background-color: #33ffcc; margin-left: 4px; animation: blink 0.5s step-end infinite; }
+        @keyframes blink { from, to { opacity: 1; } 50% { opacity: 0; } }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 6px; 
+            padding: 10px; 
+            background: #0a0a0a; 
+            position: absolute;
+            bottom: 60px; 
+            left: 0;
+            width: 100%;
+            height: calc(55vh - 60px); 
+            z-index: 5;
+        }
+
+        button { 
+            height: 100%; 
+            min-height: 45px; 
+            font-size: 1.3rem; 
+            font-weight: bold; 
+            background: linear-gradient(145deg, #222, #111); 
+            color: #ccc; 
+            border: 1px solid #000; 
+            border-radius: 4px; 
+            box-shadow: 0 3px #000; 
+            font-family: 'Share Tech Mono', monospace; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            line-height: 1; 
+            transition: filter 0.05s ease;
+        }
+
+        button:not(.shift-btn):active { 
+            filter: brightness(1.6);
+        }
+        
+        .nav-btn { color: #33ffcc; background: #181818; font-size: 1.5rem; }
+        .eq { background: #003328; color: #33ffcc; border: 1px solid #1a8a7a; }
+        
+        .shift-btn { background: #f5a623 !important; color: #fff !important; font-size: 1.1rem; transition: background 0.2s ease; }
+        .shift-active { background: #ff8c00 !important; color: #fff !important; box-shadow: 0 0 12px #ff8c00 !important; }
+        
+        .sci-mode-active { color: #ffaa00 !important; text-shadow: 0 0 12px #ffaa00; }
+        .ac { background: #330000; color: #ff9999; }
+        sup { font-size: 0.8rem; line-height: 0; vertical-align: baseline; position: relative; top: -0.4em; }
+    </style>
+</head>
+<body>
+    <div class="display-area">
+        <div class="history-viewport" id="viewport"><div id="history-container"></div></div>
+        <div class="divider"></div>
+        <div id="input-line-container" class="current-line"></div>
+    </div>
+    
+    <div class="extra-line"></div>
+
+    <div class="grid" id="main-grid">
+        <button id="shiftBtn" class="shift-btn" data-val="shift">SHIFT</button>
+        <button class="nav-btn" data-val="left">◀</button>
+        <button class="nav-btn" data-val="right">▶</button>
+        <button id="acBtn" class="ac" data-val="ac">CLR</button>
+        <button class="nav-btn" data-val="up">▲</button>
+        <button id="expBtn" data-val="exp">e<sup>x</sup></button>
+        <button data-val="π">π</button>
+        <button data-val="del">⌫</button>
+        <button class="nav-btn" data-val="down">▼</button>
+        <button data-val="(">(</button>
+        <button data-val=")">)</button>
+        <button data-val="^">^</button>
+        <button id="sinBtn" data-val="sin">SIN</button>
+        <button id="cosBtn" data-val="cos">COS</button>
+        <button id="tanBtn" data-val="tan">TAN</button>
+        <button data-val="/">÷</button>
+        <button data-val="7">7</button><button data-val="8">8</button><button data-val="9">9</button><button data-val="*">×</button>
+        <button data-val="4">4</button><button data-val="5">5</button><button data-val="6">6</button><button data-val="-">-</button>
+        <button data-val="1">1</button><button data-val="2">2</button><button data-val="3">3</button><button data-val="+">+</button>
+        
+        <button data-val="0">0</button>
+        <button data-val=".">.</button>
+        <button id="ansBtn" data-val="ans">ANS</button>
+        <button class="eq" data-val="=">EXE</button>
+    </div>
+
+<script>
+    // SERVICE WORKER REGISTRATION
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('SW Registered'))
+                .catch(err => console.log('SW Failed', err));
+        });
+    }
+
+    let entryArr = [];
+    let cursorIdx = 0;
+    let lastAnswer = 0;
+    let shiftMode = false;
+    let sciMode = localStorage.getItem('vfdSciMode') === 'true';
+    let historyIndex = -1;
+    let fullHistory = JSON.parse(localStorage.getItem('vfdHistory')) || [];
+
+    const viewport = document.getElementById('viewport');
+    const historyContainer = document.getElementById('history-container');
+    const inputDisplay = document.getElementById('input-line-container');
+    const ansBtn = document.getElementById('ansBtn');
+    const acBtn = document.getElementById('acBtn');
+    const expBtn = document.getElementById('expBtn');
+    const shiftBtn = document.getElementById('shiftBtn');
+    const sinBtn = document.getElementById('sinBtn');
+    const cosBtn = document.getElementById('cosBtn');
+    const tanBtn = document.getElementById('tanBtn');
+
+    function triggerHaptic() {
+        if (navigator.vibrate) {
+            navigator.vibrate(1); 
+        }
+    }
+
+    function toScientific(num) { return (num === 0) ? "0.0000e+0" : num.toExponential(4); }
+    function formatVal(val) { return (sciMode && !isNaN(val)) ? toScientific(Number(val)) : val; }
+
+    function initHistory() {
+        historyContainer.innerHTML = '';
+        fullHistory.forEach((item, idx) => addHistoryToDOM(item.expr, item.res, idx));
+        if (fullHistory.length > 0) lastAnswer = fullHistory[fullHistory.length - 1].res;
+        viewport.scrollTop = viewport.scrollHeight;
+    }
+
+    function addHistoryToDOM(expr, res, id) {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.setAttribute('data-ans', res);
+        div.innerHTML = `<span>${expr}</span><span>= ${formatVal(res)}</span>`;
+        historyContainer.appendChild(div);
+    }
+
+    function renderEntry() {
+        let left = entryArr.slice(0, cursorIdx).join('');
+        let right = entryArr.slice(cursorIdx).join('');
+        let cursorHtml = (historyIndex === -1) ? '<span class="cursor"></span>' : '';
+        inputDisplay.innerHTML = left + cursorHtml + right;
+        inputDisplay.style.opacity = (historyIndex !== -1) ? '0.4' : '1';
+        
+        ansBtn.innerText = shiftMode ? 'SCI' : 'ANS';
+        ansBtn.classList.toggle('sci-mode-active', sciMode);
+        acBtn.innerText = shiftMode ? 'CLR HIST' : 'CLR';
+        expBtn.innerHTML = shiftMode ? 'LN' : 'e<sup>x</sup>';
+        sinBtn.innerText = shiftMode ? 'ASN' : 'SIN';
+        cosBtn.innerText = shiftMode ? 'ACS' : 'COS';
+        tanBtn.innerText = shiftMode ? 'ATN' : 'TAN';
+    }
+
+    document.getElementById('main-grid').addEventListener('pointerdown', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        triggerHaptic();
+        handleInput(btn.getAttribute('data-val'));
+    });
+
+    function handleInput(val) {
+        if (entryArr.join('') === 'ERROR') { entryArr = []; cursorIdx = 0; }
+        const items = Array.from(document.querySelectorAll('.history-item')).reverse();
+
+        if (val === 'shift') { 
+            shiftMode = !shiftMode; 
+            shiftBtn.classList.toggle('shift-active', shiftMode);
+            renderEntry();
+            return;
+        }
+
+        if (val === 'ans' && shiftMode) {
+            sciMode = !sciMode;
+            localStorage.setItem('vfdSciMode', sciMode);
+            shiftMode = false;
+            shiftBtn.classList.remove('shift-active');
+            initHistory();
+            renderEntry();
+            return;
+        }
+
+        if (val === 'left') {
+            if (shiftMode) cursorIdx = 0; else if (cursorIdx > 0) cursorIdx--;
+            shiftMode = false; shiftBtn.classList.remove('shift-active'); renderEntry(); return;
+        }
+        if (val === 'right') {
+            if (shiftMode) cursorIdx = entryArr.length; else if (cursorIdx < entryArr.length) cursorIdx++;
+            shiftMode = false; shiftBtn.classList.remove('shift-active'); renderEntry(); return;
+        }
+
+        if (val === 'up') {
+            if (historyIndex < items.length - 1) { historyIndex++; items[historyIndex].scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        } else if (val === 'down') {
+            if (historyIndex > -1) { historyIndex--; if (historyIndex === -1) viewport.scrollTop = viewport.scrollHeight; else items[historyIndex].scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+        } else if (val === '=') {
+            if (historyIndex !== -1) {
+                let v = items[historyIndex].getAttribute('data-ans');
+                entryArr.splice(cursorIdx, 0, ...v.toString().split(''));
+                cursorIdx += v.toString().length;
+                historyIndex = -1;
+            } else { solve(); }
+        } else if (val === 'ac') {
+            if (shiftMode) { 
+                fullHistory = []; 
+                localStorage.removeItem('vfdHistory'); 
+                historyContainer.innerHTML = ''; 
+                lastAnswer = 0; 
+            } else { entryArr = []; cursorIdx = 0; historyIndex = -1; }
+            shiftMode = false; shiftBtn.classList.remove('shift-active');
+        } else {
+            if (historyIndex !== -1) { historyIndex = -1; viewport.scrollTop = viewport.scrollHeight; }
+            if (val === 'del') {
+                if (cursorIdx > 0) { entryArr.splice(cursorIdx - 1, 1); cursorIdx--; }
+            } else {
+                if (entryArr.length === 0 && ['+', '-', '*', '/', '^'].includes(val)) { entryArr = ['A','N','S']; cursorIdx = 3; }
+                let toAdd = val;
+                if (['sin','cos','tan'].includes(val)) toAdd = (shiftMode ? 'A' : '') + val.toUpperCase() + '(';
+                if (val === 'exp') toAdd = shiftMode ? 'LN(' : 'e^';
+                entryArr.splice(cursorIdx, 0, ...toAdd.split(''));
+                cursorIdx += toAdd.length;
+                shiftMode = false; shiftBtn.classList.remove('shift-active');
+            }
+        }
+        items.forEach((item, idx) => item.classList.toggle('selected', idx === historyIndex));
+        renderEntry();
+    }
+
+    function solve() {
+        try {
+            let expr = entryArr.join('');
+            if (!expr) return;
+            let open = (expr.match(/\(/g) || []).length;
+            let close = (expr.match(/\)/g) || []).length;
+            while (open > close) { expr += ')'; close++; }
+            let s = expr.replace(/ANS/gi, `(${lastAnswer})`).replace(/π/g, 'Math.PI').replace(/e\^/g, `(${Math.E})**`).replace(/×/g, '*').replace(/÷/g, '/').replace(/\^/g, '**');
+            const R2D = (180 / Math.PI), D2R = (Math.PI / 180);
+            const invFunctions = { 'ASIN': Math.asin, 'ACOS': Math.acos, 'ATAN': Math.atan };
+            for (let [key, func] of Object.entries(invFunctions)) {
+                let regex = new RegExp(key + "\\(([^\\(\\)]+)\\)", "gi");
+                s = s.replace(regex, (match, inner) => `(${func(eval(inner.replace(/Math.PI/g, Math.PI))) * R2D})`);
+            }
+            s = s.replace(/SIN\(/gi, `Math.sin(${D2R}*`).replace(/COS\(/gi, `Math.cos(${D2R}*`).replace(/TAN\(/gi, `Math.tan(${D2R}*`).replace(/LOG\(/gi, 'Math.log10(').replace(/LN\(/gi, 'Math.log(');
+            let result = eval(s);
+            lastAnswer = Number.isInteger(result) ? result : parseFloat(result.toFixed(10));
+            fullHistory.push({expr: expr, res: lastAnswer});
+            if (fullHistory.length > 50) fullHistory.shift();
+            localStorage.setItem('vfdHistory', JSON.stringify(fullHistory));
+            initHistory(); entryArr = []; cursorIdx = 0;
+            setTimeout(() => { viewport.scrollTop = viewport.scrollHeight; }, 50);
+        } catch (e) { entryArr = ['E','R','R','O','R']; cursorIdx = 5; }
+        renderEntry();
+    }
+    initHistory(); renderEntry();
+</script>
+</body>
+</html>
