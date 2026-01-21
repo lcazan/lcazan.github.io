@@ -3,174 +3,405 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>VFD Pro 3.1</title>
+    
+    <title>VFD Pro</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#050505">
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-        * { box-sizing: border-box; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
-        body, html { background-color: #050505; height: 100vh; width: 100vw; margin: 0; font-family: 'Share Tech Mono', monospace; overflow: hidden; position: fixed; }
-
-        /* Display Layout */
-        .display-area { background: #010808; position: absolute; top: 0; left: 0; width: 100%; height: 45vh; padding: 15px; display: flex; flex-direction: column; z-index: 10; }
-        .history-viewport { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; }
-        #history-container { margin-top: auto; display: flex; flex-direction: column; }
-        .history-item { display: flex; flex-direction: column; padding: 5px 15px; font-size: 1.1rem; color: #26bf9e; border-bottom: 1px solid #0a2a24; }
-        .history-item span:last-child { align-self: flex-end; color: #33ffcc; font-weight: bold; font-size: 1.4rem; }
-
-        .divider { height: 3px; width: 100%; background: #33ffcc; box-shadow: 0 0 10px rgba(51, 255, 204, 0.5); margin: 8px 0; }
-        .tag-container { display: flex; justify-content: space-between; padding: 0 15px; margin-bottom: 5px; }
-        .version-tag { font-size: 0.7rem; color: #1a6354; }
-        .status-tag { font-size: 0.7rem; color: #33ffcc; }
-
-        .current-line { display: flex; align-items: center; justify-content: flex-end; color: #33ffcc; font-size: 3.2rem; font-weight: bold; text-shadow: 0 0 8px rgba(51, 255, 204, 0.5); min-height: 4rem; padding-right: 10px; }
-        .cursor { display: inline-block; width: 15px; height: 2.8rem; background-color: #33ffcc; margin-left: 4px; animation: blink 0.6s step-end infinite; }
-        @keyframes blink { from, to { opacity: 1; } 50% { opacity: 0; } }
-
-        /* Flush-Bottom Grid */
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: 0.6fr repeat(8, 1fr); gap: 4px; background: #000; position: absolute; bottom: 0; width: 100%; height: 55vh; padding: 4px; padding-bottom: env(safe-area-inset-bottom); }
-        button { height: 100%; font-size: 1.4rem; font-weight: bold; background: #1a1a1a; color: #eee; border: none; border-radius: 2px; font-family: 'Share Tech Mono', monospace; transition: filter 0.1s; }
-        button:active { filter: brightness(1.5); }
         
-        /* Specialized Colors */
-        .util-btn { font-size: 0.85rem; background: #0d1d25; color: #7ab8d6; }
-        .shift-btn { background: #f5a623; color: #000; }
-        .shift-active { background: #f5a623 !important; box-shadow: 0 0 15px #f5a623; }
-        .alpha-active { background: #26bf9e !important; box-shadow: 0 0 15px #26bf9e; color: #000; }
-        .eq { background: #004d3d; color: #33ffcc; }
-        .ac { background: #3d0000; color: #ff9999; }
+        * { 
+            box-sizing: border-box; 
+            touch-action: manipulation; 
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+        
+        body, html { 
+            background-color: #050505; 
+            height: 100vh; 
+            width: 100vw; 
+            margin: 0; 
+            font-family: 'Share Tech Mono', monospace; 
+            overflow: hidden; 
+            position: fixed; 
+        }
+
+        .display-area { 
+            background: #010808; 
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 45vh; 
+            padding: 15px; 
+            display: flex; 
+            flex-direction: column; 
+            z-index: 10;
+        }
+
+        .display-area::after { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.7) 70%); background-size: 2px 2px; pointer-events: none; z-index: 20; }
+        
+        .history-viewport { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; scroll-behavior: smooth; }
+        #history-container { margin-top: auto; display: flex; flex-direction: column; }
+        
+        .history-item { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: stretch; 
+            justify-content: center; 
+            min-height: 55px; 
+            padding: 5px 15px; 
+            margin: 2px 0; 
+            font-size: 1.2rem; 
+            color: #26bf9e; 
+            flex-shrink: 0; 
+            transition: background 0.2s ease;
+        }
+        
+        .history-item span { pointer-events: none; }
+        .history-item span:first-child { align-self: flex-start; text-align: left; }
+        .history-item span:last-child { align-self: flex-end; text-align: right; font-weight: bold; color: #33ffcc; }
+
+        .history-item.selected { 
+            color: #004d40 !important; 
+            background: #33ffcc; 
+            border-radius: 4px; 
+            box-shadow: 0 0 15px rgba(51, 255, 204, 0.6); 
+        }
+        .history-item.selected span:last-child { 
+            color: #ffffff !important; 
+            text-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+
+        .divider { height: 3px; width: 100%; background: #33ffcc; box-shadow: 0 0 10px rgba(51, 255, 204, 0.5); margin: 8px 0; flex-shrink: 0; z-index: 21; }
+        .extra-line { position: absolute; top: 45vh; left: 0; width: 100%; height: 1px; background: #2a2a2a; z-index: 22; }
+        
+        .tag-container { display: flex; justify-content: flex-start; align-items: center; padding-left: 15px; margin-top: 2px; z-index: 23; }
+        .version-tag { font-size: 0.7rem; color: #1a6354; letter-spacing: 1px; }
+        .status-tag { font-size: 0.7rem; color: #33ffcc; letter-spacing: 1px; margin-left: 30px; min-width: 50px; }
+
+        .current-line { display: flex; align-items: center; justify-content: flex-end; color: #33ffcc; font-size: 3rem; font-weight: bold; text-shadow: 0 0 8px rgba(51, 255, 204, 0.5); white-space: pre; min-height: 5.5rem; flex-shrink: 0; z-index: 15; }
+        
+        .cursor { display: inline-block; width: 18px; height: 2.6rem; background-color: #33ffcc; margin-left: 4px; animation: blink 0.5s step-end infinite; }
+        @keyframes blink { from, to { opacity: 1; } 50% { opacity: 0; } }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            grid-template-rows: 0.5fr repeat(8, 1fr);
+            gap: 6px; 
+            padding: 10px; 
+            background: #0a0a0a; 
+            position: absolute;
+            bottom: 0; 
+            left: 0;
+            width: 100%;
+            height: 55vh; 
+            z-index: 5;
+            padding-bottom: calc(10px + env(safe-area-inset-bottom));
+        }
+
+        button { 
+            height: 100%; 
+            font-size: 1.8rem; 
+            font-weight: bold; 
+            background: linear-gradient(145deg, #222, #111); 
+            color: #fff; 
+            border: 1px solid #000; 
+            border-radius: 4px; 
+            box-shadow: 0 3px #000; 
+            font-family: 'Share Tech Mono', monospace; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            transition: filter 0.05s ease, background 0.2s ease;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .util-btn { 
+            font-size: 1rem; 
+            background: linear-gradient(145deg, #1a3a4a, #0d1d25); 
+            color: #7ab8d6; 
+            border-color: #244d61;
+        }
+        
+        button * { pointer-events: none; }
+        button:not(.shift-btn):active { filter: brightness(1.6); }
+        .nav-btn { color: #33ffcc; background: #181818; }
+        .eq { background: #003328; color: #33ffcc; border: 1px solid #1a8a7a; }
+        .shift-btn { background: #f5a623 !important; color: #fff !important; font-size: 1.2rem; }
+        .shift-active { background: #ff8c00 !important; box-shadow: 0 0 12px #ff8c00 !important; }
+        
+        .ac { background: #330000; color: #ff9999; }
+        .ac-shift { background: #990000 !important; color: #fff !important; filter: brightness(1.4); }
+        .sci-active { color: #ffcc00 !important; text-shadow: 0 0 12px #ff8c00, 0 0 20px rgba(255, 140, 0, 0.4); }
+        sup { font-size: 0.8rem; line-height: 0; vertical-align: baseline; position: relative; top: -0.4em; }
     </style>
 </head>
 <body>
-
-<div class="display-area">
-    <div class="history-viewport" id="viewport"><div id="history-container"></div></div>
-    <div class="divider"></div>
-    <div class="tag-container">
-        <div class="version-tag">VERSION 3.1</div>
-        <div id="status-tag" class="status-tag">READY</div>
+    <div class="display-area">
+        <div class="history-viewport" id="viewport"><div id="history-container"></div></div>
+        <div class="divider"></div>
+        <div class="tag-container">
+            <div class="version-tag">VERSION 2.8</div>
+            <div class="status-tag" id="status-tag">RND 9</div>
+        </div>
+        <div id="input-line-container" class="current-line"></div>
     </div>
-    <div id="input-line" class="current-line"></div>
-</div>
+    <div class="extra-line"></div>
 
-<div class="grid" id="keypad">
-    <button class="util-btn" id="u1">RND</button>
-    <button class="util-btn" id="u2">√</button>
-    <button class="util-btn" id="u3">1/x</button>
-    <button class="util-btn" id="u4">FRAC</button>
+    <div class="grid" id="main-grid">
+        <button class="util-btn" data-val="rnd_mode">RND</button>
+        <button class="util-btn" data-val="frac">FRAC</button>
+        <button class="util-btn" data-val="root">√</button>
+        <button class="util-btn" data-val="recip">1/x</button>
 
-    <button id="shiftBtn" class="shift-btn">SHIFT</button>
-    <button data-val="left">◀</button><button data-val="right">▶</button><button class="ac" data-val="ac">CLR</button>
-    
-    <button data-val="7">7</button><button data-val="8">8</button><button data-val="9">9</button><button data-val="/">÷</button>
-    <button data-val="4">4</button><button data-val="5">5</button><button data-val="6">6</button><button data-val="*">×</button>
-    <button data-val="1">1</button><button data-val="2">2</button><button data-val="3">3</button><button data-val="-">-</button>
-    <button data-val="0">0</button><button data-val=".">.</button><button data-val="ans">ANS</button><button data-val="+" class="op">+</button>
-    
-    <button data-val="(">(</button><button data-val=")">)</button><button data-val="^">^</button><button class="eq" data-val="=">EXE</button>
-</div>
+        <button id="shiftBtn" class="shift-btn" data-val="shift">SHIFT</button>
+        <button class="nav-btn" data-val="left">◀</button>
+        <button class="nav-btn" data-val="right">▶</button>
+        <button id="acBtn" class="ac" data-val="ac">CLR</button>
+        <button class="nav-btn" data-val="up">▲</button>
+        <button id="expBtn" data-val="exp">e<sup>x</sup></button>
+        <button data-val="π">π</button>
+        <button data-val="del">⌫</button>
+        <button class="nav-btn" data-val="down">▼</button>
+        <button data-val="(">(</button>
+        <button data-val=")">)</button>
+        <button data-val="^">^</button>
+        <button id="sinBtn" data-val="sin">SIN</button>
+        <button id="cosBtn" data-val="cos">COS</button>
+        <button id="tanBtn" data-val="tan">TAN</button>
+        <button data-val="/">÷</button>
+        <button data-val="7">7</button><button data-val="8">8</button><button data-val="9">9</button><button data-val="*">×</button>
+        <button data-val="4">4</button><button data-val="5">5</button><button data-val="6">6</button><button data-val="-">-</button>
+        <button data-val="1">1</button><button data-val="2">2</button><button data-val="3">3</button><button data-val="+">+</button>
+        <button data-val="0">0</button>
+        <button data-val=".">.</button>
+        <button id="ansBtn" data-val="ans">ANS</button>
+        <button class="eq" data-val="=">EXE</button>
+    </div>
 
 <script>
-    let entryArr = [], cursorIdx = 0, lastAnswer = 0, shiftState = 0; // 0: none, 1: Yellow, 2: Green
-    let history = [];
-    let shiftTimer;
+    let entryArr = [], cursorIdx = 0, lastAnswer = 0, shiftMode = false;
+    let sciMode = localStorage.getItem('vfdSciMode') === 'true';
+    let stickyMemory = localStorage.getItem('vfdStickyMemory') || "0";
+    let historyIndex = -1, fullHistory = JSON.parse(localStorage.getItem('vfdHistory')) || [];
+    let rndMode = false, currentRnd = parseInt(localStorage.getItem('vfdRnd')) || 9;
+    let holdTimer, isHolding = false;
 
-    const uLabels = [
-        ['RND', 'FIX', 'LOG'],
-        ['√', 'AVG', 'CLIP'],
-        ['1/x', 'MOD', 'TAX'],
-        ['FRAC', 'SUM', 'HYP']
-    ];
+    const viewport = document.getElementById('viewport'), historyContainer = document.getElementById('history-container');
+    const inputDisplay = document.getElementById('input-line-container'), statusTag = document.getElementById('status-tag');
 
-    function updateDisplay() {
-        const uBtns = [document.getElementById('u1'), document.getElementById('u2'), document.getElementById('u3'), document.getElementById('u4')];
-        uBtns.forEach((btn, i) => btn.innerText = uLabels[i][shiftState]);
-        
-        const sBtn = document.getElementById('shiftBtn');
-        sBtn.className = 'shift-btn' + (shiftState === 1 ? ' shift-active' : (shiftState === 2 ? ' alpha-active' : ''));
-
-        let left = entryArr.slice(0, cursorIdx).join('');
-        let right = entryArr.slice(cursorIdx).join('');
-        document.getElementById('input-line').innerHTML = left + '<span class="cursor"></span>' + right;
+    function triggerHaptic(strong = false) { if (navigator.vibrate) navigator.vibrate(strong ? 15 : 1); }
+    
+    function updateStatus() {
+        if (sciMode) statusTag.innerText = "SCI";
+        else statusTag.innerText = "RND " + currentRnd;
     }
 
-    function gcd(a, b) { return b ? gcd(b, a % b) : a; }
-    function to64th(val) {
-        let dec = Math.abs(val % 1);
+    function toScientific(num) { 
+        let n = Number(num);
+        return (n === 0) ? "0.0000e+0" : n.toExponential(4); 
+    }
+    
+    function formatVal(val) {
+        if (typeof val === 'string' && val.includes('/')) return val;
+        if (isNaN(val)) return val;
+        if (sciMode) return toScientific(val);
+        return Number(val).toFixed(currentRnd).replace(/\.?0+$/, "");
+    }
+
+    function getFraction(decimal) {
+        let val = parseFloat(decimal);
         let whole = Math.floor(Math.abs(val));
-        let 64ths = Math.round(dec * 64);
-        if (64ths === 0) return whole.toString();
-        if (64ths === 64) return (whole + 1).toString();
-        let common = gcd(64ths, 64);
-        return `${whole > 0 ? whole + " " : ""}${64ths/common}/${64/common}`;
+        let frac = Math.abs(val) - whole;
+        let numerator = Math.round(frac * 64);
+        if (numerator === 0) return (val < 0 ? "-" : "") + whole.toString();
+        if (numerator === 64) return (val < 0 ? "-" : "") + (whole + 1).toString();
+        const gcd = (a, b) => b ? gcd(b, a % b) : a;
+        let common = gcd(numerator, 64);
+        let n = numerator / common;
+        let d = 64 / common;
+        let res = (whole > 0 ? whole + " " : "") + n + "/" + d;
+        return (val < 0 ? "-" : "") + res;
     }
 
-    document.getElementById('shiftBtn').addEventListener('pointerdown', () => {
-        shiftTimer = setTimeout(() => { shiftState = 2; updateDisplay(); }, 500);
-    });
+    function initHistory() {
+        historyContainer.innerHTML = '';
+        fullHistory.forEach((item) => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.setAttribute('data-ans', item.res);
+            div.innerHTML = `<span>${item.expr}</span><span>= ${formatVal(item.res)}</span>`;
+            historyContainer.appendChild(div);
+        });
+        viewport.scrollTop = viewport.scrollHeight;
+    }
 
-    document.getElementById('keypad').addEventListener('pointerup', (e) => {
-        clearTimeout(shiftTimer);
+    function renderEntry() {
+        let left = entryArr.slice(0, cursorIdx).join(''), right = entryArr.slice(cursorIdx).join('');
+        let cursorHtml = (historyIndex === -1) ? '<span class="cursor"></span>' : '';
+        inputDisplay.innerHTML = left + cursorHtml + right;
+        inputDisplay.style.opacity = (historyIndex !== -1) ? '0.4' : '1';
+        
+        const ansBtn = document.getElementById('ansBtn'), acBtn = document.getElementById('acBtn'), shiftBtn = document.getElementById('shiftBtn');
+        ansBtn.innerText = shiftMode ? 'SCI' : 'ANS';
+        ansBtn.classList.toggle('sci-active', sciMode);
+        
+        if (shiftMode) { acBtn.innerText = 'CLS'; acBtn.classList.add('ac-shift'); } 
+        else { acBtn.innerText = 'CLR'; acBtn.classList.remove('ac-shift'); }
+        
+        document.getElementById('expBtn').innerHTML = shiftMode ? 'LN' : 'e<sup>x</sup>';
+        document.getElementById('sinBtn').innerText = shiftMode ? 'ASN' : 'SIN';
+        document.getElementById('cosBtn').innerText = shiftMode ? 'ACS' : 'COS';
+        document.getElementById('tanBtn').innerText = shiftMode ? 'ATN' : 'TAN';
+        updateStatus();
+    }
+
+    document.getElementById('main-grid').addEventListener('pointerdown', (e) => {
         const btn = e.target.closest('button'); if (!btn) return;
-        const val = btn.dataset.val;
-        const id = btn.id;
-
-        if (id === 'shiftBtn') { if(shiftState !== 2) shiftState = shiftState === 1 ? 0 : 1; updateDisplay(); return; }
-
-        if (id.startsWith('u')) {
-            const idx = parseInt(id[1]) - 1;
-            executeUtility(idx, shiftState);
-            shiftState = 0;
-        } else if (val === '=') {
-            solve();
-        } else if (val === 'ac') {
-            entryArr = []; cursorIdx = 0;
-        } else if (val) {
-            entryArr.splice(cursorIdx, 0, val);
-            cursorIdx++;
+        const val = btn.getAttribute('data-val');
+        const items = Array.from(document.querySelectorAll('.history-item')).reverse();
+        triggerHaptic(); isHolding = false;
+        
+        if (val === 'ans' || val === '=') {
+            holdTimer = setTimeout(() => {
+                isHolding = true;
+                if (val === '=') {
+                    if (historyIndex !== -1) {
+                        stickyMemory = items[historyIndex].getAttribute('data-ans');
+                        triggerHaptic(true);
+                    } else if (entryArr.length > 0) {
+                        solve();
+                        stickyMemory = lastAnswer.toString();
+                        triggerHaptic(true);
+                    }
+                    localStorage.setItem('vfdStickyMemory', stickyMemory);
+                } else if (val === 'ans') {
+                    entryArr.splice(cursorIdx, 0, ...stickyMemory.split(''));
+                    cursorIdx += stickyMemory.length;
+                    triggerHaptic(true);
+                    renderEntry();
+                }
+            }, 500);
         }
-        updateDisplay();
     });
 
-    function executeUtility(btnIdx, mode) {
-        if (mode === 0) { // Primary
-            const ops = ['RND(', '√(', '1/(', '']; 
-            if (btnIdx === 3) { // FRAC primary
-                let f = to64th(lastAnswer); entryArr = f.split(''); cursorIdx = entryArr.length;
-            } else {
-                entryArr.splice(cursorIdx, 0, ...ops[btnIdx].split('')); cursorIdx += ops[btnIdx].length;
-            }
-        } else if (mode === 1) { // Yellow
-            const ops = ['FIX(', 'AVG(', 'MOD(', 'SUM('];
-            entryArr.splice(cursorIdx, 0, ...ops[btnIdx].split('')); cursorIdx += ops[btnIdx].length;
-        } else if (mode === 2) { // Green
-            if (btnIdx === 0) { entryArr.splice(cursorIdx, 0, ...'LOG('.split('')); cursorIdx += 4; }
-            if (btnIdx === 1) { navigator.clipboard.writeText(lastAnswer); }
-            if (btnIdx === 2) { // TAX
-                let sum = history.reduce((a, b) => a + Number(b.res), 0);
-                lastAnswer = (sum * 0.06).toFixed(2);
-                entryArr = lastAnswer.split(''); cursorIdx = entryArr.length;
-            }
-            if (btnIdx === 3) { entryArr.splice(cursorIdx, 0, ...'HYP('.split('')); cursorIdx += 4; }
+    document.getElementById('main-grid').addEventListener('pointerup', (e) => {
+        clearTimeout(holdTimer);
+        const btn = e.target.closest('button');
+        if (!btn || isHolding) return;
+        handleInput(btn.getAttribute('data-val'));
+    });
+
+    function handleInput(val) {
+        if (rndMode && !isNaN(val)) {
+            currentRnd = parseInt(val);
+            localStorage.setItem('vfdRnd', currentRnd);
+            rndMode = false;
+            initHistory();
+            updateStatus();
+            return;
         }
+        
+        if (val === 'rnd_mode') { rndMode = true; statusTag.innerText = "RND _"; return; }
+        if (entryArr.join('') === 'ERROR') { entryArr = []; cursorIdx = 0; }
+        const items = Array.from(document.querySelectorAll('.history-item')).reverse();
+        
+        if (val === 'shift') { shiftMode = !shiftMode; document.getElementById('shiftBtn').classList.toggle('shift-active', shiftMode); renderEntry(); return; }
+        
+        if (val === 'ans' && shiftMode) { 
+            sciMode = !sciMode; 
+            localStorage.setItem('vfdSciMode', sciMode); 
+            shiftMode = false; 
+            document.getElementById('shiftBtn').classList.remove('shift-active'); 
+            initHistory(); renderEntry(); return; 
+        }
+
+        if (val === 'left') { if (shiftMode) cursorIdx = 0; else if (cursorIdx > 0) cursorIdx--; shiftMode = false; renderEntry(); return; }
+        if (val === 'right') { if (shiftMode) cursorIdx = entryArr.length; else if (cursorIdx < entryArr.length) cursorIdx++; shiftMode = false; renderEntry(); return; }
+        
+        if (val === 'up') { if (historyIndex < items.length - 1) { historyIndex++; items[historyIndex].scrollIntoView({ behavior: 'smooth', block: 'center' }); } }
+        else if (val === 'down') { if (historyIndex > -1) { historyIndex--; if (historyIndex === -1) viewport.scrollTop = viewport.scrollHeight; else items[historyIndex].scrollIntoView({ behavior: 'smooth', block: 'center' }); } }
+        else if (val === 'recip') { instantRecip(); }
+        else if (val === '=') {
+            if (historyIndex !== -1) {
+                let targetValue = shiftMode ? items[historyIndex].querySelector('span:first-child').innerText : items[historyIndex].getAttribute('data-ans');
+                entryArr.splice(cursorIdx, 0, ...targetValue.toString().split(''));
+                cursorIdx += targetValue.toString().length; historyIndex = -1;
+            } else solve();
+        } else if (val === 'ac') {
+            if (shiftMode) { fullHistory = []; localStorage.removeItem('vfdHistory'); historyContainer.innerHTML = ''; lastAnswer = 0; entryArr = []; cursorIdx = 0; historyIndex = -1; }
+            else { entryArr = []; cursorIdx = 0; historyIndex = -1; }
+            shiftMode = false;
+        } else {
+            if (historyIndex !== -1) { historyIndex = -1; viewport.scrollTop = viewport.scrollHeight; }
+            if (val === 'del') { if (cursorIdx > 0) { entryArr.splice(cursorIdx - 1, 1); cursorIdx--; } }
+            else {
+                if (entryArr.length === 0 && ['+', '-', '*', '/', '^'].includes(val)) { entryArr = ['A','N','S']; cursorIdx = 3; }
+                let toAdd = val;
+                if (val === 'ans') toAdd = 'ANS';
+                if (val === 'root') toAdd = '√(';
+                if (val === 'frac') toAdd = 'FRAC(';
+                if (['sin','cos','tan'].includes(val)) toAdd = (shiftMode ? 'A' : '') + val.toUpperCase() + '(';
+                if (val === 'exp') toAdd = shiftMode ? 'LN(' : 'e^';
+                entryArr.splice(cursorIdx, 0, ...toAdd.split(''));
+                cursorIdx += toAdd.length; shiftMode = false;
+            }
+        }
+        items.forEach((item, idx) => item.classList.toggle('selected', idx === historyIndex));
+        document.getElementById('shiftBtn').classList.remove('shift-active');
+        renderEntry();
+    }
+
+    function instantRecip() {
+        try {
+            let expr = (entryArr.length > 0) ? entryArr.join('') : "ANS";
+            let s = expr.replace(/ANS/gi, `(${lastAnswer})`).replace(/π/g, 'Math.PI').replace(/e\^/g, `(${Math.E})**`).replace(/×/g, '*').replace(/÷/g, '/').replace(/\^/g, '**').replace(/√\(/g, 'Math.sqrt(');
+            const D2R = (Math.PI / 180);
+            s = s.replace(/SIN\(/gi, `Math.sin(${D2R}*`).replace(/COS\(/gi, `Math.cos(${D2R}*`).replace(/TAN\(/gi, `Math.tan(${D2R}*`).replace(/LN\(/gi, 'Math.log(');
+            let val = eval(s);
+            if (val === 0) throw "Div0";
+            let result = 1 / val;
+            lastAnswer = Number.isInteger(result) ? result : parseFloat(result.toFixed(10));
+            fullHistory.push({expr: `1/(${expr})`, res: lastAnswer});
+            localStorage.setItem('vfdHistory', JSON.stringify(fullHistory));
+            initHistory(); entryArr = []; cursorIdx = 0;
+            setTimeout(() => { viewport.scrollTop = viewport.scrollHeight; }, 50);
+        } catch(e) { entryArr = ['E','R','R','O','R']; cursorIdx = 5; }
+        renderEntry();
     }
 
     function solve() {
         try {
-            let expr = entryArr.join('').replace(/×/g, '*').replace(/÷/g, '/');
-            // Simplified eval for demonstration
-            lastAnswer = eval(expr.replace(/ANS/g, lastAnswer));
-            history.push({expr: entryArr.join(''), res: lastAnswer});
-            renderHistory();
-            entryArr = []; cursorIdx = 0;
-        } catch(e) { entryArr = ['E','R','R']; cursorIdx = 3; }
+            let expr = entryArr.join(''); if (!expr) return;
+            let open = (expr.match(/\(/g) || []).length, close = (expr.match(/\)/g) || []).length;
+            while (open > close) { expr += ')'; close++; }
+            let s = expr.replace(/ANS/gi, `(${lastAnswer})`).replace(/π/g, 'Math.PI').replace(/e\^/g, `(${Math.E})**`).replace(/×/g, '*').replace(/÷/g, '/').replace(/\^/g, '**').replace(/√\(/g, 'Math.sqrt(');
+            let fracMatch = s.match(/FRAC\(([^)]+)\)/);
+            let isFracRequest = !!fracMatch;
+            if (isFracRequest) s = s.replace(/FRAC\(/g, '(');
+            const R2D = (180 / Math.PI), D2R = (Math.PI / 180);
+            const invFunctions = { 'ASIN': Math.asin, 'ACOS': Math.acos, 'ATAN': Math.atan };
+            for (let [key, func] of Object.entries(invFunctions)) {
+                let regex = new RegExp(key + "\\(([^\\(\\)]+)\\)", "gi");
+                s = s.replace(regex, (match, inner) => `(${func(eval(inner.replace(/Math.PI/g, Math.PI))) * R2D})`);
+            }
+            s = s.replace(/SIN\(/gi, `Math.sin(${D2R}*`).replace(/COS\(/gi, `Math.cos(${D2R}*`).replace(/TAN\(/gi, `Math.tan(${D2R}*`).replace(/LN\(/gi, 'Math.log(');
+            let result = eval(s);
+            lastAnswer = isFracRequest ? getFraction(result) : (Number.isInteger(result) ? result : parseFloat(result.toFixed(10)));
+            fullHistory.push({expr: expr, res: lastAnswer});
+            localStorage.setItem('vfdHistory', JSON.stringify(fullHistory));
+            initHistory(); entryArr = []; cursorIdx = 0;
+            setTimeout(() => { viewport.scrollTop = viewport.scrollHeight; }, 50);
+        } catch (e) { entryArr = ['E','R','R','O','R']; cursorIdx = 5; }
+        renderEntry();
     }
-
-    function renderHistory() {
-        const container = document.getElementById('history-container');
-        container.innerHTML = history.map(h => `<div class="history-item"><span>${h.expr}</span><span>= ${h.res}</span></div>`).join('');
-        document.getElementById('viewport').scrollTop = 99999;
-    }
-
-    updateDisplay();
+    initHistory(); renderEntry();
 </script>
 </body>
 </html>
