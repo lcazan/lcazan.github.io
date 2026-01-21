@@ -52,6 +52,8 @@
             color: #26bf9e; 
             flex-shrink: 0; 
             transition: background 0.2s ease;
+            user-select: none;
+            -webkit-user-select: none;
         }
         
         .history-item span:first-child { align-self: flex-start; text-align: left; }
@@ -72,9 +74,9 @@
         
         .extra-line { position: absolute; top: 45vh; left: 0; width: 100%; height: 1px; background: #2a2a2a; z-index: 22; }
 
-        .version-tag { font-size: 0.7rem; color: #1a6354; text-align: left; padding-left: 15px; margin-top: 2px; letter-spacing: 1px; z-index: 23; transition: color 0.3s; }
+        .version-tag { font-size: 0.7rem; color: #1a6354; text-align: left; padding-left: 15px; margin-top: 2px; letter-spacing: 1px; z-index: 23; transition: color 0.3s; user-select: none; }
 
-        .current-line { display: flex; align-items: center; justify-content: flex-end; color: #33ffcc; font-size: 3rem; font-weight: bold; text-shadow: 0 0 8px rgba(51, 255, 204, 0.5); white-space: pre; min-height: 5.5rem; flex-shrink: 0; z-index: 15; }
+        .current-line { display: flex; align-items: center; justify-content: flex-end; color: #33ffcc; font-size: 3rem; font-weight: bold; text-shadow: 0 0 8px rgba(51, 255, 204, 0.5); white-space: pre; min-height: 5.5rem; flex-shrink: 0; z-index: 15; user-select: none; }
         
         .cursor { display: inline-block; width: 18px; height: 2.6rem; background-color: #33ffcc; margin-left: 4px; animation: blink 0.5s step-end infinite; }
         @keyframes blink { from, to { opacity: 1; } 50% { opacity: 0; } }
@@ -109,6 +111,9 @@
             align-items: center; 
             justify-content: center; 
             transition: filter 0.05s ease, background 0.2s ease, text-shadow 0.3s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
         button:not(.shift-btn):active { filter: brightness(1.6); }
