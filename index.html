@@ -10,7 +10,15 @@
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-        * { box-sizing: border-box; touch-action: manipulation; }
+        
+        /* Global selection prevention */
+        * { 
+            box-sizing: border-box; 
+            touch-action: manipulation; 
+            -webkit-user-select: none; /* Safari */
+            user-select: none;         /* Standard */
+            -webkit-touch-callout: none; /* Disable callouts/menus */
+        }
         
         body, html { 
             background-color: #050505; 
@@ -52,10 +60,9 @@
             color: #26bf9e; 
             flex-shrink: 0; 
             transition: background 0.2s ease;
-            user-select: none;
-            -webkit-user-select: none;
         }
         
+        .history-item span { pointer-events: none; } /* Ensures interaction hits the container */
         .history-item span:first-child { align-self: flex-start; text-align: left; }
         .history-item span:last-child { align-self: flex-end; text-align: right; font-weight: bold; color: #33ffcc; }
 
@@ -71,12 +78,9 @@
         }
 
         .divider { height: 3px; width: 100%; background: #33ffcc; box-shadow: 0 0 10px rgba(51, 255, 204, 0.5); margin: 8px 0; flex-shrink: 0; z-index: 21; }
-        
         .extra-line { position: absolute; top: 45vh; left: 0; width: 100%; height: 1px; background: #2a2a2a; z-index: 22; }
-
-        .version-tag { font-size: 0.7rem; color: #1a6354; text-align: left; padding-left: 15px; margin-top: 2px; letter-spacing: 1px; z-index: 23; transition: color 0.3s; user-select: none; }
-
-        .current-line { display: flex; align-items: center; justify-content: flex-end; color: #33ffcc; font-size: 3rem; font-weight: bold; text-shadow: 0 0 8px rgba(51, 255, 204, 0.5); white-space: pre; min-height: 5.5rem; flex-shrink: 0; z-index: 15; user-select: none; }
+        .version-tag { font-size: 0.7rem; color: #1a6354; text-align: left; padding-left: 15px; margin-top: 2px; letter-spacing: 1px; z-index: 23; transition: color 0.3s; }
+        .current-line { display: flex; align-items: center; justify-content: flex-end; color: #33ffcc; font-size: 3rem; font-weight: bold; text-shadow: 0 0 8px rgba(51, 255, 204, 0.5); white-space: pre; min-height: 5.5rem; flex-shrink: 0; z-index: 15; }
         
         .cursor { display: inline-block; width: 18px; height: 2.6rem; background-color: #33ffcc; margin-left: 4px; animation: blink 0.5s step-end infinite; }
         @keyframes blink { from, to { opacity: 1; } 50% { opacity: 0; } }
@@ -110,11 +114,13 @@
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            transition: filter 0.05s ease, background 0.2s ease, text-shadow 0.3s ease;
-            user-select: none;
-            -webkit-user-select: none;
-            -webkit-touch-callout: none;
+            transition: filter 0.05s ease, background 0.2s ease;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
         }
+        
+        /* Protect button labels from selection */
+        button * { pointer-events: none; }
 
         button:not(.shift-btn):active { filter: brightness(1.6); }
         .nav-btn { color: #33ffcc; background: #181818; }
@@ -124,9 +130,7 @@
         
         .ac { background: #330000; color: #ff9999; }
         .ac-shift { background: #990000 !important; color: #fff !important; filter: brightness(1.4); }
-        
         .sci-active { color: #ffcc00 !important; text-shadow: 0 0 12px #ff8c00, 0 0 20px rgba(255, 140, 0, 0.4); }
-        
         sup { font-size: 0.8rem; line-height: 0; vertical-align: baseline; position: relative; top: -0.4em; }
     </style>
 </head>
@@ -134,7 +138,7 @@
     <div class="display-area">
         <div class="history-viewport" id="viewport"><div id="history-container"></div></div>
         <div class="divider"></div>
-        <div class="version-tag" id="v-tag">VERSION 2.5</div>
+        <div class="version-tag" id="v-tag">VERSION 2.6</div>
         <div id="input-line-container" class="current-line"></div>
     </div>
     <div class="extra-line"></div>
@@ -177,7 +181,7 @@
 
     function triggerHaptic(strong = false) { if (navigator.vibrate) navigator.vibrate(strong ? 15 : 1); }
     function showStatus(msg) {
-        const original = "VERSION 2.5";
+        const original = "VERSION 2.6";
         vTag.innerText = msg; vTag.style.color = "#33ffcc";
         setTimeout(() => { vTag.innerText = original; vTag.style.color = "#1a6354"; }, 1500);
     }
