@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vfd-v1';
+const CACHE_NAME = 'vfd-v2';
 const ASSETS = [
   './',
   './index.html',
