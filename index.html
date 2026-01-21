@@ -14,19 +14,37 @@
         .display-area::after { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.7) 70%); background-size: 2px 2px; pointer-events: none; z-index: 20; }
         .history-viewport { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; scroll-behavior: smooth; }
         #history-container { margin-top: auto; display: flex; flex-direction: column; }
-        .history-item { display: flex; flex-direction: column; align-items: stretch; justify-content: center; min-height: 55px; padding: 5px 15px; margin: 2px 0; font-size: 1.2rem; color: #26bf9e; flex-shrink: 0; transition: background 0.2s ease; }
-        .history-item span:first-child { align-self: flex-start; text-align: left; }
+        
+        .history-item { 
+            display: flex; flex-direction: column; align-items: stretch; justify-content: center; 
+            min-height: 55px; padding: 8px 15px; margin: 2px 0; font-size: 1.2rem; 
+            color: #26bf9e; flex-shrink: 0; transition: background 0.2s ease; word-break: break-all; 
+        }
+        .history-item span:first-child { align-self: flex-start; text-align: left; line-height: 1.2; margin-bottom: 4px; }
         .history-item span:last-child { align-self: flex-end; text-align: right; font-weight: bold; color: #33ffcc; }
         .history-item.selected { color: #004d40 !important; background: #33ffcc; border-radius: 4px; box-shadow: 0 0 15px rgba(51, 255, 204, 0.6); }
         .history-item.selected span:last-child { color: #ffffff !important; text-shadow: 0 0 5px rgba(0,0,0,0.3); }
+        
         .divider { height: 3px; width: 100%; background: #33ffcc; box-shadow: 0 0 10px rgba(51, 255, 204, 0.5); margin: 8px 0; flex-shrink: 0; z-index: 21; }
         .extra-line { position: absolute; top: 45vh; left: 0; width: 100%; height: 1px; background: #2a2a2a; z-index: 22; }
-        .tag-container { display: flex; justify-content: flex-start; align-items: center; padding-left: 15px; margin-top: 2px; z-index: 23; }
+        
+        .tag-container { display: flex; justify-content: space-between; align-items: center; padding: 0 15px; margin-top: 2px; z-index: 23; }
         .version-tag { font-size: 0.7rem; color: #1a6354; letter-spacing: 1px; }
-        .status-tag { font-size: 0.7rem; color: #33ffcc; letter-spacing: 1px; margin-left: 30px; min-width: 50px; }
-        .current-line { display: flex; align-items: center; justify-content: flex-end; color: #33ffcc; font-size: 3rem; font-weight: bold; text-shadow: 0 0 8px rgba(51, 255, 204, 0.5); white-space: pre; min-height: 5.5rem; flex-shrink: 0; z-index: 15; }
-        .cursor { display: inline-block; width: 18px; height: 2.6rem; background-color: #33ffcc; margin-left: 4px; animation: blink 0.5s step-end infinite; }
+        .status-group { display: flex; gap: 20px; }
+        .status-tag { font-size: 0.7rem; color: #33ffcc; letter-spacing: 1px; min-width: 40px; text-align: right; }
+        #mem-tag { color: #f5a623; display: none; }
+        #mem-tag.active { display: block; }
+        #notif-tag { color: #ffcc00; font-weight: bold; }
+
+        .current-line { 
+            display: block; text-align: right; color: #33ffcc; font-size: 3rem; font-weight: bold; 
+            text-shadow: 0 0 8px rgba(51, 255, 204, 0.5); white-space: nowrap; min-height: 5.5rem; 
+            flex-shrink: 0; z-index: 15; overflow-x: auto; overflow-y: hidden; padding-bottom: 5px;
+        }
+        .current-line::-webkit-scrollbar { display: none; }
+        .cursor { display: inline-block; width: 18px; height: 2.6rem; background-color: #33ffcc; vertical-align: middle; margin-left: 2px; animation: blink 0.5s step-end infinite; }
         @keyframes blink { from, to { opacity: 1; } 50% { opacity: 0; } }
+        
         .grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: 0.5fr repeat(8, 1fr); gap: 6px; padding: 10px; background: #0a0a0a; position: absolute; bottom: 0; left: 0; width: 100%; height: 55vh; z-index: 5; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
         button { height: 100%; font-size: 1.8rem; font-weight: bold; background: linear-gradient(145deg, #222, #111); color: #fff; border: 1px solid #000; border-radius: 4px; box-shadow: 0 3px #000; font-family: 'Share Tech Mono', monospace; display: flex; align-items: center; justify-content: center; transition: filter 0.05s ease, background 0.2s ease; outline: none; -webkit-tap-highlight-color: transparent; }
         .util-btn { font-size: 1rem; background: linear-gradient(145deg, #1a3a4a, #0d1d25); color: #7ab8d6; border-color: #244d61; }
@@ -48,7 +66,11 @@
         <div class="divider"></div>
         <div class="tag-container">
             <div class="version-tag">VERSION 3.2</div>
-            <div class="status-tag" id="status-tag">RND 9</div>
+            <div class="status-group">
+                <div id="notif-tag" class="status-tag"></div>
+                <div id="mem-tag" class="status-tag">MEM</div>
+                <div id="status-tag" class="status-tag">RND 9</div>
+            </div>
         </div>
         <div id="input-line-container" class="current-line"></div>
     </div>
@@ -91,15 +113,19 @@
 
     const viewport = document.getElementById('viewport'), historyContainer = document.getElementById('history-container');
     const inputDisplay = document.getElementById('input-line-container'), statusTag = document.getElementById('status-tag');
+    const memTag = document.getElementById('mem-tag'), notifTag = document.getElementById('notif-tag');
 
     function triggerHaptic(strong = false) { if (navigator.vibrate) navigator.vibrate(strong ? 15 : 1); }
-    function updateStatus() { statusTag.innerText = sciMode ? "SCI" : "RND " + currentRnd; }
-    function toScientific(num) { let n = Number(num); return (n === 0) ? "0.0000e+0" : n.toExponential(4); }
-    
+    function updateStatus() { 
+        statusTag.innerText = sciMode ? "SCI" : "RND " + currentRnd; 
+        memTag.classList.toggle('active', stickyMemory !== "0");
+    }
+    function showNotif(text) { notifTag.innerText = text; setTimeout(() => { notifTag.innerText = ""; }, 1500); }
+
     function formatVal(val) {
         if (isNaN(val) && typeof val !== 'string') return val;
         if (typeof val === 'string' && val.includes('/')) return val;
-        if (sciMode) return toScientific(val);
+        if (sciMode) return (Number(val) === 0) ? "0.0000e+0" : Number(val).toExponential(4);
         return Number(val).toFixed(currentRnd).replace(/\.?0+$/, "");
     }
 
@@ -110,18 +136,16 @@
         let absVal = Math.abs(val);
         let whole = Math.floor(absVal);
         let frac = absVal - whole;
-        let rawNum = frac * 64;
-        let roundedNum = Math.round(rawNum);
-        let indicator = "";
-        if (Math.abs(roundedNum - rawNum) > 0.0001) {
-            indicator = (roundedNum > rawNum) ? "+" : "-";
-        }
+        let rawNum = frac * 64, roundedNum = Math.round(rawNum);
+        let indicator = (Math.abs(roundedNum - rawNum) > 0.0001) ? (roundedNum > rawNum ? "+" : "-") : "";
         let finalWhole = (roundedNum === 64) ? whole + 1 : whole;
         let finalNum = (roundedNum === 64 || roundedNum === 0) ? 0 : roundedNum;
+        
+        const gcd = (a, b) => b ? gcd(b, a % b) : a;
         let fractionStr = "";
-        if (finalNum === 0) fractionStr = sign + finalWhole.toString();
-        else {
-            const gcd = (a, b) => b ? gcd(b, a % b) : a;
+        if (finalNum === 0) {
+            fractionStr = sign + finalWhole.toString();
+        } else {
             let common = gcd(finalNum, 64);
             fractionStr = sign + (finalWhole > 0 ? finalWhole + " " : "") + (finalNum/common) + "/" + (64/common);
         }
@@ -134,161 +158,144 @@
             const div = document.createElement('div');
             div.className = 'history-item';
             div.setAttribute('data-ans', item.rawRes !== undefined ? item.rawRes : item.res);
-            let displayRes = formatVal(item.res);
             let indicatorHtml = item.ind ? `<span style="margin-left:8px; font-size:0.8em; opacity:0.7;">${item.ind}</span>` : "";
-            div.innerHTML = `<span>${item.expr}</span><span>= ${displayRes}${indicatorHtml}</span>`;
+            div.innerHTML = `<span>${item.expr}</span><span>= ${formatVal(item.res)}${indicatorHtml}</span>`;
             historyContainer.appendChild(div);
         });
         viewport.scrollTop = viewport.scrollHeight;
+        updateStatus();
     }
 
     function evalSub(p) {
-        // Prepare string for calculation
-        let s = p.replace(/ANS/gi, `(${lastAnswer})`).replace(/π/g, 'Math.PI').replace(/e\^/g, `(${Math.E})**`).replace(/×/g, '*').replace(/÷/g, '/').replace(/\^/g, '**').replace(/√\(/g, 'Math.sqrt(');
+        let s = p.toString().replace(/ANS/gi, `(${lastAnswer})`).replace(/π/g, 'Math.PI').replace(/e\^/g, `(${Math.E})**`).replace(/×/g, '*').replace(/÷/g, '/').replace(/\^/g, '**').replace(/√\(/g, 'Math.sqrt(');
         const R2D = (180 / Math.PI), D2R = (Math.PI / 180);
-        
-        // Handle Inverse Trig separately to avoid collisions
-        const invFunctions = { 'ASIN': Math.asin, 'ACOS': Math.acos, 'ATAN': Math.atan };
-        for (let [key, func] of Object.entries(invFunctions)) {
+        const invTrig = { 'ASIN': Math.asin, 'ACOS': Math.acos, 'ATAN': Math.atan };
+        for (let [key, func] of Object.entries(invTrig)) {
             let regex = new RegExp(key + "\\(([^\\(\\)]+)\\)", "gi");
-            s = s.replace(regex, (match, inner) => `(${func(evalSub(inner)) * R2D})`);
+            s = s.replace(regex, (m, i) => `(${func(evalSub(i)) * R2D})`);
         }
-
-        // Standard Trig
         s = s.replace(/SIN\(/gi, `Math.sin(${D2R}*`).replace(/COS\(/gi, `Math.cos(${D2R}*`).replace(/TAN\(/gi, `Math.tan(${D2R}*`).replace(/LN\(/gi, 'Math.log(');
         return eval(s);
     }
 
     function renderEntry() {
         let left = entryArr.slice(0, cursorIdx).join(''), right = entryArr.slice(cursorIdx).join('');
-        let cursorHtml = (historyIndex === -1) ? '<span class="cursor"></span>' : '';
+        let cursorHtml = (historyIndex === -1) ? '<span id="active-cursor" class="cursor"></span>' : '';
         inputDisplay.innerHTML = left + cursorHtml + right;
         inputDisplay.style.opacity = (historyIndex !== -1) ? '0.4' : '1';
-        const ansBtn = document.getElementById('ansBtn'), acBtn = document.getElementById('acBtn'), rndBtn = document.getElementById('rndBtn'), sqrtBtn = document.getElementById('sqrtBtn');
-        ansBtn.innerText = shiftMode ? 'SCI' : 'ANS';
-        ansBtn.classList.toggle('sci-active', sciMode);
-        rndBtn.innerText = shiftMode ? 'AVG' : 'RND';
-        sqrtBtn.innerText = shiftMode ? 'TAX' : '√';
-        if (shiftMode) { acBtn.innerText = 'CLS'; acBtn.classList.add('ac-shift'); } 
-        else { acBtn.innerText = 'CLR'; acBtn.classList.remove('ac-shift'); }
+        setTimeout(() => { document.getElementById('active-cursor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }, 10);
+        const btns = { ans: document.getElementById('ansBtn'), ac: document.getElementById('acBtn'), rnd: document.getElementById('rndBtn'), sqrt: document.getElementById('sqrtBtn') };
+        btns.ans.innerText = shiftMode ? 'SCI' : 'ANS';
+        btns.ans.classList.toggle('sci-active', sciMode);
+        btns.rnd.innerText = shiftMode ? 'AVG' : 'RND';
+        btns.sqrt.innerText = shiftMode ? 'TAX' : '√';
+        btns.ac.innerText = shiftMode ? 'CLS' : 'CLR';
+        btns.ac.classList.toggle('ac-shift', shiftMode);
         document.getElementById('expBtn').innerHTML = shiftMode ? 'LN' : 'e<sup>x</sup>';
-        document.getElementById('sinBtn').innerText = shiftMode ? 'ASN' : 'SIN';
-        document.getElementById('cosBtn').innerText = shiftMode ? 'ACS' : 'COS';
-        document.getElementById('tanBtn').innerText = shiftMode ? 'ATN' : 'TAN';
+        ['sin','cos','tan'].forEach(f => document.getElementById(f+'Btn').innerText = (shiftMode?'A':'')+f.toUpperCase());
         updateStatus();
     }
 
     function handleInput(val) {
-        if (rndMode && !isNaN(val)) {
-            currentRnd = parseInt(val); localStorage.setItem('vfdRnd', currentRnd);
-            rndMode = false; initHistory(); updateStatus(); return;
-        }
-        if (val === 'rnd_mode') { 
-            if (shiftMode) {
-                let toAdd = 'AVG('; entryArr.splice(cursorIdx, 0, ...toAdd.split(''));
-                cursorIdx += toAdd.length; shiftMode = false; renderEntry(); return;
-            } else { rndMode = true; statusTag.innerText = "RND _"; return; }
-        }
+        if (rndMode && !isNaN(val)) { currentRnd = parseInt(val); localStorage.setItem('vfdRnd', currentRnd); rndMode = false; initHistory(); return; }
+        if (val === 'rnd_mode') { if (shiftMode) { let a = 'AVG('; entryArr.splice(cursorIdx, 0, ...a.split('')); cursorIdx += a.length; shiftMode = false; } else rndMode = true; renderEntry(); return; }
+        
         const items = Array.from(document.querySelectorAll('.history-item')).reverse();
+        
+        // Navigation & Logic specific keys - Prevent insertion
         if (val === 'shift') { shiftMode = !shiftMode; document.getElementById('shiftBtn').classList.toggle('shift-active', shiftMode); renderEntry(); return; }
-        if (val === 'ans' && shiftMode) { sciMode = !sciMode; localStorage.setItem('vfdSciMode', sciMode); shiftMode = false; initHistory(); renderEntry(); return; }
-        if (val === 'left') { if (shiftMode) cursorIdx = 0; else if (cursorIdx > 0) cursorIdx--; shiftMode = false; renderEntry(); return; }
-        if (val === 'right') { if (shiftMode) cursorIdx = entryArr.length; else if (cursorIdx < entryArr.length) cursorIdx++; shiftMode = false; renderEntry(); return; }
-        if (val === 'up') { if (historyIndex < items.length - 1) { historyIndex++; items[historyIndex].scrollIntoView({ behavior: 'smooth', block: 'center' }); } }
-        else if (val === 'down') { if (historyIndex > -1) { historyIndex--; if (historyIndex === -1) viewport.scrollTop = viewport.scrollHeight; else items[historyIndex].scrollIntoView({ behavior: 'smooth', block: 'center' }); } }
-        else if (val === 'recip') instantRecip();
+        if (val === 'left') { cursorIdx = shiftMode ? 0 : Math.max(0, cursorIdx - 1); shiftMode = false; renderEntry(); return; }
+        if (val === 'right') { cursorIdx = shiftMode ? entryArr.length : Math.min(entryArr.length, cursorIdx + 1); shiftMode = false; renderEntry(); return; }
+        if (val === 'up') { if (historyIndex < items.length - 1) { historyIndex++; items[historyIndex].scrollIntoView({ behavior: 'smooth', block: 'center' }); } renderEntry(); return; }
+        if (val === 'down') { if (historyIndex > -1) { historyIndex--; if (historyIndex === -1) viewport.scrollTop = viewport.scrollHeight; else items[historyIndex].scrollIntoView({ behavior: 'smooth', block: 'center' }); } renderEntry(); return; }
+        
+        if (val === 'recip') instantRecip();
         else if (val === 'n64') instantN64();
         else if (val === '=') {
             if (historyIndex !== -1) {
-                let targetValue = shiftMode ? items[historyIndex].querySelector('span:first-child').innerText : items[historyIndex].getAttribute('data-ans');
-                entryArr.splice(cursorIdx, 0, ...targetValue.toString().split(''));
-                cursorIdx += targetValue.toString().length; historyIndex = -1;
+                let v = shiftMode ? items[historyIndex].querySelector('span:first-child').innerText : items[historyIndex].getAttribute('data-ans');
+                entryArr.splice(cursorIdx, 0, ...v.toString().split('')); cursorIdx += v.toString().length; historyIndex = -1;
             } else solve();
         } else if (val === 'ac') {
-            if (shiftMode) { fullHistory = []; localStorage.removeItem('vfdHistory'); historyContainer.innerHTML = ''; lastAnswer = 0; entryArr = []; cursorIdx = 0; historyIndex = -1; }
-            else { entryArr = []; cursorIdx = 0; historyIndex = -1; }
-            shiftMode = false;
+            if (shiftMode) { fullHistory = []; localStorage.removeItem('vfdHistory'); historyContainer.innerHTML = ''; lastAnswer = 0; }
+            entryArr = []; cursorIdx = 0; historyIndex = -1; shiftMode = false;
         } else if (val === 'del') { if (cursorIdx > 0) { entryArr.splice(cursorIdx - 1, 1); cursorIdx--; } }
         else {
             if (entryArr.length === 0 && ['+', '-', '*', '/', '^'].includes(val)) { entryArr = ['A','N','S']; cursorIdx = 3; }
-            let toAdd = val;
-            if (val === 'ans') toAdd = 'ANS';
-            if (val === 'root') toAdd = shiftMode ? 'TAX(' : '√(';
-            if (['sin','cos','tan'].includes(val)) toAdd = (shiftMode ? 'A' : '') + val.toUpperCase() + '(';
-            if (val === 'exp') toAdd = shiftMode ? 'LN(' : 'e^';
-            entryArr.splice(cursorIdx, 0, ...toAdd.split(''));
-            cursorIdx += toAdd.length; shiftMode = false;
+            let t = val === 'ans' ? 'ANS' : val === 'root' ? (shiftMode?'TAX(':'√(') : ['sin','cos','tan'].includes(val) ? (shiftMode?'A':'')+val.toUpperCase()+'(' : val === 'exp' ? (shiftMode?'LN(':'e^') : val;
+            entryArr.splice(cursorIdx, 0, ...t.split('')); cursorIdx += t.length; shiftMode = false;
         }
-        items.forEach((item, idx) => item.classList.toggle('selected', idx === historyIndex));
-        document.getElementById('shiftBtn').classList.remove('shift-active');
+        items.forEach((it, i) => it.classList.toggle('selected', i === historyIndex));
+        document.getElementById('shiftBtn').classList.remove('shift-active'); 
         renderEntry();
     }
 
     function solve() {
         try {
-            let expr = entryArr.join(''); if (!expr) return;
-            let open = (expr.match(/\(/g) || []).length, close = (expr.match(/\)/g) || []).length;
-            while (open > close) { expr += ')'; close++; }
-            let processed = expr.replace(/AVG\(([^)]+)\)/g, (m, inner) => {
-                const numbers = inner.split('+').map(part => evalSub(part));
-                return `(${numbers.reduce((a, b) => a + b, 0) / numbers.length})`;
-            }).replace(/TAX\(([^)]+)\)/g, (m, inner) => {
-                const numbers = inner.split('+').map(part => evalSub(part));
-                return `(${numbers.reduce((a, b) => a + b, 0) * 0.06})`;
-            });
-            let result = evalSub(processed);
-            lastAnswer = (Number.isInteger(result) ? result : parseFloat(result.toFixed(10)));
-            fullHistory.push({expr: expr, res: lastAnswer, ind: ""});
+            let e = entryArr.join(''); if (!e) return;
+            let o = (e.match(/\(/g)||[]).length, c = (e.match(/\)/g)||[]).length;
+            while(o > c) { e += ')'; c++; }
+            let p = e.replace(/AVG\(([^)]+)\)/g, (m, i) => `(${i.split('+').map(x=>evalSub(x)).reduce((a,b)=>a+b,0)/i.split('+').length})`)
+                     .replace(/TAX\(([^)]+)\)/g, (m, i) => `(${i.split('+').map(x=>evalSub(x)).reduce((a,b)=>a+b,0)*0.06})`);
+            lastAnswer = evalSub(p);
+            fullHistory.push({expr: e, res: lastAnswer, ind: ""});
             localStorage.setItem('vfdHistory', JSON.stringify(fullHistory));
             initHistory(); entryArr = []; cursorIdx = 0;
-            setTimeout(() => { viewport.scrollTop = viewport.scrollHeight; }, 50);
-        } catch (e) { entryArr = ['E','R','R','O','R']; cursorIdx = 5; }
+        } catch (err) { entryArr = ['E','R','R','O','R']; cursorIdx = 5; }
         renderEntry();
     }
 
     function instantN64() {
         try {
-            let expr = (entryArr.length > 0) ? entryArr.join('') : "ANS";
-            let val = evalSub(expr);
-            let matrix = getFractionMatrix(val);
-            lastAnswer = matrix.raw;
-            fullHistory.push({ expr: `n/64(${expr})`, res: matrix.res, ind: matrix.ind, rawRes: matrix.raw });
+            let e = entryArr.length > 0 ? entryArr.join('') : "ANS";
+            let rawVal = evalSub(e);
+            let m = getFractionMatrix(rawVal);
+            lastAnswer = m.raw;
+            fullHistory.push({ expr: `n/64(${e})`, res: m.res, ind: m.ind, rawRes: m.raw });
             localStorage.setItem('vfdHistory', JSON.stringify(fullHistory));
             initHistory(); entryArr = []; cursorIdx = 0;
-        } catch(e) { entryArr = ['E','R','R','O','R']; cursorIdx = 5; }
+        } catch(err) { entryArr = ['E','R','R','O','R']; cursorIdx = 5; }
         renderEntry();
     }
 
     function instantRecip() {
         try {
-            let expr = (entryArr.length > 0) ? entryArr.join('') : "ANS";
-            let val = evalSub(expr);
-            if (val === 0) throw "Div0";
-            lastAnswer = Number.isInteger(1/val) ? 1/val : parseFloat((1/val).toFixed(10));
-            fullHistory.push({expr: `1/(${expr})`, res: lastAnswer, ind: ""});
+            let e = entryArr.length > 0 ? entryArr.join('') : "ANS";
+            let v = evalSub(e); if (v === 0) throw "Div0";
+            lastAnswer = 1/v;
+            fullHistory.push({expr: `1/(${e})`, res: lastAnswer, ind: ""});
             localStorage.setItem('vfdHistory', JSON.stringify(fullHistory));
             initHistory(); entryArr = []; cursorIdx = 0;
-        } catch(e) { entryArr = ['E','R','R','O','R']; cursorIdx = 5; }
+        } catch(err) { entryArr = ['E','R','R','O','R']; cursorIdx = 5; }
         renderEntry();
     }
 
     document.getElementById('main-grid').addEventListener('pointerdown', (e) => {
         const btn = e.target.closest('button'); if (!btn) return;
         const val = btn.getAttribute('data-val');
-        const items = Array.from(document.querySelectorAll('.history-item')).reverse();
         triggerHaptic(); isHolding = false;
-        if (val === 'ans' || val === '=') {
+        
+        if (val === 'ans' || val === '=' || val === 'ac') {
             holdTimer = setTimeout(() => {
                 isHolding = true;
                 if (val === '=') {
+                    const items = Array.from(document.querySelectorAll('.history-item')).reverse();
                     if (historyIndex !== -1) stickyMemory = items[historyIndex].getAttribute('data-ans');
                     else if (entryArr.length > 0) { solve(); stickyMemory = lastAnswer.toString(); }
                     localStorage.setItem('vfdStickyMemory', stickyMemory);
+                    showNotif("SAVED");
                     triggerHaptic(true);
+                    updateStatus();
                 } else if (val === 'ans') {
                     entryArr.splice(cursorIdx, 0, ...stickyMemory.split(''));
                     cursorIdx += stickyMemory.length; renderEntry();
                     triggerHaptic(true);
+                } else if (val === 'ac') {
+                    stickyMemory = "0";
+                    localStorage.setItem('vfdStickyMemory', stickyMemory);
+                    showNotif("MEM CLR");
+                    triggerHaptic(true);
+                    updateStatus();
                 }
             }, 500);
         }
@@ -297,8 +304,7 @@
     document.getElementById('main-grid').addEventListener('pointerup', (e) => {
         clearTimeout(holdTimer);
         const btn = e.target.closest('button');
-        if (!btn || isHolding) return;
-        handleInput(btn.getAttribute('data-val'));
+        if (btn && !isHolding) handleInput(btn.getAttribute('data-val'));
     });
 
     initHistory(); renderEntry();
