@@ -129,7 +129,7 @@
     <div class="display-area">
         <div class="history-viewport" id="viewport"><div id="history-container"></div></div>
         <div class="divider"></div>
-        <div class="version-tag" id="v-tag">VERSION 2.4</div>
+        <div class="version-tag" id="v-tag">VERSION 2.5</div>
         <div id="input-line-container" class="current-line"></div>
     </div>
     <div class="extra-line"></div>
@@ -170,17 +170,12 @@
     const viewport = document.getElementById('viewport'), historyContainer = document.getElementById('history-container');
     const inputDisplay = document.getElementById('input-line-container'), shiftBtn = document.getElementById('shiftBtn'), acBtn = document.getElementById('acBtn'), ansBtn = document.getElementById('ansBtn'), vTag = document.getElementById('v-tag');
 
-    function triggerHaptic(strong = false) { 
-        if (navigator.vibrate) navigator.vibrate(strong ? 15 : 1); 
-    }
-
+    function triggerHaptic(strong = false) { if (navigator.vibrate) navigator.vibrate(strong ? 15 : 1); }
     function showStatus(msg) {
-        const original = "VERSION 2.4";
-        vTag.innerText = msg;
-        vTag.style.color = "#33ffcc";
+        const original = "VERSION 2.5";
+        vTag.innerText = msg; vTag.style.color = "#33ffcc";
         setTimeout(() => { vTag.innerText = original; vTag.style.color = "#1a6354"; }, 1500);
     }
-
     function toScientific(num) { return (num === 0) ? "0.0000e+0" : num.toExponential(4); }
     function formatVal(val) { return (sciMode && !isNaN(val)) ? toScientific(Number(val)) : val; }
 
@@ -212,24 +207,28 @@
     }
 
     document.getElementById('main-grid').addEventListener('pointerdown', (e) => {
-        const btn = e.target.closest('button');
-        if (!btn) return;
+        const btn = e.target.closest('button'); if (!btn) return;
         const val = btn.getAttribute('data-val');
-        triggerHaptic();
+        const items = Array.from(document.querySelectorAll('.history-item')).reverse();
+        triggerHaptic(); isHolding = false;
         
-        isHolding = false;
         if (val === 'ans' || val === '=') {
             holdTimer = setTimeout(() => {
                 isHolding = true;
-                triggerHaptic(true); // Second haptic
                 if (val === '=') {
-                    stickyMemory = lastAnswer.toString();
+                    if (historyIndex !== -1) {
+                        stickyMemory = items[historyIndex].getAttribute('data-ans');
+                        triggerHaptic(true); showStatus("MEM SAVED");
+                    } else if (entryArr.length > 0) {
+                        solve();
+                        stickyMemory = lastAnswer.toString();
+                        triggerHaptic(true); showStatus("MEM SAVED");
+                    }
                     localStorage.setItem('vfdStickyMemory', stickyMemory);
-                    showStatus("MEM SAVED");
                 } else if (val === 'ans') {
                     entryArr.splice(cursorIdx, 0, ...stickyMemory.split(''));
                     cursorIdx += stickyMemory.length;
-                    showStatus("MEM RECALL");
+                    triggerHaptic(true); showStatus("MEM RECALL");
                     renderEntry();
                 }
             }, 500);
@@ -246,7 +245,6 @@
     function handleInput(val) {
         if (entryArr.join('') === 'ERROR') { entryArr = []; cursorIdx = 0; }
         const items = Array.from(document.querySelectorAll('.history-item')).reverse();
-
         if (val === 'shift') { shiftMode = !shiftMode; shiftBtn.classList.toggle('shift-active', shiftMode); renderEntry(); return; }
         if (val === 'ans' && shiftMode) { sciMode = !sciMode; localStorage.setItem('vfdSciMode', sciMode); shiftMode = false; shiftBtn.classList.remove('shift-active'); initHistory(); renderEntry(); return; }
         if (val === 'left') { if (shiftMode) cursorIdx = 0; else if (cursorIdx > 0) cursorIdx--; shiftMode = false; shiftBtn.classList.remove('shift-active'); renderEntry(); return; }
