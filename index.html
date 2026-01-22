@@ -49,6 +49,10 @@
         button { height: 100%; font-size: 1.8rem; font-weight: bold; background: linear-gradient(145deg, #222, #111); color: #fff; border: 1px solid #000; border-radius: 4px; box-shadow: 0 3px #000; font-family: 'Share Tech Mono', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: filter 0.05s ease, background 0.2s ease; outline: none; -webkit-tap-highlight-color: transparent; line-height: 1; }
         .sub-label { font-size: 0.7rem; letter-spacing: 1px; margin-top: 4px; opacity: 0.8; font-weight: normal; }
         
+        /* Fixed e^x Alignment Styles */
+        .exp-container { display: inline-flex; align-items: flex-start; justify-content: center; position: relative; }
+        .exp-sup { font-size: 1rem; margin-top: -0.25em; margin-left: 0.1em; }
+
         .util-btn { font-size: 1rem; background: linear-gradient(145deg, #1a3a4a, #0d1d25); color: #7ab8d6; border-color: #244d61; }
         button:not(.shift-btn):active { filter: brightness(1.6); }
         .nav-btn { color: #33ffcc; background: #181818; }
@@ -58,7 +62,6 @@
         .ac { background: #330000; color: #ff9999; }
         .ac-shift { background: #990000 !important; color: #fff !important; filter: brightness(1.4); }
         .sci-active { color: #ffcc00 !important; text-shadow: 0 0 12px #ff8c00, 0 0 20px rgba(255, 140, 0, 0.4); }
-        sup { font-size: 0.8rem; line-height: 0; vertical-align: baseline; position: relative; top: -0.4em; }
     </style>
 </head>
 <body>
@@ -66,7 +69,7 @@
         <div class="history-viewport" id="viewport"><div id="history-container"></div></div>
         <div class="divider"></div>
         <div class="tag-container">
-            <div class="version-tag">VERSION 3.2</div>
+            <div class="version-tag">VERSION 3.5</div>
             <div class="status-group">
                 <div id="notif-tag" class="status-tag"></div>
                 <div id="mem-tag" class="status-tag">MEM</div>
@@ -86,7 +89,7 @@
         <button class="nav-btn" data-val="right">▶</button>
         <button id="acBtn" class="ac" data-val="ac"><span>CLR</span><span class="sub-label">Mem-</span></button>
         <button class="nav-btn" data-val="up">▲</button>
-        <button id="expBtn" data-val="exp">e<sup>x</sup></button>
+        <button id="expBtn" data-val="exp"><div class="exp-container">e<span class="exp-sup">x</span></div></button>
         <button data-val="π">π</button>
         <button data-val="del">⌫</button>
         <button class="nav-btn" data-val="down">▼</button>
@@ -105,9 +108,6 @@
         <button class="eq" data-val="="><span>⏎</span><span class="sub-label">Mem+</span></button>
     </div>
 <script>
-    // [The logic remains identical to the previous fixed Version 3.2]
-    // Including the scientific mode fix, n/64 fix, and navigation fix.
-    
     let entryArr = [], cursorIdx = 0, lastAnswer = 0, shiftMode = false;
     let sciMode = localStorage.getItem('vfdSciMode') === 'true';
     let stickyMemory = localStorage.getItem('vfdStickyMemory') || "0";
@@ -188,7 +188,10 @@
         btns.sqrt.innerText = shiftMode ? 'TAX' : '√';
         btns.ac.querySelector('span:first-child').innerText = shiftMode ? 'CLS' : 'CLR';
         btns.ac.classList.toggle('ac-shift', shiftMode);
-        document.getElementById('expBtn').innerHTML = shiftMode ? 'LN' : 'e<sup>x</sup>';
+        
+        // Re-apply the Flexbox fix during the render cycle
+        document.getElementById('expBtn').innerHTML = shiftMode ? 'LN' : '<div class="exp-container">e<span class="exp-sup">x</span></div>';
+        
         ['sin','cos','tan'].forEach(f => document.getElementById(f+'Btn').innerText = (shiftMode?'A':'')+f.toUpperCase());
         updateStatus();
     }
