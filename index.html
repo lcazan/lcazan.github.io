@@ -36,20 +36,23 @@
         #mem-tag.active { display: block; }
         #notif-tag { color: #ffcc00; font-weight: bold; }
 
+        /* Updated current-line for vertical alignment */
         .current-line { 
-            display: block; text-align: right; color: #33ffcc; font-size: 3rem; font-weight: bold; 
+            display: flex; align-items: center; justify-content: flex-end; 
+            color: #33ffcc; font-size: 3rem; font-weight: bold; 
             text-shadow: 0 0 8px rgba(51, 255, 204, 0.5); white-space: nowrap; min-height: 5.5rem; 
             flex-shrink: 0; z-index: 15; overflow-x: auto; overflow-y: hidden; padding-bottom: 5px;
         }
         .current-line::-webkit-scrollbar { display: none; }
-        .cursor { display: inline-block; width: 18px; height: 2.6rem; background-color: #33ffcc; vertical-align: middle; margin-left: 2px; animation: blink 0.5s step-end infinite; }
+        
+        /* Updated cursor to match text height perfectly */
+        .cursor { display: inline-block; width: 18px; height: 1em; background-color: #33ffcc; margin-left: 2px; animation: blink 0.5s step-end infinite; }
         @keyframes blink { from, to { opacity: 1; } 50% { opacity: 0; } }
         
         .grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: 0.5fr repeat(8, 1fr); gap: 6px; padding: 10px; background: #0a0a0a; position: absolute; bottom: 0; left: 0; width: 100%; height: 55vh; z-index: 5; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
         button { height: 100%; font-size: 1.8rem; font-weight: bold; background: linear-gradient(145deg, #222, #111); color: #fff; border: 1px solid #000; border-radius: 4px; box-shadow: 0 3px #000; font-family: 'Share Tech Mono', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: filter 0.05s ease, background 0.2s ease; outline: none; -webkit-tap-highlight-color: transparent; line-height: 1; }
         .sub-label { font-size: 0.7rem; letter-spacing: 1px; margin-top: 4px; opacity: 0.8; font-weight: normal; }
         
-        /* Fixed e^x Alignment Styles */
         .exp-container { display: inline-flex; align-items: flex-start; justify-content: center; position: relative; }
         .exp-sup { font-size: 1rem; margin-top: -0.25em; margin-left: 0.1em; }
 
@@ -57,8 +60,10 @@
         button:not(.shift-btn):active { filter: brightness(1.6); }
         .nav-btn { color: #33ffcc; background: #181818; }
         .eq { background: #003328; color: #33ffcc; border: 1px solid #1a8a7a; }
-        .shift-btn { background: #f5a623 !important; color: #fff !important; font-size: 1.2rem; }
-        .shift-active { background: #ff8c00 !important; box-shadow: 0 0 12px #ff8c00 !important; }
+
+        .shift-btn { background: #f5a623 !important; color: #fff !important; font-size: 1.2rem; border: 1px solid #000; }
+        .shift-active { box-shadow: 0 0 15px #f5a623, 0 0 25px rgba(245, 166, 35, 0.5) !important; }
+        
         .ac { background: #330000; color: #ff9999; }
         .ac-shift { background: #990000 !important; color: #fff !important; filter: brightness(1.4); }
         .sci-active { color: #ffcc00 !important; text-shadow: 0 0 12px #ff8c00, 0 0 20px rgba(255, 140, 0, 0.4); }
@@ -177,7 +182,7 @@
     function renderEntry() {
         let left = entryArr.slice(0, cursorIdx).join(''), right = entryArr.slice(cursorIdx).join('');
         let cursorHtml = (historyIndex === -1) ? '<span id="active-cursor" class="cursor"></span>' : '';
-        inputDisplay.innerHTML = left + cursorHtml + right;
+        inputDisplay.innerHTML = `<span>${left}</span>` + cursorHtml + `<span>${right}</span>`;
         inputDisplay.style.opacity = (historyIndex !== -1) ? '0.4' : '1';
         setTimeout(() => { document.getElementById('active-cursor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }, 10);
         
@@ -189,7 +194,7 @@
         btns.ac.querySelector('span:first-child').innerText = shiftMode ? 'CLS' : 'CLR';
         btns.ac.classList.toggle('ac-shift', shiftMode);
         
-        // Re-apply the Flexbox fix during the render cycle
+        document.getElementById('shiftBtn').classList.toggle('shift-active', shiftMode);
         document.getElementById('expBtn').innerHTML = shiftMode ? 'LN' : '<div class="exp-container">e<span class="exp-sup">x</span></div>';
         
         ['sin','cos','tan'].forEach(f => document.getElementById(f+'Btn').innerText = (shiftMode?'A':'')+f.toUpperCase());
