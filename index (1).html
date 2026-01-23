@@ -37,20 +37,19 @@
         #notif-tag { color: #ffcc00; font-weight: bold; }
 
         .current-line { 
-            display: flex; align-items: center; justify-content: flex-end; 
-            color: #33ffcc; font-size: 3rem; font-weight: bold; 
+            display: block; text-align: right; color: #33ffcc; font-size: 3rem; font-weight: bold; 
             text-shadow: 0 0 8px rgba(51, 255, 204, 0.5); white-space: nowrap; min-height: 5.5rem; 
             flex-shrink: 0; z-index: 15; overflow-x: auto; overflow-y: hidden; padding-bottom: 5px;
         }
         .current-line::-webkit-scrollbar { display: none; }
-        
-        .cursor { display: inline-block; width: 18px; height: 1em; background-color: #33ffcc; margin-left: 2px; animation: blink 0.5s step-end infinite; }
+        .cursor { display: inline-block; width: 18px; height: 2.6rem; background-color: #33ffcc; vertical-align: middle; margin-left: 2px; animation: blink 0.5s step-end infinite; }
         @keyframes blink { from, to { opacity: 1; } 50% { opacity: 0; } }
         
         .grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: 0.5fr repeat(8, 1fr); gap: 6px; padding: 10px; background: #0a0a0a; position: absolute; bottom: 0; left: 0; width: 100%; height: 55vh; z-index: 5; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
         button { height: 100%; font-size: 1.8rem; font-weight: bold; background: linear-gradient(145deg, #222, #111); color: #fff; border: 1px solid #000; border-radius: 4px; box-shadow: 0 3px #000; font-family: 'Share Tech Mono', monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: filter 0.05s ease, background 0.2s ease; outline: none; -webkit-tap-highlight-color: transparent; line-height: 1; }
         .sub-label { font-size: 0.7rem; letter-spacing: 1px; margin-top: 4px; opacity: 0.8; font-weight: normal; }
         
+        /* Fixed e^x Alignment Styles */
         .exp-container { display: inline-flex; align-items: flex-start; justify-content: center; position: relative; }
         .exp-sup { font-size: 1rem; margin-top: -0.25em; margin-left: 0.1em; }
 
@@ -58,10 +57,8 @@
         button:not(.shift-btn):active { filter: brightness(1.6); }
         .nav-btn { color: #33ffcc; background: #181818; }
         .eq { background: #003328; color: #33ffcc; border: 1px solid #1a8a7a; }
-
-        .shift-btn { background: #f5a623 !important; color: #fff !important; font-size: 1.2rem; border: 1px solid #000; }
-        .shift-active { box-shadow: 0 0 15px #f5a623, 0 0 25px rgba(245, 166, 35, 0.5) !important; }
-        
+        .shift-btn { background: #f5a623 !important; color: #fff !important; font-size: 1.2rem; }
+        .shift-active { background: #ff8c00 !important; box-shadow: 0 0 12px #ff8c00 !important; }
         .ac { background: #330000; color: #ff9999; }
         .ac-shift { background: #990000 !important; color: #fff !important; filter: brightness(1.4); }
         .sci-active { color: #ffcc00 !important; text-shadow: 0 0 12px #ff8c00, 0 0 20px rgba(255, 140, 0, 0.4); }
@@ -84,7 +81,7 @@
     <div class="extra-line"></div>
     <div class="grid" id="main-grid">
         <button id="rndBtn" class="util-btn" data-val="rnd_mode">RND</button>
-        <button class="util-btn" data-val="n16">n/16</button>
+        <button class="util-btn" data-val="n64">n/64</button>
         <button id="sqrtBtn" class="util-btn" data-val="root">√</button>
         <button class="util-btn" data-val="recip">1/x</button>
         <button id="shiftBtn" class="shift-btn" data-val="shift">SHIFT</button>
@@ -143,16 +140,13 @@
         let absVal = Math.abs(val);
         let whole = Math.floor(absVal);
         let frac = absVal - whole;
-        let rawNum = frac * 16, roundedNum = Math.round(rawNum);
-        let diffInches = absVal - (whole + (roundedNum / 16));
-        let diffMm = diffInches * 25.4;
-        let indicator = "";
-        if (Math.abs(diffMm) > 0.005) { indicator = (diffMm > 0 ? "+" : "") + diffMm.toFixed(2) + "mm"; }
-        let finalWhole = (roundedNum === 16) ? whole + 1 : whole;
-        let finalNum = (roundedNum === 16 || roundedNum === 0) ? 0 : roundedNum;
+        let rawNum = frac * 64, roundedNum = Math.round(rawNum);
+        let indicator = (Math.abs(roundedNum - rawNum) > 0.0001) ? (roundedNum > rawNum ? "+" : "-") : "";
+        let finalWhole = (roundedNum === 64) ? whole + 1 : whole;
+        let finalNum = (roundedNum === 64 || roundedNum === 0) ? 0 : roundedNum;
         const gcd = (a, b) => b ? gcd(b, a % b) : a;
         let fractionStr = (finalNum === 0) ? sign + finalWhole.toString() : 
-            sign + (finalWhole > 0 ? finalWhole + " " : "") + (finalNum/gcd(finalNum, 16)) + "/" + (16/gcd(finalNum, 16));
+            sign + (finalWhole > 0 ? finalWhole + " " : "") + (finalNum/gcd(finalNum, 64)) + "/" + (64/gcd(finalNum, 64));
         return { res: fractionStr, ind: indicator, raw: val };
     }
 
@@ -162,7 +156,7 @@
             const div = document.createElement('div');
             div.className = 'history-item';
             div.setAttribute('data-ans', item.rawRes !== undefined ? item.rawRes : item.res);
-            let indicatorHtml = item.ind ? `<span style="margin-left:8px; font-size:0.8em; opacity:0.8; color:#f5a623;">${item.ind}</span>` : "";
+            let indicatorHtml = item.ind ? `<span style="margin-left:8px; font-size:0.8em; opacity:0.7;">${item.ind}</span>` : "";
             div.innerHTML = `<span>${item.expr}</span><span>= ${formatVal(item.res)}${indicatorHtml}</span>`;
             historyContainer.appendChild(div);
         });
@@ -183,7 +177,7 @@
     function renderEntry() {
         let left = entryArr.slice(0, cursorIdx).join(''), right = entryArr.slice(cursorIdx).join('');
         let cursorHtml = (historyIndex === -1) ? '<span id="active-cursor" class="cursor"></span>' : '';
-        inputDisplay.innerHTML = `<span>${left}</span>` + cursorHtml + `<span>${right}</span>`;
+        inputDisplay.innerHTML = left + cursorHtml + right;
         inputDisplay.style.opacity = (historyIndex !== -1) ? '0.4' : '1';
         setTimeout(() => { document.getElementById('active-cursor')?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); }, 10);
         
@@ -194,8 +188,10 @@
         btns.sqrt.innerText = shiftMode ? 'TAX' : '√';
         btns.ac.querySelector('span:first-child').innerText = shiftMode ? 'CLS' : 'CLR';
         btns.ac.classList.toggle('ac-shift', shiftMode);
-        document.getElementById('shiftBtn').classList.toggle('shift-active', shiftMode);
+        
+        // Re-apply the Flexbox fix during the render cycle
         document.getElementById('expBtn').innerHTML = shiftMode ? 'LN' : '<div class="exp-container">e<span class="exp-sup">x</span></div>';
+        
         ['sin','cos','tan'].forEach(f => document.getElementById(f+'Btn').innerText = (shiftMode?'A':'')+f.toUpperCase());
         updateStatus();
     }
@@ -213,20 +209,14 @@
         if (val === '=') {
             if (historyIndex !== -1) {
                 let v = shiftMode ? items[historyIndex].querySelector('span:first-child').innerText : items[historyIndex].getAttribute('data-ans');
-                entryArr = []; 
-                cursorIdx = 0; 
-                historyIndex = -1; 
-                items.forEach(it => it.classList.remove('selected'));
-                entryArr.splice(0, 0, ...v.toString().split(''));
-                cursorIdx = entryArr.length;
-                shiftMode = false;
+                entryArr.splice(cursorIdx, 0, ...v.toString().split('')); cursorIdx += v.toString().length; historyIndex = -1;
             } else solve();
         } else if (val === 'ac') {
             if (shiftMode) { fullHistory = []; localStorage.removeItem('vfdHistory'); historyContainer.innerHTML = ''; lastAnswer = 0; }
             entryArr = []; cursorIdx = 0; historyIndex = -1; shiftMode = false;
         } else if (val === 'del') { if (cursorIdx > 0) { entryArr.splice(cursorIdx - 1, 1); cursorIdx--; } }
         else if (val === 'recip') instantRecip();
-        else if (val === 'n16') instantN16();
+        else if (val === 'n64') instantN64();
         else {
             if (entryArr.length === 0 && ['+', '-', '*', '/', '^'].includes(val)) { entryArr = ['A','N','S']; cursorIdx = 3; }
             let t = val === 'ans' ? 'ANS' : val === 'root' ? (shiftMode?'TAX(':'√(') : ['sin','cos','tan'].includes(val) ? (shiftMode?'A':'')+val.toUpperCase()+'(' : val === 'exp' ? (shiftMode?'LN(':'e^') : val;
@@ -250,11 +240,11 @@
         renderEntry();
     }
 
-    function instantN16() {
+    function instantN64() {
         try {
             let e = entryArr.length > 0 ? entryArr.join('') : "ANS";
             let m = getFractionMatrix(evalSub(e)); lastAnswer = m.raw;
-            fullHistory.push({ expr: `n/16(${e})`, res: m.res, ind: m.ind, rawRes: m.raw });
+            fullHistory.push({ expr: `n/64(${e})`, res: m.res, ind: m.ind, rawRes: m.raw });
             localStorage.setItem('vfdHistory', JSON.stringify(fullHistory));
             initHistory(); entryArr = []; cursorIdx = 0;
         } catch(err) { entryArr = ['E','R','R','O','R']; cursorIdx = 5; }
