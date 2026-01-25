@@ -64,15 +64,15 @@
             background-color: var(--brand-cream);
             padding: 0;
             display: flex;
-            flex-direction: column; /* Vertical: Stacked */
-            align-items: flex-start; /* Flush Left */
-            justify-content: flex-start; /* Flush Top */
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
         }
 
         .hero-banner img {
             display: block;
-            width: 100%; /* Full width of box */
-            height: auto; /* Maintains original aspect ratio */
+            width: 100%; /* Wide as box in vertical */
+            height: auto; /* Maintain sexy ratio */
             margin: 0;
             padding: 0;
         }
@@ -96,17 +96,16 @@
         /* --- Desktop & Landscape Layout --- */
         @media (min-width: 768px) or (orientation: landscape) {
             .hero-banner {
-                flex-direction: row; /* Side-by-side */
-                align-items: flex-start; /* Keeps image/text at the top */
+                flex-direction: row; 
             }
             .hero-banner img {
-                width: 55%; /* Image takes over half width */
-                max-width: none;
+                width: 50%;
             }
             .tagline-container {
-                width: 45%;
+                width: 50%;
                 padding: 60px 40px;
                 text-align: left;
+                align-self: center; /* Centers text vertically next to image */
             }
             .hero-tagline {
                 font-size: 1.4rem;
@@ -160,12 +159,12 @@
             display: inline-block;
         }
 
-        /* --- Instant Snap Buttons --- */
+        /* --- Force Snap Buttons --- */
         .btn-find-out {
             display: inline-block;
             margin-top: 15px;
             padding: 12px 30px;
-            background-color: #fff;
+            background-color: #ffffff;
             color: var(--text-dark);
             border: 1px solid var(--text-dark);
             text-decoration: none;
@@ -173,15 +172,17 @@
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            transition: none; 
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
+            /* Remove all transitions to ensure instant reset */
+            transition: none !important;
         }
 
-        .btn-find-out:active, .btn-find-out:hover {
-            background-color: var(--text-dark);
-            color: #fff;
-            transition: none; 
+        /* Hover for mouse users, Active for touch users */
+        .btn-find-out:hover, 
+        .btn-find-out:active {
+            background-color: var(--text-dark) !important;
+            color: #ffffff !important;
         }
 
         footer {
@@ -269,6 +270,15 @@
     function toggleNav() {
         document.getElementById('sidebar').classList.toggle('open');
     }
+
+    // This script fixes the "stuck" color on mobile
+    document.querySelectorAll('.btn-find-out').forEach(button => {
+        button.addEventListener('touchend', function() {
+            // Wait a tiny fraction of a second, then force the button to lose focus
+            setTimeout(() => { this.blur(); }, 50);
+        });
+    });
+
     document.addEventListener('click', function(event) {
         var sidebar = document.getElementById('sidebar');
         var menuIcon = document.querySelector('.menu-icon');
