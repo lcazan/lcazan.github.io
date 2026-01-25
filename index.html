@@ -28,6 +28,7 @@
             min-height: 100vh;
         }
 
+        /* --- Header & Navigation --- */
         header {
             display: flex;
             align-items: center;
@@ -83,10 +84,12 @@
             background-color: var(--brand-cream);
             display: flex;
             flex-direction: column;
+            width: 100%;
         }
 
         .hero-image-container {
             width: 100%;
+            cursor: pointer;
         }
 
         .hero-banner img {
@@ -118,6 +121,7 @@
             .hero-tagline { font-size: 1.4rem; }
         }
 
+        /* --- Main Content --- */
         .content {
             flex: 1;
             max-width: 900px;
@@ -127,7 +131,7 @@
         }
 
         section { margin-bottom: 80px; }
-        h2 { font-family: 'Cinzel', serif; font-weight: 400; font-size: 1.3rem; margin-top: 40px; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; }
+        h2 { font-family: 'Cinzel', serif; font-weight: 400; font-size: 1.3rem; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; }
 
         .btn-find-out {
             display: inline-block;
@@ -143,7 +147,7 @@
             letter-spacing: 1px;
         }
 
-        /* --- Paged Gallery Section --- */
+        /* --- Paged Gallery --- */
         .gallery-section {
             padding: 60px 20px;
             background: #fff;
@@ -151,28 +155,18 @@
             text-align: center;
         }
 
-        .gallery-section h3 {
-            font-family: 'Cinzel', serif;
-            font-size: 1rem;
-            letter-spacing: 2px;
-            margin-bottom: 30px;
-        }
+        .gallery-section h3 { font-family: 'Cinzel', serif; font-size: 1rem; letter-spacing: 2px; margin-bottom: 30px; }
 
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            grid-template-rows: repeat(2, 1fr);
             gap: 10px;
             max-width: 1000px;
             margin: 0 auto 30px;
         }
 
         @media (min-width: 768px) or (orientation: landscape) {
-            .gallery-grid {
-                grid-template-columns: repeat(4, 1fr);
-                grid-template-rows: repeat(2, 1fr);
-                gap: 15px;
-            }
+            .gallery-grid { grid-template-columns: repeat(4, 1fr); gap: 15px; }
         }
 
         .gallery-item {
@@ -180,14 +174,10 @@
             overflow: hidden;
             border-radius: 4px;
             background: var(--brand-cream);
+            cursor: pointer;
         }
 
-        .gallery-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
         .gallery-controls {
             display: flex;
@@ -208,9 +198,54 @@
 
         .gallery-btn:disabled { opacity: 0.2; cursor: not-allowed; }
 
+        /* --- Lightbox Modal --- */
+        .modal {
+            display: none; 
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content-wrapper {
+            width: 80%; /* Fixed 80% mobile width */
+            max-width: 500px; /* Max size for desktop */
+            aspect-ratio: 1 / 1; /* Locked Square */
+            background: #000;
+            position: relative;
+            border-radius: 2px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            color: #fff;
+            font-size: 35px;
+            font-weight: 300;
+            cursor: pointer;
+            z-index: 2001;
+        }
+
+        /* --- Footer --- */
         footer {
             text-align: center;
-            padding: 60px 20px 20px;
+            padding: 60px 20px 40px;
             background: #fdfdfd;
             border-top: 1px solid #eee;
             position: relative;
@@ -249,8 +284,8 @@
 </nav>
 
 <div class="hero-banner">
-    <div class="hero-image-container">
-        <img src="emerson.jpeg" alt="Baby Emerson">
+    <div class="hero-image-container" onclick="openModal('emerson.jpeg')">
+        <img src="emerson.jpeg" alt="Baby Emerson" onerror="this.src='https://via.placeholder.com/800x800?text=emerson.jpeg+Missing'">
     </div>
     <div class="tagline-container">
         <p class="hero-tagline">FOR BETTER-SLEEPING BABIES. <br> FOR HAPPIER BABIES.</p>
@@ -265,14 +300,8 @@
     </section>
 
     <section>
-        <h2>SNOO deep-cleaning, servicing, and repairs</h2>
-        <p>Professional deep-cleaning, servicing, and repairs for your pre-loved SNOO.</p>
-        <a href="#" class="btn-find-out">Find out more</a>
-    </section>
-
-    <section>
-        <h2>Traveling to the DC Metro area?</h2>
-        <p>Premium rentals of cribs, strollers, and car seats for families visiting Washington DC.</p>
+        <h2>SNOO deep-cleaning & repairs</h2>
+        <p>Professional servicing and repairs for your pre-loved SNOO.</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
 </div>
@@ -287,23 +316,30 @@
     </div>
 </div>
 
+<div id="imageModal" class="modal" onclick="closeModal()">
+    <span class="close-modal" onclick="closeModal()">&times;</span>
+    <div class="modal-content-wrapper" onclick="event.stopPropagation()">
+        <img id="modalImg" src="" alt="Full view">
+    </div>
+</div>
+
 <footer>
     <div class="social-icons">
-        <a href="#" title="Facebook"><i class="fa-brands fa-facebook"></i></a>
-        <a href="#" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
-        <a href="#" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+        <a href="#"><i class="fa-brands fa-facebook"></i></a>
+        <a href="#"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#"><i class="fa-brands fa-tiktok"></i></a>
     </div>
     <div class="disclaimer">
         <span style="display:block; margin-bottom:15px; color:var(--text-dark); font-weight:400;">
             Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.
         </span>
-        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. All trademarks, including SNOO®, remain the property of their respective owners. Nominative fair use applies.
+        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. All trademarks remain property of their respective owners. Nominative fair use applies.
     </div>
     <span class="version-label">Version 2.1</span>
 </footer>
 
 <script>
-    // --- GALLERY LOGIC (Using Numbered .jpeg) ---
+    // --- GALLERY CONFIG ---
     const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg"];
     let currentIndex = 0;
 
@@ -321,6 +357,7 @@
         pageItems.forEach(img => {
             const item = document.createElement('div');
             item.className = 'gallery-item';
+            item.onclick = () => openModal(img);
             item.innerHTML = `<img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=${img}+Missing'">`;
             grid.appendChild(item);
         });
@@ -333,6 +370,20 @@
     function movePage(direction) {
         currentIndex += (direction * getItemsPerPage());
         renderGallery();
+    }
+
+    // --- MODAL LOGIC ---
+    function openModal(imgSrc) {
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImg');
+        modal.style.display = "flex";
+        modalImg.src = imgSrc;
+        document.body.style.overflow = "hidden"; 
+    }
+
+    function closeModal() {
+        document.getElementById('imageModal').style.display = "none";
+        document.body.style.overflow = "auto"; 
     }
 
     // --- SIDEBAR LOGIC ---
