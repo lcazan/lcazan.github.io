@@ -71,8 +71,8 @@
 
         .hero-banner img {
             display: block;
-            width: 100%; /* Wide as box in vertical */
-            height: auto; /* Maintain sexy ratio */
+            width: 100%; 
+            height: auto; 
             margin: 0;
             padding: 0;
         }
@@ -93,7 +93,7 @@
             text-transform: uppercase;
         }
 
-        /* --- Desktop & Landscape Layout --- */
+        /* Desktop & Landscape Logic */
         @media (min-width: 768px) or (orientation: landscape) {
             .hero-banner {
                 flex-direction: row; 
@@ -105,7 +105,7 @@
                 width: 50%;
                 padding: 60px 40px;
                 text-align: left;
-                align-self: center; /* Centers text vertically next to image */
+                align-self: center; 
             }
             .hero-tagline {
                 font-size: 1.4rem;
@@ -159,7 +159,7 @@
             display: inline-block;
         }
 
-        /* --- Force Snap Buttons --- */
+        /* --- Slightly Rounded Buttons --- */
         .btn-find-out {
             display: inline-block;
             margin-top: 15px;
@@ -167,6 +167,7 @@
             background-color: #ffffff;
             color: var(--text-dark);
             border: 1px solid var(--text-dark);
+            border-radius: 5px; /* Slightly rounded corners */
             text-decoration: none;
             font-family: 'Source Sans Pro', sans-serif;
             font-size: 0.9rem;
@@ -174,15 +175,12 @@
             letter-spacing: 1px;
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
-            /* Remove all transitions to ensure instant reset */
-            transition: none !important;
+            transition: background-color 0.2s, color 0.2s;
         }
 
-        /* Hover for mouse users, Active for touch users */
-        .btn-find-out:hover, 
-        .btn-find-out:active {
-            background-color: var(--text-dark) !important;
-            color: #ffffff !important;
+        .btn-find-out:hover, .btn-find-out:active {
+            background-color: var(--text-dark);
+            color: #ffffff;
         }
 
         footer {
@@ -270,14 +268,6 @@
     function toggleNav() {
         document.getElementById('sidebar').classList.toggle('open');
     }
-
-    // This script fixes the "stuck" color on mobile
-    document.querySelectorAll('.btn-find-out').forEach(button => {
-        button.addEventListener('touchend', function() {
-            // Wait a tiny fraction of a second, then force the button to lose focus
-            setTimeout(() => { this.blur(); }, 50);
-        });
-    });
 
     document.addEventListener('click', function(event) {
         var sidebar = document.getElementById('sidebar');
