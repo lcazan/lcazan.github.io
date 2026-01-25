@@ -10,10 +10,10 @@
     
     <style>
         :root {
-            --brand-cream: #FAF6F3;   
-            --brand-pink: #ebd5c9;    
-            --icon-brown: #877267;   
-            --text-dark: #151515;
+            --brand-cream: #FAF6F3;   /* Backgrounds */
+            --brand-pink: #ebd5c9;    /* Borders/Accents */
+            --icon-brown: #877267;    /* Hamburger Icon */
+            --text-dark: #151515;     /* Text and Button Borders */
         }
 
         body {
@@ -22,8 +22,10 @@
             margin: 0;
             color: var(--text-dark);
             line-height: 1.6;
+            background-color: #ffffff;
         }
 
+        /* Header Styling */
         header {
             display: flex;
             align-items: center;
@@ -31,6 +33,7 @@
             padding: 25px;
             background: #fff;
             position: relative;
+            border-bottom: 1px solid #f0f0f0;
         }
 
         .logo {
@@ -41,6 +44,24 @@
             letter-spacing: 3px;
         }
 
+        /* Hamburger Menu Icon (#877267) */
+        .menu-icon {
+            position: absolute;
+            left: 20px;
+            cursor: pointer;
+            z-index: 1001;
+            padding: 10px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .menu-icon div {
+            width: 24px;
+            height: 2px;
+            background-color: var(--icon-brown); 
+            margin: 6px 0;
+        }
+
+        /* Hero Banner with #FAF6F3 */
         .hero-banner {
             background-color: var(--brand-cream);
             text-align: center;
@@ -64,21 +85,7 @@
             text-transform: uppercase;
         }
 
-        .menu-icon {
-            position: absolute;
-            left: 20px;
-            cursor: pointer;
-            z-index: 1001;
-            padding: 10px;
-        }
-
-        .menu-icon div {
-            width: 24px;
-            height: 2px;
-            background-color: var(--icon-brown); 
-            margin: 6px 0;
-        }
-
+        /* Navigation Side Menu (#FAF6F3) */
         nav {
             position: fixed;
             top: 0;
@@ -104,6 +111,7 @@
             text-transform: uppercase;
         }
 
+        /* Main Content Layout */
         .content {
             max-width: 800px;
             margin: 40px auto;
@@ -126,7 +134,7 @@
             display: inline-block;
         }
 
-        /* Button Styling */
+        /* Anti-Sticky Hover Buttons */
         .btn-find-out {
             display: inline-block;
             margin-top: 15px;
@@ -139,23 +147,36 @@
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            transition: background-color 0.2s, color 0.2s; /* Snappy transition */
+            transition: background-color 0.1s;
             cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* Colors invert ONLY during hover or active click */
-        .btn-find-out:hover, 
+        /* Desktop Hover only */
+        @media (hover: hover) {
+            .btn-find-out:hover {
+                background-color: var(--text-dark);
+                color: #fff;
+            }
+        }
+
+        /* Mobile Press - snap back when released */
         .btn-find-out:active {
             background-color: var(--text-dark);
             color: #fff;
         }
 
+        /* Footer Icons */
         footer {
             text-align: center;
             padding: 60px 20px;
             background: #fdfdfd;
             margin-top: 80px;
             border-top: 1px solid #eee;
+        }
+
+        .social-icons {
+            margin-bottom: 25px;
         }
 
         .social-icons a {
@@ -233,6 +254,8 @@
     function toggleNav() {
         document.getElementById('sidebar').classList.toggle('open');
     }
+    
+    // Auto-close menu when clicking outside
     document.addEventListener('click', function(event) {
         var sidebar = document.getElementById('sidebar');
         var menuIcon = document.querySelector('.menu-icon');
