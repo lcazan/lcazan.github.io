@@ -33,7 +33,7 @@
             background: #fff;
             position: relative;
             border-bottom: 1px solid #f0f0f0;
-            z-index: 101;
+            z-index: 100; /* Header base layer */
         }
 
         .logo {
@@ -44,12 +44,19 @@
             letter-spacing: 3px;
         }
 
+        /* --- Updated Menu Icon for Visibility --- */
         .menu-icon {
             position: absolute;
             left: 20px;
             cursor: pointer;
-            z-index: 1001;
+            z-index: 2001; /* Higher than the sidebar */
             padding: 10px;
+            transition: 0.4s ease-in-out;
+        }
+
+        /* When the sidebar is open, keep the icon fixed so it's always reachable */
+        nav.open ~ header .menu-icon {
+            position: fixed;
         }
 
         .menu-icon div {
@@ -57,6 +64,7 @@
             height: 2px;
             background-color: var(--icon-brown); 
             margin: 6px 0;
+            transition: 0.3s;
         }
 
         /* --- Sidebar --- */
@@ -69,7 +77,7 @@
             background: var(--brand-cream);
             box-shadow: 4px 0 15px rgba(0,0,0,0.05);
             transition: 0.4s ease-in-out;
-            z-index: 1000;
+            z-index: 2000; /* Sits under the icon but above content */
             padding-top: 80px;
             overflow-y: auto;
         }
@@ -103,7 +111,7 @@
             color: var(--icon-brown);
         }
 
-        /* --- Hero Banner (No Lightbox) --- */
+        /* --- Hero Banner --- */
         .hero-banner {
             background-color: var(--brand-cream);
             display: flex;
@@ -115,7 +123,6 @@
             display: block;
             width: 100%; 
             height: auto; 
-            /* Cursor set to default so it doesn't look clickable */
             cursor: default; 
         }
 
@@ -142,7 +149,7 @@
             .hero-tagline { font-size: 1.4rem; }
         }
 
-        /* --- Content & Sections --- */
+        /* --- Content Sections --- */
         .content { max-width: 900px; margin: 40px auto; padding: 0 20px; text-align: center; }
         section { margin-bottom: 80px; }
         h2 { font-family: 'Cinzel', serif; font-weight: 400; font-size: 1.3rem; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; }
@@ -174,11 +181,11 @@
         .gallery-btn { background: none; border: 1px solid var(--text-dark); padding: 8px 16px; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; border-radius: 4px; }
         .gallery-btn:disabled { opacity: 0.2; cursor: not-allowed; }
 
-        /* --- Lightbox Modal (80% Mobile) --- */
-        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
+        /* --- Lightbox Modal --- */
+        .modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
         .modal-content-wrapper { width: 80%; max-width: 500px; aspect-ratio: 1/1; background: #000; position: relative; border-radius: 2px; overflow: hidden; }
         .modal-content-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-        .close-modal { position: absolute; top: 15px; right: 25px; color: #fff; font-size: 35px; cursor: pointer; z-index: 2001; }
+        .close-modal { position: absolute; top: 15px; right: 25px; color: #fff; font-size: 35px; cursor: pointer; z-index: 3001; }
 
         /* --- Footer --- */
         footer { text-align: center; padding: 60px 20px 40px; background: #fdfdfd; border-top: 1px solid #eee; position: relative; margin-top: 80px;}
@@ -189,13 +196,6 @@
     </style>
 </head>
 <body>
-
-<header>
-    <div class="menu-icon" onclick="toggleNav()">
-        <div></div><div></div><div></div>
-    </div>
-    <div class="logo">My Snoozing Baby</div>
-</header>
 
 <nav id="sidebar">
     <a href="#">Home</a>
@@ -210,6 +210,13 @@
     <a href="#">Contact Us</a>
     <a href="#">FAQs</a>
 </nav>
+
+<header>
+    <div class="menu-icon" onclick="toggleNav()">
+        <div></div><div></div><div></div>
+    </div>
+    <div class="logo">My Snoozing Baby</div>
+</header>
 
 <div class="hero-banner">
     <img src="emerson.jpeg" alt="Baby Emerson">
@@ -269,7 +276,6 @@
 </footer>
 
 <script>
-    // --- SIDEBAR ---
     function toggleNav() { document.getElementById('sidebar').classList.toggle('open'); }
     
     document.addEventListener('click', function(event) {
@@ -280,7 +286,6 @@
         }
     });
 
-    // --- GALLERY CONFIG ---
     const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg"];
     let currentIndex = 0;
     const getItemsPerPage = () => (window.innerWidth < 768 && window.innerHeight > window.innerWidth) ? 4 : 8;
@@ -304,17 +309,8 @@
     }
 
     function movePage(dir) { currentIndex += (dir * getItemsPerPage()); renderGallery(); }
-
-    // --- LIGHTBOX (Locked to Gallery Only) ---
-    function openModal(src) { 
-        document.getElementById('modalImg').src = src; 
-        document.getElementById('imageModal').style.display = "flex"; 
-        document.body.style.overflow = "hidden"; 
-    }
-    function closeModal() { 
-        document.getElementById('imageModal').style.display = "none"; 
-        document.body.style.overflow = "auto"; 
-    }
+    function openModal(src) { document.getElementById('modalImg').src = src; document.getElementById('imageModal').style.display = "flex"; document.body.style.overflow = "hidden"; }
+    function closeModal() { document.getElementById('imageModal').style.display = "none"; document.body.style.overflow = "auto"; }
 
     window.addEventListener('load', renderGallery);
     window.addEventListener('resize', renderGallery);
