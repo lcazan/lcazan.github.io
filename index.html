@@ -23,8 +23,12 @@
             color: var(--text-dark);
             line-height: 1.6;
             background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
+        /* --- Header & Navigation --- */
         header {
             display: flex;
             align-items: center;
@@ -33,6 +37,7 @@
             background: #fff;
             position: relative;
             border-bottom: 1px solid #f0f0f0;
+            z-index: 100;
         }
 
         .logo {
@@ -58,19 +63,118 @@
             margin: 6px 0;
         }
 
-        /* --- Content Sections --- */
+        nav {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 260px;
+            height: 100%;
+            background: var(--brand-cream);
+            box-shadow: 4px 0 15px rgba(0,0,0,0.05);
+            transition: 0.4s ease-in-out;
+            z-index: 1000;
+            padding-top: 80px;
+        }
+
+        nav.open { left: 0; }
+
+        nav a {
+            display: block;
+            padding: 15px 30px;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 400;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        /* --- Hero Banner --- */
+        .hero-banner {
+            background-color: var(--brand-cream);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+        }
+
+        .hero-banner img {
+            display: block;
+            width: 100%; 
+            height: auto; 
+        }
+
+        .tagline-container {
+            padding: 40px 20px;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .hero-tagline {
+            font-family: 'Cinzel', serif;
+            font-weight: 400;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        @media (min-width: 768px) or (orientation: landscape) {
+            .hero-banner { flex-direction: row; }
+            .hero-banner img { width: 50%; }
+            .tagline-container { width: 50%; padding: 60px 40px; text-align: left; align-self: center; }
+            .hero-tagline { font-size: 1.4rem; }
+        }
+
+        /* --- Main Content --- */
         .content {
+            flex: 1;
             max-width: 900px;
             margin: 40px auto;
             padding: 0 20px;
             text-align: center;
         }
 
-        /* --- Paged Gallery Styling --- */
+        section { margin-bottom: 80px; }
+
+        h2 {
+            font-family: 'Cinzel', serif;
+            font-weight: 400;
+            font-size: 1.3rem;
+            margin-top: 40px;
+            border-bottom: 1px solid var(--brand-pink);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+
+        .btn-find-out {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 12px 30px;
+            background-color: #ffffff;
+            color: var(--text-dark);
+            border: 1px solid var(--text-dark);
+            border-radius: 5px; 
+            text-decoration: none;
+            font-family: 'Source Sans Pro', sans-serif;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: 0.2s;
+        }
+
+        .btn-find-out:hover, .btn-find-out:active {
+            background-color: var(--text-dark);
+            color: #ffffff;
+        }
+
+        /* --- Paged Gallery (JPEG) --- */
         .gallery-section {
             padding: 60px 20px;
             background: #fff;
             border-top: 1px solid #f0f0f0;
+            text-align: center;
         }
 
         .gallery-section h3 {
@@ -78,12 +182,10 @@
             font-size: 1rem;
             letter-spacing: 2px;
             margin-bottom: 30px;
-            text-align: center;
         }
 
         .gallery-grid {
             display: grid;
-            /* Default Mobile: 2x2 Grid */
             grid-template-columns: repeat(2, 1fr);
             grid-template-rows: repeat(2, 1fr);
             gap: 10px;
@@ -93,7 +195,6 @@
 
         @media (min-width: 768px) or (orientation: landscape) {
             .gallery-grid {
-                /* Desktop/Landscape: 4 columns, 2 rows (8 images total) */
                 grid-template-columns: repeat(4, 1fr);
                 grid-template-rows: repeat(2, 1fr);
                 gap: 15px;
@@ -128,52 +229,85 @@
             cursor: pointer;
             text-transform: uppercase;
             font-size: 0.75rem;
-            letter-spacing: 1px;
-            transition: 0.3s;
+            border-radius: 4px;
         }
 
-        .gallery-btn:hover:not(:disabled) {
-            background: var(--text-dark);
-            color: #fff;
-        }
+        .gallery-btn:disabled { opacity: 0.2; cursor: not-allowed; }
 
-        .gallery-btn:disabled {
-            opacity: 0.2;
-            cursor: not-allowed;
-        }
-
-        /* --- Footer --- */
+        /* --- Footer (Flush Bottom Logic) --- */
         footer {
             text-align: center;
-            padding: 60px 20px;
+            padding: 60px 20px 20px;
             background: #fdfdfd;
             border-top: 1px solid #eee;
+            position: relative;
         }
 
         .social-icons { margin-bottom: 25px; }
-        .social-icons a { margin: 0 15px; color: var(--text-dark); font-size: 1.5rem; }
-        .disclaimer { font-size: 0.75rem; color: #666; max-width: 650px; margin: 0 auto; line-height: 1.6; }
+        .social-icons a { margin: 0 15px; color: var(--text-dark); font-size: 1.5rem; text-decoration: none; }
+        .disclaimer { font-size: 0.75rem; color: #666; max-width: 700px; margin: 0 auto; line-height: 1.6; }
+        
+        .version-label { 
+            font-size: 0.65rem; 
+            color: #ccc; 
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+        }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="menu-icon" onclick="toggleNav()">
+    <div class="menu-icon" onclick="toggleNav(event)">
         <div></div><div></div><div></div>
     </div>
     <div class="logo">My Snoozing Baby</div>
 </header>
 
-<div class="content">
+<nav id="sidebar">
+    <a href="#">Home</a>
+    <a href="#">SNOO SMART SLEEPER</a>
+    <a href="#">Baby Gear Rentals</a>
+    <a href="#">Toddler Party Rentals</a>
+    <a href="#">About Us</a>
+    <a href="#">Contact Us</a>
+    <a href="#">FAQs</a>
+</nav>
+
+<div class="hero-banner">
+    <img src="emerson.jpeg" alt="Baby Emerson">
+    <div class="tagline-container">
+        <p class="hero-tagline">FOR BETTER-SLEEPING BABIES. <br> FOR HAPPIER BABIES.</p>
     </div>
+</div>
+
+<div class="content">
+    <section>
+        <h2>SNOO Smart Bassinet Rental</h2>
+        <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
+        <a href="#" class="btn-find-out">Find out more</a>
+    </section>
+
+    <section>
+        <h2>SNOO deep-cleaning, servicing, and repairs</h2>
+        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO.</p>
+        <a href="#" class="btn-find-out">Find out more</a>
+    </section>
+
+    <section>
+        <h2>Traveling to the DC Metro area?</h2>
+        <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC.</p>
+        <a href="#" class="btn-find-out">Find out more</a>
+    </section>
+</div>
 
 <div class="gallery-section">
     <h3>OUR RECENT WORK</h3>
-    <div id="galleryGrid" class="gallery-grid">
-        </div>
+    <div id="galleryGrid" class="gallery-grid"></div>
     <div class="gallery-controls">
         <button id="prevBtn" class="gallery-btn" onclick="movePage(-1)">Prev</button>
-        <span id="pageCounter" style="font-size: 0.8rem; letter-spacing: 1px;">Page 1</span>
+        <span id="pageCounter" style="font-size: 0.7rem; letter-spacing: 1px;"></span>
         <button id="nextBtn" class="gallery-btn" onclick="movePage(1)">Next</button>
     </div>
 </div>
@@ -190,20 +324,21 @@
         </span>
         My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.
     </div>
+    <span class="version-label">Version 2.1</span>
 </footer>
 
 <script>
-    // Configuration
-    const imageList = ["img1.jpg", "img2.jpg", "img3.jpg", "img4.jpg", "img5.jpg", "img6.jpg", "img7.jpg", "img8.jpg"];
+    // --- GALLERY LOGIC (Using .jpeg) ---
+    const imageList = ["img1.jpeg", "img2.jpeg", "img3.jpeg", "img4.jpeg", "img5.jpeg", "img6.jpeg", "img7.jpeg", "img8.jpeg"];
     let currentIndex = 0;
 
     function getItemsPerPage() {
-        // Mobile is 4 (2x2), Desktop/Landscape is 8
         return (window.innerWidth < 768 && window.innerHeight > window.innerWidth) ? 4 : 8;
     }
 
     function renderGallery() {
         const grid = document.getElementById('galleryGrid');
+        if(!grid) return;
         const itemsPerPage = getItemsPerPage();
         const pageItems = imageList.slice(currentIndex, currentIndex + itemsPerPage);
         
@@ -211,29 +346,37 @@
         pageItems.forEach(img => {
             const item = document.createElement('div');
             item.className = 'gallery-item';
-            item.innerHTML = `<img src="${img}" alt="Snoo Rental Gallery">`;
+            // Added placeholder fallback just in case files are missing
+            item.innerHTML = `<img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Image+Missing'">`;
             grid.appendChild(item);
         });
 
-        // Update UI
-        document.getElementById('pageCounter').innerText = `SHOWING ${currentIndex + 1} - ${Math.min(currentIndex + itemsPerPage, imageList.length)} OF ${imageList.length}`;
+        document.getElementById('pageCounter').innerText = `PAGE ${(currentIndex / itemsPerPage) + 1}`;
         document.getElementById('prevBtn').disabled = currentIndex === 0;
         document.getElementById('nextBtn').disabled = (currentIndex + itemsPerPage) >= imageList.length;
     }
 
     function movePage(direction) {
-        const step = getItemsPerPage();
-        currentIndex += (direction * step);
+        currentIndex += (direction * getItemsPerPage());
         renderGallery();
     }
 
-    // Initial Load & Resize Listener
+    // --- SIDEBAR LOGIC ---
+    function toggleNav(e) {
+        e.stopPropagation();
+        document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    document.addEventListener('click', function(event) {
+        var sidebar = document.getElementById('sidebar');
+        if (sidebar && sidebar.classList.contains('open') && !sidebar.contains(event.target)) {
+            sidebar.classList.remove('open');
+        }
+    });
+
+    // --- INITIALIZE ---
     window.addEventListener('load', renderGallery);
     window.addEventListener('resize', renderGallery);
-
-    function toggleNav() {
-        // (Existing nav logic)
-    }
 </script>
 
 </body>
