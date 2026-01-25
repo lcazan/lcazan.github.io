@@ -33,6 +33,7 @@
             background: #fff;
             position: relative;
             border-bottom: 1px solid #f0f0f0;
+            z-index: 101;
         }
 
         .logo {
@@ -59,21 +60,69 @@
             margin: 6px 0;
         }
 
+        /* --- Sidebar & Submenus --- */
+        nav {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 260px;
+            height: 100%;
+            background: var(--brand-cream);
+            box-shadow: 4px 0 15px rgba(0,0,0,0.05);
+            transition: 0.4s ease-in-out;
+            z-index: 1000;
+            padding-top: 80px;
+            overflow-y: auto;
+        }
+
+        nav.open { left: 0; }
+
+        nav a, .submenu-trigger {
+            display: block;
+            padding: 15px 30px;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 400;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(0,0,0,0.03);
+        }
+
+        .submenu {
+            background: #fdfaf8;
+            display: none;
+            padding-left: 15px;
+        }
+
+        .submenu.active { display: block; }
+
+        .submenu a {
+            font-size: 0.75rem;
+            padding: 10px 30px;
+            text-transform: none;
+            font-weight: 300;
+            letter-spacing: 0.5px;
+        }
+
+        .submenu-trigger {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* --- Hero Banner --- */
         .hero-banner {
             background-color: var(--brand-cream);
-            padding: 0;
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
-            justify-content: flex-start;
         }
 
         .hero-banner img {
             display: block;
             width: 100%; 
             height: auto; 
-            margin: 0;
-            padding: 0;
             cursor: pointer;
         }
 
@@ -100,25 +149,10 @@
             .hero-tagline { font-size: 1.4rem; }
         }
 
-        nav {
-            position: fixed;
-            top: 0;
-            left: -280px;
-            width: 260px;
-            height: 100%;
-            background: var(--brand-cream);
-            box-shadow: 4px 0 15px rgba(0,0,0,0.05);
-            transition: 0.4s ease-in-out;
-            z-index: 1000;
-            padding-top: 80px;
-        }
-
-        nav.open { left: 0; }
-        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 0.9rem; text-transform: uppercase; }
-
+        /* --- Content Sections --- */
         .content { max-width: 900px; margin: 40px auto; padding: 0 20px; text-align: center; }
         section { margin-bottom: 80px; }
-        h2 { font-family: 'Cinzel', serif; font-weight: 400; font-size: 1.3rem; margin-top: 40px; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; }
+        h2 { font-family: 'Cinzel', serif; font-weight: 400; font-size: 1.3rem; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; }
 
         .btn-find-out {
             display: inline-block;
@@ -129,47 +163,28 @@
             border: 1px solid var(--text-dark);
             border-radius: 5px; 
             text-decoration: none;
-            font-family: 'Source Sans Pro', sans-serif;
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            cursor: pointer;
             transition: 0.2s;
         }
 
         .btn-find-out:hover { background-color: var(--text-dark); color: #ffffff; }
 
-        /* --- Gallery Section --- */
+        /* --- Gallery & Lightbox --- */
         .gallery-section { padding: 60px 20px; background: #fff; border-top: 1px solid #f0f0f0; text-align: center; }
-        .gallery-section h3 { font-family: 'Cinzel', serif; font-size: 1rem; letter-spacing: 2px; margin-bottom: 30px; }
-        .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 1000px; margin: 0 auto 30px; }
-
-        @media (min-width: 768px) or (orientation: landscape) {
-            .gallery-grid { grid-template-columns: repeat(4, 1fr); gap: 15px; }
-        }
-
-        .gallery-item { aspect-ratio: 1 / 1; overflow: hidden; border-radius: 4px; background: var(--brand-cream); cursor: pointer; }
+        .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 1000px; margin: 30px auto; }
+        @media (min-width: 768px) { .gallery-grid { grid-template-columns: repeat(4, 1fr); } }
+        .gallery-item { aspect-ratio: 1/1; overflow: hidden; border-radius: 4px; background: var(--brand-cream); cursor: pointer; }
         .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .gallery-controls { display: flex; justify-content: center; align-items: center; gap: 20px; }
-        .gallery-btn { background: none; border: 1px solid var(--text-dark); padding: 8px 16px; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; border-radius: 4px; }
-        .gallery-btn:disabled { opacity: 0.2; cursor: not-allowed; }
-
-        /* --- Lightbox Modal --- */
-        .modal {
-            display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.9); justify-content: center; align-items: center;
-        }
-        .modal-content-wrapper {
-            width: 80%; max-width: 500px; aspect-ratio: 1 / 1; background: #000;
-            position: relative; border-radius: 2px; overflow: hidden;
-        }
+        
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
+        .modal-content-wrapper { width: 80%; max-width: 500px; aspect-ratio: 1/1; background: #000; position: relative; }
         .modal-content-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-        .close-modal { position: absolute; top: 15px; right: 25px; color: #fff; font-size: 35px; cursor: pointer; z-index: 2001; }
+        .close-modal { position: absolute; top: 15px; right: 25px; color: #fff; font-size: 35px; cursor: pointer; }
 
         /* --- Footer --- */
-        footer { text-align: center; padding: 60px 20px 40px; background: #fdfdfd; margin-top: 80px; border-top: 1px solid #eee; position: relative; }
-        .social-icons { margin-bottom: 25px; }
-        .social-icons a { margin: 0 15px; text-decoration: none; color: var(--text-dark); font-size: 1.5rem; }
+        footer { text-align: center; padding: 60px 20px 40px; background: #fdfdfd; border-top: 1px solid #eee; position: relative; margin-top: 80px;}
         .disclaimer { font-size: 0.75rem; color: #666; max-width: 650px; margin: 0 auto; line-height: 1.6; }
         .version-label { font-size: 0.65rem; color: #ccc; position: absolute; bottom: 10px; right: 15px; }
     </style>
@@ -183,22 +198,42 @@
     <div class="logo">My Snoozing Baby</div>
 </header>
 
+<nav id="sidebar">
+    <a href="#">Home</a>
+    
+    <div class="submenu-trigger" onclick="toggleSubmenu('snoo-rent')">SNOO Rentals <i class="fa-solid fa-plus"></i></div>
+    <div id="snoo-rent" class="submenu">
+        <a href="#">Pricing & Packages</a>
+        <a href="#">Delivery Info</a>
+        <a href="#">Reserve Now</a>
+    </div>
+
+    <div class="submenu-trigger" onclick="toggleSubmenu('snoo-clean')">SNOO Cleaning & Repair <i class="fa-solid fa-plus"></i></div>
+    <div id="snoo-clean" class="submenu">
+        <a href="#">Deep Cleaning</a>
+        <a href="#">Repair Services</a>
+        <a href="#">Service Request</a>
+    </div>
+
+    <div class="submenu-trigger" onclick="toggleSubmenu('travel-rent')">Baby Gear Rentals <i class="fa-solid fa-plus"></i></div>
+    <div id="travel-rent" class="submenu">
+        <a href="#">Cribs & Sleep</a>
+        <a href="#">Strollers & Car Seats</a>
+        <a href="#">High Chairs & More</a>
+    </div>
+
+    <a href="#">Toddler Party Rentals</a>
+    <a href="#">About Us</a>
+    <a href="#">Contact Us</a>
+    <a href="#">FAQs</a>
+</nav>
+
 <div class="hero-banner">
     <img src="emerson.jpeg" alt="Baby Emerson" onclick="openModal('emerson.jpeg')">
     <div class="tagline-container">
         <p class="hero-tagline">FOR BETTER-SLEEPING BABIES. <br> FOR HAPPIER BABIES.</p>
     </div>
 </div>
-
-<nav id="sidebar">
-    <a href="#">Home</a>
-    <a href="#">SNOO SMART SLEEPER</a>
-    <a href="#">Baby Gear Rentals</a>
-    <a href="#">Toddler Party Rentals</a>
-    <a href="#">About Us</a>
-    <a href="#">Contact Us</a>
-    <a href="#">FAQs</a>
-</nav>
 
 <div class="content">
     <section>
@@ -208,14 +243,8 @@
     </section>
 
     <section>
-        <h2>SNOO deep-cleaning, servicing, and repairs</h2>
-        <p>Professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
-        <a href="#" class="btn-find-out">Find out more</a>
-    </section>
-
-    <section>
-        <h2>Traveling to the DC Metro area?</h2>
-        <p>Premium rentals of cribs, strollers, and more for families visiting Washington DC. Travel light and let us handle the rest.</p>
+        <h2>SNOO deep-cleaning & repairs</h2>
+        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO.</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
 </div>
@@ -225,91 +254,73 @@
     <div id="galleryGrid" class="gallery-grid"></div>
     <div class="gallery-controls">
         <button id="prevBtn" class="gallery-btn" onclick="movePage(-1)">Prev</button>
-        <span id="pageCounter" style="font-size: 0.7rem; letter-spacing: 1px;"></span>
+        <span id="pageCounter" style="font-size: 0.7rem;"></span>
         <button id="nextBtn" class="gallery-btn" onclick="movePage(1)">Next</button>
     </div>
 </div>
 
 <div id="imageModal" class="modal" onclick="closeModal()">
-    <span class="close-modal" onclick="closeModal()">&times;</span>
+    <span class="close-modal">&times;</span>
     <div class="modal-content-wrapper" onclick="event.stopPropagation()">
-        <img id="modalImg" src="" alt="Enlarged view">
+        <img id="modalImg" src="">
     </div>
 </div>
 
 <footer>
-    <div class="social-icons">
-        <a href="#" title="Facebook"><i class="fa-brands fa-facebook"></i></a>
-        <a href="#" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
-        <a href="#" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+    <div class="social-icons" style="margin-bottom:20px;">
+        <a href="#" style="margin:0 15px; color:#151515; font-size:1.5rem;"><i class="fa-brands fa-facebook"></i></a>
+        <a href="#" style="margin:0 15px; color:#151515; font-size:1.5rem;"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" style="margin:0 15px; color:#151515; font-size:1.5rem;"><i class="fa-brands fa-tiktok"></i></a>
     </div>
     <div class="disclaimer">
-        <span class="copyright">Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.</span>
-        My Snoozing Baby, LLC is an independent service provider and is not affiliated with Happiest Baby, Inc. All trademarks, including SNOO®, remain the property of their respective owners. Nominative fair use applies.
+        <span style="display:block; margin-bottom:10px; font-weight:400; color:#151515;">Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.</span>
+        My Snoozing Baby, LLC is an independent service provider and is not affiliated with Happiest Baby, Inc. All trademarks remain property of their respective owners.
     </div>
     <span class="version-label">Version 2.1</span>
 </footer>
 
 <script>
-    // --- GALLERY LOGIC ---
+    // --- SIDEBAR & SUBMENU ---
+    function toggleNav() { document.getElementById('sidebar').classList.toggle('open'); }
+    
+    function toggleSubmenu(id) {
+        document.getElementById(id).classList.toggle('active');
+        const icon = event.currentTarget.querySelector('i');
+        icon.classList.toggle('fa-plus');
+        icon.classList.toggle('fa-minus');
+    }
+
+    document.addEventListener('click', (e) => {
+        const sidebar = document.getElementById('sidebar');
+        const icon = document.querySelector('.menu-icon');
+        if (!sidebar.contains(e.target) && !icon.contains(e.target)) sidebar.classList.remove('open');
+    });
+
+    // --- GALLERY ---
     const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg"];
     let currentIndex = 0;
-
-    function getItemsPerPage() {
-        return (window.innerWidth < 768 && window.innerHeight > window.innerWidth) ? 4 : 8;
-    }
+    const getItemsPerPage = () => (window.innerWidth < 768 && window.innerHeight > window.innerWidth) ? 4 : 8;
 
     function renderGallery() {
         const grid = document.getElementById('galleryGrid');
-        if(!grid) return;
-        const itemsPerPage = getItemsPerPage();
-        const pageItems = imageList.slice(currentIndex, currentIndex + itemsPerPage);
-        
+        const ipp = getItemsPerPage();
+        const items = imageList.slice(currentIndex, currentIndex + ipp);
         grid.innerHTML = "";
-        pageItems.forEach(img => {
-            const item = document.createElement('div');
-            item.className = 'gallery-item';
-            item.onclick = () => openModal(img);
-            item.innerHTML = `<img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=${img}+Missing'">`;
-            grid.appendChild(item);
+        items.forEach(img => {
+            const div = document.createElement('div');
+            div.className = 'gallery-item';
+            div.onclick = () => openModal(img);
+            div.innerHTML = `<img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Missing'">`;
+            grid.appendChild(div);
         });
-
-        document.getElementById('pageCounter').innerText = `PAGE ${(currentIndex / itemsPerPage) + 1}`;
+        document.getElementById('pageCounter').innerText = `PAGE ${(currentIndex/ipp)+1}`;
         document.getElementById('prevBtn').disabled = currentIndex === 0;
-        document.getElementById('nextBtn').disabled = (currentIndex + itemsPerPage) >= imageList.length;
+        document.getElementById('nextBtn').disabled = currentIndex + ipp >= imageList.length;
     }
 
-    function movePage(direction) {
-        currentIndex += (direction * getItemsPerPage());
-        renderGallery();
-    }
-
-    // --- LIGHTBOX LOGIC ---
-    function openModal(imgSrc) {
-        const modal = document.getElementById('imageModal');
-        const modalImg = document.getElementById('modalImg');
-        modal.style.display = "flex";
-        modalImg.src = imgSrc;
-        document.body.style.overflow = "hidden";
-    }
-
-    function closeModal() {
-        document.getElementById('imageModal').style.display = "none";
-        document.body.style.overflow = "auto";
-    }
-
-    // --- NAV LOGIC ---
-    function toggleNav() {
-        document.getElementById('sidebar').classList.toggle('open');
-    }
-
-    document.addEventListener('click', function(event) {
-        var sidebar = document.getElementById('sidebar');
-        var menuIcon = document.querySelector('.menu-icon');
-        if (!sidebar.contains(event.target) && !menuIcon.contains(event.target)) {
-            sidebar.classList.remove('open');
-        }
-    });
+    function movePage(dir) { currentIndex += (dir * getItemsPerPage()); renderGallery(); }
+    function openModal(src) { document.getElementById('modalImg').src = src; document.getElementById('imageModal').style.display = "flex"; document.body.style.overflow = "hidden"; }
+    function closeModal() { document.getElementById('imageModal').style.display = "none"; document.body.style.overflow = "auto"; }
 
     window.addEventListener('load', renderGallery);
     window.addEventListener('resize', renderGallery);
