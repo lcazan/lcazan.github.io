@@ -76,29 +76,23 @@
         }
 
         nav.open { left: 0; }
+        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 0.9rem; text-transform: uppercase; }
 
-        nav a {
-            display: block;
-            padding: 15px 30px;
-            text-decoration: none;
-            color: var(--text-dark);
-            font-weight: 400;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-        }
-
+        /* --- Hero Banner --- */
         .hero-banner {
             background-color: var(--brand-cream);
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
-            justify-content: flex-start;
+        }
+
+        .hero-image-container {
+            width: 100%;
         }
 
         .hero-banner img {
+            width: 100%;
+            height: auto;
             display: block;
-            width: 100%; 
-            height: auto; 
         }
 
         .tagline-container {
@@ -119,7 +113,7 @@
 
         @media (min-width: 768px) or (orientation: landscape) {
             .hero-banner { flex-direction: row; }
-            .hero-banner img { width: 50%; }
+            .hero-image-container { width: 50%; }
             .tagline-container { width: 50%; padding: 60px 40px; text-align: left; align-self: center; }
             .hero-tagline { font-size: 1.4rem; }
         }
@@ -133,17 +127,7 @@
         }
 
         section { margin-bottom: 80px; }
-
-        h2 {
-            font-family: 'Cinzel', serif;
-            font-weight: 400;
-            font-size: 1.3rem;
-            margin-top: 40px;
-            border-bottom: 1px solid var(--brand-pink);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            display: inline-block;
-        }
+        h2 { font-family: 'Cinzel', serif; font-weight: 400; font-size: 1.3rem; margin-top: 40px; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; }
 
         .btn-find-out {
             display: inline-block;
@@ -154,19 +138,12 @@
             border: 1px solid var(--text-dark);
             border-radius: 5px; 
             text-decoration: none;
-            font-family: 'Source Sans Pro', sans-serif;
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            transition: 0.2s;
         }
 
-        .btn-find-out:hover, .btn-find-out:active {
-            background-color: var(--text-dark);
-            color: #ffffff;
-        }
-
-        /* --- Paged Gallery (Numbered 1-8) --- */
+        /* --- Paged Gallery Section --- */
         .gallery-section {
             padding: 60px 20px;
             background: #fff;
@@ -272,7 +249,9 @@
 </nav>
 
 <div class="hero-banner">
-    <img src="emerson.jpeg" alt="Baby Emerson">
+    <div class="hero-image-container">
+        <img src="emerson.jpeg" alt="Baby Emerson">
+    </div>
     <div class="tagline-container">
         <p class="hero-tagline">FOR BETTER-SLEEPING BABIES. <br> FOR HAPPIER BABIES.</p>
     </div>
@@ -287,13 +266,13 @@
 
     <section>
         <h2>SNOO deep-cleaning, servicing, and repairs</h2>
-        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO.</p>
+        <p>Professional deep-cleaning, servicing, and repairs for your pre-loved SNOO.</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
 
     <section>
         <h2>Traveling to the DC Metro area?</h2>
-        <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC.</p>
+        <p>Premium rentals of cribs, strollers, and car seats for families visiting Washington DC.</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
 </div>
@@ -318,7 +297,7 @@
         <span style="display:block; margin-bottom:15px; color:var(--text-dark); font-weight:400;">
             Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.
         </span>
-        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.
+        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. All trademarks, including SNOO®, remain the property of their respective owners. Nominative fair use applies.
     </div>
     <span class="version-label">Version 2.1</span>
 </footer>
@@ -342,8 +321,7 @@
         pageItems.forEach(img => {
             const item = document.createElement('div');
             item.className = 'gallery-item';
-            // Placeholder fallback if file is missing
-            item.innerHTML = `<img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Image+Missing'">`;
+            item.innerHTML = `<img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=${img}+Missing'">`;
             grid.appendChild(item);
         });
 
