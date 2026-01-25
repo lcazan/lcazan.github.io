@@ -28,7 +28,6 @@
             min-height: 100vh;
         }
 
-        /* --- Header & Navigation --- */
         header {
             display: flex;
             align-items: center;
@@ -88,7 +87,6 @@
             text-transform: uppercase;
         }
 
-        /* --- Hero Banner --- */
         .hero-banner {
             background-color: var(--brand-cream);
             display: flex;
@@ -126,7 +124,6 @@
             .hero-tagline { font-size: 1.4rem; }
         }
 
-        /* --- Main Content --- */
         .content {
             flex: 1;
             max-width: 900px;
@@ -169,7 +166,7 @@
             color: #ffffff;
         }
 
-        /* --- Paged Gallery (JPEG) --- */
+        /* --- Paged Gallery (Numbered 1-8) --- */
         .gallery-section {
             padding: 60px 20px;
             background: #fff;
@@ -234,7 +231,6 @@
 
         .gallery-btn:disabled { opacity: 0.2; cursor: not-allowed; }
 
-        /* --- Footer (Flush Bottom Logic) --- */
         footer {
             text-align: center;
             padding: 60px 20px 20px;
@@ -328,8 +324,8 @@
 </footer>
 
 <script>
-    // --- GALLERY LOGIC (Using .jpeg) ---
-    const imageList = ["img1.jpeg", "img2.jpeg", "img3.jpeg", "img4.jpeg", "img5.jpeg", "img6.jpeg", "img7.jpeg", "img8.jpeg"];
+    // --- GALLERY LOGIC (Using Numbered .jpeg) ---
+    const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg"];
     let currentIndex = 0;
 
     function getItemsPerPage() {
@@ -346,7 +342,7 @@
         pageItems.forEach(img => {
             const item = document.createElement('div');
             item.className = 'gallery-item';
-            // Added placeholder fallback just in case files are missing
+            // Placeholder fallback if file is missing
             item.innerHTML = `<img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Image+Missing'">`;
             grid.appendChild(item);
         });
@@ -374,7 +370,6 @@
         }
     });
 
-    // --- INITIALIZE ---
     window.addEventListener('load', renderGallery);
     window.addEventListener('resize', renderGallery);
 </script>
