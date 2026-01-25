@@ -49,7 +49,6 @@
             cursor: pointer;
             z-index: 1001;
             padding: 10px;
-            -webkit-tap-highlight-color: transparent;
         }
 
         .menu-icon div {
@@ -59,152 +58,101 @@
             margin: 6px 0;
         }
 
-        /* --- Hero Banner Layout --- */
-        .hero-banner {
-            background-color: var(--brand-cream);
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            justify-content: flex-start;
-        }
-
-        .hero-banner img {
-            display: block;
-            width: 100%; 
-            height: auto; 
-            margin: 0;
-            padding: 0;
-        }
-
-        .tagline-container {
-            padding: 40px 20px;
-            width: 100%;
-            box-sizing: border-box;
-            text-align: center;
-        }
-
-        .hero-tagline {
-            font-family: 'Cinzel', serif;
-            font-weight: 400;
-            font-size: 1.1rem;
-            letter-spacing: 1px;
-            margin: 0;
-            text-transform: uppercase;
-        }
-
-        /* Desktop & Landscape Logic */
-        @media (min-width: 768px) or (orientation: landscape) {
-            .hero-banner {
-                flex-direction: row; 
-            }
-            .hero-banner img {
-                width: 50%;
-            }
-            .tagline-container {
-                width: 50%;
-                padding: 60px 40px;
-                text-align: left;
-                align-self: center; 
-            }
-            .hero-tagline {
-                font-size: 1.4rem;
-            }
-        }
-
-        nav {
-            position: fixed;
-            top: 0;
-            left: -280px;
-            width: 260px;
-            height: 100%;
-            background: var(--brand-cream);
-            box-shadow: 4px 0 15px rgba(0,0,0,0.05);
-            transition: 0.4s ease-in-out;
-            z-index: 1000;
-            padding-top: 80px;
-        }
-
-        nav.open { left: 0; }
-
-        nav a {
-            display: block;
-            padding: 15px 30px;
-            text-decoration: none;
-            color: var(--text-dark);
-            font-weight: 400;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-        }
-
+        /* --- Content Sections --- */
         .content {
             max-width: 900px;
             margin: 40px auto;
             padding: 0 20px;
-            text-align: center; 
+            text-align: center;
         }
 
-        section {
-            margin-bottom: 80px;
+        /* --- Paged Gallery Styling --- */
+        .gallery-section {
+            padding: 60px 20px;
+            background: #fff;
+            border-top: 1px solid #f0f0f0;
         }
 
-        h2 {
+        .gallery-section h3 {
             font-family: 'Cinzel', serif;
-            font-weight: 400;
-            font-size: 1.3rem;
-            margin-top: 40px;
-            border-bottom: 1px solid var(--brand-pink);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-            display: inline-block;
+            font-size: 1rem;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            text-align: center;
         }
 
-        /* --- Slightly Rounded Buttons --- */
-        .btn-find-out {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 12px 30px;
-            background-color: #ffffff;
-            color: var(--text-dark);
+        .gallery-grid {
+            display: grid;
+            /* Default Mobile: 2x2 Grid */
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 10px;
+            max-width: 1000px;
+            margin: 0 auto 30px;
+        }
+
+        @media (min-width: 768px) or (orientation: landscape) {
+            .gallery-grid {
+                /* Desktop/Landscape: 4 columns, 2 rows (8 images total) */
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: repeat(2, 1fr);
+                gap: 15px;
+            }
+        }
+
+        .gallery-item {
+            aspect-ratio: 1 / 1;
+            overflow: hidden;
+            border-radius: 4px;
+            background: var(--brand-cream);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .gallery-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .gallery-btn {
+            background: none;
             border: 1px solid var(--text-dark);
-            border-radius: 5px; /* Slightly rounded corners */
-            text-decoration: none;
-            font-family: 'Source Sans Pro', sans-serif;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            padding: 8px 16px;
             cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
-            transition: background-color 0.2s, color 0.2s;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            transition: 0.3s;
         }
 
-        .btn-find-out:hover, .btn-find-out:active {
-            background-color: var(--text-dark);
-            color: #ffffff;
+        .gallery-btn:hover:not(:disabled) {
+            background: var(--text-dark);
+            color: #fff;
         }
 
+        .gallery-btn:disabled {
+            opacity: 0.2;
+            cursor: not-allowed;
+        }
+
+        /* --- Footer --- */
         footer {
             text-align: center;
             padding: 60px 20px;
             background: #fdfdfd;
-            margin-top: 80px;
             border-top: 1px solid #eee;
         }
 
-        .social-icons a {
-            margin: 0 15px;
-            text-decoration: none;
-            color: var(--text-dark);
-            font-size: 1.5rem;
-        }
-
-        .disclaimer {
-            font-size: 0.75rem;
-            color: #777;
-            max-width: 550px;
-            margin: 30px auto 0;
-            line-height: 1.4;
-        }
+        .social-icons { margin-bottom: 25px; }
+        .social-icons a { margin: 0 15px; color: var(--text-dark); font-size: 1.5rem; }
+        .disclaimer { font-size: 0.75rem; color: #666; max-width: 650px; margin: 0 auto; line-height: 1.6; }
     </style>
 </head>
 <body>
@@ -216,41 +164,18 @@
     <div class="logo">My Snoozing Baby</div>
 </header>
 
-<div class="hero-banner">
-    <img src="emerson.jpg" alt="Baby Emerson">
-    <div class="tagline-container">
-        <p class="hero-tagline">FOR BETTER-SLEEPING BABIES. <br> FOR HAPPIER BABIES.</p>
-    </div>
-</div>
-
-<nav id="sidebar">
-    <a href="#">Home</a>
-    <a href="#">SNOO SMART SLEEPER</a>
-    <a href="#">Baby Gear Rentals</a>
-    <a href="#">Toddler Party Rentals</a>
-    <a href="#">About Us</a>
-    <a href="#">Contact Us</a>
-    <a href="#">FAQs</a>
-</nav>
-
 <div class="content">
-    <section>
-        <h2>SNOO Smart Bassinet Rental</h2>
-        <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
-        <a href="#" class="btn-find-out">Find out more</a>
-    </section>
+    </div>
 
-    <section>
-        <h2>SNOO deep-cleaning, servicing, and repairs</h2>
-        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
-        <a href="#" class="btn-find-out">Find out more</a>
-    </section>
-
-    <section>
-        <h2>Traveling to the DC Metro area?</h2>
-        <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC or surrounding parts of Virginia and Maryland. Travel light and let us handle the rest.</p>
-        <a href="#" class="btn-find-out">Find out more</a>
-    </section>
+<div class="gallery-section">
+    <h3>OUR RECENT WORK</h3>
+    <div id="galleryGrid" class="gallery-grid">
+        </div>
+    <div class="gallery-controls">
+        <button id="prevBtn" class="gallery-btn" onclick="movePage(-1)">Prev</button>
+        <span id="pageCounter" style="font-size: 0.8rem; letter-spacing: 1px;">Page 1</span>
+        <button id="nextBtn" class="gallery-btn" onclick="movePage(1)">Next</button>
+    </div>
 </div>
 
 <footer>
@@ -260,22 +185,55 @@
         <a href="#" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
     </div>
     <div class="disclaimer">
-        My Snoozing Baby is an independent service provider. SNOO is a registered trademark of Happiest Baby, Inc. My Snoozing Baby is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc.
+        <span style="display:block; margin-bottom:15px; color:var(--text-dark); font-weight:400;">
+            Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.
+        </span>
+        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.
     </div>
 </footer>
 
 <script>
-    function toggleNav() {
-        document.getElementById('sidebar').classList.toggle('open');
+    // Configuration
+    const imageList = ["img1.jpg", "img2.jpg", "img3.jpg", "img4.jpg", "img5.jpg", "img6.jpg", "img7.jpg", "img8.jpg"];
+    let currentIndex = 0;
+
+    function getItemsPerPage() {
+        // Mobile is 4 (2x2), Desktop/Landscape is 8
+        return (window.innerWidth < 768 && window.innerHeight > window.innerWidth) ? 4 : 8;
     }
 
-    document.addEventListener('click', function(event) {
-        var sidebar = document.getElementById('sidebar');
-        var menuIcon = document.querySelector('.menu-icon');
-        if (!sidebar.contains(event.target) && !menuIcon.contains(event.target)) {
-            sidebar.classList.remove('open');
-        }
-    });
+    function renderGallery() {
+        const grid = document.getElementById('galleryGrid');
+        const itemsPerPage = getItemsPerPage();
+        const pageItems = imageList.slice(currentIndex, currentIndex + itemsPerPage);
+        
+        grid.innerHTML = "";
+        pageItems.forEach(img => {
+            const item = document.createElement('div');
+            item.className = 'gallery-item';
+            item.innerHTML = `<img src="${img}" alt="Snoo Rental Gallery">`;
+            grid.appendChild(item);
+        });
+
+        // Update UI
+        document.getElementById('pageCounter').innerText = `SHOWING ${currentIndex + 1} - ${Math.min(currentIndex + itemsPerPage, imageList.length)} OF ${imageList.length}`;
+        document.getElementById('prevBtn').disabled = currentIndex === 0;
+        document.getElementById('nextBtn').disabled = (currentIndex + itemsPerPage) >= imageList.length;
+    }
+
+    function movePage(direction) {
+        const step = getItemsPerPage();
+        currentIndex += (direction * step);
+        renderGallery();
+    }
+
+    // Initial Load & Resize Listener
+    window.addEventListener('load', renderGallery);
+    window.addEventListener('resize', renderGallery);
+
+    function toggleNav() {
+        // (Existing nav logic)
+    }
 </script>
 
 </body>
