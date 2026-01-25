@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Snoozing Baby | Home</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Source+Sans+Pro:wght@300;400&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --brand-cream: #FAF6F3;   /* Matched from GoDaddy screenshot */
+            --brand-pink: #ebd5c9;    /* Your brand accent pink */
+            --icon-brown: #877267;   /* Requested hamburger color */
+            --text-dark: #151515;
+        }
+
+        body {
+            font-family: 'Source Sans Pro', sans-serif;
+            font-weight: 300;
+            margin: 0;
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 25px;
+            background: #fff;
+            position: relative;
+        }
+
+        .logo {
+            font-family: 'Cinzel', serif;
+            font-weight: 400;
+            font-size: 1.6rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        /* Hero Box now using #FAF6F3 */
+        .hero-banner {
+            background-color: var(--brand-cream);
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .hero-banner img {
+            display: block;
+            margin: 0 auto 20px auto;
+            max-width: 100%;
+            height: auto;
+            max-height: 450px;
+        }
+
+        .hero-tagline {
+            font-family: 'Cinzel', serif;
+            font-weight: 400;
+            font-size: 1.1rem;
+            letter-spacing: 1px;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .menu-icon {
+            position: absolute;
+            left: 20px;
+            cursor: pointer;
+            z-index: 1001;
+            padding: 10px;
+        }
+
+        .menu-icon div {
+            width: 24px;
+            height: 2px;
+            background-color: var(--icon-brown); 
+            margin: 6px 0;
+        }
+
+        /* Menu now using #FAF6F3 */
+        nav {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 260px;
+            height: 100%;
+            background: var(--brand-cream);
+            box-shadow: 4px 0 15px rgba(0,0,0,0.05);
+            transition: 0.4s ease-in-out;
+            z-index: 1000;
+            padding-top: 80px;
+        }
+
+        nav.open { left: 0; }
+
+        nav a {
+            display: block;
+            padding: 15px 30px;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 400;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .sub-nav {
+            background: rgba(0, 0, 0, 0.02);
+            padding-left: 20px;
+        }
+
+        .sub-nav a {
+            font-size: 0.8rem;
+            text-transform: none;
+            padding: 10px 30px;
+        }
+
+        .sub-nav a::before {
+            content: "•";
+            margin-right: 12px;
+            color: var(--icon-brown);
+        }
+
+        .content {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        h2 {
+            font-family: 'Cinzel', serif;
+            font-weight: 400;
+            font-size: 1.3rem;
+            margin-top: 40px;
+            border-bottom: 1px solid var(--brand-pink);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 60px 20px;
+            background: #fdfdfd;
+            margin-top: 80px;
+            border-top: 1px solid #eee;
+        }
+
+        .socials a {
+            margin: 0 15px;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+        }
+
+        .disclaimer {
+            font-size: 0.75rem;
+            color: #777;
+            max-width: 500px;
+            margin: 30px auto 0;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="menu-icon" onclick="toggleNav()">
+        <div></div><div></div><div></div>
+    </div>
+    <div class="logo">My Snoozing Baby</div>
+</header>
+
+<div class="hero-banner">
+    <img src="emerson.jpg" alt="Baby Emerson">
+    <p class="hero-tagline">FOR BETTER-SLEEPING BABIES. FOR HAPPIER BABIES.</p>
+</div>
+
+<nav id="sidebar">
+    <a href="#">Home</a>
+    <a href="#">SNOO SMART SLEEPER</a>
+    <div class="sub-nav">
+        <a href="#">SNOO Rental</a>
+        <a href="#">SNOO Cleaning/Repair</a>
+    </div>
+    <a href="#">Baby Gear Rentals</a>
+    <a href="#">Toddler Party Rentals</a>
+    <a href="#">About Us</a>
+    <a href="#">Contact Us</a>
+    <a href="#">FAQs</a>
+</nav>
+
+<div class="content">
+    <section>
+        <h2>SNOO Smart Bassinet Rental</h2>
+        <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
+    </section>
+
+    <section>
+        <h2>SNOO deep-cleaning, servicing, and repairs</h2>
+        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
+    </section>
+
+    <section>
+        <h2>Traveling to the DC Metro area?</h2>
+        <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC or surrounding parts of Virginia and Maryland. Travel light and let us handle the rest.</p>
+    </section>
+</div>
+
+<footer>
+    <div class="socials">
+        <a href="#">Facebook</a>
+        <a href="#">Instagram</a>
+        <a href="#">TikTok</a>
+    </div>
+    <div class="disclaimer">
+        My Snoozing Baby is an independent service provider. SNOO is a registered trademark of Happiest Baby, Inc. My Snoozing Baby is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc.
+    </div>
+</footer>
+
+<script>
+    function toggleNav() {
+        document.getElementById('sidebar').classList.toggle('open');
+    }
+    document.addEventListener('click', function(event) {
+        var sidebar = document.getElementById('sidebar');
+        var menuIcon = document.querySelector('.menu-icon');
+        if (!sidebar.contains(event.target) && !menuIcon.contains(event.target)) {
+            sidebar.classList.remove('open');
+        }
+    });
+</script>
+
+</body>
+</html>
