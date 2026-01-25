@@ -59,26 +59,28 @@
             margin: 6px 0;
         }
 
-        /* --- Hero Banner: Orientation Logic --- */
+        /* --- Hero Banner Layout --- */
         .hero-banner {
             background-color: var(--brand-cream);
-            padding: 0; /* No padding around the container */
+            padding: 0;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column; /* Vertical: Stacked */
+            align-items: flex-start; /* Flush Left */
+            justify-content: flex-start; /* Flush Top */
         }
 
         .hero-banner img {
             display: block;
-            width: 100%; /* Wide as the box in vertical mode */
-            height: auto;
-            max-height: 500px;
-            object-fit: cover;
+            width: 100%; /* Full width of box */
+            height: auto; /* Maintains original aspect ratio */
+            margin: 0;
+            padding: 0;
         }
 
         .tagline-container {
-            padding: 30px 20px;
+            padding: 40px 20px;
+            width: 100%;
+            box-sizing: border-box;
             text-align: center;
         }
 
@@ -89,30 +91,25 @@
             letter-spacing: 1px;
             margin: 0;
             text-transform: uppercase;
-            max-width: 450px;
         }
 
-        /* Desktop & Horizontal Logic */
+        /* --- Desktop & Landscape Layout --- */
         @media (min-width: 768px) or (orientation: landscape) {
             .hero-banner {
-                flex-direction: row; 
-                align-items: flex-start;
-                justify-content: flex-start;
+                flex-direction: row; /* Side-by-side */
+                align-items: flex-start; /* Keeps image/text at the top */
             }
             .hero-banner img {
-                width: 50%; /* Image takes half width */
-                max-width: 600px;
-                margin: 0;
+                width: 55%; /* Image takes over half width */
+                max-width: none;
             }
             .tagline-container {
+                width: 45%;
                 padding: 60px 40px;
                 text-align: left;
-                flex: 1;
             }
             .hero-tagline {
-                text-align: left;
                 font-size: 1.4rem;
-                max-width: none;
             }
         }
 
@@ -176,7 +173,7 @@
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            transition: none; /* Instant snap on release */
+            transition: none; 
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
         }
@@ -184,7 +181,7 @@
         .btn-find-out:active, .btn-find-out:hover {
             background-color: var(--text-dark);
             color: #fff;
-            transition: none; /* Instant snap on press */
+            transition: none; 
         }
 
         footer {
@@ -240,7 +237,7 @@
 <div class="content">
     <section>
         <h2>SNOO Smart Bassinet Rental</h2>
-        <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit rest.</p>
+        <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
 
