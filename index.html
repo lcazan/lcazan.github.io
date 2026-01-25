@@ -104,27 +104,15 @@
             text-transform: uppercase;
         }
 
-        .sub-nav {
-            background: rgba(0, 0, 0, 0.02);
-            padding-left: 20px;
-        }
-
-        .sub-nav a {
-            font-size: 0.8rem;
-            text-transform: none;
-            padding: 10px 30px;
-        }
-
-        .sub-nav a::before {
-            content: "•";
-            margin-right: 12px;
-            color: var(--icon-brown);
-        }
-
         .content {
             max-width: 800px;
             margin: 40px auto;
             padding: 0 20px;
+            text-align: center; /* Centers the text and buttons */
+        }
+
+        section {
+            margin-bottom: 60px;
         }
 
         h2 {
@@ -135,9 +123,31 @@
             border-bottom: 1px solid var(--brand-pink);
             padding-bottom: 10px;
             margin-bottom: 20px;
+            display: inline-block; /* Allows the border to fit the text width */
         }
 
-        /* Footer Icons Style */
+        /* Inverting Buttons */
+        .btn-find-out {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 25px;
+            background-color: #fff;
+            color: var(--text-dark);
+            border: 1px solid var(--text-dark);
+            text-decoration: none;
+            font-family: 'Source Sans Pro', sans-serif;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .btn-find-out:hover, .btn-find-out:active {
+            background-color: var(--text-dark);
+            color: #fff;
+        }
+
         footer {
             text-align: center;
             padding: 60px 20px;
@@ -146,20 +156,11 @@
             border-top: 1px solid #eee;
         }
 
-        .social-icons {
-            margin-bottom: 25px;
-        }
-
         .social-icons a {
             margin: 0 15px;
             text-decoration: none;
             color: var(--text-dark);
-            font-size: 1.5rem; /* Larger for better mobile tapping */
-            transition: color 0.3s;
-        }
-
-        .social-icons a:hover {
-            color: var(--icon-brown);
+            font-size: 1.5rem;
         }
 
         .disclaimer {
@@ -188,10 +189,6 @@
 <nav id="sidebar">
     <a href="#">Home</a>
     <a href="#">SNOO SMART SLEEPER</a>
-    <div class="sub-nav">
-        <a href="#">SNOO Rental</a>
-        <a href="#">SNOO Cleaning/Repair</a>
-    </div>
     <a href="#">Baby Gear Rentals</a>
     <a href="#">Toddler Party Rentals</a>
     <a href="#">About Us</a>
@@ -203,16 +200,19 @@
     <section>
         <h2>SNOO Smart Bassinet Rental</h2>
         <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
+        <a href="#" class="btn-find-out">Find out more</a>
     </section>
 
     <section>
         <h2>SNOO deep-cleaning, servicing, and repairs</h2>
         <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
+        <a href="#" class="btn-find-out">Find out more</a>
     </section>
 
     <section>
         <h2>Traveling to the DC Metro area?</h2>
         <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC or surrounding parts of Virginia and Maryland. Travel light and let us handle the rest.</p>
+        <a href="#" class="btn-find-out">Find out more</a>
     </section>
 </div>
 
