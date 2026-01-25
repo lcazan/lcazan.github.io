@@ -6,12 +6,13 @@
     <title>My Snoozing Baby | Home</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Source+Sans+Pro:wght@300;400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
         :root {
-            --brand-cream: #FAF6F3;   /* Matched from GoDaddy screenshot */
-            --brand-pink: #ebd5c9;    /* Your brand accent pink */
-            --icon-brown: #877267;   /* Requested hamburger color */
+            --brand-cream: #FAF6F3;   
+            --brand-pink: #ebd5c9;    
+            --icon-brown: #877267;   
             --text-dark: #151515;
         }
 
@@ -40,7 +41,6 @@
             letter-spacing: 3px;
         }
 
-        /* Hero Box now using #FAF6F3 */
         .hero-banner {
             background-color: var(--brand-cream);
             text-align: center;
@@ -79,7 +79,6 @@
             margin: 6px 0;
         }
 
-        /* Menu now using #FAF6F3 */
         nav {
             position: fixed;
             top: 0;
@@ -138,6 +137,7 @@
             margin-bottom: 20px;
         }
 
+        /* Footer Icons Style */
         footer {
             text-align: center;
             padding: 60px 20px;
@@ -146,11 +146,20 @@
             border-top: 1px solid #eee;
         }
 
-        .socials a {
+        .social-icons {
+            margin-bottom: 25px;
+        }
+
+        .social-icons a {
             margin: 0 15px;
             text-decoration: none;
             color: var(--text-dark);
-            font-size: 0.9rem;
+            font-size: 1.5rem; /* Larger for better mobile tapping */
+            transition: color 0.3s;
+        }
+
+        .social-icons a:hover {
+            color: var(--icon-brown);
         }
 
         .disclaimer {
@@ -208,10 +217,10 @@
 </div>
 
 <footer>
-    <div class="socials">
-        <a href="#">Facebook</a>
-        <a href="#">Instagram</a>
-        <a href="#">TikTok</a>
+    <div class="social-icons">
+        <a href="#" title="Facebook"><i class="fa-brands fa-facebook"></i></a>
+        <a href="#" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
     </div>
     <div class="disclaimer">
         My Snoozing Baby is an independent service provider. SNOO is a registered trademark of Happiest Baby, Inc. My Snoozing Baby is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc.
