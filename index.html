@@ -59,23 +59,27 @@
             margin: 6px 0;
         }
 
-        /* --- Hero Banner: Flush Top Adjustment --- */
+        /* --- Hero Banner: Orientation Logic --- */
         .hero-banner {
             background-color: var(--brand-cream);
-            padding: 0 20px 40px 20px; /* 0 padding at top */
+            padding: 0; /* No padding around the container */
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 25px;
         }
 
         .hero-banner img {
             display: block;
-            margin-top: 0; /* Flush with top */
-            max-width: 100%;
+            width: 100%; /* Wide as the box in vertical mode */
             height: auto;
-            max-height: 450px;
+            max-height: 500px;
+            object-fit: cover;
+        }
+
+        .tagline-container {
+            padding: 30px 20px;
+            text-align: center;
         }
 
         .hero-tagline {
@@ -85,24 +89,30 @@
             letter-spacing: 1px;
             margin: 0;
             text-transform: uppercase;
-            text-align: center;
             max-width: 450px;
         }
 
-        @media (min-width: 768px) {
+        /* Desktop & Horizontal Logic */
+        @media (min-width: 768px) or (orientation: landscape) {
             .hero-banner {
                 flex-direction: row; 
-                padding: 0 10% 0 0; /* Flush top and left for image on desktop */
-                text-align: left;
-                align-items: flex-start; /* Aligns items to the top of the box */
+                align-items: flex-start;
+                justify-content: flex-start;
             }
             .hero-banner img {
-                max-height: 500px;
+                width: 50%; /* Image takes half width */
+                max-width: 600px;
+                margin: 0;
+            }
+            .tagline-container {
+                padding: 60px 40px;
+                text-align: left;
+                flex: 1;
             }
             .hero-tagline {
                 text-align: left;
                 font-size: 1.4rem;
-                padding-top: 60px; /* Gives text breathing room while image stays flush */
+                max-width: none;
             }
         }
 
@@ -153,7 +163,7 @@
             display: inline-block;
         }
 
-        /* --- Instant Reset Buttons --- */
+        /* --- Instant Snap Buttons --- */
         .btn-find-out {
             display: inline-block;
             margin-top: 15px;
@@ -166,22 +176,15 @@
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            transition: none; /* Removed transition for instant snap-back */
+            transition: none; /* Instant snap on release */
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
         }
 
-        @media (hover: hover) {
-            .btn-find-out:hover {
-                background-color: var(--text-dark);
-                color: #fff;
-                transition: background-color 0.1s; /* Only animate going IN */
-            }
-        }
-
-        .btn-find-out:active {
+        .btn-find-out:active, .btn-find-out:hover {
             background-color: var(--text-dark);
             color: #fff;
+            transition: none; /* Instant snap on press */
         }
 
         footer {
@@ -219,7 +222,9 @@
 
 <div class="hero-banner">
     <img src="emerson.jpg" alt="Baby Emerson">
-    <p class="hero-tagline">FOR BETTER-SLEEPING BABIES. <br> FOR HAPPIER BABIES.</p>
+    <div class="tagline-container">
+        <p class="hero-tagline">FOR BETTER-SLEEPING BABIES. <br> FOR HAPPIER BABIES.</p>
+    </div>
 </div>
 
 <nav id="sidebar">
@@ -235,7 +240,7 @@
 <div class="content">
     <section>
         <h2>SNOO Smart Bassinet Rental</h2>
-        <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
+        <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit rest.</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
 
