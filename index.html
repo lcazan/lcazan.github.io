@@ -10,10 +10,10 @@
     
     <style>
         :root {
-            --brand-cream: #FAF6F3;   /* Backgrounds */
-            --brand-pink: #ebd5c9;    /* Borders/Accents */
-            --icon-brown: #877267;    /* Hamburger Icon */
-            --text-dark: #151515;     /* Text and Button Borders */
+            --brand-cream: #FAF6F3;   
+            --brand-pink: #ebd5c9;    
+            --icon-brown: #877267;    
+            --text-dark: #151515;     
         }
 
         body {
@@ -25,7 +25,6 @@
             background-color: #ffffff;
         }
 
-        /* Header Styling */
         header {
             display: flex;
             align-items: center;
@@ -44,7 +43,6 @@
             letter-spacing: 3px;
         }
 
-        /* Hamburger Menu Icon (#877267) */
         .menu-icon {
             position: absolute;
             left: 20px;
@@ -61,19 +59,23 @@
             margin: 6px 0;
         }
 
-        /* Hero Banner with #FAF6F3 */
+        /* --- Hero Banner Layout --- */
         .hero-banner {
             background-color: var(--brand-cream);
-            text-align: center;
             padding: 40px 20px;
+            display: flex;
+            flex-direction: column; /* Mobile: Top-to-bottom */
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
         }
 
         .hero-banner img {
             display: block;
-            margin: 0 auto 20px auto;
             max-width: 100%;
             height: auto;
-            max-height: 450px;
+            max-height: 400px;
+            border-radius: 2px;
         }
 
         .hero-tagline {
@@ -83,9 +85,25 @@
             letter-spacing: 1px;
             margin: 0;
             text-transform: uppercase;
+            text-align: center;
+            max-width: 450px;
         }
 
-        /* Navigation Side Menu (#FAF6F3) */
+        /* Desktop Mode: Side-by-Side */
+        @media (min-width: 768px) {
+            .hero-banner {
+                flex-direction: row; 
+                padding: 60px 10%;
+                text-align: left;
+            }
+            .hero-tagline {
+                text-align: left;
+                font-size: 1.4rem;
+                line-height: 1.4;
+            }
+        }
+
+        /* Navigation Side Menu */
         nav {
             position: fixed;
             top: 0;
@@ -111,16 +129,16 @@
             text-transform: uppercase;
         }
 
-        /* Main Content Layout */
+        /* Content Sections */
         .content {
-            max-width: 800px;
+            max-width: 900px;
             margin: 40px auto;
             padding: 0 20px;
             text-align: center; 
         }
 
         section {
-            margin-bottom: 60px;
+            margin-bottom: 80px;
         }
 
         h2 {
@@ -134,11 +152,11 @@
             display: inline-block;
         }
 
-        /* Anti-Sticky Hover Buttons */
+        /* --- Super Responsive Buttons --- */
         .btn-find-out {
             display: inline-block;
             margin-top: 15px;
-            padding: 10px 25px;
+            padding: 12px 30px;
             background-color: #fff;
             color: var(--text-dark);
             border: 1px solid var(--text-dark);
@@ -147,12 +165,12 @@
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-            transition: background-color 0.1s;
+            /* Faster back-transition (0.05s) */
+            transition: background-color 0.05s ease-out, color 0.05s ease-out; 
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* Desktop Hover only */
         @media (hover: hover) {
             .btn-find-out:hover {
                 background-color: var(--text-dark);
@@ -160,23 +178,18 @@
             }
         }
 
-        /* Mobile Press - snap back when released */
         .btn-find-out:active {
             background-color: var(--text-dark);
             color: #fff;
+            transition: none; /* Instant color flip when pressed */
         }
 
-        /* Footer Icons */
         footer {
             text-align: center;
             padding: 60px 20px;
             background: #fdfdfd;
             margin-top: 80px;
             border-top: 1px solid #eee;
-        }
-
-        .social-icons {
-            margin-bottom: 25px;
         }
 
         .social-icons a {
@@ -189,7 +202,7 @@
         .disclaimer {
             font-size: 0.75rem;
             color: #777;
-            max-width: 500px;
+            max-width: 550px;
             margin: 30px auto 0;
             line-height: 1.4;
         }
@@ -206,7 +219,7 @@
 
 <div class="hero-banner">
     <img src="emerson.jpg" alt="Baby Emerson">
-    <p class="hero-tagline">FOR BETTER-SLEEPING BABIES. FOR HAPPIER BABIES.</p>
+    <p class="hero-tagline">FOR BETTER-SLEEPING BABIES. <br> FOR HAPPIER BABIES.</p>
 </div>
 
 <nav id="sidebar">
@@ -255,7 +268,6 @@
         document.getElementById('sidebar').classList.toggle('open');
     }
     
-    // Auto-close menu when clicking outside
     document.addEventListener('click', function(event) {
         var sidebar = document.getElementById('sidebar');
         var menuIcon = document.querySelector('.menu-icon');
