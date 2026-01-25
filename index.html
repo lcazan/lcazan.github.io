@@ -33,7 +33,7 @@
             background: #fff;
             position: relative;
             border-bottom: 1px solid #f0f0f0;
-            z-index: 100; /* Header base layer */
+            z-index: 100;
         }
 
         .logo {
@@ -44,19 +44,22 @@
             letter-spacing: 3px;
         }
 
-        /* --- Updated Menu Icon for Visibility --- */
+        /* --- STRENGTHENED MENU ICON --- */
         .menu-icon {
             position: absolute;
             left: 20px;
             cursor: pointer;
-            z-index: 2001; /* Higher than the sidebar */
+            z-index: 2100; /* Extremely high to stay on top */
             padding: 10px;
-            transition: 0.4s ease-in-out;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        /* When the sidebar is open, keep the icon fixed so it's always reachable */
+        /* Logic to keep icon visible on top of sidebar */
         nav.open ~ header .menu-icon {
             position: fixed;
+            background-color: rgba(250, 246, 243, 0.8); /* Cream glow to pop against sidebar text */
         }
 
         .menu-icon div {
@@ -67,7 +70,7 @@
             transition: 0.3s;
         }
 
-        /* --- Sidebar --- */
+        /* --- SIDEBAR --- */
         nav {
             position: fixed;
             top: 0;
@@ -75,9 +78,9 @@
             width: 260px;
             height: 100%;
             background: var(--brand-cream);
-            box-shadow: 4px 0 15px rgba(0,0,0,0.05);
-            transition: 0.4s ease-in-out;
-            z-index: 2000; /* Sits under the icon but above content */
+            box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 2000; 
             padding-top: 80px;
             overflow-y: auto;
         }
@@ -95,7 +98,7 @@
         }
 
         .sub-nav {
-            background: rgba(0, 0, 0, 0.02);
+            background: rgba(0, 0, 0, 0.03);
             padding-left: 20px;
         }
 
@@ -111,12 +114,11 @@
             color: var(--icon-brown);
         }
 
-        /* --- Hero Banner --- */
+        /* --- HERO BANNER --- */
         .hero-banner {
             background-color: var(--brand-cream);
             display: flex;
             flex-direction: column;
-            width: 100%;
         }
 
         .hero-banner img {
@@ -129,7 +131,6 @@
         .tagline-container {
             padding: 40px 20px;
             width: 100%;
-            box-sizing: border-box;
             text-align: center;
         }
 
@@ -138,7 +139,6 @@
             font-weight: 400;
             font-size: 1.1rem;
             letter-spacing: 1px;
-            margin: 0;
             text-transform: uppercase;
         }
 
@@ -149,49 +149,21 @@
             .hero-tagline { font-size: 1.4rem; }
         }
 
-        /* --- Content Sections --- */
-        .content { max-width: 900px; margin: 40px auto; padding: 0 20px; text-align: center; }
-        section { margin-bottom: 80px; }
-        h2 { font-family: 'Cinzel', serif; font-weight: 400; font-size: 1.3rem; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; }
-
-        .btn-find-out {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 12px 30px;
-            background-color: #ffffff;
-            color: var(--text-dark);
-            border: 1px solid var(--text-dark);
-            border-radius: 5px; 
-            text-decoration: none;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: 0.2s;
-        }
-
-        .btn-find-out:hover { background-color: var(--text-dark); color: #ffffff; }
-
-        /* --- Paged Gallery --- */
-        .gallery-section { padding: 60px 20px; background: #fff; border-top: 1px solid #f0f0f0; text-align: center; }
-        .gallery-section h3 { font-family: 'Cinzel', serif; font-size: 1rem; letter-spacing: 2px; margin-bottom: 30px; }
+        /* --- GALLERY GRID --- */
+        .gallery-section { padding: 60px 20px; text-align: center; border-top: 1px solid #f0f0f0; }
         .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 1000px; margin: 30px auto; }
         @media (min-width: 768px) { .gallery-grid { grid-template-columns: repeat(4, 1fr); } }
-        .gallery-item { aspect-ratio: 1/1; overflow: hidden; border-radius: 4px; background: var(--brand-cream); cursor: pointer; }
-        .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .gallery-btn { background: none; border: 1px solid var(--text-dark); padding: 8px 16px; cursor: pointer; text-transform: uppercase; font-size: 0.75rem; border-radius: 4px; }
-        .gallery-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+        .gallery-item { aspect-ratio: 1/1; overflow: hidden; border-radius: 4px; cursor: pointer; }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* --- Lightbox Modal --- */
-        .modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
-        .modal-content-wrapper { width: 80%; max-width: 500px; aspect-ratio: 1/1; background: #000; position: relative; border-radius: 2px; overflow: hidden; }
-        .modal-content-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-        .close-modal { position: absolute; top: 15px; right: 25px; color: #fff; font-size: 35px; cursor: pointer; z-index: 3001; }
+        /* --- SQUARE LIGHTBOX (80% Mobile) --- */
+        .modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); justify-content: center; align-items: center; }
+        .modal-content-wrapper { width: 80%; max-width: 500px; aspect-ratio: 1/1; position: relative; }
+        .modal-content-wrapper img { width: 100%; height: 100%; object-fit: cover; border: 2px solid #fff; }
+        .close-modal { position: absolute; top: -45px; right: 0; color: #fff; font-size: 35px; cursor: pointer; }
 
-        /* --- Footer --- */
-        footer { text-align: center; padding: 60px 20px 40px; background: #fdfdfd; border-top: 1px solid #eee; position: relative; margin-top: 80px;}
-        .social-icons { margin-bottom: 25px; }
-        .social-icons a { margin: 0 15px; text-decoration: none; color: var(--text-dark); font-size: 1.5rem; }
-        .disclaimer { font-size: 0.75rem; color: #666; max-width: 700px; margin: 0 auto; line-height: 1.6; }
+        /* --- FOOTER --- */
+        footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; position: relative; }
         .version-label { font-size: 0.65rem; color: #ccc; position: absolute; bottom: 10px; right: 15px; }
     </style>
 </head>
@@ -225,53 +197,50 @@
     </div>
 </div>
 
-<div class="content">
-    <section>
-        <h2>SNOO Smart Bassinet Rental</h2>
-        <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
-        <a href="#" class="btn-find-out">Find out more</a>
+<div class="content" style="max-width: 900px; margin: 40px auto; padding: 0 20px; text-align: center;">
+    <section style="margin-bottom: 80px;">
+        <h2 style="font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom:10px;">SNOO Smart Bassinet Rental</h2>
+        <p>Let a smart bassinet do the hard work for you while you enjoy a little bit of rest.</p>
+        <a href="#" class="btn-find-out" style="display:inline-block; padding:12px 30px; border:1px solid #151515; text-decoration:none; color:#151515; text-transform:uppercase; font-size:0.9rem;">Find out more</a>
     </section>
 
-    <section>
-        <h2>SNOO deep-cleaning, servicing, and repairs</h2>
-        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
-        <a href="#" class="btn-find-out">Find out more</a>
+    <section style="margin-bottom: 80px;">
+        <h2 style="font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom:10px;">SNOO Cleaning & Repair</h2>
+        <p>Professional deep-cleaning, servicing, and repairs for your pre-loved SNOO.</p>
+        <a href="#" class="btn-find-out" style="display:inline-block; padding:12px 30px; border:1px solid #151515; text-decoration:none; color:#151515; text-transform:uppercase; font-size:0.9rem;">Find out more</a>
     </section>
 
-    <section>
-        <h2>Traveling to the DC Metro area?</h2>
-        <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC or surrounding parts of Virginia and Maryland. Travel light and let us handle the rest.</p>
-        <a href="#" class="btn-find-out">Find out more</a>
+    <section style="margin-bottom: 80px;">
+        <h2 style="font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom:10px;">Baby Gear Rentals</h2>
+        <p>Premium rentals of cribs, strollers, and car seats for families visiting Washington DC. Travel light and let us handle the rest.</p>
+        <a href="#" class="btn-find-out" style="display:inline-block; padding:12px 30px; border:1px solid #151515; text-decoration:none; color:#151515; text-transform:uppercase; font-size:0.9rem;">Find out more</a>
     </section>
 </div>
 
 <div class="gallery-section">
-    <h3>OUR RECENT WORK</h3>
+    <h3 style="font-family:'Cinzel',serif; font-size:1rem; letter-spacing:2px;">OUR RECENT WORK</h3>
     <div id="galleryGrid" class="gallery-grid"></div>
     <div class="gallery-controls">
-        <button id="prevBtn" class="gallery-btn" onclick="movePage(-1)">Prev</button>
+        <button id="prevBtn" onclick="movePage(-1)" style="background:none; border:1px solid #151515; padding:8px 16px; cursor:pointer;">Prev</button>
         <span id="pageCounter" style="font-size: 0.7rem; margin: 0 15px;"></span>
-        <button id="nextBtn" class="gallery-btn" onclick="movePage(1)">Next</button>
+        <button id="nextBtn" onclick="movePage(1)" style="background:none; border:1px solid #151515; padding:8px 16px; cursor:pointer;">Next</button>
     </div>
 </div>
 
 <div id="imageModal" class="modal" onclick="closeModal()">
-    <span class="close-modal" onclick="closeModal()">&times;</span>
     <div class="modal-content-wrapper" onclick="event.stopPropagation()">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
         <img id="modalImg" src="">
     </div>
 </div>
 
 <footer>
-    <div class="social-icons">
-        <a href="#" title="Facebook"><i class="fa-brands fa-facebook"></i></a>
-        <a href="#" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
-        <a href="#" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+    <div class="social-icons" style="margin-bottom:25px;">
+        <a href="#" style="margin:0 15px; color:#151515; font-size:1.5rem;"><i class="fa-brands fa-facebook"></i></a>
+        <a href="#" style="margin:0 15px; color:#151515; font-size:1.5rem;"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" style="margin:0 15px; color:#151515; font-size:1.5rem;"><i class="fa-brands fa-tiktok"></i></a>
     </div>
-    <div class="disclaimer">
-        <span style="display:block; margin-bottom:15px; color:var(--text-dark); font-weight:400;">Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.</span>
-        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. All trademarks, including SNOO®, remain the property of their respective owners. Nominative fair use applies.
-    </div>
+    <p style="font-size:0.75rem; color:#666; max-width:700px; margin:0 auto;">Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.</p>
     <span class="version-label">Version 2.1</span>
 </footer>
 
@@ -279,9 +248,9 @@
     function toggleNav() { document.getElementById('sidebar').classList.toggle('open'); }
     
     document.addEventListener('click', function(event) {
-        var sidebar = document.getElementById('sidebar');
-        var menuIcon = document.querySelector('.menu-icon');
-        if (!sidebar.contains(event.target) && !menuIcon.contains(event.target)) {
+        const sidebar = document.getElementById('sidebar');
+        const icon = document.querySelector('.menu-icon');
+        if (!sidebar.contains(event.target) && !icon.contains(event.target)) {
             sidebar.classList.remove('open');
         }
     });
@@ -292,7 +261,6 @@
 
     function renderGallery() {
         const grid = document.getElementById('galleryGrid');
-        if(!grid) return;
         const ipp = getItemsPerPage();
         const items = imageList.slice(currentIndex, currentIndex + ipp);
         grid.innerHTML = "";
@@ -300,7 +268,7 @@
             const div = document.createElement('div');
             div.className = 'gallery-item';
             div.onclick = () => openModal(img);
-            div.innerHTML = `<img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Missing'">`;
+            div.innerHTML = `<img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Image'">`;
             grid.appendChild(div);
         });
         document.getElementById('pageCounter').innerText = `PAGE ${(currentIndex/ipp)+1}`;
