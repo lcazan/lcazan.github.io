@@ -47,11 +47,11 @@
 
         /* --- Main Content --- */
         .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
-        .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; }
+        .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
 
         section { margin-bottom: 60px; text-align: center; }
         h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 8px; margin-bottom: 10px; display: inline-block; font-size: 1.2rem; font-weight: 400; text-transform: uppercase; }
-        section p { text-align: justify; text-justify: inter-word; line-height: 1.8; margin-top: 5px; margin-bottom: 25px; max-width: 800px; margin-left: auto; margin-right: auto; }
+        section p { text-align: center; line-height: 1.8; margin-top: 5px; margin-bottom: 25px; max-width: 800px; margin-left: auto; margin-right: auto; }
         .btn-find-out { display: inline-block; padding: 10px 25px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
 
         /* --- Gallery --- */
@@ -60,28 +60,32 @@
         .gallery-item { cursor: pointer; background: #f9f9f9; }
         .gallery-item img { width: 100%; height: auto; display: block; }
 
-        /* --- Modal --- */
+        /* --- Lightbox Modal --- */
         .modal { display: none; position: fixed; z-index: 5000; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
         .slider-track { display: flex; height: 100%; width: 100%; }
-        .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+        .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         
         .image-wrapper { position: relative; display: flex; align-items: center; justify-content: center; width: 90%; height: 70vh; }
         .slide img { max-width: 100%; max-height: 100%; width: auto; height: auto; border: 2px solid #fff; object-fit: contain; opacity: 0; transition: opacity 0.3s ease; }
         .slide img.loaded { opacity: 1; }
 
-        .counter { position: fixed; top: 25px; left: 25px; color: #fff; font-size: 22px; font-weight: 600; letter-spacing: 2px; z-index: 8000; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none; }
+        .counter { 
+            position: fixed; top: 25px; left: 25px; color: #fff; font-size: 22px; 
+            letter-spacing: 2px; font-weight: 600; z-index: 8000; 
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none;
+        }
+        
         .close-modal { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 40px; cursor: pointer; z-index: 7000; }
+        .loader { width: 30px; height: 30px; border: 3px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 1s infinite linear; position: absolute; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         /* --- Footer --- */
         footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; position: relative; margin-top: auto; }
         .social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
-        .social-icons a { color: var(--text-dark); font-size: 1.4rem; }
+        .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; }
         .copyright-text { font-weight: 600; display: block; margin-bottom: 15px; font-size: 0.85rem; }
-        .disclaimer { font-size: 0.75rem; color: #666; max-width: 850px; margin: 0 auto; line-height: 1.7; }
+        .disclaimer { font-size: 0.75rem; color: #666; max-width: 850px; margin: 0 auto; line-height: 1.7; text-align: center; }
         .version-label { font-size: 0.65rem; color: #ccc; position: absolute; bottom: 10px; right: 15px; }
-
-        .loader { width: 30px; height: 30px; border: 3px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 1s infinite linear; position: absolute; }
-        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -92,6 +96,7 @@
 </header>
 
 <div id="navOverlay" onclick="toggleNav(event)"></div>
+
 <nav id="sidebar">
     <a href="#">Home</a>
     <a href="#">SNOO SMART SLEEPER</a>
@@ -114,14 +119,22 @@
 
 <div class="content-container">
     <div class="section-label">OUR SERVICES</div>
+    
     <section>
         <h2>SNOO Smart Bassinet Rental</h2>
-        <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest. Our rentals provide you with the latest technology in infant sleep safety and comfort, delivered straight to your door.</p>
+        <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
+
     <section>
         <h2>SNOO deep-cleaning, servicing, and repairs</h2>
-        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO.</p>
+        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
+        <a href="#" class="btn-find-out">Find out more</a>
+    </section>
+
+    <section>
+        <h2>Traveling to the DC Metro area?</h2>
+        <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC or surrounding parts of Virginia and Maryland. Travel light and let us handle the rest.</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
 
@@ -144,8 +157,10 @@
         <a href="#"><i class="fa-brands fa-instagram"></i></a>
         <a href="#"><i class="fa-brands fa-tiktok"></i></a>
     </div>
-    <span class="copyright-text">Copyright © 2022-2026 My Snoozing Baby</span>
-    <div class="disclaimer">My Snoozing Baby, LLC is independent and not affiliated with Happiest Baby, Inc.</div>
+    <span class="copyright-text">Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.</span>
+    <div class="disclaimer">
+        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.
+    </div>
     <span class="version-label">Version 2.1</span>
 </footer>
 
@@ -157,8 +172,9 @@
     }
 
     const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg", "9.jpeg", "10.jpeg", "11.jpeg", "12.jpeg", "13.jpeg", "14.jpeg", "15.jpeg", "16.jpeg", "17.jpeg"];
-    let currentIndex = 0, startX = 0, currentTranslate = 0, prevTranslate = 0, isDragging = false;
-    const VELOCITY = 2500; // Pixels per second constant
+    let currentIndex = 0;
+    let startX = 0, currentTranslate = 0, prevTranslate = 0, isDragging = false;
+    const VELOCITY = 2500; 
 
     function renderGallery() {
         const left = document.getElementById('col-left'), right = document.getElementById('col-right'), track = document.getElementById('sliderTrack');
@@ -172,12 +188,13 @@
         });
     }
 
-    function loadImage(idx) {
-        const slide = document.querySelector(`.image-wrapper[data-index="${idx}"]`);
+    function loadImage(index) {
+        const slide = document.querySelector(`.image-wrapper[data-index="${index}"]`);
         if (!slide) return;
         const img = slide.querySelector('img'), loader = slide.querySelector('.loader');
         if (img && img.dataset.src) {
-            img.src = img.dataset.src; img.removeAttribute('data-src');
+            img.src = img.dataset.src;
+            img.removeAttribute('data-src');
             img.onload = () => { img.classList.add('loaded'); if (loader) loader.style.display = 'none'; };
         }
     }
@@ -191,15 +208,13 @@
         prevTranslate = currentTranslate;
         track.style.transform = `translateX(${currentTranslate}px)`;
         document.getElementById('modalCounter').innerText = `${currentIndex + 1} / ${imageList.length}`;
-        loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
         document.body.style.overflow = "hidden";
+        loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
     }
 
     function moveSlide(step) {
         const track = document.getElementById('sliderTrack'), width = document.getElementById('imageModal').offsetWidth;
-        const distance = Math.abs(step * width);
-        const duration = distance / VELOCITY; // Time = Distance / Speed
-        
+        const duration = Math.abs(step * width) / VELOCITY; 
         track.style.transition = `transform ${duration}s ease-out`;
         currentIndex = Math.max(0, Math.min(currentIndex + step, imageList.length - 1));
         currentTranslate = currentIndex * -width;
