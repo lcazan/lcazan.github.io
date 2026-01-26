@@ -12,7 +12,7 @@
         :root {
             --brand-cream: #FAF6F3;   
             --brand-pink: #ebd5c9;    
-            --icon-brown: #877267; /* The color from your image */
+            --icon-brown: #877267; 
             --text-dark: #151515;
             --gallery-gap: 15px; 
         }
@@ -55,16 +55,50 @@
             text-transform: uppercase; 
             letter-spacing: 2px; 
             text-align: left; 
-            color: var(--icon-brown); /* Matches attached image */
+            color: var(--icon-brown); 
             margin-top: 40px; 
             margin-bottom: 30px; 
             display: block; 
         }
 
-        section { margin-bottom: 60px; text-align: left; }
-        h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 8px; margin-bottom: 10px; display: inline-block; font-size: 1.2rem; font-weight: 400; text-transform: uppercase; }
-        section p { text-align: justify; text-justify: inter-word; line-height: 1.8; margin-top: 5px; margin-bottom: 20px; }
-        .btn-find-out { display: inline-block; padding: 10px 25px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+        /* Service Sections Styling */
+        section { margin-bottom: 60px; text-align: center; } /* Centers the container */
+        
+        h2 { 
+            font-family: 'Cinzel', serif; 
+            border-bottom: 1px solid var(--brand-pink); 
+            padding-bottom: 8px; 
+            margin-bottom: 10px; 
+            display: inline-block; 
+            font-size: 1.2rem; 
+            font-weight: 400; 
+            text-transform: uppercase; 
+            text-align: center;
+        }
+
+        section p { 
+            text-align: justify; 
+            text-justify: inter-word; 
+            line-height: 1.8; 
+            margin-top: 5px; 
+            margin-bottom: 25px; 
+            hyphens: auto;
+            max-width: 800px; /* Keeps text block readable */
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn-find-out { 
+            display: inline-block; 
+            padding: 10px 25px; 
+            border: 1px solid var(--text-dark); 
+            text-decoration: none; 
+            color: var(--text-dark); 
+            font-size: 0.8rem; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            text-align: center;
+        }
 
         /* --- Gallery --- */
         .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; margin-top: 10px; }
@@ -184,7 +218,7 @@
     function renderGallery() {
         const left = document.getElementById('col-left'), right = document.getElementById('col-right'), track = document.getElementById('sliderTrack');
         imageList.forEach((img, index) => {
-            const itemHtml = `<div class="gallery-item" onclick="openModal(${index})"><img src="${img}"></div>`;
+            const itemHtml = `<div class="gallery-item" onclick="openModal(${index})"><img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Snoo'"></div>`;
             index % 2 === 0 ? left.innerHTML += itemHtml : right.innerHTML += itemHtml;
             const slide = document.createElement('div'); slide.className = 'slide'; slide.innerHTML = `<img src="${img}">`;
             track.appendChild(slide);
