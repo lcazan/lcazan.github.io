@@ -25,12 +25,12 @@
             background-color: #ffffff;
         }
 
-        /* --- Header & Sidebar --- */
+        /* --- Updated Boxed Logo Header --- */
         header {
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 25px;
+            padding: 30px 20px;
             background: #fff;
             position: relative;
         }
@@ -38,9 +38,13 @@
         .logo {
             font-family: 'Cinzel', serif;
             font-weight: 400;
-            font-size: 1.6rem;
+            font-size: 1.1rem; /* Smaller logo size */
             text-transform: uppercase;
             letter-spacing: 3px;
+            border: 1px solid var(--text-dark); /* Box around logo */
+            padding: 10px 20px;
+            display: inline-block;
+            line-height: 1;
         }
 
         .menu-icon {
@@ -58,6 +62,7 @@
             margin: 6px 0;
         }
 
+        /* --- Sidebar Navigation --- */
         nav {
             position: fixed;
             top: 0;
@@ -94,12 +99,6 @@
             padding: 10px 30px;
         }
 
-        .sub-nav a::before {
-            content: "•";
-            margin-right: 12px;
-            color: var(--icon-brown);
-        }
-
         /* --- Hero Banner --- */
         .hero-banner {
             background-color: var(--brand-cream);
@@ -112,7 +111,6 @@
             display: block;
             width: 100%;
             height: auto;
-            cursor: default;
         }
 
         .tagline-container {
@@ -142,21 +140,21 @@
         h2 { font-family: 'Cinzel', serif; font-weight: 400; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; font-size: 1.3rem; }
         .btn-find-out { display: inline-block; margin-top: 15px; padding: 12px 30px; border: 1px solid var(--text-dark); border-radius: 5px; text-decoration: none; color: var(--text-dark); font-size: 0.9rem; text-transform: uppercase; }
 
-        /* --- Responsive Multi-Column Gallery --- */
+        /* --- Gallery --- */
         .gallery-grid { 
             display: grid; 
-            grid-template-columns: repeat(2, 1fr); /* Mobile default */
+            grid-template-columns: repeat(2, 1fr); 
             gap: 15px; 
             max-width: 1000px; 
             margin: 30px auto; 
         }
 
         @media (min-width: 600px) {
-            .gallery-grid { grid-template-columns: repeat(3, 1fr); } /* Landscape/Small Tablet */
+            .gallery-grid { grid-template-columns: repeat(3, 1fr); }
         }
 
         @media (min-width: 992px) {
-            .gallery-grid { grid-template-columns: repeat(4, 1fr); } /* Desktop */
+            .gallery-grid { grid-template-columns: repeat(4, 1fr); }
         }
         
         .gallery-item { 
@@ -174,7 +172,18 @@
             display: block;
         }
 
-        /* --- Swipeable Lightbox --- */
+        .gallery-title-boxed {
+            font-family: 'Cinzel', serif;
+            letter-spacing: 2px;
+            font-size: 0.8rem;
+            margin: 0 auto 30px;
+            padding: 8px 20px;
+            border: 1px solid var(--text-dark);
+            display: inline-block;
+            text-transform: uppercase;
+        }
+
+        /* --- Lightbox --- */
         .modal { display: none; position: fixed; z-index: 4000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; touch-action: none; }
         .modal-content-wrapper { width: 85%; max-width: 500px; aspect-ratio: 1/1; position: relative; }
         .modal-content-wrapper img { width: 100%; height: 100%; object-fit: cover; border: 2px solid #fff; }
@@ -185,25 +194,10 @@
         .next-arrow { right: -50px; }
         @media (max-width: 600px) { .modal-nav { display: none; } }
 
-        /* --- Footer & Social Icons --- */
+        /* --- Footer & Social --- */
         footer { text-align: center; padding: 60px 20px 40px; background: #fdfdfd; border-top: 1px solid #eee; position: relative; margin-top: 80px; }
-        
-        .social-icons { 
-            margin-bottom: 35px; 
-            display: flex;
-            justify-content: center;
-            gap: 30px; /* Increased spacing */
-        }
-        
-        .social-icons a { 
-            color: #000000; /* Solid black */
-            font-size: 1.8rem; /* Larger buttons */
-            text-decoration: none; 
-            transition: opacity 0.3s;
-        }
-
-        .social-icons a:hover { opacity: 0.7; }
-
+        .social-icons { margin-bottom: 35px; display: flex; justify-content: center; gap: 35px; }
+        .social-icons a { color: #000; font-size: 1.8rem; text-decoration: none; }
         .disclaimer { font-size: 0.75rem; color: #777; max-width: 700px; margin: 0 auto; line-height: 1.6; }
         .version-label { font-size: 0.65rem; color: #ccc; position: absolute; bottom: 10px; right: 15px; }
     </style>
@@ -258,7 +252,7 @@
     </section>
 
     <div class="gallery-section" style="border-top: 1px solid #eee; padding-top: 40px;">
-        <h3 style="font-family:'Cinzel'; letter-spacing: 2px; font-size: 1rem; margin-bottom: 30px;">IMAGES</h3>
+        <h3 class="gallery-title-boxed">IMAGES</h3>
         <div id="galleryGrid" class="gallery-grid"></div>
     </div>
 </div>
@@ -286,7 +280,6 @@
 </footer>
 
 <script>
-    // --- SIDEBAR LOGIC ---
     function toggleNav() { document.getElementById('sidebar').classList.toggle('open'); }
     document.addEventListener('click', function(e) {
         var sidebar = document.getElementById('sidebar');
@@ -294,7 +287,6 @@
         if (!sidebar.contains(e.target) && !icon.contains(e.target)) sidebar.classList.remove('open');
     });
 
-    // --- GALLERY & LIGHTBOX LOGIC ---
     const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg"];
     let activeImgIndex = 0; 
 
@@ -333,7 +325,6 @@
         document.getElementById('modalImg').src = imageList[activeImgIndex];
     }
 
-    // SWIPE LOGIC
     let touchStartX = 0;
     let touchEndX = 0;
     const modal = document.getElementById('imageModal');
