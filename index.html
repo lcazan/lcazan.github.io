@@ -15,7 +15,7 @@
             --icon-brown: #877267;   
             --text-dark: #151515;
             --border-gray: #e0e0e0;
-            --gallery-gap: 20px; /* Synchronized spacing variable */
+            --gallery-gap: 20px; 
         }
 
         body {
@@ -77,6 +77,9 @@
         nav.open { left: 0; }
         nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 14px; text-transform: uppercase; }
 
+        .sub-nav { background: rgba(0, 0, 0, 0.02); padding-left: 20px; }
+        .sub-nav a { font-size: 0.8rem; text-transform: none; padding: 10px 30px; }
+
         /* --- Hero Banner --- */
         .hero-banner { background-color: var(--brand-cream); display: flex; flex-direction: column; width: 100%; }
         .hero-banner img { display: block; width: 100%; height: auto; }
@@ -87,22 +90,18 @@
             .hero-banner { flex-direction: row; }
             .hero-banner img { width: 50%; }
             .tagline-container { width: 50%; padding: 60px; text-align: left; align-self: center; }
+            .hero-tagline { font-size: 1.4rem; }
         }
 
         /* --- Content Sections --- */
         .main-content { flex: 1; }
-        .content { max-width: 1200px; margin: 40px auto; padding: 0 20px; text-align: center; }
+        .content { max-width: 1000px; margin: 40px auto; padding: 0 20px; text-align: center; }
         section { margin-bottom: 80px; }
-        h2 { font-family: 'Cinzel', serif; font-size: 1.3rem; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; display: inline-block; }
+        h2 { font-family: 'Cinzel', serif; font-weight: 400; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; font-size: 1.3rem; }
         .btn-find-out { display: inline-block; margin-top: 15px; padding: 12px 30px; border: 1px solid var(--text-dark); border-radius: 5px; text-decoration: none; color: var(--text-dark); font-size: 0.9rem; text-transform: uppercase; }
 
-        /* --- PHOTO GALLERY (Natural Height) --- */
-        .gallery-section {
-            border-top: 1px solid #eee;
-            padding-top: 40px;
-            text-align: left;
-        }
-
+        /* --- Photo Gallery --- */
+        .gallery-section { border-top: 1px solid #eee; padding-top: 40px; text-align: left; }
         .gallery-title-plain {
             font-family: 'Source Sans Pro', sans-serif;
             font-size: 14px;
@@ -114,39 +113,67 @@
             display: block;
         }
 
-        /* Masonry-style layout using columns for natural height */
         .gallery-grid { 
             column-count: 2;
             column-gap: var(--gallery-gap);
-            width: 80vw; /* 2 columns of 40vw */
+            width: 80vw;
             margin: 0 auto 50px auto;
         }
         
         .gallery-item { 
             break-inside: avoid;
-            margin-bottom: var(--gallery-gap); /* Vertical gap matches horizontal gap */
+            margin-bottom: var(--gallery-gap);
             width: 100%;
             cursor: pointer; 
             border: 1px solid var(--border-gray); 
             box-sizing: border-box;
-            line-height: 0; /* Removes bottom spacing in container */
+            line-height: 0;
         }
         
-        .gallery-item img { 
-            width: 100%; 
-            height: auto; /* Occupies natural vertical space */
-            display: block;
+        .gallery-item img { width: 100%; height: auto; display: block; }
+
+        /* --- Lightbox (Fixed to 60% Max Dimension) --- */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            z-index: 4000; 
+            left: 0; top: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            background: rgba(0,0,0,0.9); 
+            justify-content: center; 
+            align-items: center; 
         }
 
-        /* --- Lightbox --- */
-        .modal { display: none; position: fixed; z-index: 4000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
-        .modal-content-wrapper { width: 90%; max-width: 800px; position: relative; }
-        .modal-content-wrapper img { width: 100%; height: auto; border: 2px solid #fff; }
-        .close-modal { position: absolute; top: -45px; right: 0; color: #fff; font-size: 35px; cursor: pointer; }
+        .modal-content-wrapper { 
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content-wrapper img { 
+            max-width: 60vw; /* Strictly 60% of screen width */
+            max-height: 60vh; /* Strictly 60% of screen height */
+            width: auto;
+            height: auto;
+            border: 2px solid #fff;
+            object-fit: contain;
+        }
+
+        .close-modal { 
+            position: absolute; 
+            top: -45px; 
+            right: 0; 
+            color: #fff; 
+            font-size: 35px; 
+            cursor: pointer; 
+        }
 
         /* --- Footer --- */
         footer { 
-            text-align: center; padding: 60px 20px 40px; background: #fdfdfd; border-top: 1px solid #eee; position: relative; margin-top: auto;
+            text-align: center; padding: 60px 20px 40px; background: #fdfdfd; 
+            border-top: 1px solid #eee; position: relative; margin-top: auto;
         }
         .social-icons { margin-bottom: 35px; display: flex; justify-content: center; gap: 35px; }
         .social-icons a { color: #000; font-size: 1.8rem; text-decoration: none; }
@@ -164,9 +191,15 @@
 <nav id="sidebar">
     <a href="#">Home</a>
     <a href="#">SNOO SMART SLEEPER</a>
+    <div class="sub-nav">
+        <a href="#">SNOO Rental</a>
+        <a href="#">SNOO Cleaning/Repair</a>
+    </div>
     <a href="#">Baby Gear Rentals</a>
+    <a href="#">Toddler Party Rentals</a>
     <a href="#">About Us</a>
     <a href="#">Contact Us</a>
+    <a href="#">FAQs</a>
 </nav>
 
 <div class="main-content">
@@ -180,13 +213,19 @@
     <div class="content">
         <section>
             <h2>SNOO Smart Bassinet Rental</h2>
-            <p>Let a smart bassinet do the hard work for you, rocking and calming your baby.</p>
+            <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
             <a href="#" class="btn-find-out">Find out more</a>
         </section>
 
         <section>
-            <h2>SNOO deep-cleaning & repairs</h2>
-            <p>Professional deep-cleaning, servicing, and repairs for your pre-loved SNOO.</p>
+            <h2>SNOO deep-cleaning, servicing, and repairs</h2>
+            <p>Professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
+            <a href="#" class="btn-find-out">Find out more</a>
+        </section>
+
+        <section>
+            <h2>Traveling to the DC Metro area?</h2>
+            <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC.</p>
             <a href="#" class="btn-find-out">Find out more</a>
         </section>
 
