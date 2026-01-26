@@ -100,7 +100,7 @@
         h2 { font-family: 'Cinzel', serif; font-weight: 400; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; font-size: 1.3rem; }
         .btn-find-out { display: inline-block; margin-top: 15px; padding: 12px 30px; border: 1px solid var(--text-dark); border-radius: 5px; text-decoration: none; color: var(--text-dark); font-size: 0.9rem; text-transform: uppercase; }
 
-        /* --- Photo Gallery --- */
+        /* --- Photo Gallery (Masonry) --- */
         .gallery-section { border-top: 1px solid #eee; padding-top: 40px; text-align: left; }
         .gallery-title-plain {
             font-family: 'Source Sans Pro', sans-serif;
@@ -132,7 +132,7 @@
         
         .gallery-item img { width: 100%; height: auto; display: block; }
 
-        /* --- Lightbox (Fixed to 60% Max Dimension) --- */
+        /* --- Lightbox (Center 80% of smallest dimension) --- */
         .modal { 
             display: none; 
             position: fixed; 
@@ -153,8 +153,9 @@
         }
 
         .modal-content-wrapper img { 
-            max-width: 60vw; /* Strictly 60% of screen width */
-            max-height: 60vh; /* Strictly 60% of screen height */
+            /* 80vmin ensures it takes 80% of the smallest screen side (works for landscape/desktop) */
+            max-width: 80vmin; 
+            max-height: 80vmin; 
             width: auto;
             height: auto;
             border: 2px solid #fff;
@@ -163,10 +164,10 @@
 
         .close-modal { 
             position: absolute; 
-            top: -45px; 
-            right: 0; 
+            top: -50px; 
+            right: -10px; 
             color: #fff; 
-            font-size: 35px; 
+            font-size: 40px; 
             cursor: pointer; 
         }
 
