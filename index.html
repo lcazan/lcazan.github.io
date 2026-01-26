@@ -17,76 +17,58 @@
             --gallery-gap: 15px; 
         }
 
-        body { font-family: 'Source Sans Pro', sans-serif; margin: 0; color: var(--text-dark); overflow-x: hidden; }
+        body { font-family: 'Source Sans Pro', sans-serif; margin: 0; color: var(--text-dark); background-color: #fff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
 
-        /* --- Header & Logo --- */
+        /* --- Header & Navigation --- */
         header { display: flex; align-items: center; justify-content: center; padding: 30px 20px; background: #fff; position: relative; }
-        .logo { font-family: 'Cinzel', serif; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 3px; border: 1px solid var(--text-dark); padding: 10px 20px; }
+        .logo { font-family: 'Cinzel', serif; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 3px; border: 1px solid var(--text-dark); padding: 10px 20px; display: inline-block; }
         .menu-icon { position: absolute; left: 20px; cursor: pointer; z-index: 3000; }
         .menu-icon div { width: 24px; height: 2px; background-color: var(--icon-brown); margin: 6px 0; }
 
-        /* --- Sidebar --- */
-        nav { position: fixed; top: 0; left: -280px; width: 260px; height: 100%; background: var(--brand-cream); transition: 0.4s; z-index: 2000; padding-top: 80px; }
+        nav { position: fixed; top: 0; left: -280px; width: 260px; height: 100%; background: var(--brand-cream); transition: 0.4s ease-in-out; z-index: 2000; padding-top: 80px; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
         nav.open { left: 0; }
-        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); text-transform: uppercase; }
+        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 14px; text-transform: uppercase; }
 
-        /* --- Hero --- */
+        /* --- Hero Banner --- */
         .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; }
         .hero-banner img { width: 50%; height: auto; display: block; }
-        .tagline-container { width: 50%; padding: 40px; display: flex; align-items: center; }
+        .tagline-container { width: 50%; padding: 60px; display: flex; align-items: center; box-sizing: border-box; }
+        .hero-tagline { font-family: 'Cinzel', serif; font-size: 1.4rem; text-transform: uppercase; margin: 0; line-height: 1.4; }
+
+        @media (max-width: 767px) {
+            .hero-banner { flex-direction: column; }
+            .hero-banner img, .tagline-container { width: 100%; }
+            .tagline-container { padding: 40px 20px; justify-content: center; text-align: center; }
+            .hero-tagline { font-size: 1.1rem; }
+        }
+
+        /* --- Main Sections --- */
+        .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; text-align: center; }
+        section { margin-bottom: 80px; }
+        h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; font-size: 1.3rem; font-weight: 400; }
+        .btn-find-out { display: inline-block; margin-top: 15px; padding: 12px 30px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); font-size: 0.9rem; text-transform: uppercase; }
 
         /* --- Gallery Columns --- */
-        .content-container { max-width: 1000px; margin: 0 auto; padding: 20px; box-sizing: border-box; }
-        .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; }
+        .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; text-align: left; }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
         .gallery-item { cursor: pointer; line-height: 0; }
         .gallery-item img { width: 100%; height: auto; display: block; }
 
-        /* --- SLIDER LIGHTBOX --- */
-        .modal { 
-            display: none; position: fixed; z-index: 4000; left: 0; top: 0; 
-            width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); 
-            overflow: hidden; touch-action: none;
-        }
-
-        /* The track that moves */
-        .slider-track {
-            display: flex;
-            height: 100%;
-            transition: transform 0.3s ease-out;
-            will-change: transform;
-        }
-
-        .slide {
-            min-width: 100vw;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            pointer-events: none; /* Let the modal handle clicks/drags */
-        }
-
-        .slide img {
-            max-width: 85%;
-            max-height: 80%;
-            border: 2px solid #fff;
-            object-fit: contain;
-            pointer-events: auto; /* Re-enable for the image specifically */
-        }
-
-        .close-modal { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; cursor: pointer; z-index: 4100; }
+        /* --- LIGHTBOX CAROUSEL --- */
+        .modal { display: none; position: fixed; z-index: 4000; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); overflow: hidden; touch-action: none; }
+        .slider-track { display: flex; height: 100%; will-change: transform; }
+        .slide { min-width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+        .slide img { max-width: 85%; max-height: 80%; border: 2px solid #fff; object-fit: contain; pointer-events: auto; }
         
-        .counter {
-            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-            color: #fff; font-family: 'Source Sans Pro', sans-serif; font-size: 14px; letter-spacing: 2px;
-        }
-
+        .close-modal { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; cursor: pointer; z-index: 4100; }
+        .counter { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 14px; letter-spacing: 2px; }
         .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); color: white; background: none; border: none; font-size: 30px; cursor: pointer; z-index: 4100; padding: 20px; opacity: 0.5; }
         .nav-btn:hover { opacity: 1; }
         .prev-btn { left: 10px; }
         .next-btn { right: 10px; }
 
-        footer { text-align: center; padding: 40px; border-top: 1px solid #eee; position: relative; }
+        /* --- Footer --- */
+        footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; position: relative; margin-top: auto; }
         .version-label { font-size: 0.65rem; color: #ccc; position: absolute; bottom: 10px; right: 15px; }
     </style>
 </head>
@@ -100,9 +82,24 @@
 <nav id="sidebar">
     <a href="#">Home</a>
     <a href="#">SNOO SMART SLEEPER</a>
+    <a href="#">Baby Gear Rentals</a>
+    <a href="#">About Us</a>
 </nav>
 
+<div class="hero-banner">
+    <img src="emerson.jpeg" alt="Baby Emerson">
+    <div class="tagline-container">
+        <p class="hero-tagline">FOR BETTER-SLEEPING BABIES. <br> FOR HAPPIER BABIES.</p>
+    </div>
+</div>
+
 <div class="content-container">
+    <section>
+        <h2>SNOO Smart Bassinet Rental</h2>
+        <p>Let a smart bassinet do the hard work for you, rocking and calming your baby.</p>
+        <a href="#" class="btn-find-out">Find out more</a>
+    </section>
+
     <div class="gallery-columns">
         <div id="col-left" class="gallery-column"></div>
         <div id="col-right" class="gallery-column"></div>
@@ -111,14 +108,9 @@
 
 <div id="imageModal" class="modal">
     <span class="close-modal" onclick="closeModal()">&times;</span>
-    
     <button class="nav-btn prev-btn" onclick="moveSlide(-1)"><i class="fas fa-chevron-left"></i></button>
-    
-    <div id="sliderTrack" class="slider-track">
-        </div>
-    
+    <div id="sliderTrack" class="slider-track"></div>
     <button class="nav-btn next-btn" onclick="moveSlide(1)"><i class="fas fa-chevron-right"></i></button>
-    
     <div class="counter" id="imgCounter">1 / 17</div>
 </div>
 
@@ -132,101 +124,53 @@
 
     const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg", "9.jpeg", "10.jpeg", "11.jpeg", "12.jpeg", "13.jpeg", "14.jpeg", "15.jpeg", "16.jpeg", "17.jpeg"];
     let currentIndex = 0;
-    let startX = 0;
-    let currentTranslate = 0;
-    let prevTranslate = 0;
-    let isDragging = false;
+    let startX = 0, currentTranslate = 0, prevTranslate = 0, isDragging = false;
 
     function renderGallery() {
-        const left = document.getElementById('col-left');
-        const right = document.getElementById('col-right');
-        const track = document.getElementById('sliderTrack');
-        
+        const left = document.getElementById('col-left'), right = document.getElementById('col-right'), track = document.getElementById('sliderTrack');
         imageList.forEach((img, index) => {
-            // Gallery View
-            const html = `<div class="gallery-item" onclick="openModal(${index})"><img src="${img}" onerror="this.src='https://via.placeholder.com/400'"></div>`;
-            index % 2 === 0 ? left.innerHTML += html : right.innerHTML += html;
-            
-            // Slider View
-            const slide = document.createElement('div');
-            slide.className = 'slide';
-            slide.innerHTML = `<img src="${img}">`;
+            left.innerHTML += index % 2 === 0 ? `<div class="gallery-item" onclick="openModal(${index})"><img src="${img}"></div>` : "";
+            right.innerHTML += index % 2 !== 0 ? `<div class="gallery-item" onclick="openModal(${index})"><img src="${img}"></div>` : "";
+            const slide = document.createElement('div'); slide.className = 'slide'; slide.innerHTML = `<img src="${img}">`;
             track.appendChild(slide);
         });
     }
 
     function openModal(index) {
         currentIndex = index;
-        document.getElementById('imageModal').style.display = "block";
-        document.body.style.overflow = "hidden";
-        updateSlider();
-    }
-
-    function closeModal() {
-        document.getElementById('imageModal').style.display = "none";
-        document.body.style.overflow = "auto";
-    }
-
-    function updateSlider() {
+        const track = document.getElementById('sliderTrack');
+        // Instantly position track BEFORE showing modal
+        track.style.transition = 'none';
         currentTranslate = currentIndex * -window.innerWidth;
         prevTranslate = currentTranslate;
+        track.style.transform = `translateX(${currentTranslate}px)`;
+        
+        document.getElementById('imageModal').style.display = "block";
+        document.getElementById('imgCounter').innerText = `${currentIndex + 1} / ${imageList.length}`;
+        document.body.style.overflow = "hidden";
+    }
+
+    function closeModal() { document.getElementById('imageModal').style.display = "none"; document.body.style.overflow = "auto"; }
+
+    function moveSlide(step) {
+        currentIndex = Math.max(0, Math.min(currentIndex + step, imageList.length - 1));
         const track = document.getElementById('sliderTrack');
         track.style.transition = 'transform 0.3s ease-out';
+        currentTranslate = currentIndex * -window.innerWidth;
+        prevTranslate = currentTranslate;
         track.style.transform = `translateX(${currentTranslate}px)`;
         document.getElementById('imgCounter').innerText = `${currentIndex + 1} / ${imageList.length}`;
     }
 
-    function moveSlide(step) {
-        currentIndex = Math.max(0, Math.min(currentIndex + step, imageList.length - 1));
-        updateSlider();
-    }
-
-    // Swipe & Drag Logic
-    const modal = document.getElementById('imageModal');
-    const track = document.getElementById('sliderTrack');
-
-    modal.addEventListener('mousedown', dragStart);
-    modal.addEventListener('touchstart', dragStart);
-    modal.addEventListener('mouseup', dragEnd);
-    modal.addEventListener('touchend', dragEnd);
-    modal.addEventListener('mousemove', dragMove);
-    modal.addEventListener('touchmove', dragMove);
-
-    // Close on background tap
-    modal.addEventListener('click', (e) => {
-        if (e.target.classList.contains('slide') || e.target.classList.contains('modal')) {
-            closeModal();
-        }
+    // Touch & Close Logic
+    const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
+    modal.addEventListener('touchstart', e => { isDragging = true; startX = e.touches[0].clientX; track.style.transition = 'none'; });
+    modal.addEventListener('touchmove', e => { if (!isDragging) return; const diff = e.touches[0].clientX - startX; track.style.transform = `translateX(${prevTranslate + diff}px)`; });
+    modal.addEventListener('touchend', e => { 
+        isDragging = false; const diff = e.changedTouches[0].clientX - startX;
+        if (diff < -50) moveSlide(1); else if (diff > 50) moveSlide(-1); else moveSlide(0);
     });
-
-    function dragStart(e) {
-        isDragging = true;
-        startX = getPositionX(e);
-        track.style.transition = 'none';
-    }
-
-    function dragMove(e) {
-        if (!isDragging) return;
-        const currentX = getPositionX(e);
-        const diff = currentX - startX;
-        track.style.transform = `translateX(${prevTranslate + diff}px)`;
-    }
-
-    function dragEnd(e) {
-        if (!isDragging) return;
-        isDragging = false;
-        const endX = getPositionX(e);
-        const movedBy = endX - startX;
-
-        if (movedBy < -100 && currentIndex < imageList.length - 1) currentIndex++;
-        else if (movedBy > 100 && currentIndex > 0) currentIndex--;
-
-        updateSlider();
-    }
-
-    function getPositionX(e) {
-        return e.type.includes('mouse') ? e.pageX : e.changedTouches[0].clientX;
-    }
+    modal.addEventListener('click', e => { if (e.target.classList.contains('slide') || e.target.id === 'imageModal') closeModal(); });
 
     window.addEventListener('load', renderGallery);
 </script>
