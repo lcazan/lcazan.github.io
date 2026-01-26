@@ -27,19 +27,10 @@
 
         /* --- Lightbox Modal --- */
         .modal { display: none; position: fixed; z-index: 5000; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
+        .slider-track { display: flex; height: 100%; width: 100%; }
+        .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         
-        .slider-track { display: flex; height: 100%; width: 100%; will-change: transform; }
-        
-        .slide { 
-            min-width: 100%; 
-            height: 100%; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            position: relative;
-        }
-        
-        /* The Container for the Image & Counter */
+        /* The Container for the Image & Counter - Set to 70% */
         .image-wrapper { 
             position: relative; 
             display: flex; 
@@ -47,10 +38,9 @@
             align-items: center; 
             justify-content: center;
             width: 90%; 
-            height: 80vh; /* Strictly 80% of screen height */
+            height: 70vh; /* Reduced from 80vh to 70vh per your request */
         }
         
-        /* Ensures portrait/landscape always fits within the 80vh height */
         .slide img { 
             max-width: 100%; 
             max-height: 100%; 
@@ -59,7 +49,7 @@
             border: 2px solid #fff; 
             object-fit: contain; 
             display: block;
-            opacity: 0; /* Hidden until loaded */
+            opacity: 0; 
             transition: opacity 0.3s ease;
         }
 
@@ -67,7 +57,7 @@
 
         .counter { 
             position: absolute; 
-            bottom: calc(100% + 15px); /* Anchored above top edge */
+            bottom: calc(100% + 15px); 
             color: #fff; 
             font-size: 14px; 
             letter-spacing: 2px; 
@@ -82,7 +72,6 @@
 
         @media (min-width: 1024px) { .nav-btn { display: flex; } }
         
-        /* Spinner for loading state */
         .loader { width: 30px; height: 30px; border: 3px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 1s infinite linear; position: absolute; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
@@ -112,11 +101,9 @@
         const left = document.getElementById('col-left'), right = document.getElementById('col-right'), track = document.getElementById('sliderTrack');
         
         imageList.forEach((img, index) => {
-            // Main Gallery (Low-res/Lazy)
             const itemHtml = `<div class="gallery-item" onclick="openModal(${index})"><img src="${img}" loading="lazy"></div>`;
             index % 2 === 0 ? left.innerHTML += itemHtml : right.innerHTML += itemHtml;
             
-            // Modal Slides (Initially Empty for Speed)
             const slide = document.createElement('div'); 
             slide.className = 'slide'; 
             slide.innerHTML = `
@@ -129,7 +116,6 @@
         });
     }
 
-    // This loads the actual image file only when needed
     function loadImage(index) {
         const slide = document.querySelector(`.image-wrapper[data-index="${index}"]`);
         if (!slide) return;
@@ -161,7 +147,7 @@
         
         document.body.style.overflow = "hidden";
         
-        // Load current, next, and previous images immediately
+        // Predictively load the current and neighboring images
         loadImage(currentIndex);
         loadImage(currentIndex + 1);
         loadImage(currentIndex - 1);
@@ -172,6 +158,7 @@
         const track = document.getElementById('sliderTrack');
         const width = document.getElementById('imageModal').offsetWidth;
         
+        // Dynamic duration for smooth speed parity
         const duration = Math.min(0.4, Math.max(0.2, (width / 2000) * 0.5));
         track.style.transition = `transform ${duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
         
@@ -180,7 +167,6 @@
         prevTranslate = currentTranslate;
         track.style.transform = `translateX(${currentTranslate}px)`;
         
-        // Lazy load the newly active slide and its neighbors
         loadImage(currentIndex);
         loadImage(currentIndex + 1);
         loadImage(currentIndex - 1);
