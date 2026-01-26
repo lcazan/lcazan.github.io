@@ -15,7 +15,7 @@
             --icon-brown: #877267;   
             --text-dark: #151515;
             --border-gray: #e0e0e0;
-            --gallery-spacing: 15px; 
+            --gallery-gap: 15px; 
         }
 
         body {
@@ -65,7 +65,6 @@
             .hero-banner { flex-direction: row; }
             .hero-banner img { width: 50%; }
             .tagline-container { width: 50%; padding: 60px; text-align: left; align-self: center; }
-            .hero-tagline { font-size: 1.4rem; }
         }
 
         /* --- Main Content Layout --- */
@@ -78,39 +77,42 @@
         h2 { font-family: 'Cinzel', serif; font-weight: 400; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; font-size: 1.3rem; }
         .btn-find-out { display: inline-block; margin-top: 15px; padding: 12px 30px; border: 1px solid var(--text-dark); border-radius: 5px; text-decoration: none; color: var(--text-dark); font-size: 0.9rem; text-transform: uppercase; }
 
-        /* --- NUMERICAL MASONRY GALLERY --- */
+        /* --- FLEX-WRAP GALLERY (Continuous Flow) --- */
         .gallery-section { margin-top: 60px; border-top: 1px solid #eee; padding-top: 40px; }
         
         .gallery-title {
             font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 400;
             text-transform: uppercase; letter-spacing: 1px;
-            margin: 0 0 var(--gallery-spacing) 0; text-align: left;
+            margin: 0 0 var(--gallery-gap) 0; text-align: left;
         }
 
-        .gallery-columns-wrapper {
+        /* Single container allows images to wrap and fill gaps naturally */
+        .gallery-flow-container {
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: var(--gallery-gap);
             width: 100%;
-        }
-
-        .gallery-col {
-            display: flex;
-            flex-direction: column;
-            width: calc(50% - (var(--gallery-spacing) / 2));
         }
 
         .gallery-item {
-            width: 100%;
-            margin-bottom: var(--gallery-spacing);
+            /* Maximize width but allow wrapping. 
+               48% ensures two images fit comfortably with the gap. */
+            flex: 1 1 48%; 
             cursor: pointer;
             border: 1px solid var(--border-gray);
             line-height: 0;
             box-sizing: border-box;
+            max-width: calc(50% - (var(--gallery-gap) / 2));
         }
 
-        .gallery-item img { width: 100%; height: auto; display: block; }
+        .gallery-item img { 
+            width: 100%; 
+            height: auto; 
+            display: block; 
+            object-fit: cover;
+        }
 
-        /* --- Lightbox (80vmin) --- */
+        /* --- Lightbox --- */
         .modal { 
             display: none; position: fixed; z-index: 4000; left: 0; top: 0; 
             width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); 
@@ -175,18 +177,9 @@
             <a href="#" class="btn-find-out">Find out more</a>
         </section>
 
-        <section>
-            <h2>Traveling to the DC Metro area?</h2>
-            <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, and more.</p>
-            <a href="#" class="btn-find-out">Find out more</a>
-        </section>
-
         <div class="gallery-section">
             <h3 class="gallery-title">PHOTO GALLERY</h3>
-            <div class="gallery-columns-wrapper">
-                <div id="col-1" class="gallery-col"></div>
-                <div id="col-2" class="gallery-col"></div>
-            </div>
+            <div id="galleryContainer" class="gallery-flow-container"></div>
         </div>
     </div>
 </div>
@@ -205,8 +198,7 @@
         <a href="#"><i class="fa-brands fa-tiktok"></i></a>
     </div>
     <div class="disclaimer">
-        Copyright © 2022-2026 My Snoozing Baby, LLC - All Rights Reserved.<br><br>
-        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. 
+        Copyright © 2022-2026 My Snoozing Baby, LLC - All Rights Reserved.
     </div>
     <span class="version-label">Version 2.1</span>
 </footer>
@@ -217,20 +209,15 @@
     const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg", "9.jpeg", "10.jpeg", "11.jpeg", "12.jpeg", "13.jpeg", "14.jpeg", "15.jpeg", "16.jpeg", "17.jpeg"];
 
     function renderGallery() {
-        const col1 = document.getElementById('col-1');
-        const col2 = document.getElementById('col-2');
+        const container = document.getElementById('galleryContainer');
         
-        // Alternating logic ensures 1 is left, 2 is right, 3 is left, etc.
-        // This keeps the numerical order ascending as you scan left-to-right/down.
-        imageList.forEach((img, index) => {
-            const itemHtml = `
-                <div class="gallery-item" onclick="openModal('${img}')">
-                    <img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Image'">
-                </div>
-            `;
-            if (index % 2 === 0) col1.innerHTML += itemHtml;
-            else col2.innerHTML += itemHtml;
-        });
+        // This keeps the ascending numerical order 1, 2, 3...
+        // and allows them to wrap to the next line naturally.
+        container.innerHTML = imageList.map(img => `
+            <div class="gallery-item" onclick="openModal('${img}')">
+                <img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Image'">
+            </div>
+        `).join('');
     }
 
     function openModal(src) {
