@@ -29,36 +29,39 @@
         nav { position: fixed; top: 0; left: -280px; width: 260px; height: 100%; background: var(--brand-cream); transition: 0.4s ease-in-out; z-index: 2000; padding-top: 80px; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
         nav.open { left: 0; }
         nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
-        nav a:hover { background: rgba(0,0,0,0.02); }
         .sub-nav { background: rgba(0, 0, 0, 0.03); padding-left: 20px; }
         .sub-nav a { font-size: 0.8rem; text-transform: none; padding: 10px 30px; }
 
-        /* Overlay for Sidebar */
         #navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.1); z-index: 1500; }
 
         /* --- Hero Banner --- */
         .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; }
         .hero-banner img { width: 50%; height: auto; display: block; }
         .tagline-container { width: 50%; padding: 60px; display: flex; align-items: center; box-sizing: border-box; }
-        .hero-tagline { font-family: 'Cinzel', serif; font-size: 1.4rem; text-transform: uppercase; margin: 0; line-height: 1.4; }
+        .hero-tagline { font-family: 'Cinzel', serif; font-size: 1.1rem; text-transform: uppercase; margin: 0; line-height: 1.6; letter-spacing: 1px; }
 
         @media (max-width: 767px) {
             .hero-banner { flex-direction: column; }
             .hero-banner img, .tagline-container { width: 100%; }
             .tagline-container { padding: 40px 20px; justify-content: center; text-align: center; }
-            .hero-tagline { font-size: 1.1rem; }
         }
 
         /* --- Main Content --- */
-        .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; text-align: center; width: 100%; box-sizing: border-box; }
-        section { margin-bottom: 80px; }
-        h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; font-size: 1.3rem; font-weight: 400; }
+        .content-container { max-width: 1000px; margin: 0 auto; padding: 0 20px; text-align: center; width: 100%; box-sizing: border-box; }
+        .text-section { margin-top: 40px; margin-bottom: 80px; }
+        h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; font-size: 1.3rem; font-weight: 400; text-transform: uppercase; }
         .btn-find-out { display: inline-block; margin-top: 15px; padding: 12px 30px; border: 1px solid var(--text-dark); border-radius: 5px; text-decoration: none; color: var(--text-dark); font-size: 0.9rem; text-transform: uppercase; }
 
         /* --- Gallery Columns --- */
         .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; text-align: left; margin-top: 40px; }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
-        .gallery-item { cursor: pointer; line-height: 0; }
+        .gallery-item { 
+            cursor: pointer; 
+            line-height: 0; 
+            /* Fixes the blue highlight/background on tap */
+            -webkit-tap-highlight-color: transparent; 
+            outline: none;
+        }
         .gallery-item img { width: 100%; height: auto; display: block; }
 
         /* --- LIGHTBOX CAROUSEL --- */
@@ -69,7 +72,7 @@
         
         .close-modal { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; cursor: pointer; z-index: 4100; }
         .counter { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 14px; letter-spacing: 2px; }
-        .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); color: white; background: none; border: none; font-size: 30px; cursor: pointer; z-index: 4100; padding: 20px; opacity: 0.5; }
+        .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); color: white; background: none; border: none; font-size: 30px; cursor: pointer; z-index: 4100; padding: 20px; opacity: 0.5; -webkit-tap-highlight-color: transparent; }
         .nav-btn:hover { opacity: 1; }
         .prev-btn { left: 10px; }
         .next-btn { right: 10px; }
@@ -102,6 +105,7 @@
     <a href="#">Toddler Party Rentals</a>
     <a href="#">About Us</a>
     <a href="#">Contact Us</a>
+    <a href="#">FAQs</a>
 </nav>
 
 <div class="hero-banner">
@@ -112,11 +116,19 @@
 </div>
 
 <div class="content-container">
-    <section>
-        <h2>SNOO Smart Bassinet Rental</h2>
-        <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
-        <a href="#" class="btn-find-out">Find out more</a>
-    </section>
+    <div class="text-section">
+        <section>
+            <h2>SNOO Smart Bassinet Rental</h2>
+            <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
+            <a href="#" class="btn-find-out">Find out more</a>
+        </section>
+
+        <section>
+            <h2>SNOO deep-cleaning, servicing, and repairs</h2>
+            <p>Professional deep-cleaning, servicing, and repairs for your pre-loved SNOO.</p>
+            <a href="#" class="btn-find-out">Find out more</a>
+        </section>
+    </div>
 
     <div class="gallery-columns">
         <div id="col-left" class="gallery-column"></div>
@@ -139,14 +151,13 @@
         <a href="#"><i class="fa-brands fa-tiktok"></i></a>
     </div>
     <div class="disclaimer">
-        Copyright © 2022-2026 My Snoozing Baby, LLC - All Rights Reserved.<br>
-        My Snoozing Baby, LLC is an independent service provider and is not affiliated with Happiest Baby, Inc.
+        Copyright © 2022-2026 My Snoozing Baby, LLC - All Rights Reserved.<br><br>
+        SNOO and Happiest Baby are trademarks of Happiest Baby, Inc. My Snoozing Baby, LLC is an independent service provider and is not affiliated with, or endorsed by, Happiest Baby, Inc.
     </div>
     <span class="version-label">Version 2.1</span>
 </footer>
 
 <script>
-    // --- Navigation ---
     function toggleNav(e) {
         if(e) e.stopPropagation();
         const nav = document.getElementById('sidebar');
@@ -155,7 +166,6 @@
         overlay.style.display = nav.classList.contains('open') ? 'block' : 'none';
     }
 
-    // --- Gallery Data ---
     const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg", "9.jpeg", "10.jpeg", "11.jpeg", "12.jpeg", "13.jpeg", "14.jpeg", "15.jpeg", "16.jpeg", "17.jpeg"];
     let currentIndex = 0;
     let startX = 0, currentTranslate = 0, prevTranslate = 0, isDragging = false;
@@ -170,11 +180,10 @@
         });
     }
 
-    // --- Lightbox Functions ---
     function openModal(index) {
         currentIndex = index;
         const track = document.getElementById('sliderTrack');
-        track.style.transition = 'none'; // No sliding when opening
+        track.style.transition = 'none'; 
         currentTranslate = currentIndex * -window.innerWidth;
         prevTranslate = currentTranslate;
         track.style.transform = `translateX(${currentTranslate}px)`;
@@ -200,7 +209,6 @@
         document.getElementById('imgCounter').innerText = `${currentIndex + 1} / ${imageList.length}`;
     }
 
-    // --- Interaction Listeners ---
     const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
     
     modal.addEventListener('touchstart', e => { 
@@ -216,7 +224,6 @@
     });
 
     modal.addEventListener('click', e => {
-        // Close if clicking the slide background or the modal container itself
         if (e.target.classList.contains('slide') || e.target.id === 'imageModal') closeModal();
     });
 
