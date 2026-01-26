@@ -49,22 +49,17 @@
         /* --- Main Content --- */
         .content-container { max-width: 1000px; margin: 0 auto; padding: 0 20px; text-align: center; width: 100%; box-sizing: border-box; }
         .text-section { margin-top: 40px; margin-bottom: 80px; }
+        section { margin-bottom: 60px; }
         h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; font-size: 1.3rem; font-weight: 400; text-transform: uppercase; }
         .btn-find-out { display: inline-block; margin-top: 15px; padding: 12px 30px; border: 1px solid var(--text-dark); border-radius: 5px; text-decoration: none; color: var(--text-dark); font-size: 0.9rem; text-transform: uppercase; }
 
-        /* --- Gallery Columns --- */
+        /* --- Gallery --- */
         .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; text-align: left; margin-top: 40px; }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
-        .gallery-item { 
-            cursor: pointer; 
-            line-height: 0; 
-            /* Fixes the blue highlight/background on tap */
-            -webkit-tap-highlight-color: transparent; 
-            outline: none;
-        }
+        .gallery-item { cursor: pointer; line-height: 0; -webkit-tap-highlight-color: transparent; outline: none; }
         .gallery-item img { width: 100%; height: auto; display: block; }
 
-        /* --- LIGHTBOX CAROUSEL --- */
+        /* --- Lightbox --- */
         .modal { display: none; position: fixed; z-index: 4000; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); overflow: hidden; touch-action: none; }
         .slider-track { display: flex; height: 100%; will-change: transform; }
         .slide { min-width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; pointer-events: none; }
@@ -125,7 +120,13 @@
 
         <section>
             <h2>SNOO deep-cleaning, servicing, and repairs</h2>
-            <p>Professional deep-cleaning, servicing, and repairs for your pre-loved SNOO.</p>
+            <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
+            <a href="#" class="btn-find-out">Find out more</a>
+        </section>
+
+        <section>
+            <h2>Traveling to the DC Metro area?</h2>
+            <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC or surrounding parts of Virginia and Maryland. Travel light and let us handle the rest.</p>
             <a href="#" class="btn-find-out">Find out more</a>
         </section>
     </div>
@@ -173,7 +174,7 @@
     function renderGallery() {
         const left = document.getElementById('col-left'), right = document.getElementById('col-right'), track = document.getElementById('sliderTrack');
         imageList.forEach((img, index) => {
-            const itemHtml = `<div class="gallery-item" onclick="openModal(${index})"><img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Image'"></div>`;
+            const itemHtml = `<div class="gallery-item" onclick="openModal(${index})"><img src="${img}"></div>`;
             index % 2 === 0 ? left.innerHTML += itemHtml : right.innerHTML += itemHtml;
             const slide = document.createElement('div'); slide.className = 'slide'; slide.innerHTML = `<img src="${img}">`;
             track.appendChild(slide);
@@ -187,7 +188,6 @@
         currentTranslate = currentIndex * -window.innerWidth;
         prevTranslate = currentTranslate;
         track.style.transform = `translateX(${currentTranslate}px)`;
-        
         document.getElementById('imageModal').style.display = "block";
         document.getElementById('imgCounter').innerText = `${currentIndex + 1} / ${imageList.length}`;
         document.body.style.overflow = "hidden";
@@ -210,22 +210,13 @@
     }
 
     const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
-    
-    modal.addEventListener('touchstart', e => { 
-        isDragging = true; startX = e.touches[0].clientX; track.style.transition = 'none'; 
-    });
-    modal.addEventListener('touchmove', e => { 
-        if (!isDragging) return; const diff = e.touches[0].clientX - startX; 
-        track.style.transform = `translateX(${prevTranslate + diff}px)`; 
-    });
+    modal.addEventListener('touchstart', e => { isDragging = true; startX = e.touches[0].clientX; track.style.transition = 'none'; });
+    modal.addEventListener('touchmove', e => { if (!isDragging) return; const diff = e.touches[0].clientX - startX; track.style.transform = `translateX(${prevTranslate + diff}px)`; });
     modal.addEventListener('touchend', e => { 
         isDragging = false; const diff = e.changedTouches[0].clientX - startX;
         if (diff < -50) moveSlide(1); else if (diff > 50) moveSlide(-1); else moveSlide(0);
     });
-
-    modal.addEventListener('click', e => {
-        if (e.target.classList.contains('slide') || e.target.id === 'imageModal') closeModal();
-    });
+    modal.addEventListener('click', e => { if (e.target.classList.contains('slide') || e.target.id === 'imageModal') closeModal(); });
 
     window.addEventListener('load', renderGallery);
 </script>
