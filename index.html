@@ -48,14 +48,13 @@
             letter-spacing: 1px;
         }
         
-        /* Fixed Menu Icon: High Z-Index to stay above sidebar */
+        /* THE ULTIMATE FIX: Positioned globally to stay on top of everything */
         .menu-icon { 
-            position: absolute; 
+            position: fixed; 
             left: 20px; 
-            top: 50%;
-            transform: translateY(-50%);
+            top: 25px; 
             cursor: pointer; 
-            z-index: 5000; 
+            z-index: 9999; /* Highest possible */
             padding: 10px; 
         }
         .menu-icon div { 
@@ -63,8 +62,13 @@
             height: 2px; 
             background-color: var(--icon-brown); 
             margin: 6px 0; 
-            transition: background 0.2s;
+            transition: 0.2s; /* Snappy transition for the X morph */
         }
+
+        /* Morphing logic for the "X" */
+        .menu-icon.active .line1 { transform: rotate(-45deg) translate(-5px, 6px); }
+        .menu-icon.active .line2 { opacity: 0; }
+        .menu-icon.active .line3 { transform: rotate(45deg) translate(-5px, -7px); }
 
         /* --- Sidebar Navigation (LOCKED STRUCTURE) --- */
         nav { 
@@ -75,8 +79,8 @@
             height: 100%; 
             background: var(--brand-cream); 
             transition: left 0.2s ease-in-out; 
-            z-index: 4000; 
-            padding-top: 80px; 
+            z-index: 8000; 
+            padding-top: 100px; 
             box-shadow: 4px 0 15px rgba(0,0,0,0.1); 
         }
         nav.open { left: 0; }
@@ -92,6 +96,7 @@
         }
         .sub-nav { background: rgba(0, 0, 0, 0.03); padding-left: 20px; }
         .sub-nav a { font-size: 1rem; text-transform: none; padding: 10px 30px; }
+        
         #navOverlay { 
             display: none; 
             position: fixed; 
@@ -100,7 +105,7 @@
             width: 100vw; 
             height: 100vh; 
             background: rgba(0,0,0,0.3); 
-            z-index: 3500; 
+            z-index: 7000; 
         }
 
         /* --- Hero --- */
@@ -131,14 +136,14 @@
         .gallery-item img { width: 100%; height: auto; display: block; }
 
         /* --- Lightbox Modal (LOCKED) --- */
-        .modal { display: none; position: fixed; z-index: 6000; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
+        .modal { display: none; position: fixed; z-index: 9000; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
         .slider-track { display: flex; height: 100%; width: 100%; }
         .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         .image-wrapper { position: relative; display: flex; align-items: center; justify-content: center; width: 90%; height: 70vh; }
         .slide img { max-width: 100%; max-height: 100%; width: auto; height: auto; border: 2px solid #fff; object-fit: contain; opacity: 0; transition: opacity 0.3s ease; }
         .slide img.loaded { opacity: 1; }
-        .counter { position: fixed; top: 25px; left: 25px; color: #fff; font-size: 22px; letter-spacing: 2px; font-weight: 600; z-index: 8000; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none; }
-        .close-modal { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 40px; cursor: pointer; z-index: 7000; }
+        .counter { position: fixed; top: 25px; left: 25px; color: #fff; font-size: 22px; letter-spacing: 2px; font-weight: 600; z-index: 9500; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none; }
+        .close-modal { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 40px; cursor: pointer; z-index: 9500; }
         .loader { width: 30px; height: 30px; border: 3px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 1s infinite linear; position: absolute; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -152,11 +157,16 @@
 </head>
 <body>
 
+<div class="menu-icon" id="hamburger" onclick="toggleNav(event)">
+    <div class="line1"></div>
+    <div class="line2"></div>
+    <div class="line3"></div>
+</div>
+
 <header>
-    <div class="menu-icon" onclick="toggleNav(event)"><div></div><div></div><div></div></div>
     <div class="logo-container">
         <div class="logo">My Snoozing Baby</div>
-        <span class="version-header">Version 2.1.1</span>
+        <span class="version-header">Version 2.1.3</span>
     </div>
 </header>
 
@@ -184,25 +194,21 @@
 
 <div class="content-container">
     <div class="section-label">OUR SERVICES</div>
-    
     <section>
         <h2>SNOO Smart Bassinet Rental</h2>
         <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
-
     <section>
         <h2>SNOO deep-cleaning, servicing, and repairs</h2>
         <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
-
     <section>
         <h2>Traveling to the DC Metro area?</h2>
         <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC or surrounding parts of Virginia and Maryland. Travel light and let us handle the rest.</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
-
     <div class="section-label">PHOTO GALLERY</div>
     <div class="gallery-columns">
         <div id="col-left" class="gallery-column"></div>
@@ -231,8 +237,13 @@
 <script>
     function toggleNav(e) {
         if(e) e.stopPropagation();
-        const isOpen = document.getElementById('sidebar').classList.toggle('open');
-        document.getElementById('navOverlay').style.display = isOpen ? 'block' : 'none';
+        const nav = document.getElementById('sidebar');
+        const hamburger = document.getElementById('hamburger');
+        const overlay = document.getElementById('navOverlay');
+        
+        const isOpen = nav.classList.toggle('open');
+        hamburger.classList.toggle('active');
+        overlay.style.display = isOpen ? 'block' : 'none';
     }
 
     const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg", "9.jpeg", "10.jpeg", "11.jpeg", "12.jpeg", "13.jpeg", "14.jpeg", "15.jpeg", "16.jpeg", "17.jpeg"];
@@ -256,8 +267,7 @@
         if (!slide) return;
         const img = slide.querySelector('img'), loader = slide.querySelector('.loader');
         if (img && img.dataset.src) {
-            img.src = img.dataset.src; img.removeAttribute('data-src');
-            img.onload = () => { img.classList.add('loaded'); if (loader) loader.style.display = 'none'; };
+            img.src = img.dataset.src; img.onload = () => { img.classList.add('loaded'); if (loader) loader.style.display = 'none'; };
         }
     }
 
