@@ -25,7 +25,7 @@
         .menu-icon { position: absolute; left: 20px; cursor: pointer; z-index: 3000; padding: 10px; }
         .menu-icon div { width: 24px; height: 2px; background-color: var(--icon-brown); margin: 6px 0; }
 
-        /* --- Sidebar --- */
+        /* --- Sidebar Navigation --- */
         nav { position: fixed; top: 0; left: -280px; width: 260px; height: 100%; background: var(--brand-cream); transition: 0.4s ease-in-out; z-index: 2000; padding-top: 80px; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
         nav.open { left: 0; }
         nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
@@ -33,7 +33,7 @@
         .sub-nav a { font-size: 0.8rem; text-transform: none; padding: 10px 30px; }
         #navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.2); z-index: 1500; }
 
-        /* --- Hero --- */
+        /* --- Hero Banner --- */
         .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; align-items: stretch; }
         .hero-banner img { width: 50%; height: auto; display: block; object-fit: cover; }
         .tagline-container { width: 50%; padding: 60px; display: flex; align-items: center; box-sizing: border-box; }
@@ -45,21 +45,30 @@
             .tagline-container { padding: 40px 20px; text-align: center; justify-content: center; }
         }
 
-        /* --- Titles & Content --- */
-        .content-container { max-width: 1000px; margin: 0 auto; padding: 60px 20px; width: 100%; box-sizing: border-box; text-align: center; }
+        /* --- Main Content --- */
+        .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
         
-        /* Forces All Caps for Main Section Titles */
-        .main-title { font-family: 'Cinzel', serif; font-size: 1.8rem; text-transform: uppercase; border-bottom: 1px solid var(--brand-pink); padding-bottom: 15px; margin-bottom: 50px; display: inline-block; font-weight: 400; letter-spacing: 2px; }
-        
-        section { margin-bottom: 60px; text-align: center; }
-        h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 25px; display: inline-block; font-size: 1.1rem; font-weight: 400; text-transform: uppercase; letter-spacing: 1px; }
-        section p { text-align: justify; text-justify: inter-word; line-height: 1.8; margin-bottom: 20px; hyphens: auto; }
-        
+        /* New Menu-Style Title Look */
+        .section-label { 
+            font-family: 'Source Sans Pro', sans-serif; 
+            font-size: 14px; 
+            font-weight: 400; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            text-align: left; 
+            margin-top: 40px; 
+            margin-bottom: 30px; 
+            display: block; 
+            border: none; /* Removed underlining */
+        }
+
+        section { margin-bottom: 60px; text-align: left; }
+        h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; font-size: 1.2rem; font-weight: 400; text-transform: uppercase; }
+        section p { text-align: justify; text-justify: inter-word; line-height: 1.8; margin-bottom: 20px; }
         .btn-find-out { display: inline-block; padding: 12px 30px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
 
         /* --- Gallery --- */
-        .gallery-section { margin-top: 80px; }
-        .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; margin-top: 40px; }
+        .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; margin-top: 20px; }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
         .gallery-item { cursor: pointer; line-height: 0; -webkit-tap-highlight-color: transparent; outline: none; }
         .gallery-item img { width: 100%; height: auto; display: block; }
@@ -114,7 +123,7 @@
 </div>
 
 <div class="content-container">
-    <h1 class="main-title">OUR SERVICES</h1>
+    <div class="section-label">OUR SERVICES</div>
     
     <section>
         <h2>SNOO Smart Bassinet Rental</h2>
@@ -134,12 +143,10 @@
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
 
-    <div class="gallery-section">
-        <h1 class="main-title">PHOTO GALLERY</h1>
-        <div class="gallery-columns">
-            <div id="col-left" class="gallery-column"></div>
-            <div id="col-right" class="gallery-column"></div>
-        </div>
+    <div class="section-label">PHOTO GALLERY</div>
+    <div class="gallery-columns">
+        <div id="col-left" class="gallery-column"></div>
+        <div id="col-right" class="gallery-column"></div>
     </div>
 </div>
 
