@@ -25,16 +25,15 @@
         .menu-icon { position: absolute; left: 20px; cursor: pointer; z-index: 3000; padding: 10px; }
         .menu-icon div { width: 24px; height: 2px; background-color: var(--icon-brown); margin: 6px 0; }
 
-        /* --- Navigation Sidebar --- */
+        /* --- Sidebar --- */
         nav { position: fixed; top: 0; left: -280px; width: 260px; height: 100%; background: var(--brand-cream); transition: 0.4s ease-in-out; z-index: 2000; padding-top: 80px; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
         nav.open { left: 0; }
         nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
         .sub-nav { background: rgba(0, 0, 0, 0.03); padding-left: 20px; }
         .sub-nav a { font-size: 0.8rem; text-transform: none; padding: 10px 30px; }
-
         #navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.2); z-index: 1500; }
 
-        /* --- Hero Banner (Side-by-Side) --- */
+        /* --- Hero --- */
         .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; align-items: stretch; }
         .hero-banner img { width: 50%; height: auto; display: block; object-fit: cover; }
         .tagline-container { width: 50%; padding: 60px; display: flex; align-items: center; box-sizing: border-box; }
@@ -46,20 +45,25 @@
             .tagline-container { padding: 40px 20px; text-align: center; justify-content: center; }
         }
 
-        /* --- Content Sections --- */
-        .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
-        section { margin-bottom: 80px; text-align: center; }
+        /* --- Main Content Titles & Text --- */
+        .content-container { max-width: 1000px; margin: 0 auto; padding: 60px 20px; width: 100%; box-sizing: border-box; text-align: center; }
+        
+        .main-title { font-family: 'Cinzel', serif; font-size: 1.8rem; text-transform: uppercase; border-bottom: 1px solid var(--brand-pink); padding-bottom: 15px; margin-bottom: 50px; display: inline-block; font-weight: 400; letter-spacing: 2px; }
+        
+        section { margin-bottom: 60px; text-align: center; }
         h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 25px; display: inline-block; font-size: 1.3rem; font-weight: 400; text-transform: uppercase; }
         section p { text-align: justify; text-justify: inter-word; line-height: 1.8; margin-bottom: 20px; }
-        .btn-find-out { display: inline-block; padding: 12px 30px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+        .btn-find-out { display: inline-block; padding: 12px 30px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
+        .btn-find-out:hover { background: var(--text-dark); color: #fff; }
 
         /* --- Gallery --- */
+        .gallery-section { margin-top: 80px; }
         .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; margin-top: 40px; }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
         .gallery-item { cursor: pointer; line-height: 0; -webkit-tap-highlight-color: transparent; }
-        .gallery-item img { width: 100%; height: auto; display: block; }
+        .gallery-item img { width: 100%; height: auto; display: block; border-radius: 2px; }
 
-        /* --- Lightbox Carousel --- */
+        /* --- Lightbox --- */
         .modal { display: none; position: fixed; z-index: 4000; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); overflow: hidden; touch-action: none; }
         .slider-track { display: flex; height: 100%; will-change: transform; }
         .slide { min-width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; pointer-events: none; }
@@ -109,6 +113,8 @@
 </div>
 
 <div class="content-container">
+    <h1 class="main-title">Our Services</h1>
+    
     <section>
         <h2>SNOO Smart Bassinet Rental</h2>
         <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest. Our rentals provide you with the latest technology in infant sleep safety and comfort, delivered straight to your door.</p>
@@ -127,9 +133,12 @@
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
 
-    <div class="gallery-columns">
-        <div id="col-left" class="gallery-column"></div>
-        <div id="col-right" class="gallery-column"></div>
+    <div class="gallery-section">
+        <h1 class="main-title">Photo Gallery</h1>
+        <div class="gallery-columns">
+            <div id="col-left" class="gallery-column"></div>
+            <div id="col-right" class="gallery-column"></div>
+        </div>
     </div>
 </div>
 
@@ -155,7 +164,6 @@
 </footer>
 
 <script>
-    // Navigation Logic
     function toggleNav(e) {
         if(e) e.stopPropagation();
         const nav = document.getElementById('sidebar');
@@ -164,7 +172,6 @@
         overlay.style.display = isOpen ? 'block' : 'none';
     }
 
-    // Gallery Logic
     const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg", "9.jpeg", "10.jpeg", "11.jpeg", "12.jpeg", "13.jpeg", "14.jpeg", "15.jpeg", "16.jpeg", "17.jpeg"];
     let currentIndex = 0;
     let startX = 0, currentTranslate = 0, prevTranslate = 0, isDragging = false;
@@ -172,14 +179,13 @@
     function renderGallery() {
         const left = document.getElementById('col-left'), right = document.getElementById('col-right'), track = document.getElementById('sliderTrack');
         imageList.forEach((img, index) => {
-            const itemHtml = `<div class="gallery-item" onclick="openModal(${index})"><img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Image'"></div>`;
+            const itemHtml = `<div class="gallery-item" onclick="openModal(${index})"><img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Baby+Gear'"></div>`;
             index % 2 === 0 ? left.innerHTML += itemHtml : right.innerHTML += itemHtml;
             const slide = document.createElement('div'); slide.className = 'slide'; slide.innerHTML = `<img src="${img}">`;
             track.appendChild(slide);
         });
     }
 
-    // Modal/Carousel Logic
     function openModal(index) {
         currentIndex = index;
         const track = document.getElementById('sliderTrack');
