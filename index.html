@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Snoozing Baby | Home</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Source+Sans+Pro:wght@300;400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Source+Sans+Pro:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
@@ -13,7 +13,7 @@
             --brand-cream: #FAF6F3;   
             --brand-pink: #ebd5c9;    
             --icon-brown: #877267;   
-            --text-dark: #151515;
+            --text-dark: #151515; /* Menu font color used here */
         }
 
         body {
@@ -28,7 +28,7 @@
             min-height: 100vh;
         }
 
-        /* --- Header & Logo Section --- */
+        /* --- Header & Logo --- */
         header {
             display: flex;
             align-items: center;
@@ -64,7 +64,7 @@
             margin: 6px 0;
         }
 
-        /* --- Sidebar Navigation --- */
+        /* --- Sidebar Navigation (Menu Styles) --- */
         nav {
             position: fixed; top: 0; left: -280px; width: 260px; height: 100%;
             background: var(--brand-cream);
@@ -73,7 +73,17 @@
             z-index: 2000; padding-top: 80px;
         }
         nav.open { left: 0; }
-        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 0.9rem; text-transform: uppercase; }
+        nav a { 
+            display: block; 
+            padding: 15px 30px; 
+            text-decoration: none; 
+            color: var(--text-dark); /* Color #151515 */
+            font-family: 'Source Sans Pro', sans-serif; /* Font used for menu */
+            font-weight: 400; 
+            font-size: 14px; /* Size used for menu */
+            text-transform: uppercase; /* Uppercase like the menu */
+            letter-spacing: 1px;
+        }
 
         /* --- Hero Banner --- */
         .hero-banner { background-color: var(--brand-cream); display: flex; flex-direction: column; width: 100%; }
@@ -85,24 +95,14 @@
             .hero-banner { flex-direction: row; }
             .hero-banner img { width: 50%; }
             .tagline-container { width: 50%; padding: 60px; text-align: left; align-self: center; }
-            .hero-tagline { font-size: 1.4rem; }
         }
 
         /* --- Content Sections --- */
         .main-content { flex: 1; }
         .content { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
         section { margin-bottom: 80px; text-align: center; }
-
-        h2 { 
-            font-family: 'Cinzel', serif; 
-            font-weight: 400; 
-            border-bottom: 1px solid var(--brand-pink); 
-            padding-bottom: 10px; 
-            margin-bottom: 20px; 
-            display: inline-block; 
-            font-size: 1.3rem; 
-        }
-
+        h2 { font-family: 'Cinzel', serif; font-size: 1.3rem; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; display: inline-block; }
+        
         .btn-find-out { 
             display: inline-block; margin-top: 15px; padding: 12px 30px; 
             border: 1px solid var(--text-dark); border-radius: 5px; 
@@ -110,30 +110,25 @@
             font-size: 0.9rem; text-transform: uppercase; 
         }
 
-        /* --- Photo Gallery (Matches Site Branding) --- */
+        /* --- Photo Gallery (Matched to Menu Font/Color) --- */
         .gallery-section {
             border-top: 1px solid #eee;
             padding-top: 40px;
-            text-align: left; /* Aligned left as requested */
+            text-align: left;
         }
 
         .gallery-title-plain {
-            font-family: 'Cinzel', serif; /* Brand font from your file */
-            font-size: 35px; /* Size for section titles in your file */
+            font-family: 'Source Sans Pro', sans-serif; /* Matched to Menu Font */
+            font-size: 14px; /* Matched to Menu Size */
             font-weight: 400;
-            color: var(--text-dark);
+            color: var(--text-dark); /* Matched to Menu Color (#151515) */
+            text-transform: uppercase; /* Matched to Menu Style */
+            letter-spacing: 1px;
             margin: 0 0 30px 0;
-            text-transform: none;
-            border: none; /* Removed rectangle */
-            padding: 0;
             display: block;
         }
 
-        .gallery-grid { 
-            display: grid; grid-template-columns: repeat(2, 1fr); 
-            gap: 15px; margin-bottom: 50px; 
-        }
-
+        .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 50px; }
         @media (min-width: 600px) { .gallery-grid { grid-template-columns: repeat(3, 1fr); } }
         @media (min-width: 992px) { .gallery-grid { grid-template-columns: repeat(4, 1fr); } }
         
@@ -143,18 +138,11 @@
         /* --- Footer & Versioning --- */
         footer { 
             text-align: center; padding: 60px 20px 40px; background: #fdfdfd; 
-            border-top: 1px solid #eee; position: relative; margin-top: auto;
+            border-top: 1px solid #eee; position: relative; margin-top: auto; 
         }
-
         .social-icons { margin-bottom: 35px; display: flex; justify-content: center; gap: 35px; }
         .social-icons a { color: #000; font-size: 1.8rem; text-decoration: none; }
-
-        .disclaimer { font-size: 0.75rem; color: #777; max-width: 700px; margin: 0 auto; line-height: 1.6; }
-
-        .version-label { 
-            font-size: 0.65rem; color: #ccc; 
-            position: absolute; bottom: 10px; right: 15px; 
-        }
+        .version-label { font-size: 0.65rem; color: #ccc; position: absolute; bottom: 10px; right: 15px; }
     </style>
 </head>
 <body>
@@ -194,7 +182,7 @@
         </section>
 
         <div class="gallery-section">
-            <h3 class="gallery-title-plain">Photo Gallery</h3>
+            <h3 class="gallery-title-plain">PHOTO GALLERY</h3>
             <div id="galleryGrid" class="gallery-grid"></div>
         </div>
     </div>
@@ -211,19 +199,11 @@
 
 <script>
     function toggleNav() { document.getElementById('sidebar').classList.toggle('open'); }
-    
-    // Gallery Image Source List
     const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg"];
-
     function renderGallery() {
         const grid = document.getElementById('galleryGrid');
-        grid.innerHTML = imageList.map(img => `
-            <div class="gallery-item">
-                <img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Image'">
-            </div>
-        `).join('');
+        grid.innerHTML = imageList.map(img => `<div class="gallery-item"><img src="${img}" onerror="this.src='https://via.placeholder.com/400'"></div>`).join('');
     }
-
     window.onload = renderGallery;
 </script>
 
