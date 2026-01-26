@@ -49,16 +49,7 @@
         .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
         
         .section-label { 
-            font-family: 'Source Sans Pro', sans-serif; 
-            font-size: 14px; 
-            font-weight: 600; 
-            text-transform: uppercase; 
-            letter-spacing: 2px; 
-            text-align: left; 
-            color: var(--icon-brown); 
-            margin-top: 40px; 
-            margin-bottom: 30px; 
-            display: block; 
+            font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; text-align: left; color: var(--icon-brown); margin-top: 40px; margin-bottom: 30px; display: block; 
         }
 
         section { margin-bottom: 60px; text-align: center; }
@@ -74,14 +65,18 @@
 
         /* --- Lightbox Modal --- */
         .modal { display: none; position: fixed; z-index: 5000; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
-        .slider-track { display: flex; height: 100%; width: 100%; will-change: transform; transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
-        .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none; }
-        .slide img { max-width: 90%; max-height: 75%; border: 2px solid #fff; object-fit: contain; pointer-events: auto; }
+        .slider-track { display: flex; height: 100%; width: 100%; will-change: transform; transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+        .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none; position: relative; }
+        
+        .image-wrapper { position: relative; display: flex; flex-direction: column; align-items: center; max-width: 90%; max-height: 80%; }
+        .slide img { max-width: 100%; max-height: 100%; border: 2px solid #fff; object-fit: contain; pointer-events: auto; }
+        
+        .counter { position: absolute; bottom: calc(100% + 15px); left: 50%; transform: translateX(-50%); color: #fff; font-size: 14px; letter-spacing: 2px; z-index: 6000; font-weight: 600; white-space: nowrap; }
         
         .close-modal { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 40px; cursor: pointer; z-index: 6000; }
-        .counter { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 14px; letter-spacing: 2px; z-index: 6000; font-weight: 600; }
         
-        .nav-btn { display: none; position: absolute; top: 50%; transform: translateY(-50%); color: #fff; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); font-size: 24px; cursor: pointer; z-index: 6000; width: 50px; height: 50px; border-radius: 50%; align-items: center; justify-content: center; }
+        .nav-btn { display: none; position: absolute; top: 50%; transform: translateY(-50%); color: #fff; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); font-size: 24px; cursor: pointer; z-index: 6000; width: 50px; height: 50px; border-radius: 50%; align-items: center; justify-content: center; transition: background 0.2s; }
+        .nav-btn:hover { background: rgba(255,255,255,0.3); }
         .prev-btn { left: 20px; }
         .next-btn { right: 20px; }
 
@@ -127,19 +122,16 @@
 
 <div class="content-container">
     <div class="section-label">OUR SERVICES</div>
-    
     <section>
         <h2>SNOO Smart Bassinet Rental</h2>
         <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest. Our rentals provide you with the latest technology in infant sleep safety and comfort, delivered straight to your door.</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
-
     <section>
         <h2>SNOO deep-cleaning, servicing, and repairs</h2>
         <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
-
     <section>
         <h2>Traveling to the DC Metro area?</h2>
         <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC or surrounding parts of Virginia and Maryland. Travel light and let us handle the rest.</p>
@@ -158,7 +150,6 @@
     <button class="nav-btn prev-btn" onclick="moveSlide(-1, event)"><i class="fas fa-chevron-left"></i></button>
     <div id="sliderTrack" class="slider-track"></div>
     <button class="nav-btn next-btn" onclick="moveSlide(1, event)"><i class="fas fa-chevron-right"></i></button>
-    <div class="counter" id="imgCounter">1 / 17</div>
 </div>
 
 <footer>
@@ -192,7 +183,15 @@
         imageList.forEach((img, index) => {
             const itemHtml = `<div class="gallery-item" onclick="openModal(${index})"><img src="${img}"></div>`;
             index % 2 === 0 ? left.innerHTML += itemHtml : right.innerHTML += itemHtml;
-            const slide = document.createElement('div'); slide.className = 'slide'; slide.innerHTML = `<img src="${img}">`;
+            
+            // Re-structured Slide with Anchor for Counter
+            const slide = document.createElement('div'); 
+            slide.className = 'slide'; 
+            slide.innerHTML = `
+                <div class="image-wrapper">
+                    <div class="counter">${index + 1} / ${imageList.length}</div>
+                    <img src="${img}">
+                </div>`;
             track.appendChild(slide);
         });
     }
@@ -207,7 +206,6 @@
         currentTranslate = currentIndex * -width;
         prevTranslate = currentTranslate;
         track.style.transform = `translateX(${currentTranslate}px)`;
-        document.getElementById('imgCounter').innerText = `${currentIndex + 1} / ${imageList.length}`;
         document.body.style.overflow = "hidden";
     }
 
@@ -216,20 +214,26 @@
         document.body.style.overflow = "auto";
     }
 
+    // Auto-close on rotation
+    window.addEventListener("orientationchange", function() {
+        if (document.getElementById('imageModal').style.display === "block") {
+            closeModal();
+        }
+    });
+
     function moveSlide(step, e) {
         if(e) e.stopPropagation();
         const track = document.getElementById('sliderTrack');
         const width = document.getElementById('imageModal').offsetWidth;
         
-        // Dynamic speed adjustment for Landscape vs Portrait
-        const speed = width > 800 ? '0.2s' : '0.3s';
-        track.style.transition = `transform ${speed} ease-out`;
+        // Consistent Physical Speed (0.2s for phone, ~0.4s for wide desktop)
+        const duration = Math.min(0.4, Math.max(0.2, (width / 2000) * 0.5));
+        track.style.transition = `transform ${duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
         
         currentIndex = Math.max(0, Math.min(currentIndex + step, imageList.length - 1));
         currentTranslate = currentIndex * -width;
         prevTranslate = currentTranslate;
         track.style.transform = `translateX(${currentTranslate}px)`;
-        document.getElementById('imgCounter').innerText = `${currentIndex + 1} / ${imageList.length}`;
     }
 
     const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
