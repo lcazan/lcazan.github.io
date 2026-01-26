@@ -13,7 +13,7 @@
             --brand-cream: #FAF6F3;   
             --brand-pink: #ebd5c9;    
             --icon-brown: #877267;   
-            --text-dark: #151515; /* Menu font color used here */
+            --text-dark: #151515;
         }
 
         body {
@@ -28,7 +28,7 @@
             min-height: 100vh;
         }
 
-        /* --- Header & Logo --- */
+        /* --- Boxed Logo Header --- */
         header {
             display: flex;
             align-items: center;
@@ -59,105 +59,222 @@
         }
 
         .menu-icon div {
-            width: 24px; height: 2px;
+            width: 24px;
+            height: 2px;
             background-color: var(--icon-brown); 
             margin: 6px 0;
         }
 
-        /* --- Sidebar Navigation (Menu Styles) --- */
+        /* --- Sidebar Navigation --- */
         nav {
-            position: fixed; top: 0; left: -280px; width: 260px; height: 100%;
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 260px;
+            height: 100%;
             background: var(--brand-cream);
             box-shadow: 4px 0 15px rgba(0,0,0,0.05);
             transition: 0.4s ease-in-out;
-            z-index: 2000; padding-top: 80px;
+            z-index: 2000;
+            padding-top: 80px;
         }
+
         nav.open { left: 0; }
-        nav a { 
-            display: block; 
-            padding: 15px 30px; 
-            text-decoration: none; 
-            color: var(--text-dark); /* Color #151515 */
-            font-family: 'Source Sans Pro', sans-serif; /* Font used for menu */
-            font-weight: 400; 
-            font-size: 14px; /* Size used for menu */
-            text-transform: uppercase; /* Uppercase like the menu */
-            letter-spacing: 1px;
+
+        nav a {
+            display: block;
+            padding: 15px 30px;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 400;
+            font-size: 14px; /* Matches requested menu size */
+            text-transform: uppercase;
+        }
+
+        .sub-nav {
+            background: rgba(0, 0, 0, 0.02);
+            padding-left: 20px;
+        }
+
+        .sub-nav a {
+            font-size: 0.8rem;
+            text-transform: none;
+            padding: 10px 30px;
         }
 
         /* --- Hero Banner --- */
-        .hero-banner { background-color: var(--brand-cream); display: flex; flex-direction: column; width: 100%; }
-        .hero-banner img { display: block; width: 100%; height: auto; }
-        .tagline-container { padding: 40px 20px; text-align: center; width: 100%; box-sizing: border-box; }
-        .hero-tagline { font-family: 'Cinzel', serif; font-size: 1.1rem; text-transform: uppercase; margin: 0; }
+        .hero-banner {
+            background-color: var(--brand-cream);
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .hero-banner img {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .tagline-container {
+            padding: 40px 20px;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .hero-tagline {
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            margin: 0;
+        }
 
         @media (min-width: 768px) {
             .hero-banner { flex-direction: row; }
             .hero-banner img { width: 50%; }
             .tagline-container { width: 50%; padding: 60px; text-align: left; align-self: center; }
+            .hero-tagline { font-size: 1.4rem; }
         }
 
         /* --- Content Sections --- */
-        .main-content { flex: 1; }
-        .content { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
-        section { margin-bottom: 80px; text-align: center; }
-        h2 { font-family: 'Cinzel', serif; font-size: 1.3rem; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; display: inline-block; }
-        
-        .btn-find-out { 
-            display: inline-block; margin-top: 15px; padding: 12px 30px; 
-            border: 1px solid var(--text-dark); border-radius: 5px; 
-            text-decoration: none; color: var(--text-dark); 
-            font-size: 0.9rem; text-transform: uppercase; 
+        .main-content {
+            flex: 1;
         }
 
-        /* --- Photo Gallery (Matched to Menu Font/Color) --- */
+        .content { 
+            max-width: 1000px; 
+            margin: 40px auto; 
+            padding: 0 20px; 
+            text-align: center;
+        }
+
+        section { margin-bottom: 80px; }
+
+        h2 { 
+            font-family: 'Cinzel', serif; 
+            font-weight: 400; 
+            border-bottom: 1px solid var(--brand-pink); 
+            padding-bottom: 10px; 
+            margin-bottom: 20px; 
+            display: inline-block; 
+            font-size: 1.3rem; 
+        }
+
+        .btn-find-out { 
+            display: inline-block; 
+            margin-top: 15px; 
+            padding: 12px 30px; 
+            border: 1px solid var(--text-dark); 
+            border-radius: 5px; 
+            text-decoration: none; 
+            color: var(--text-dark); 
+            font-size: 0.9rem; 
+            text-transform: uppercase; 
+        }
+
+        /* --- Responsive Multi-Column Gallery --- */
         .gallery-section {
             border-top: 1px solid #eee;
             padding-top: 40px;
-            text-align: left;
+            text-align: left; /* Aligned left for the title */
         }
 
         .gallery-title-plain {
-            font-family: 'Source Sans Pro', sans-serif; /* Matched to Menu Font */
-            font-size: 14px; /* Matched to Menu Size */
+            font-family: 'Source Sans Pro', sans-serif;
+            font-size: 14px; /* Exact menu size */
             font-weight: 400;
-            color: var(--text-dark); /* Matched to Menu Color (#151515) */
-            text-transform: uppercase; /* Matched to Menu Style */
+            color: var(--text-dark); /* Color #151515 */
+            text-transform: uppercase;
             letter-spacing: 1px;
             margin: 0 0 30px 0;
             display: block;
         }
 
-        .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 50px; }
-        @media (min-width: 600px) { .gallery-grid { grid-template-columns: repeat(3, 1fr); } }
-        @media (min-width: 992px) { .gallery-grid { grid-template-columns: repeat(4, 1fr); } }
-        
-        .gallery-item { aspect-ratio: 1/1; overflow: hidden; border-radius: 4px; background: var(--brand-cream); cursor: pointer; }
-        .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-        /* --- Footer & Versioning --- */
-        footer { 
-            text-align: center; padding: 60px 20px 40px; background: #fdfdfd; 
-            border-top: 1px solid #eee; position: relative; margin-top: auto; 
+        .gallery-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 15px; 
+            margin-bottom: 50px;
         }
-        .social-icons { margin-bottom: 35px; display: flex; justify-content: center; gap: 35px; }
-        .social-icons a { color: #000; font-size: 1.8rem; text-decoration: none; }
+
+        @media (min-width: 600px) {
+            .gallery-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (min-width: 992px) {
+            .gallery-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+        
+        .gallery-item { 
+            aspect-ratio: 1/1; 
+            overflow: hidden; 
+            border-radius: 4px; 
+            background: var(--brand-cream); 
+            cursor: pointer; 
+        }
+        
+        .gallery-item img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            display: block;
+        }
+
+        /* --- Lightbox --- */
+        .modal { display: none; position: fixed; z-index: 4000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; touch-action: none; }
+        .modal-content-wrapper { width: 85%; max-width: 500px; aspect-ratio: 1/1; position: relative; }
+        .modal-content-wrapper img { width: 100%; height: 100%; object-fit: cover; border: 2px solid #fff; }
+        .close-modal { position: absolute; top: -45px; right: 0; color: #fff; font-size: 35px; cursor: pointer; }
+
+        /* --- Footer & Social --- */
+        footer { 
+            text-align: center; 
+            padding: 60px 20px 40px; 
+            background: #fdfdfd; 
+            border-top: 1px solid #eee; 
+            position: relative;
+            margin-top: auto;
+        }
+
+        .social-icons { 
+            margin-bottom: 35px; 
+            display: flex;
+            justify-content: center;
+            gap: 35px; 
+        }
+        
+        .social-icons a { 
+            color: #000; 
+            font-size: 1.8rem; 
+            text-decoration: none; 
+        }
+
+        .disclaimer { font-size: 0.75rem; color: #777; max-width: 700px; margin: 0 auto; line-height: 1.6; }
         .version-label { font-size: 0.65rem; color: #ccc; position: absolute; bottom: 10px; right: 15px; }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="menu-icon" onclick="toggleNav()"><div></div><div></div><div></div></div>
+    <div class="menu-icon" onclick="toggleNav()">
+        <div></div><div></div><div></div>
+    </div>
     <div class="logo">My Snoozing Baby</div>
 </header>
 
 <nav id="sidebar">
     <a href="#">Home</a>
-    <a href="#">SNOO Rental</a>
-    <a href="#">SNOO Cleaning/Repair</a>
+    <a href="#">SNOO SMART SLEEPER</a>
+    <div class="sub-nav">
+        <a href="#">SNOO Rental</a>
+        <a href="#">SNOO Cleaning/Repair</a>
+    </div>
     <a href="#">Baby Gear Rentals</a>
+    <a href="#">Toddler Party Rentals</a>
     <a href="#">About Us</a>
+    <a href="#">Contact Us</a>
+    <a href="#">FAQs</a>
 </nav>
 
 <div class="main-content">
@@ -171,13 +288,19 @@
     <div class="content">
         <section>
             <h2>SNOO Smart Bassinet Rental</h2>
-            <p>Let a smart bassinet do the hard work for you, rocking and calming your baby.</p>
+            <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
             <a href="#" class="btn-find-out">Find out more</a>
         </section>
 
         <section>
-            <h2>SNOO Deep-Cleaning & Repair</h2>
-            <p>Professional deep-cleaning, servicing, and repairs for your pre-loved SNOO.</p>
+            <h2>SNOO deep-cleaning, servicing, and repairs</h2>
+            <p>Professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
+            <a href="#" class="btn-find-out">Find out more</a>
+        </section>
+
+        <section>
+            <h2>Traveling to the DC Metro area?</h2>
+            <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC.</p>
             <a href="#" class="btn-find-out">Find out more</a>
         </section>
 
@@ -188,23 +311,61 @@
     </div>
 </div>
 
+<div id="imageModal" class="modal" onclick="closeModal()">
+    <div class="modal-content-wrapper" onclick="event.stopPropagation()">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <img id="modalImg" src="">
+    </div>
+</div>
+
 <footer>
     <div class="social-icons">
-        <a href="#"><i class="fa-brands fa-facebook"></i></a>
-        <a href="#"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" title="Facebook"><i class="fa-brands fa-facebook"></i></a>
+        <a href="#" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
     </div>
-    <div class="disclaimer">Copyright © 2026 My Snoozing Baby - All Rights Reserved.</div>
+    <div class="disclaimer">
+        Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.<br><br>
+        My Snoozing Baby is an independent service provider. SNOO is a registered trademark of Happiest Baby, Inc.
+    </div>
     <span class="version-label">Version 2.1</span>
 </footer>
 
 <script>
     function toggleNav() { document.getElementById('sidebar').classList.toggle('open'); }
+    
+    document.addEventListener('click', function(e) {
+        var sidebar = document.getElementById('sidebar');
+        var icon = document.querySelector('.menu-icon');
+        if (!sidebar.contains(e.target) && !icon.contains(e.target)) sidebar.classList.remove('open');
+    });
+
     const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg"];
+
     function renderGallery() {
         const grid = document.getElementById('galleryGrid');
-        grid.innerHTML = imageList.map(img => `<div class="gallery-item"><img src="${img}" onerror="this.src='https://via.placeholder.com/400'"></div>`).join('');
+        grid.innerHTML = "";
+        imageList.forEach((img) => {
+            const div = document.createElement('div');
+            div.className = 'gallery-item';
+            div.onclick = () => openModal(img);
+            div.innerHTML = `<img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Image'">`;
+            grid.appendChild(div);
+        });
     }
-    window.onload = renderGallery;
+
+    function openModal(src) {
+        document.getElementById('modalImg').src = src;
+        document.getElementById('imageModal').style.display = "flex";
+        document.body.style.overflow = "hidden";
+    }
+
+    function closeModal() {
+        document.getElementById('imageModal').style.display = "none";
+        document.body.style.overflow = "auto";
+    }
+
+    window.addEventListener('load', renderGallery);
 </script>
 
 </body>
