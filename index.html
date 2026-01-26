@@ -19,16 +19,19 @@
 
         body { font-family: 'Source Sans Pro', sans-serif; margin: 0; color: var(--text-dark); background-color: #fff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
 
-        /* --- Header --- */
+        /* --- STICKY HEADER (LOCKED) --- */
         header { 
             display: flex; 
             flex-direction: column;
             align-items: center; 
             justify-content: center; 
             padding: 20px 20px 15px; 
-            background: #fff; 
-            position: relative; 
-            z-index: 1000; 
+            background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(5px); /* Adds a modern touch as it scrolls */
+            position: sticky; 
+            top: 0;
+            z-index: 9000; 
+            border-bottom: 1px solid rgba(0,0,0,0.05);
         }
         .logo-container { text-align: center; }
         .logo { 
@@ -48,13 +51,14 @@
             letter-spacing: 1px;
         }
         
-        /* --- Menu Icon (LOCKED) --- */
+        /* Menu Icon now inside the Sticky Header context */
         .menu-icon { 
-            position: fixed; 
+            position: absolute; 
             left: 20px; 
-            top: 25px; 
+            top: 50%;
+            transform: translateY(-50%);
             cursor: pointer; 
-            z-index: 9999; 
+            z-index: 9500; 
             padding: 10px; 
         }
         .menu-icon div { 
@@ -77,7 +81,7 @@
             height: 100%; 
             background: var(--brand-cream); 
             transition: left 0.2s ease-in-out; 
-            z-index: 8000; 
+            z-index: 9999; 
             padding-top: 100px; 
             box-shadow: 4px 0 15px rgba(0,0,0,0.1); 
         }
@@ -103,7 +107,7 @@
             width: 100vw; 
             height: 100vh; 
             background: rgba(0,0,0,0.3); 
-            z-index: 7000; 
+            z-index: 9998; 
         }
 
         /* --- Hero --- */
@@ -133,7 +137,6 @@
         .gallery-item { cursor: pointer; background: #f9f9f9; }
         .gallery-item img { width: 100%; height: auto; display: block; }
 
-        /* Modal z-index updated to 10001 to cover the menu icon */
         .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
         .slider-track { display: flex; height: 100%; width: 100%; }
         .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
@@ -155,16 +158,15 @@
 </head>
 <body>
 
-<div class="menu-icon" id="hamburger" onclick="toggleNav(event)">
-    <div class="line1"></div>
-    <div class="line2"></div>
-    <div class="line3"></div>
-</div>
-
 <header>
+    <div class="menu-icon" id="hamburger" onclick="toggleNav(event)">
+        <div class="line1"></div>
+        <div class="line2"></div>
+        <div class="line3"></div>
+    </div>
     <div class="logo-container">
         <div class="logo">My Snoozing Baby</div>
-        <span class="version-header">Version 2.1.4</span>
+        <span class="version-header">Version 2.1.5</span>
     </div>
 </header>
 
