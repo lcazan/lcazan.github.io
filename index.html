@@ -30,7 +30,7 @@
             backdrop-filter: blur(5px);
             position: sticky; 
             top: 0;
-            z-index: 8000; /* High, but lower than icon and nav */
+            z-index: 8000; 
             border-bottom: 1px solid rgba(0,0,0,0.05);
         }
         .logo-container { text-align: center; }
@@ -51,13 +51,12 @@
             letter-spacing: 1px;
         }
         
-        /* THE STACKING FIX: Fixed position icon with the highest Z-index */
         .menu-icon { 
             position: fixed; 
             left: 20px; 
-            top: 25px; /* Aligned with sticky header logo */
+            top: 25px; 
             cursor: pointer; 
-            z-index: 10000; /* Absolute top layer */
+            z-index: 10000; 
             padding: 10px; 
         }
         .menu-icon div { 
@@ -80,7 +79,7 @@
             height: 100%; 
             background: var(--brand-cream); 
             transition: left 0.2s ease-in-out; 
-            z-index: 9000; /* Lower than menu-icon */
+            z-index: 9000; 
             padding-top: 100px; 
             box-shadow: 4px 0 15px rgba(0,0,0,0.1); 
         }
@@ -109,6 +108,13 @@
             z-index: 8500; 
         }
 
+        /* --- Content Layout --- */
+        .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
+        .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
+
+        /* --- Instagram Container (NEW) --- */
+        .instagram-container { min-height: 200px; margin-bottom: 60px; width: 100%; }
+
         /* --- Hero --- */
         .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; align-items: stretch; }
         .hero-banner img { width: 50%; height: auto; display: block; object-fit: cover; }
@@ -121,10 +127,7 @@
             .tagline-container { padding: 40px 20px; text-align: center; justify-content: center; }
         }
 
-        /* --- Main Content (SERVICES LOCKED) --- */
-        .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
-        .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
-
+        /* --- Services (LOCKED) --- */
         section { margin-bottom: 60px; text-align: center; }
         h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 8px; margin-bottom: 10px; display: inline-block; font-size: 1.2rem; font-weight: 400; text-transform: uppercase; }
         section p { text-align: center; line-height: 1.8; margin-top: 5px; margin-bottom: 25px; max-width: 800px; margin-left: auto; margin-right: auto; }
@@ -166,7 +169,7 @@
 <header>
     <div class="logo-container">
         <div class="logo">My Snoozing Baby</div>
-        <span class="version-header">Version 2.1.6</span>
+        <span class="version-header">Version 2.1.7</span>
     </div>
 </header>
 
@@ -209,6 +212,13 @@
         <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC or surrounding parts of Virginia and Maryland. Travel light and let us handle the rest.</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
+
+    <div class="section-label">FOLLOW US @MYSNOOZINGBABY</div>
+    <div class="instagram-container">
+        <script src="https://elfsightcdn.com/platform.js" async></script>
+        <div class="elfsight-app-e127011c-7d69-46dc-a886-aabc5532bd9d" data-elfsight-app-lazy></div>
+    </div>
+
     <div class="section-label">PHOTO GALLERY</div>
     <div class="gallery-columns">
         <div id="col-left" class="gallery-column"></div>
