@@ -12,7 +12,7 @@
         :root {
             --brand-cream: #FAF6F3;   
             --brand-pink: #ebd5c9;    
-            --icon-brown: #877267;   
+            --icon-brown: #877267; /* The color from your image */
             --text-dark: #151515;
             --gallery-gap: 15px; 
         }
@@ -21,19 +21,19 @@
 
         /* --- Header --- */
         header { display: flex; align-items: center; justify-content: center; padding: 30px 20px; background: #fff; position: relative; z-index: 1000; }
-        .logo { font-family: 'Cinzel', serif; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 3px; border: 1px solid var(--text-dark); padding: 10px 20px; display: inline-block; }
+        .logo { font-family: 'Cinzel', serif; font-size: 1.25rem; text-transform: uppercase; letter-spacing: 3px; border: 1px solid var(--text-dark); padding: 10px 20px; display: inline-block; }
         .menu-icon { position: absolute; left: 20px; cursor: pointer; z-index: 3000; padding: 10px; }
         .menu-icon div { width: 24px; height: 2px; background-color: var(--icon-brown); margin: 6px 0; }
 
         /* --- Sidebar Navigation --- */
         nav { position: fixed; top: 0; left: -280px; width: 260px; height: 100%; background: var(--brand-cream); transition: 0.4s ease-in-out; z-index: 2000; padding-top: 80px; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
         nav.open { left: 0; }
-        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
         .sub-nav { background: rgba(0, 0, 0, 0.03); padding-left: 20px; }
-        .sub-nav a { font-size: 0.8rem; text-transform: none; padding: 10px 30px; }
+        .sub-nav a { font-size: 0.9rem; text-transform: none; padding: 10px 30px; }
         #navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.2); z-index: 1500; }
 
-        /* --- Hero Banner --- */
+        /* --- Hero --- */
         .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; align-items: stretch; }
         .hero-banner img { width: 50%; height: auto; display: block; object-fit: cover; }
         .tagline-container { width: 50%; padding: 60px; display: flex; align-items: center; box-sizing: border-box; }
@@ -48,29 +48,28 @@
         /* --- Main Content --- */
         .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
         
-        /* New Menu-Style Title Look */
         .section-label { 
             font-family: 'Source Sans Pro', sans-serif; 
             font-size: 14px; 
-            font-weight: 400; 
+            font-weight: 600; 
             text-transform: uppercase; 
-            letter-spacing: 1px; 
+            letter-spacing: 2px; 
             text-align: left; 
+            color: var(--icon-brown); /* Matches attached image */
             margin-top: 40px; 
             margin-bottom: 30px; 
             display: block; 
-            border: none; /* Removed underlining */
         }
 
         section { margin-bottom: 60px; text-align: left; }
-        h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; font-size: 1.2rem; font-weight: 400; text-transform: uppercase; }
-        section p { text-align: justify; text-justify: inter-word; line-height: 1.8; margin-bottom: 20px; }
-        .btn-find-out { display: inline-block; padding: 12px 30px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+        h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 8px; margin-bottom: 10px; display: inline-block; font-size: 1.2rem; font-weight: 400; text-transform: uppercase; }
+        section p { text-align: justify; text-justify: inter-word; line-height: 1.8; margin-top: 5px; margin-bottom: 20px; }
+        .btn-find-out { display: inline-block; padding: 10px 25px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
 
         /* --- Gallery --- */
-        .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; margin-top: 20px; }
+        .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; margin-top: 10px; }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
-        .gallery-item { cursor: pointer; line-height: 0; -webkit-tap-highlight-color: transparent; outline: none; }
+        .gallery-item { cursor: pointer; line-height: 0; -webkit-tap-highlight-color: transparent; }
         .gallery-item img { width: 100%; height: auto; display: block; }
 
         /* --- Lightbox --- */
@@ -80,16 +79,14 @@
         .slide img { max-width: 85%; max-height: 80%; border: 2px solid #fff; object-fit: contain; pointer-events: auto; }
         .close-modal { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; cursor: pointer; z-index: 4100; }
         .counter { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 12px; letter-spacing: 2px; }
-        .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); color: white; background: none; border: none; font-size: 30px; cursor: pointer; z-index: 4100; padding: 20px; opacity: 0.4; -webkit-tap-highlight-color: transparent; }
-        .nav-btn:hover { opacity: 1; }
-        .prev-btn { left: 10px; }
-        .next-btn { right: 10px; }
-
+        .nav-btn { position: absolute; top: 50%; transform: translateY(-50%); color: white; background: none; border: none; font-size: 30px; cursor: pointer; z-index: 4100; padding: 20px; opacity: 0.4; }
+        
         /* --- Footer --- */
-        footer { text-align: center; padding: 80px 20px 40px; border-top: 1px solid #eee; position: relative; margin-top: auto; }
-        .social-icons { margin-bottom: 30px; display: flex; justify-content: center; gap: 30px; }
+        footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; position: relative; margin-top: auto; }
+        .social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
         .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; }
-        .disclaimer { font-size: 0.75rem; color: #888; max-width: 800px; margin: 0 auto; line-height: 1.7; }
+        .copyright-text { font-weight: 600; display: block; margin-bottom: 15px; font-size: 0.85rem; }
+        .disclaimer { font-size: 0.75rem; color: #666; max-width: 850px; margin: 0 auto; line-height: 1.7; text-align: center; }
         .version-label { font-size: 0.65rem; color: #ccc; position: absolute; bottom: 10px; right: 15px; }
     </style>
 </head>
@@ -164,9 +161,9 @@
         <a href="#"><i class="fa-brands fa-instagram"></i></a>
         <a href="#"><i class="fa-brands fa-tiktok"></i></a>
     </div>
+    <span class="copyright-text">Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.</span>
     <div class="disclaimer">
-        Copyright © 2022-2026 My Snoozing Baby, LLC - All Rights Reserved.<br><br>
-        SNOO and Happiest Baby are trademarks of Happiest Baby, Inc. My Snoozing Baby, LLC is an independent service provider and is not affiliated with, or endorsed by, Happiest Baby, Inc.
+        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.
     </div>
     <span class="version-label">Version 2.1</span>
 </footer>
@@ -187,7 +184,7 @@
     function renderGallery() {
         const left = document.getElementById('col-left'), right = document.getElementById('col-right'), track = document.getElementById('sliderTrack');
         imageList.forEach((img, index) => {
-            const itemHtml = `<div class="gallery-item" onclick="openModal(${index})"><img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Snoo'"></div>`;
+            const itemHtml = `<div class="gallery-item" onclick="openModal(${index})"><img src="${img}"></div>`;
             index % 2 === 0 ? left.innerHTML += itemHtml : right.innerHTML += itemHtml;
             const slide = document.createElement('div'); slide.className = 'slide'; slide.innerHTML = `<img src="${img}">`;
             track.appendChild(slide);
