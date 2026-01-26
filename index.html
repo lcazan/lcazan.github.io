@@ -23,9 +23,12 @@
             color: var(--text-dark);
             line-height: 1.6;
             background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
-        /* --- Updated Boxed Logo Header --- */
+        /* --- Boxed Logo Header --- */
         header {
             display: flex;
             align-items: center;
@@ -38,10 +41,10 @@
         .logo {
             font-family: 'Cinzel', serif;
             font-weight: 400;
-            font-size: 1.1rem; /* Smaller logo size */
+            font-size: 1.1rem;
             text-transform: uppercase;
             letter-spacing: 3px;
-            border: 1px solid var(--text-dark); /* Box around logo */
+            border: 1px solid var(--text-dark);
             padding: 10px 20px;
             display: inline-block;
             line-height: 1;
@@ -135,18 +138,64 @@
         }
 
         /* --- Content Sections --- */
-        .content { max-width: 900px; margin: 40px auto; padding: 0 20px; text-align: center; }
-        section { margin-bottom: 80px; }
-        h2 { font-family: 'Cinzel', serif; font-weight: 400; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; font-size: 1.3rem; }
-        .btn-find-out { display: inline-block; margin-top: 15px; padding: 12px 30px; border: 1px solid var(--text-dark); border-radius: 5px; text-decoration: none; color: var(--text-dark); font-size: 0.9rem; text-transform: uppercase; }
+        .main-content {
+            flex: 1;
+        }
 
-        /* --- Gallery --- */
+        .content { 
+            max-width: 1000px; 
+            margin: 40px auto; 
+            padding: 0 20px; 
+        }
+
+        section { margin-bottom: 80px; text-align: center; }
+
+        h2 { 
+            font-family: 'Cinzel', serif; 
+            font-weight: 400; 
+            border-bottom: 1px solid var(--brand-pink); 
+            padding-bottom: 10px; 
+            margin-bottom: 20px; 
+            display: inline-block; 
+            font-size: 1.3rem; 
+        }
+
+        .btn-find-out { 
+            display: inline-block; 
+            margin-top: 15px; 
+            padding: 12px 30px; 
+            border: 1px solid var(--text-dark); 
+            border-radius: 5px; 
+            text-decoration: none; 
+            color: var(--text-dark); 
+            font-size: 0.9rem; 
+            text-transform: uppercase; 
+        }
+
+        /* --- Photo Gallery (Matches Instagram Styling) --- */
+        .gallery-section {
+            border-top: 1px solid #eee;
+            padding-top: 40px;
+            text-align: left; /* Left aligned as requested */
+        }
+
+        .gallery-title-plain {
+            font-family: 'Source Sans Pro', sans-serif;
+            font-size: 40px; /* Matches Instagram font size */
+            font-weight: 300;
+            color: var(--text-dark);
+            margin: 0 0 30px 0;
+            text-transform: none;
+            border: none; /* No rectangle */
+            padding: 0;
+            display: block;
+        }
+
         .gallery-grid { 
             display: grid; 
             grid-template-columns: repeat(2, 1fr); 
             gap: 15px; 
-            max-width: 1000px; 
-            margin: 30px auto; 
+            margin-bottom: 50px;
         }
 
         @media (min-width: 600px) {
@@ -172,34 +221,40 @@
             display: block;
         }
 
-        .gallery-title-boxed {
-            font-family: 'Cinzel', serif;
-            letter-spacing: 2px;
-            font-size: 0.8rem;
-            margin: 0 auto 30px;
-            padding: 8px 20px;
-            border: 1px solid var(--text-dark);
-            display: inline-block;
-            text-transform: uppercase;
-        }
-
         /* --- Lightbox --- */
         .modal { display: none; position: fixed; z-index: 4000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; touch-action: none; }
         .modal-content-wrapper { width: 85%; max-width: 500px; aspect-ratio: 1/1; position: relative; }
         .modal-content-wrapper img { width: 100%; height: 100%; object-fit: cover; border: 2px solid #fff; }
         .close-modal { position: absolute; top: -45px; right: 0; color: #fff; font-size: 35px; cursor: pointer; }
 
-        .modal-nav { position: absolute; top: 50%; transform: translateY(-50%); color: white; font-size: 2rem; cursor: pointer; padding: 10px; z-index: 4001; user-select: none; }
-        .prev-arrow { left: -50px; }
-        .next-arrow { right: -50px; }
-        @media (max-width: 600px) { .modal-nav { display: none; } }
+        /* --- Footer & Version Label --- */
+        footer { 
+            text-align: center; 
+            padding: 60px 20px 40px; 
+            background: #fdfdfd; 
+            border-top: 1px solid #eee; 
+            position: relative;
+            margin-top: auto; /* Flush bottom layout */
+        }
 
-        /* --- Footer & Social --- */
-        footer { text-align: center; padding: 60px 20px 40px; background: #fdfdfd; border-top: 1px solid #eee; position: relative; margin-top: 80px; }
         .social-icons { margin-bottom: 35px; display: flex; justify-content: center; gap: 35px; }
         .social-icons a { color: #000; font-size: 1.8rem; text-decoration: none; }
-        .disclaimer { font-size: 0.75rem; color: #777; max-width: 700px; margin: 0 auto; line-height: 1.6; }
-        .version-label { font-size: 0.65rem; color: #ccc; position: absolute; bottom: 10px; right: 15px; }
+
+        .disclaimer { 
+            font-size: 0.75rem; 
+            color: #777; 
+            max-width: 700px; 
+            margin: 0 auto; 
+            line-height: 1.6; 
+        }
+
+        .version-label { 
+            font-size: 0.65rem; 
+            color: #ccc; 
+            position: absolute; 
+            bottom: 10px; 
+            right: 15px; 
+        }
     </style>
 </head>
 <body>
@@ -225,44 +280,38 @@
     <a href="#">FAQs</a>
 </nav>
 
-<div class="hero-banner">
-    <img src="emerson.jpeg" alt="Baby Emerson">
-    <div class="tagline-container">
-        <p class="hero-tagline">FOR BETTER-SLEEPING BABIES. <br> FOR HAPPIER BABIES.</p>
+<div class="main-content">
+    <div class="hero-banner">
+        <img src="emerson.jpeg" alt="Baby Emerson">
+        <div class="tagline-container">
+            <p class="hero-tagline">FOR BETTER-SLEEPING BABIES. <br> FOR HAPPIER BABIES.</p>
+        </div>
     </div>
-</div>
 
-<div class="content">
-    <section>
-        <h2>SNOO Smart Bassinet Rental</h2>
-        <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
-        <a href="#" class="btn-find-out">Find out more</a>
-    </section>
+    <div class="content">
+        <section>
+            <h2>SNOO Smart Bassinet Rental</h2>
+            <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
+            <a href="#" class="btn-find-out">Find out more</a>
+        </section>
 
-    <section>
-        <h2>SNOO deep-cleaning, servicing, and repairs</h2>
-        <p>Professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
-        <a href="#" class="btn-find-out">Find out more</a>
-    </section>
+        <section>
+            <h2>SNOO deep-cleaning, servicing, and repairs</h2>
+            <p>Professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
+            <a href="#" class="btn-find-out">Find out more</a>
+        </section>
 
-    <section>
-        <h2>Traveling to the DC Metro area?</h2>
-        <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC. Travel light and let us handle the rest.</p>
-        <a href="#" class="btn-find-out">Find out more</a>
-    </section>
-
-    <div class="gallery-section" style="border-top: 1px solid #eee; padding-top: 40px;">
-        <h3 class="gallery-title-boxed">IMAGES</h3>
-        <div id="galleryGrid" class="gallery-grid"></div>
+        <div class="gallery-section">
+            <h3 class="gallery-title-plain">Photo Gallery</h3>
+            <div id="galleryGrid" class="gallery-grid"></div>
+        </div>
     </div>
 </div>
 
 <div id="imageModal" class="modal" onclick="closeModal()">
     <div class="modal-content-wrapper" onclick="event.stopPropagation()">
         <span class="close-modal" onclick="closeModal()">&times;</span>
-        <div class="modal-nav prev-arrow" onclick="changeImage(-1)">&#10094;</div>
         <img id="modalImg" src="">
-        <div class="modal-nav next-arrow" onclick="changeImage(1)">&#10095;</div>
     </div>
 </div>
 
@@ -281,6 +330,7 @@
 
 <script>
     function toggleNav() { document.getElementById('sidebar').classList.toggle('open'); }
+    
     document.addEventListener('click', function(e) {
         var sidebar = document.getElementById('sidebar');
         var icon = document.querySelector('.menu-icon');
@@ -288,23 +338,21 @@
     });
 
     const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg"];
-    let activeImgIndex = 0; 
 
     function renderGallery() {
         const grid = document.getElementById('galleryGrid');
         grid.innerHTML = "";
-        imageList.forEach((img, index) => {
+        imageList.forEach((img) => {
             const div = document.createElement('div');
             div.className = 'gallery-item';
-            div.onclick = () => openModal(index);
+            div.onclick = () => openModal(img);
             div.innerHTML = `<img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Image'">`;
             grid.appendChild(div);
         });
     }
 
-    function openModal(index) {
-        activeImgIndex = index;
-        updateModalImage();
+    function openModal(src) {
+        document.getElementById('modalImg').src = src;
         document.getElementById('imageModal').style.display = "flex";
         document.body.style.overflow = "hidden";
     }
@@ -312,32 +360,6 @@
     function closeModal() {
         document.getElementById('imageModal').style.display = "none";
         document.body.style.overflow = "auto";
-    }
-
-    function changeImage(dir) {
-        activeImgIndex += dir;
-        if (activeImgIndex >= imageList.length) activeImgIndex = 0;
-        if (activeImgIndex < 0) activeImgIndex = imageList.length - 1;
-        updateModalImage();
-    }
-
-    function updateModalImage() {
-        document.getElementById('modalImg').src = imageList[activeImgIndex];
-    }
-
-    let touchStartX = 0;
-    let touchEndX = 0;
-    const modal = document.getElementById('imageModal');
-    modal.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, false);
-    modal.addEventListener('touchend', e => {
-        touchEndX = e.changedTouches[0].screenX;
-        handleSwipe();
-    }, false);
-
-    function handleSwipe() {
-        const threshold = 50;
-        if (touchEndX < touchStartX - threshold) changeImage(1);
-        if (touchEndX > touchStartX + threshold) changeImage(-1);
     }
 
     window.addEventListener('load', renderGallery);
