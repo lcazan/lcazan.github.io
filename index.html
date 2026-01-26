@@ -142,13 +142,21 @@
         h2 { font-family: 'Cinzel', serif; font-weight: 400; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; font-size: 1.3rem; }
         .btn-find-out { display: inline-block; margin-top: 15px; padding: 12px 30px; border: 1px solid var(--text-dark); border-radius: 5px; text-decoration: none; color: var(--text-dark); font-size: 0.9rem; text-transform: uppercase; }
 
-        /* --- Updated 2-Column Gallery --- */
+        /* --- Responsive Multi-Column Gallery --- */
         .gallery-grid { 
             display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
+            grid-template-columns: repeat(2, 1fr); /* Mobile default */
             gap: 15px; 
             max-width: 1000px; 
             margin: 30px auto; 
+        }
+
+        @media (min-width: 600px) {
+            .gallery-grid { grid-template-columns: repeat(3, 1fr); } /* Landscape/Small Tablet */
+        }
+
+        @media (min-width: 992px) {
+            .gallery-grid { grid-template-columns: repeat(4, 1fr); } /* Desktop */
         }
         
         .gallery-item { 
@@ -177,8 +185,26 @@
         .next-arrow { right: -50px; }
         @media (max-width: 600px) { .modal-nav { display: none; } }
 
-        /* --- Footer --- */
+        /* --- Footer & Social Icons --- */
         footer { text-align: center; padding: 60px 20px 40px; background: #fdfdfd; border-top: 1px solid #eee; position: relative; margin-top: 80px; }
+        
+        .social-icons { 
+            margin-bottom: 35px; 
+            display: flex;
+            justify-content: center;
+            gap: 30px; /* Increased spacing */
+        }
+        
+        .social-icons a { 
+            color: #000000; /* Solid black */
+            font-size: 1.8rem; /* Larger buttons */
+            text-decoration: none; 
+            transition: opacity 0.3s;
+        }
+
+        .social-icons a:hover { opacity: 0.7; }
+
+        .disclaimer { font-size: 0.75rem; color: #777; max-width: 700px; margin: 0 auto; line-height: 1.6; }
         .version-label { font-size: 0.65rem; color: #ccc; position: absolute; bottom: 10px; right: 15px; }
     </style>
 </head>
@@ -247,7 +273,7 @@
 </div>
 
 <footer>
-    <div class="social-icons" style="margin-bottom:25px;">
+    <div class="social-icons">
         <a href="#" title="Facebook"><i class="fa-brands fa-facebook"></i></a>
         <a href="#" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
         <a href="#" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
