@@ -11,18 +11,51 @@
     <style>
         :root {
             --brand-cream: #FAF6F3;   
+            --brand-pink: #ebd5c9;    
             --icon-brown: #877267; 
             --text-dark: #151515;
             --gallery-gap: 15px; 
         }
 
-        body { font-family: 'Source Sans Pro', sans-serif; margin: 0; background-color: #fff; overflow-x: hidden; }
+        body { font-family: 'Source Sans Pro', sans-serif; margin: 0; color: var(--text-dark); background-color: #fff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+
+        /* --- Header --- */
+        header { display: flex; align-items: center; justify-content: center; padding: 30px 20px; background: #fff; position: relative; z-index: 1000; }
+        .logo { font-family: 'Cinzel', serif; font-size: 1.25rem; text-transform: uppercase; letter-spacing: 3px; border: 1px solid var(--text-dark); padding: 10px 20px; display: inline-block; }
+        .menu-icon { position: absolute; left: 20px; cursor: pointer; z-index: 3000; padding: 10px; }
+        .menu-icon div { width: 24px; height: 2px; background-color: var(--icon-brown); margin: 6px 0; }
+
+        /* --- Sidebar Navigation --- */
+        nav { position: fixed; top: 0; left: -280px; width: 260px; height: 100%; background: var(--brand-cream); transition: 0.4s ease-in-out; z-index: 2000; padding-top: 80px; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
+        nav.open { left: 0; }
+        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
+        #navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.2); z-index: 1500; }
+
+        /* --- Hero --- */
+        .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; align-items: stretch; }
+        .hero-banner img { width: 50%; height: auto; display: block; object-fit: cover; }
+        .tagline-container { width: 50%; padding: 60px; display: flex; align-items: center; box-sizing: border-box; }
+        .hero-tagline { font-family: 'Cinzel', serif; font-size: 1.2rem; text-transform: uppercase; margin: 0; line-height: 1.6; letter-spacing: 1px; }
+
+        @media (max-width: 767px) {
+            .hero-banner { flex-direction: column; }
+            .hero-banner img, .tagline-container { width: 100%; }
+            .tagline-container { padding: 40px 20px; text-align: center; justify-content: center; }
+        }
+
+        /* --- Main Content --- */
+        .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
+        .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; }
+        
+        section { margin-bottom: 60px; text-align: center; }
+        h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 8px; margin-bottom: 10px; display: inline-block; font-size: 1.2rem; text-transform: uppercase; }
+        section p { text-align: justify; line-height: 1.8; max-width: 800px; margin: 5px auto 25px; }
+        .btn-find-out { display: inline-block; padding: 10px 25px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
 
         /* --- Gallery Layout --- */
-        .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
         .gallery-columns { display: flex; gap: var(--gallery-gap); }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
-        .gallery-item { cursor: pointer; background: #f0f0f0; min-height: 100px; transition: opacity 0.3s; }
+        .gallery-item { cursor: pointer; background: #f0f0f0; transition: opacity 0.3s; }
         .gallery-item img { width: 100%; height: auto; display: block; }
 
         /* --- Lightbox Modal --- */
@@ -30,59 +63,62 @@
         .slider-track { display: flex; height: 100%; width: 100%; }
         .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         
-        /* The Container for the Image - strictly 70% height */
-        .image-wrapper { 
-            position: relative; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            width: 90%; 
-            height: 70vh; 
-        }
-        
-        .slide img { 
-            max-width: 100%; 
-            max-height: 100%; 
-            width: auto; 
-            height: auto; 
-            border: 2px solid #fff; 
-            object-fit: contain; 
-            display: block;
-            opacity: 0; 
-            transition: opacity 0.3s ease;
-        }
-
+        .image-wrapper { position: relative; display: flex; align-items: center; justify-content: center; width: 90%; height: 70vh; }
+        .slide img { max-width: 100%; max-height: 100%; width: auto; height: auto; border: 2px solid #fff; object-fit: contain; opacity: 0; transition: opacity 0.3s ease; }
         .slide img.loaded { opacity: 1; }
 
-        /* Counter: Larger font and fixed in the Upper Left Corner */
+        /* Fixed Large Counter upper left */
         .counter { 
-            position: fixed; 
-            top: 25px; 
-            left: 25px; 
-            color: #fff; 
-            font-size: 22px; /* Larger font size */
-            letter-spacing: 2px; 
-            font-weight: 600; 
-            z-index: 8000;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8); /* Ensures visibility on light backgrounds */
-            pointer-events: none;
+            position: fixed; top: 25px; left: 25px; color: #fff; font-size: 22px; 
+            letter-spacing: 2px; font-weight: 600; z-index: 8000; 
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none;
         }
         
         .close-modal { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 40px; cursor: pointer; z-index: 7000; }
-        
         .nav-btn { display: none; position: absolute; top: 50%; transform: translateY(-50%); color: #fff; background: rgba(50,50,50,0.7); border: 1px solid #fff; font-size: 24px; cursor: pointer; z-index: 7000; width: 50px; height: 50px; border-radius: 50%; align-items: center; justify-content: center; }
         .prev-btn { left: 20px; }
         .next-btn { right: 20px; }
-
         @media (min-width: 1024px) { .nav-btn { display: flex; } }
         
         .loader { width: 30px; height: 30px; border: 3px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 1s infinite linear; position: absolute; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* --- Footer --- */
+        footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; position: relative; margin-top: auto; }
+        .version-label { font-size: 0.65rem; color: #ccc; position: absolute; bottom: 10px; right: 15px; }
     </style>
 </head>
 <body>
 
+<header>
+    <div class="menu-icon" onclick="toggleNav(event)"><div></div><div></div><div></div></div>
+    <div class="logo">My Snoozing Baby</div>
+</header>
+
+<div id="navOverlay" onclick="toggleNav(event)"></div>
+<nav id="sidebar">
+    <a href="#">Home</a>
+    <a href="#">SNOO Smart Sleeper</a>
+    <a href="#">Baby Gear Rentals</a>
+    <a href="#">Contact Us</a>
+</nav>
+
+<div class="hero-banner">
+    <img src="emerson.jpeg" alt="Baby Emerson">
+    <div class="tagline-container">
+        <p class="hero-tagline">FOR BETTER-SLEEPING BABIES. <br> FOR HAPPIER BABIES.</p>
+    </div>
+</div>
+
 <div class="content-container">
+    <div class="section-label">OUR SERVICES</div>
+    <section>
+        <h2>SNOO Smart Bassinet Rental</h2>
+        <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy rest.</p>
+        <a href="#" class="btn-find-out">Find out more</a>
+    </section>
+
+    <div class="section-label">PHOTO GALLERY</div>
     <div class="gallery-columns">
         <div id="col-left" class="gallery-column"></div>
         <div id="col-right" class="gallery-column"></div>
@@ -92,103 +128,82 @@
 <div id="imageModal" class="modal">
     <div class="counter" id="modalCounter">1 / 17</div>
     <span class="close-modal" onclick="closeModal()">&times;</span>
-    
     <button class="nav-btn prev-btn" onclick="moveSlide(-1, event)"><i class="fas fa-chevron-left"></i></button>
     <div id="sliderTrack" class="slider-track"></div>
     <button class="nav-btn next-btn" onclick="moveSlide(1, event)"><i class="fas fa-chevron-right"></i></button>
 </div>
 
+<footer>
+    <span class="copyright-text">Copyright © 2022-2026 My Snoozing Baby</span>
+    <span class="version-label">Version 2.1</span>
+</footer>
+
 <script>
+    function toggleNav(e) {
+        if(e) e.stopPropagation();
+        const nav = document.getElementById('sidebar');
+        const overlay = document.getElementById('navOverlay');
+        const isOpen = nav.classList.toggle('open');
+        overlay.style.display = isOpen ? 'block' : 'none';
+    }
+
     const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg", "9.jpeg", "10.jpeg", "11.jpeg", "12.jpeg", "13.jpeg", "14.jpeg", "15.jpeg", "16.jpeg", "17.jpeg"];
     let currentIndex = 0;
     let startX = 0, currentTranslate = 0, prevTranslate = 0, isDragging = false;
 
     function renderGallery() {
         const left = document.getElementById('col-left'), right = document.getElementById('col-right'), track = document.getElementById('sliderTrack');
-        
         imageList.forEach((img, index) => {
             const itemHtml = `<div class="gallery-item" onclick="openModal(${index})"><img src="${img}" loading="lazy"></div>`;
             index % 2 === 0 ? left.innerHTML += itemHtml : right.innerHTML += itemHtml;
-            
             const slide = document.createElement('div'); 
             slide.className = 'slide'; 
-            slide.innerHTML = `
-                <div class="image-wrapper" data-index="${index}">
-                    <div class="loader"></div>
-                    <img data-src="${img}" alt="Baby Image ${index + 1}">
-                </div>`;
+            slide.innerHTML = `<div class="image-wrapper" data-index="${index}"><div class="loader"></div><img data-src="${img}"></div>`;
             track.appendChild(slide);
         });
     }
 
-    function updateCounter() {
-        document.getElementById('modalCounter').innerText = `${currentIndex + 1} / ${imageList.length}`;
-    }
+    function updateCounter() { document.getElementById('modalCounter').innerText = `${currentIndex + 1} / ${imageList.length}`; }
 
     function loadImage(index) {
         const slide = document.querySelector(`.image-wrapper[data-index="${index}"]`);
         if (!slide) return;
-        const img = slide.querySelector('img');
-        const loader = slide.querySelector('.loader');
-        
+        const img = slide.querySelector('img'), loader = slide.querySelector('.loader');
         if (img && img.dataset.src) {
             img.src = img.dataset.src;
             img.removeAttribute('data-src');
-            img.onload = () => {
-                img.classList.add('loaded');
-                if (loader) loader.style.display = 'none';
-            };
+            img.onload = () => { img.classList.add('loaded'); if (loader) loader.style.display = 'none'; };
         }
     }
 
     function openModal(index) {
         currentIndex = index;
         updateCounter();
-        const modal = document.getElementById('imageModal');
-        const track = document.getElementById('sliderTrack');
-        
+        const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
         track.style.transition = 'none'; 
         modal.style.display = "block";
-        
-        const width = modal.offsetWidth;
-        currentTranslate = currentIndex * -width;
+        currentTranslate = currentIndex * -modal.offsetWidth;
         prevTranslate = currentTranslate;
         track.style.transform = `translateX(${currentTranslate}px)`;
-        
         document.body.style.overflow = "hidden";
-        
-        loadImage(currentIndex);
-        loadImage(currentIndex + 1);
-        loadImage(currentIndex - 1);
+        loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
     }
 
     function moveSlide(step, e) {
         if(e) e.stopPropagation();
-        const track = document.getElementById('sliderTrack');
-        const width = document.getElementById('imageModal').offsetWidth;
-        
+        const track = document.getElementById('sliderTrack'), width = document.getElementById('imageModal').offsetWidth;
         const duration = Math.min(0.4, Math.max(0.2, (width / 2000) * 0.5));
         track.style.transition = `transform ${duration}s cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
-        
         currentIndex = Math.max(0, Math.min(currentIndex + step, imageList.length - 1));
         currentTranslate = currentIndex * -width;
         prevTranslate = currentTranslate;
         track.style.transform = `translateX(${currentTranslate}px)`;
-        
-        updateCounter();
-        loadImage(currentIndex);
-        loadImage(currentIndex + 1);
-        loadImage(currentIndex - 1);
+        updateCounter(); loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
     }
 
-    function closeModal() {
-        document.getElementById('imageModal').style.display = "none";
-        document.body.style.overflow = "auto";
-    }
+    function closeModal() { document.getElementById('imageModal').style.display = "none"; document.body.style.overflow = "auto"; }
 
-    window.addEventListener("orientationchange", () => { 
-        if (document.getElementById('imageModal').style.display === "block") closeModal(); 
-    });
+    window.addEventListener("orientationchange", () => { if (document.getElementById('imageModal').style.display === "block") closeModal(); });
 
     const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
     modal.addEventListener('touchstart', e => { isDragging = true; startX = e.touches[0].clientX; track.style.transition = 'none'; });
