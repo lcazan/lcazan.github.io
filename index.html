@@ -28,7 +28,7 @@
             min-height: 100vh;
         }
 
-        /* --- Boxed Logo Header --- */
+        /* --- Header --- */
         header {
             display: flex;
             align-items: center;
@@ -59,130 +59,51 @@
         }
 
         .menu-icon div {
-            width: 24px;
-            height: 2px;
+            width: 24px; height: 2px;
             background-color: var(--icon-brown); 
             margin: 6px 0;
         }
 
-        /* --- Sidebar Navigation --- */
+        /* --- Navigation --- */
         nav {
-            position: fixed;
-            top: 0;
-            left: -280px;
-            width: 260px;
-            height: 100%;
+            position: fixed; top: 0; left: -280px; width: 260px; height: 100%;
             background: var(--brand-cream);
             box-shadow: 4px 0 15px rgba(0,0,0,0.05);
             transition: 0.4s ease-in-out;
-            z-index: 2000;
-            padding-top: 80px;
+            z-index: 2000; padding-top: 80px;
         }
-
         nav.open { left: 0; }
+        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 0.9rem; text-transform: uppercase; }
 
-        nav a {
-            display: block;
-            padding: 15px 30px;
-            text-decoration: none;
-            color: var(--text-dark);
-            font-weight: 400;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-        }
-
-        .sub-nav {
-            background: rgba(0, 0, 0, 0.02);
-            padding-left: 20px;
-        }
-
-        .sub-nav a {
-            font-size: 0.8rem;
-            text-transform: none;
-            padding: 10px 30px;
-        }
-
-        /* --- Hero Banner --- */
-        .hero-banner {
-            background-color: var(--brand-cream);
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-        }
-
-        .hero-banner img {
-            display: block;
-            width: 100%;
-            height: auto;
-        }
-
-        .tagline-container {
-            padding: 40px 20px;
-            text-align: center;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .hero-tagline {
-            font-family: 'Cinzel', serif;
-            font-size: 1.1rem;
-            text-transform: uppercase;
-            margin: 0;
-        }
+        /* --- Hero --- */
+        .hero-banner { background-color: var(--brand-cream); display: flex; flex-direction: column; width: 100%; }
+        .hero-banner img { width: 100%; height: auto; }
+        .tagline-container { padding: 40px 20px; text-align: center; width: 100%; box-sizing: border-box; }
+        .hero-tagline { font-family: 'Cinzel', serif; font-size: 1.1rem; text-transform: uppercase; margin: 0; }
 
         @media (min-width: 768px) {
             .hero-banner { flex-direction: row; }
             .hero-banner img { width: 50%; }
             .tagline-container { width: 50%; padding: 60px; text-align: left; align-self: center; }
-            .hero-tagline { font-size: 1.4rem; }
         }
 
-        /* --- Content Sections --- */
-        .main-content {
-            flex: 1;
-        }
-
-        .content { 
-            max-width: 1000px; 
-            margin: 40px auto; 
-            padding: 0 20px; 
-        }
-
+        /* --- Content --- */
+        .main-content { flex: 1; }
+        .content { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
         section { margin-bottom: 80px; text-align: center; }
+        h2 { font-family: 'Cinzel', serif; font-size: 1.3rem; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; display: inline-block; }
 
-        h2 { 
-            font-family: 'Cinzel', serif; 
-            font-weight: 400; 
-            border-bottom: 1px solid var(--brand-pink); 
-            padding-bottom: 10px; 
-            margin-bottom: 20px; 
-            display: inline-block; 
-            font-size: 1.3rem; 
-        }
-
-        .btn-find-out { 
-            display: inline-block; 
-            margin-top: 15px; 
-            padding: 12px 30px; 
-            border: 1px solid var(--text-dark); 
-            border-radius: 5px; 
-            text-decoration: none; 
-            color: var(--text-dark); 
-            font-size: 0.9rem; 
-            text-transform: uppercase; 
-        }
-
-        /* --- Photo Gallery (Matches Instagram Styling) --- */
+        /* --- Photo Gallery (Corrected Styling) --- */
         .gallery-section {
             border-top: 1px solid #eee;
             padding-top: 40px;
-            text-align: left; /* Left aligned as requested */
+            text-align: left; /* Left aligned */
         }
 
         .gallery-title-plain {
-            font-family: 'Source Sans Pro', sans-serif;
-            font-size: 40px; /* Matches Instagram font size */
-            font-weight: 300;
+            font-family: 'Cinzel', serif; /* Matched to site branding */
+            font-size: 40px; /* Matched to site branding */
+            font-weight: 400;
             color: var(--text-dark);
             margin: 0 0 30px 0;
             text-transform: none;
@@ -191,93 +112,36 @@
             display: block;
         }
 
-        .gallery-grid { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 15px; 
-            margin-bottom: 50px;
-        }
-
-        @media (min-width: 600px) {
-            .gallery-grid { grid-template-columns: repeat(3, 1fr); }
-        }
-
-        @media (min-width: 992px) {
-            .gallery-grid { grid-template-columns: repeat(4, 1fr); }
-        }
+        .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 50px; }
+        @media (min-width: 600px) { .gallery-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (min-width: 992px) { .gallery-grid { grid-template-columns: repeat(4, 1fr); } }
         
-        .gallery-item { 
-            aspect-ratio: 1/1; 
-            overflow: hidden; 
-            border-radius: 4px; 
-            background: var(--brand-cream); 
-            cursor: pointer; 
-        }
-        
-        .gallery-item img { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            display: block;
-        }
+        .gallery-item { aspect-ratio: 1/1; overflow: hidden; border-radius: 4px; background: var(--brand-cream); cursor: pointer; }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* --- Lightbox --- */
-        .modal { display: none; position: fixed; z-index: 4000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; touch-action: none; }
-        .modal-content-wrapper { width: 85%; max-width: 500px; aspect-ratio: 1/1; position: relative; }
-        .modal-content-wrapper img { width: 100%; height: 100%; object-fit: cover; border: 2px solid #fff; }
-        .close-modal { position: absolute; top: -45px; right: 0; color: #fff; font-size: 35px; cursor: pointer; }
-
-        /* --- Footer & Version Label --- */
+        /* --- Footer --- */
         footer { 
-            text-align: center; 
-            padding: 60px 20px 40px; 
-            background: #fdfdfd; 
-            border-top: 1px solid #eee; 
-            position: relative;
-            margin-top: auto; /* Flush bottom layout */
+            text-align: center; padding: 60px 20px 40px; background: #fdfdfd; border-top: 1px solid #eee; 
+            position: relative; margin-top: auto; /* Flush bottom */
         }
-
         .social-icons { margin-bottom: 35px; display: flex; justify-content: center; gap: 35px; }
-        .social-icons a { color: #000; font-size: 1.8rem; text-decoration: none; }
-
-        .disclaimer { 
-            font-size: 0.75rem; 
-            color: #777; 
-            max-width: 700px; 
-            margin: 0 auto; 
-            line-height: 1.6; 
-        }
-
-        .version-label { 
-            font-size: 0.65rem; 
-            color: #ccc; 
-            position: absolute; 
-            bottom: 10px; 
-            right: 15px; 
-        }
+        .social-icons a { color: #000; font-size: 1.8rem; }
+        .version-label { font-size: 0.65rem; color: #ccc; position: absolute; bottom: 10px; right: 15px; }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="menu-icon" onclick="toggleNav()">
-        <div></div><div></div><div></div>
-    </div>
+    <div class="menu-icon" onclick="toggleNav()"><div></div><div></div><div></div></div>
     <div class="logo">My Snoozing Baby</div>
 </header>
 
 <nav id="sidebar">
     <a href="#">Home</a>
-    <a href="#">SNOO SMART SLEEPER</a>
-    <div class="sub-nav">
-        <a href="#">SNOO Rental</a>
-        <a href="#">SNOO Cleaning/Repair</a>
-    </div>
+    <a href="#">SNOO Rental</a>
+    <a href="#">SNOO Cleaning/Repair</a>
     <a href="#">Baby Gear Rentals</a>
-    <a href="#">Toddler Party Rentals</a>
     <a href="#">About Us</a>
-    <a href="#">Contact Us</a>
-    <a href="#">FAQs</a>
 </nav>
 
 <div class="main-content">
@@ -289,18 +153,6 @@
     </div>
 
     <div class="content">
-        <section>
-            <h2>SNOO Smart Bassinet Rental</h2>
-            <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
-            <a href="#" class="btn-find-out">Find out more</a>
-        </section>
-
-        <section>
-            <h2>SNOO deep-cleaning, servicing, and repairs</h2>
-            <p>Professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
-            <a href="#" class="btn-find-out">Find out more</a>
-        </section>
-
         <div class="gallery-section">
             <h3 class="gallery-title-plain">Photo Gallery</h3>
             <div id="galleryGrid" class="gallery-grid"></div>
@@ -308,61 +160,23 @@
     </div>
 </div>
 
-<div id="imageModal" class="modal" onclick="closeModal()">
-    <div class="modal-content-wrapper" onclick="event.stopPropagation()">
-        <span class="close-modal" onclick="closeModal()">&times;</span>
-        <img id="modalImg" src="">
-    </div>
-</div>
-
 <footer>
     <div class="social-icons">
-        <a href="#" title="Facebook"><i class="fa-brands fa-facebook"></i></a>
-        <a href="#" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
-        <a href="#" title="TikTok"><i class="fa-brands fa-tiktok"></i></a>
+        <a href="#"><i class="fa-brands fa-facebook"></i></a>
+        <a href="#"><i class="fa-brands fa-instagram"></i></a>
     </div>
-    <div class="disclaimer">
-        Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.<br><br>
-        My Snoozing Baby is an independent service provider. SNOO is a registered trademark of Happiest Baby, Inc. My Snoozing Baby is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc.
-    </div>
+    <div class="disclaimer">Copyright © 2026 My Snoozing Baby - All Rights Reserved.</div>
     <span class="version-label">Version 2.1</span>
 </footer>
 
 <script>
     function toggleNav() { document.getElementById('sidebar').classList.toggle('open'); }
-    
-    document.addEventListener('click', function(e) {
-        var sidebar = document.getElementById('sidebar');
-        var icon = document.querySelector('.menu-icon');
-        if (!sidebar.contains(e.target) && !icon.contains(e.target)) sidebar.classList.remove('open');
-    });
-
-    const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg"];
-
+    const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg"];
     function renderGallery() {
         const grid = document.getElementById('galleryGrid');
-        grid.innerHTML = "";
-        imageList.forEach((img) => {
-            const div = document.createElement('div');
-            div.className = 'gallery-item';
-            div.onclick = () => openModal(img);
-            div.innerHTML = `<img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Image'">`;
-            grid.appendChild(div);
-        });
+        grid.innerHTML = imageList.map(img => `<div class="gallery-item"><img src="${img}" onerror="this.src='https://via.placeholder.com/400'"></div>`).join('');
     }
-
-    function openModal(src) {
-        document.getElementById('modalImg').src = src;
-        document.getElementById('imageModal').style.display = "flex";
-        document.body.style.overflow = "hidden";
-    }
-
-    function closeModal() {
-        document.getElementById('imageModal').style.display = "none";
-        document.body.style.overflow = "auto";
-    }
-
-    window.addEventListener('load', renderGallery);
+    window.onload = renderGallery;
 </script>
 
 </body>
