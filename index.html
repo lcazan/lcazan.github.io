@@ -22,15 +22,17 @@
         /* --- Header --- */
         header { display: flex; align-items: center; justify-content: center; padding: 30px 20px; background: #fff; position: relative; z-index: 1000; }
         .logo { font-family: 'Cinzel', serif; font-size: 1.25rem; text-transform: uppercase; letter-spacing: 3px; border: 1px solid var(--text-dark); padding: 10px 20px; display: inline-block; }
-        .menu-icon { position: absolute; left: 20px; cursor: pointer; z-index: 3000; padding: 10px; }
+        
+        /* Fixed Menu Icon: Always visible on top */
+        .menu-icon { position: absolute; left: 20px; cursor: pointer; z-index: 4000; padding: 10px; }
         .menu-icon div { width: 24px; height: 2px; background-color: var(--icon-brown); margin: 6px 0; }
 
         /* --- Sidebar Navigation (LOCKED) --- */
-        nav { position: fixed; top: 0; left: -280px; width: 260px; height: 100%; background: var(--brand-cream); transition: 0.4s ease-in-out; z-index: 2000; padding-top: 80px; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
+        nav { position: fixed; top: 0; left: -280px; width: 260px; height: 100%; background: var(--brand-cream); transition: none; z-index: 2000; padding-top: 80px; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
         nav.open { left: 0; }
-        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
+        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
         .sub-nav { background: rgba(0, 0, 0, 0.03); padding-left: 20px; }
-        .sub-nav a { font-size: 0.9rem; text-transform: none; padding: 10px 30px; }
+        .sub-nav a { font-size: 1rem; text-transform: none; padding: 10px 30px; }
         #navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.2); z-index: 1500; }
 
         /* --- Hero --- */
@@ -45,7 +47,7 @@
             .tagline-container { padding: 40px 20px; text-align: center; justify-content: center; }
         }
 
-        /* --- Main Content --- */
+        /* --- Main Content (SERVICES LOCKED) --- */
         .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
         .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
 
@@ -54,27 +56,20 @@
         section p { text-align: center; line-height: 1.8; margin-top: 5px; margin-bottom: 25px; max-width: 800px; margin-left: auto; margin-right: auto; }
         .btn-find-out { display: inline-block; padding: 10px 25px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* --- Gallery --- */
+        /* --- Gallery (LOCKED) --- */
         .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
         .gallery-item { cursor: pointer; background: #f9f9f9; }
         .gallery-item img { width: 100%; height: auto; display: block; }
 
-        /* --- Lightbox Modal --- */
+        /* --- Lightbox Modal (LOCKED) --- */
         .modal { display: none; position: fixed; z-index: 5000; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
         .slider-track { display: flex; height: 100%; width: 100%; }
         .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
-        
         .image-wrapper { position: relative; display: flex; align-items: center; justify-content: center; width: 90%; height: 70vh; }
         .slide img { max-width: 100%; max-height: 100%; width: auto; height: auto; border: 2px solid #fff; object-fit: contain; opacity: 0; transition: opacity 0.3s ease; }
         .slide img.loaded { opacity: 1; }
-
-        .counter { 
-            position: fixed; top: 25px; left: 25px; color: #fff; font-size: 22px; 
-            letter-spacing: 2px; font-weight: 600; z-index: 8000; 
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none;
-        }
-        
+        .counter { position: fixed; top: 25px; left: 25px; color: #fff; font-size: 22px; letter-spacing: 2px; font-weight: 600; z-index: 8000; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none; }
         .close-modal { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 40px; cursor: pointer; z-index: 7000; }
         .loader { width: 30px; height: 30px; border: 3px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 1s infinite linear; position: absolute; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -222,11 +217,8 @@
 
     function closeModal() { document.getElementById('imageModal').style.display = "none"; document.body.style.overflow = "auto"; }
 
-    // Fix: Handle Orientation Change without closing
     window.addEventListener('resize', () => {
-        if (document.getElementById('imageModal').style.display === "block") {
-            updateTrackPos(false);
-        }
+        if (document.getElementById('imageModal').style.display === "block") updateTrackPos(false);
     });
 
     const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
