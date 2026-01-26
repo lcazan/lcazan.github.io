@@ -142,11 +142,29 @@
         h2 { font-family: 'Cinzel', serif; font-weight: 400; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; font-size: 1.3rem; }
         .btn-find-out { display: inline-block; margin-top: 15px; padding: 12px 30px; border: 1px solid var(--text-dark); border-radius: 5px; text-decoration: none; color: var(--text-dark); font-size: 0.9rem; text-transform: uppercase; }
 
-        /* --- Gallery --- */
-        .gallery-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; max-width: 1000px; margin: 30px auto; }
-        @media (min-width: 768px) { .gallery-grid { grid-template-columns: repeat(4, 1fr); } }
-        .gallery-item { aspect-ratio: 1/1; overflow: hidden; border-radius: 4px; background: var(--brand-cream); cursor: pointer; }
-        .gallery-item img { width: 100%; height: 100%; object-fit: cover; }
+        /* --- Updated 2-Column Gallery --- */
+        .gallery-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 15px; 
+            max-width: 1000px; 
+            margin: 30px auto; 
+        }
+        
+        .gallery-item { 
+            aspect-ratio: 1/1; 
+            overflow: hidden; 
+            border-radius: 4px; 
+            background: var(--brand-cream); 
+            cursor: pointer; 
+        }
+        
+        .gallery-item img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            display: block;
+        }
 
         /* --- Swipeable Lightbox --- */
         .modal { display: none; position: fixed; z-index: 4000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; touch-action: none; }
@@ -216,11 +234,6 @@
     <div class="gallery-section" style="border-top: 1px solid #eee; padding-top: 40px;">
         <h3 style="font-family:'Cinzel'; letter-spacing: 2px; font-size: 1rem; margin-bottom: 30px;">IMAGES</h3>
         <div id="galleryGrid" class="gallery-grid"></div>
-        <div class="gallery-controls">
-            <button id="prevBtn" onclick="movePage(-1)" style="background:none; border:1px solid #151515; padding:8px 16px; cursor:pointer; text-transform: uppercase; font-size: 0.75rem;">Prev</button>
-            <span id="pageCounter" style="font-size: 0.7rem; margin: 0 15px;"></span>
-            <button id="nextBtn" onclick="movePage(1)" style="background:none; border:1px solid #151515; padding:8px 16px; cursor:pointer; text-transform: uppercase; font-size: 0.75rem;">Next</button>
-        </div>
     </div>
 </div>
 
@@ -257,30 +270,18 @@
 
     // --- GALLERY & LIGHTBOX LOGIC ---
     const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg"];
-    let currentIndex = 0; 
     let activeImgIndex = 0; 
 
     function renderGallery() {
         const grid = document.getElementById('galleryGrid');
-        const ipp = (window.innerWidth < 768 && window.innerHeight > window.innerWidth) ? 4 : 8;
-        const items = imageList.slice(currentIndex, currentIndex + ipp);
         grid.innerHTML = "";
-        items.forEach((img) => {
+        imageList.forEach((img, index) => {
             const div = document.createElement('div');
             div.className = 'gallery-item';
-            div.onclick = () => openModal(imageList.indexOf(img));
+            div.onclick = () => openModal(index);
             div.innerHTML = `<img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Image'">`;
             grid.appendChild(div);
         });
-        document.getElementById('pageCounter').innerText = `PAGE ${(currentIndex/ipp)+1}`;
-        document.getElementById('prevBtn').disabled = currentIndex === 0;
-        document.getElementById('nextBtn').disabled = currentIndex + ipp >= imageList.length;
-    }
-
-    function movePage(dir) { 
-        const ipp = (window.innerWidth < 768 && window.innerHeight > window.innerWidth) ? 4 : 8;
-        currentIndex += (dir * ipp); 
-        renderGallery(); 
     }
 
     function openModal(index) {
@@ -323,7 +324,6 @@
     }
 
     window.addEventListener('load', renderGallery);
-    window.addEventListener('resize', renderGallery);
 </script>
 
 </body>
