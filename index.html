@@ -15,7 +15,7 @@
             --icon-brown: #877267;   
             --text-dark: #151515;
             --border-gray: #e0e0e0;
-            --gallery-spacing: 10px; /* Synchronized gap */
+            --spacing-unit: 15px; /* Change this one value to adjust all gallery gaps */
         }
 
         body {
@@ -23,12 +23,10 @@
             font-weight: 300;
             margin: 0;
             color: var(--text-dark);
-            line-height: 1.6;
             background-color: #ffffff;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            overflow-x: hidden; /* Prevent horizontal scroll */
         }
 
         /* --- Header & Boxed Logo --- */
@@ -37,28 +35,23 @@
             align-items: center;
             justify-content: center;
             padding: 30px 20px;
-            background: #fff;
             position: relative;
         }
 
         .logo {
             font-family: 'Cinzel', serif;
-            font-weight: 400;
             font-size: 1.1rem;
             text-transform: uppercase;
             letter-spacing: 3px;
             border: 1px solid var(--text-dark);
             padding: 10px 20px;
-            display: inline-block;
-            line-height: 1;
         }
 
         .menu-icon {
             position: absolute;
             left: 20px;
             cursor: pointer;
-            z-index: 3000; 
-            padding: 10px;
+            z-index: 3000;
         }
 
         .menu-icon div {
@@ -71,85 +64,87 @@
         nav {
             position: fixed; top: 0; left: -280px; width: 260px; height: 100%;
             background: var(--brand-cream);
-            box-shadow: 4px 0 15px rgba(0,0,0,0.05);
             transition: 0.4s ease-in-out;
             z-index: 2000; padding-top: 80px;
         }
         nav.open { left: 0; }
-        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 14px; text-transform: uppercase; }
+        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-size: 14px; text-transform: uppercase; }
 
-        /* --- Content Sections --- */
-        .main-content { flex: 1; width: 100%; }
-        
-        /* Standard text content remains centered/padded */
-        .content-text-wrapper {
-            max-width: 1000px;
-            margin: 40px auto;
-            padding: 0 20px;
-            text-align: center;
+        /* --- Main Content Layout --- */
+        .content-container {
+            max-width: 1100px; /* Adjust this to change overall site width */
+            margin: 0 auto;
+            padding: 0 20px; /* Page padding */
+            width: 100%;
+            box-sizing: border-box;
         }
 
+        .text-center { text-align: center; margin-top: 40px; }
         section { margin-bottom: 80px; }
-        h2 { font-family: 'Cinzel', serif; font-weight: 400; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; font-size: 1.3rem; }
-        .btn-find-out { display: inline-block; margin-top: 15px; padding: 12px 30px; border: 1px solid var(--text-dark); border-radius: 5px; text-decoration: none; color: var(--text-dark); font-size: 0.9rem; text-transform: uppercase; }
+        h2 { font-family: 'Cinzel', serif; font-weight: 400; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; display: inline-block; }
+        .btn-find-out { display: inline-block; margin-top: 15px; padding: 12px 30px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); text-transform: uppercase; font-size: 0.9rem; }
 
-        /* --- PHOTO GALLERY (Flush to edges) --- */
-        .gallery-section { 
-            border-top: 1px solid #eee; 
-            padding-top: 40px; 
-            width: 100vw;
-            margin-left: calc(-50vw + 50%); /* Centers the full-width section if inside a container */
+        /* --- NEW GALLERY REDESIGN --- */
+        .gallery-section {
+            margin-top: 60px;
+            border-top: 1px solid #eee;
+            padding-top: 40px;
         }
 
-        .gallery-title-plain {
+        .gallery-title {
             font-family: 'Source Sans Pro', sans-serif;
             font-size: 14px;
             font-weight: 400;
-            color: var(--text-dark);
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin: 0 0 20px 10px; /* Small margin to avoid touching screen edge, aligned with images */
+            margin: 0 0 var(--spacing-unit) 0; /* Aligned with the left edge of the grid below */
+            text-align: left;
+        }
+
+        .gallery-flex-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between; /* Pushes left to left edge, right to right edge */
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        .gallery-column {
+            display: flex;
+            flex-direction: column;
+            /* width: calc(50% - (horizontal gap / 2)) */
+            width: calc(50% - (var(--spacing-unit) / 2)); 
+        }
+
+        .gallery-item {
+            width: 100%;
+            margin-bottom: var(--spacing-unit); /* Vertical gap identical to horizontal gap */
+            cursor: pointer;
+            border: 1px solid var(--border-gray);
+            line-height: 0;
+            box-sizing: border-box;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: auto;
             display: block;
         }
 
-        .gallery-grid { 
-            column-count: 2;
-            column-gap: var(--gallery-spacing);
-            width: 100%;
-            padding: 0 var(--gallery-spacing); /* Matches gap for edge-to-edge look */
-            box-sizing: border-box;
-            margin-bottom: 50px;
-        }
-        
-        .gallery-item { 
-            break-inside: avoid;
-            margin-bottom: var(--gallery-spacing);
-            width: 100%;
-            cursor: pointer; 
-            border: 1px solid var(--border-gray); 
-            box-sizing: border-box;
-            line-height: 0;
-        }
-        
-        .gallery-item img { width: 100%; height: auto; display: block; }
-
-        /* --- Lightbox (80vmin) --- */
+        /* --- Lightbox (80% Smallest Dimension) --- */
         .modal { 
             display: none; position: fixed; z-index: 4000; left: 0; top: 0; 
             width: 100vw; height: 100vh; background: rgba(0,0,0,0.9); 
             justify-content: center; align-items: center; 
         }
-        .modal-content-wrapper { position: relative; display: flex; justify-content: center; align-items: center; }
         .modal-content-wrapper img { 
-            max-width: 80vmin; max-height: 80vmin; width: auto; height: auto; 
+            max-width: 80vmin; max-height: 80vmin; 
             border: 2px solid #fff; object-fit: contain; 
         }
         .close-modal { position: absolute; top: -50px; right: -10px; color: #fff; font-size: 40px; cursor: pointer; }
 
         /* --- Footer --- */
-        footer { text-align: center; padding: 60px 20px 40px; background: #fdfdfd; border-top: 1px solid #eee; position: relative; margin-top: auto; }
-        .social-icons { margin-bottom: 35px; display: flex; justify-content: center; gap: 35px; }
-        .social-icons a { color: #000; font-size: 1.8rem; text-decoration: none; }
+        footer { text-align: center; padding: 60px 20px; border-top: 1px solid #eee; margin-top: auto; position: relative; }
         .disclaimer { font-size: 0.75rem; color: #777; max-width: 800px; margin: 0 auto; line-height: 1.6; }
         .version-label { font-size: 0.65rem; color: #ccc; position: absolute; bottom: 10px; right: 15px; }
     </style>
@@ -163,14 +158,14 @@
 
 <nav id="sidebar">
     <a href="#">Home</a>
-    <a href="#">SNOO SMART SLEEPER</a>
+    <a href="#">SNOO Smart Sleeper</a>
     <a href="#">Baby Gear Rentals</a>
     <a href="#">About Us</a>
     <a href="#">Contact Us</a>
 </nav>
 
-<div class="main-content">
-    <div class="content-text-wrapper">
+<div class="content-container">
+    <div class="text-center">
         <section>
             <h2>SNOO Smart Bassinet Rental</h2>
             <p>Let a smart bassinet do the hard work for you, rocking and calming your baby.</p>
@@ -184,8 +179,11 @@
         </section>
 
         <div class="gallery-section">
-            <h3 class="gallery-title-plain">PHOTO GALLERY</h3>
-            <div id="galleryGrid" class="gallery-grid"></div>
+            <h3 class="gallery-title">PHOTO GALLERY</h3>
+            <div class="gallery-flex-wrapper">
+                <div id="col-left" class="gallery-column"></div>
+                <div id="col-right" class="gallery-column"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -198,29 +196,33 @@
 </div>
 
 <footer>
-    <div class="social-icons">
-        <a href="#"><i class="fa-brands fa-facebook"></i></a>
-        <a href="#"><i class="fa-brands fa-instagram"></i></a>
-        <a href="#"><i class="fa-brands fa-tiktok"></i></a>
-    </div>
     <div class="disclaimer">
         Copyright © 2022-2026 My Snoozing Baby, LLC - All Rights Reserved.<br><br>
-        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site.
+        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. All trademarks, including SNOO®, remain the property of their respective owners.
     </div>
     <span class="version-label">Version 2.1</span>
 </footer>
 
 <script>
     function toggleNav() { document.getElementById('sidebar').classList.toggle('open'); }
+
+    // Logic to distribute 17 images into 2 columns for a masonry effect using Flexbox
     const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg", "9.jpeg", "10.jpeg", "11.jpeg", "12.jpeg", "13.jpeg", "14.jpeg", "15.jpeg", "16.jpeg", "17.jpeg"];
 
     function renderGallery() {
-        const grid = document.getElementById('galleryGrid');
-        grid.innerHTML = imageList.map(img => `
-            <div class="gallery-item" onclick="openModal('${img}')">
-                <img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Image'">
-            </div>
-        `).join('');
+        const leftCol = document.getElementById('col-left');
+        const rightCol = document.getElementById('col-right');
+        
+        imageList.forEach((img, index) => {
+            const html = `
+                <div class="gallery-item" onclick="openModal('${img}')">
+                    <img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Image'">
+                </div>
+            `;
+            // Alternates distribution to keep columns relatively even
+            if (index % 2 === 0) leftCol.innerHTML += html;
+            else rightCol.innerHTML += html;
+        });
     }
 
     function openModal(src) {
