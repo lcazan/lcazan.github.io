@@ -20,20 +20,88 @@
         body { font-family: 'Source Sans Pro', sans-serif; margin: 0; color: var(--text-dark); background-color: #fff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
 
         /* --- Header --- */
-        header { display: flex; align-items: center; justify-content: center; padding: 30px 20px; background: #fff; position: relative; z-index: 1000; }
-        .logo { font-family: 'Cinzel', serif; font-size: 1.25rem; text-transform: uppercase; letter-spacing: 3px; border: 1px solid var(--text-dark); padding: 10px 20px; display: inline-block; }
+        header { 
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center; 
+            padding: 20px 20px 15px; 
+            background: #fff; 
+            position: relative; 
+            z-index: 1000; 
+        }
+        .logo-container { text-align: center; }
+        .logo { 
+            font-family: 'Cinzel', serif; 
+            font-size: 1.25rem; 
+            text-transform: uppercase; 
+            letter-spacing: 3px; 
+            border: 1px solid var(--text-dark); 
+            padding: 8px 20px; 
+            display: inline-block; 
+        }
+        .version-header { 
+            display: block; 
+            font-size: 0.65rem; 
+            color: #888; 
+            margin-top: 5px; 
+            letter-spacing: 1px;
+        }
         
-        /* Fixed Menu Icon: Always visible on top */
-        .menu-icon { position: absolute; left: 20px; cursor: pointer; z-index: 4000; padding: 10px; }
-        .menu-icon div { width: 24px; height: 2px; background-color: var(--icon-brown); margin: 6px 0; }
+        /* Fixed Menu Icon: High Z-Index to stay above sidebar */
+        .menu-icon { 
+            position: absolute; 
+            left: 20px; 
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer; 
+            z-index: 5000; 
+            padding: 10px; 
+        }
+        .menu-icon div { 
+            width: 24px; 
+            height: 2px; 
+            background-color: var(--icon-brown); 
+            margin: 6px 0; 
+            transition: background 0.2s;
+        }
 
-        /* --- Sidebar Navigation (LOCKED) --- */
-        nav { position: fixed; top: 0; left: -280px; width: 260px; height: 100%; background: var(--brand-cream); transition: none; z-index: 2000; padding-top: 80px; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
+        /* --- Sidebar Navigation (LOCKED STRUCTURE) --- */
+        nav { 
+            position: fixed; 
+            top: 0; 
+            left: -280px; 
+            width: 260px; 
+            height: 100%; 
+            background: var(--brand-cream); 
+            transition: left 0.2s ease-in-out; 
+            z-index: 4000; 
+            padding-top: 80px; 
+            box-shadow: 4px 0 15px rgba(0,0,0,0.1); 
+        }
         nav.open { left: 0; }
-        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
+        nav a { 
+            display: block; 
+            padding: 15px 30px; 
+            text-decoration: none; 
+            color: var(--text-dark); 
+            font-weight: 400; 
+            font-size: 18px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+        }
         .sub-nav { background: rgba(0, 0, 0, 0.03); padding-left: 20px; }
         .sub-nav a { font-size: 1rem; text-transform: none; padding: 10px 30px; }
-        #navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.2); z-index: 1500; }
+        #navOverlay { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            background: rgba(0,0,0,0.3); 
+            z-index: 3500; 
+        }
 
         /* --- Hero --- */
         .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; align-items: stretch; }
@@ -63,7 +131,7 @@
         .gallery-item img { width: 100%; height: auto; display: block; }
 
         /* --- Lightbox Modal (LOCKED) --- */
-        .modal { display: none; position: fixed; z-index: 5000; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
+        .modal { display: none; position: fixed; z-index: 6000; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
         .slider-track { display: flex; height: 100%; width: 100%; }
         .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         .image-wrapper { position: relative; display: flex; align-items: center; justify-content: center; width: 90%; height: 70vh; }
@@ -80,14 +148,16 @@
         .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; }
         .copyright-text { font-weight: 600; display: block; margin-bottom: 15px; font-size: 0.85rem; }
         .disclaimer { font-size: 0.75rem; color: #666; max-width: 850px; margin: 0 auto; line-height: 1.7; text-align: center; }
-        .version-label { font-size: 0.65rem; color: #ccc; position: absolute; bottom: 10px; right: 15px; }
     </style>
 </head>
 <body>
 
 <header>
     <div class="menu-icon" onclick="toggleNav(event)"><div></div><div></div><div></div></div>
-    <div class="logo">My Snoozing Baby</div>
+    <div class="logo-container">
+        <div class="logo">My Snoozing Baby</div>
+        <span class="version-header">Version 2.1.1</span>
+    </div>
 </header>
 
 <div id="navOverlay" onclick="toggleNav(event)"></div>
@@ -156,7 +226,6 @@
     <div class="disclaimer">
         My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.
     </div>
-    <span class="version-label">Version 2.1</span>
 </footer>
 
 <script>
