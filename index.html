@@ -74,14 +74,13 @@
 
         /* --- Lightbox Modal --- */
         .modal { display: none; position: fixed; z-index: 5000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); overflow: hidden; touch-action: none; }
-        .slider-track { display: flex; height: 100%; width: 100%; will-change: transform; transition: transform 0.3s ease-out; }
+        .slider-track { display: flex; height: 100%; width: 100%; will-change: transform; }
         .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none; }
         .slide img { max-width: 85%; max-height: 80%; border: 2px solid #fff; object-fit: contain; pointer-events: auto; }
         
         .close-modal { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 45px; cursor: pointer; z-index: 5200; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
         .counter { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 14px; letter-spacing: 2px; z-index: 5200; font-weight: 600; }
         
-        /* Lightbox Desktop Arrows - Enhanced Visibility */
         .nav-btn { display: none; position: absolute; top: 50%; transform: translateY(-50%); color: #fff; background: rgba(255,255,255,0.1); border: none; font-size: 30px; cursor: pointer; z-index: 5200; width: 60px; height: 60px; border-radius: 50%; transition: background 0.3s; align-items: center; justify-content: center; }
         .nav-btn:hover { background: rgba(255,255,255,0.25); }
         .prev-btn { left: 30px; }
@@ -203,13 +202,18 @@
 
     function openModal(index) {
         currentIndex = index;
+        const modal = document.getElementById('imageModal');
         const track = document.getElementById('sliderTrack');
-        const width = document.getElementById('imageModal').offsetWidth;
+        
+        // Instant setup before showing
         track.style.transition = 'none'; 
+        modal.style.display = "block";
+        
+        const width = modal.offsetWidth;
         currentTranslate = currentIndex * -width;
         prevTranslate = currentTranslate;
+        
         track.style.transform = `translateX(${currentTranslate}px)`;
-        document.getElementById('imageModal').style.display = "block";
         document.getElementById('imgCounter').innerText = `${currentIndex + 1} / ${imageList.length}`;
         document.body.style.overflow = "hidden";
     }
@@ -224,21 +228,39 @@
         currentIndex = Math.max(0, Math.min(currentIndex + step, imageList.length - 1));
         const track = document.getElementById('sliderTrack');
         const width = document.getElementById('imageModal').offsetWidth;
+        
         track.style.transition = 'transform 0.3s ease-out';
         currentTranslate = currentIndex * -width;
         prevTranslate = currentTranslate;
+        
         track.style.transform = `translateX(${currentTranslate}px)`;
         document.getElementById('imgCounter').innerText = `${currentIndex + 1} / ${imageList.length}`;
     }
 
     const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
-    modal.addEventListener('touchstart', e => { isDragging = true; startX = e.touches[0].clientX; track.style.transition = 'none'; });
-    modal.addEventListener('touchmove', e => { if (!isDragging) return; const diff = e.touches[0].clientX - startX; track.style.transform = `translateX(${prevTranslate + diff}px)`; });
-    modal.addEventListener('touchend', e => { 
-        isDragging = false; const diff = e.changedTouches[0].clientX - startX;
-        if (diff < -50) moveSlide(1); else if (diff > 50) moveSlide(-1); else moveSlide(0);
+    modal.addEventListener('touchstart', e => { 
+        isDragging = true; 
+        startX = e.touches[0].clientX; 
+        track.style.transition = 'none'; 
     });
-    modal.addEventListener('click', e => { if (e.target.classList.contains('slide') || e.target.id === 'imageModal') closeModal(); });
+    
+    modal.addEventListener('touchmove', e => { 
+        if (!isDragging) return; 
+        const diff = e.touches[0].clientX - startX; 
+        track.style.transform = `translateX(${prevTranslate + diff}px)`; 
+    });
+    
+    modal.addEventListener('touchend', e => { 
+        isDragging = false; 
+        const diff = e.changedTouches[0].clientX - startX;
+        if (diff < -50) moveSlide(1); 
+        else if (diff > 50) moveSlide(-1); 
+        else moveSlide(0);
+    });
+    
+    modal.addEventListener('click', e => { 
+        if (e.target.classList.contains('slide') || e.target.id === 'imageModal') closeModal(); 
+    });
 
     window.addEventListener('load', renderGallery);
 </script>
