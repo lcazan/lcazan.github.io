@@ -15,7 +15,7 @@
             --icon-brown: #877267;   
             --text-dark: #151515;
             --border-gray: #e0e0e0;
-            --gallery-spacing: 15px; /* Single source for all gaps */
+            --gallery-spacing: 15px; 
         }
 
         body {
@@ -30,7 +30,7 @@
             min-height: 100vh;
         }
 
-        /* --- Header & Boxed Logo --- */
+        /* --- Header & Logo --- */
         header {
             display: flex; align-items: center; justify-content: center;
             padding: 30px 20px; background: #fff; position: relative;
@@ -78,7 +78,7 @@
         h2 { font-family: 'Cinzel', serif; font-weight: 400; border-bottom: 1px solid var(--brand-pink); padding-bottom: 10px; margin-bottom: 20px; display: inline-block; font-size: 1.3rem; }
         .btn-find-out { display: inline-block; margin-top: 15px; padding: 12px 30px; border: 1px solid var(--text-dark); border-radius: 5px; text-decoration: none; color: var(--text-dark); font-size: 0.9rem; text-transform: uppercase; }
 
-        /* --- MASONRY GALLERY (Natural Heights) --- */
+        /* --- NUMERICAL MASONRY GALLERY --- */
         .gallery-section { margin-top: 60px; border-top: 1px solid #eee; padding-top: 40px; }
         
         .gallery-title {
@@ -87,27 +87,28 @@
             margin: 0 0 var(--gallery-spacing) 0; text-align: left;
         }
 
-        .gallery-masonry {
-            column-count: 2; /* Arranges images in two columns */
-            column-gap: var(--gallery-spacing); /* Horizontal spacing */
+        .gallery-columns-wrapper {
+            display: flex;
+            justify-content: space-between;
             width: 100%;
         }
 
+        .gallery-col {
+            display: flex;
+            flex-direction: column;
+            width: calc(50% - (var(--gallery-spacing) / 2));
+        }
+
         .gallery-item {
-            break-inside: avoid; /* Prevents image from splitting across columns */
-            margin-bottom: var(--gallery-spacing); /* Vertical spacing equal to horizontal */
             width: 100%;
+            margin-bottom: var(--gallery-spacing);
             cursor: pointer;
             border: 1px solid var(--border-gray);
             line-height: 0;
             box-sizing: border-box;
         }
 
-        .gallery-item img { 
-            width: 100%; 
-            height: auto; /* Maintains natural aspect ratio */
-            display: block; 
-        }
+        .gallery-item img { width: 100%; height: auto; display: block; }
 
         /* --- Lightbox (80vmin) --- */
         .modal { 
@@ -170,19 +171,22 @@
 
         <section>
             <h2>SNOO deep-cleaning, servicing, and repairs</h2>
-            <p>Professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
+            <p>Professional deep-cleaning, servicing, and repairs for your pre-loved SNOO.</p>
             <a href="#" class="btn-find-out">Find out more</a>
         </section>
 
         <section>
             <h2>Traveling to the DC Metro area?</h2>
-            <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC.</p>
+            <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, and more.</p>
             <a href="#" class="btn-find-out">Find out more</a>
         </section>
 
         <div class="gallery-section">
             <h3 class="gallery-title">PHOTO GALLERY</h3>
-            <div id="galleryGrid" class="gallery-masonry"></div>
+            <div class="gallery-columns-wrapper">
+                <div id="col-1" class="gallery-col"></div>
+                <div id="col-2" class="gallery-col"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -202,7 +206,7 @@
     </div>
     <div class="disclaimer">
         Copyright © 2022-2026 My Snoozing Baby, LLC - All Rights Reserved.<br><br>
-        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. All trademarks, including SNOO®, remain the property of their respective owners. These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.
+        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. 
     </div>
     <span class="version-label">Version 2.1</span>
 </footer>
@@ -210,21 +214,23 @@
 <script>
     function toggleNav() { document.getElementById('sidebar').classList.toggle('open'); }
     
-    document.addEventListener('click', function(e) {
-        var sidebar = document.getElementById('sidebar');
-        var icon = document.querySelector('.menu-icon');
-        if (!sidebar.contains(e.target) && !icon.contains(e.target)) sidebar.classList.remove('open');
-    });
-
     const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg", "9.jpeg", "10.jpeg", "11.jpeg", "12.jpeg", "13.jpeg", "14.jpeg", "15.jpeg", "16.jpeg", "17.jpeg"];
 
     function renderGallery() {
-        const grid = document.getElementById('galleryGrid');
-        grid.innerHTML = imageList.map(img => `
-            <div class="gallery-item" onclick="openModal('${img}')">
-                <img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Image'">
-            </div>
-        `).join('');
+        const col1 = document.getElementById('col-1');
+        const col2 = document.getElementById('col-2');
+        
+        // Alternating logic ensures 1 is left, 2 is right, 3 is left, etc.
+        // This keeps the numerical order ascending as you scan left-to-right/down.
+        imageList.forEach((img, index) => {
+            const itemHtml = `
+                <div class="gallery-item" onclick="openModal('${img}')">
+                    <img src="${img}" onerror="this.src='https://via.placeholder.com/400?text=Image'">
+                </div>
+            `;
+            if (index % 2 === 0) col1.innerHTML += itemHtml;
+            else col2.innerHTML += itemHtml;
+        });
     }
 
     function openModal(src) {
