@@ -19,7 +19,7 @@
 
         body { font-family: 'Source Sans Pro', sans-serif; margin: 0; color: var(--text-dark); background-color: #fff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
 
-        /* --- STICKY HEADER --- */
+        /* --- STICKY HEADER (LOCKED) --- */
         header { 
             display: flex; 
             flex-direction: column;
@@ -51,6 +51,7 @@
             letter-spacing: 1px;
         }
         
+        /* --- Sidebar Toggle (LOCKED) --- */
         .menu-icon { 
             position: fixed; 
             left: 20px; 
@@ -112,16 +113,16 @@
         .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
         .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
 
-        /* --- Hero --- */
+        /* --- Hero (UPDATED PERMISSION) --- */
         .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; align-items: stretch; }
-        .hero-banner img { width: 50%; height: auto; display: block; object-fit: cover; }
+        .hero-banner picture, .hero-banner img { width: 50%; height: auto; display: block; object-fit: cover; }
         .tagline-container { width: 50%; padding: 60px; display: flex; align-items: center; box-sizing: border-box; }
         .hero-tagline { font-family: 'Cinzel', serif; font-size: 1.2rem; text-transform: uppercase; margin: 0; line-height: 1.6; letter-spacing: 1px; }
 
         @media (max-width: 767px) {
             .hero-banner { flex-direction: column; }
-            .hero-banner img, .tagline-container { width: 100%; }
-            .tagline-container { padding: 40px 20px; text-align: center; justify-content: center; }
+            .hero-banner picture, .hero-banner img { width: 100%; }
+            .tagline-container { width: 100%; padding: 40px 20px; text-align: center; justify-content: center; }
         }
 
         /* --- Services (LOCKED) --- */
@@ -130,7 +131,7 @@
         section p { text-align: center; line-height: 1.8; margin-top: 5px; margin-bottom: 25px; max-width: 800px; margin-left: auto; margin-right: auto; }
         .btn-find-out { display: inline-block; padding: 10px 25px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* --- Gallery & Lightbox (UPDATED) --- */
+        /* --- Gallery & Lightbox (LOCKED) --- */
         .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
         .gallery-item { cursor: pointer; background: #f9f9f9; }
@@ -166,7 +167,7 @@
 <header>
     <div class="logo-container">
         <div class="logo">My Snoozing Baby</div>
-        <span class="version-header">Version 2.2.3</span>
+        <span class="version-header">Version 2.2.4</span>
     </div>
 </header>
 
@@ -186,7 +187,11 @@
 </nav>
 
 <div class="hero-banner">
-    <img src="emerson.jpeg" alt="Baby Emerson">
+    <picture>
+        <source media="(max-width: 767px)" srcset="emerson-small.jpg">
+        <source media="(min-width: 768px)" srcset="emerson-large.jpg">
+        <img src="emerson-large.jpg" alt="Baby Emerson">
+    </picture>
     <div class="tagline-container">
         <p class="hero-tagline">FOR BETTER-SLEEPING BABIES. <br> FOR HAPPIER BABIES.</p>
     </div>
@@ -252,7 +257,6 @@
         overlay.style.display = isOpen ? 'block' : 'none';
     }
 
-    // UPDATED GALLERY DATA USING SIZES
     const galleryItems = [
         {"id": 1, "small": "1-small.jpg", "large": "1-large.jpg"},
         {"id": 2, "small": "2-small.jpg", "large": "2-large.jpg"},
@@ -279,11 +283,8 @@
     function renderGallery() {
         const left = document.getElementById('col-left'), right = document.getElementById('col-right'), track = document.getElementById('sliderTrack');
         galleryItems.forEach((item, index) => {
-            // Uses small images for grid
             const itemHtml = `<div class="gallery-item" onclick="openModal(${index})"><img src="${item.small}" loading="lazy"></div>`;
             index % 2 === 0 ? left.innerHTML += itemHtml : right.innerHTML += itemHtml;
-            
-            // Prepares large images for lightbox
             const slide = document.createElement('div'); 
             slide.className = 'slide'; 
             slide.innerHTML = `<div class="image-wrapper" data-index="${index}"><div class="loader"></div><img data-src="${item.large}"></div>`;
