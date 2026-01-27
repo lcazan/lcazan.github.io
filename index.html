@@ -49,21 +49,19 @@
             -ms-user-select: none;
         }
 
-        /* Initial Hamburger in Header */
+        /* Icons with tap highlight removed */
+        .menu-lines { cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .header-menu-icon {
             position: absolute; 
             top: 50%; 
             left: 20px; 
             transform: translateY(-50%); 
-            cursor: pointer; 
             z-index: 8001; 
             padding: 5px;
         }
 
-        /* Icon Lines Styling */
         .menu-lines div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0.2s; }
         
-        /* Transform to X */
         .active .line1 { transform: rotate(-45deg) translate(-4.5px, 5px); }
         .active .line2 { opacity: 0; }
         .active .line3 { transform: rotate(45deg) translate(-4.5px, -5.5px); }
@@ -83,14 +81,12 @@
         }
         nav.open { left: 0; }
         
-        /* The Close X inside the Sidebar */
         .sidebar-close-icon {
             position: absolute;
-            top: 25px; /* Aligned vertically with original header height */
+            top: 25px; 
             left: 20px;
-            cursor: pointer;
             padding: 5px;
-            display: none; /* Only visible when sidebar is open */
+            display: none;
         }
         nav.open .sidebar-close-icon { display: block; }
 
@@ -104,6 +100,7 @@
             text-transform: uppercase; 
             letter-spacing: 1px; 
             white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .dropdown-btn { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
@@ -137,11 +134,7 @@
 
         .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
-        .gallery-item { 
-            cursor: pointer; 
-            background: #f9f9f9; 
-            -webkit-tap-highlight-color: transparent; 
-        }
+        .gallery-item { cursor: pointer; background: #f9f9f9; -webkit-tap-highlight-color: transparent; }
         .gallery-item img { width: 100%; height: auto; display: block; }
 
         .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
@@ -151,12 +144,12 @@
         .slide img { max-width: 100%; max-height: 100%; width: auto; height: auto; border: 2px solid #fff; object-fit: contain; opacity: 0; transition: opacity 0.3s ease; }
         .slide img.loaded { opacity: 1; }
         .counter { position: fixed; top: 25px; left: 25px; color: #fff; font-size: 22px; letter-spacing: 2px; font-weight: 600; z-index: 10005; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none; }
-        .close-modal { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 40px; cursor: pointer; z-index: 10005; }
+        .close-modal { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 40px; cursor: pointer; z-index: 10005; -webkit-tap-highlight-color: transparent; }
         .loader { width: 30px; height: 30px; border: 3px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 1s infinite linear; position: absolute; }
 
         footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; position: relative; margin-top: auto; }
         .social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
-        .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; }
+        .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; -webkit-tap-highlight-color: transparent; }
         .copyright-text { font-weight: 600; display: block; margin-bottom: 15px; font-size: 0.85rem; }
         .disclaimer { font-size: 0.75rem; color: #666; max-width: 850px; margin: 0 auto; line-height: 1.7; text-align: center; }
     </style>
@@ -182,7 +175,6 @@
         <div class="line2"></div>
         <div class="line3"></div>
     </div>
-
     <a href="https://mysnoozingbaby.com/">Home</a>
     <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">Snoo Smart Sleeper <i class="fa-solid fa-caret-down"></i></a>
     <div class="sub-nav">
@@ -262,10 +254,7 @@
         const nav = document.getElementById('sidebar');
         const headerHamburger = document.getElementById('headerHamburger');
         const overlay = document.getElementById('navOverlay');
-        
         const isOpen = nav.classList.toggle('open');
-        
-        // Hide/Show the header icon based on sidebar state
         headerHamburger.style.visibility = isOpen ? 'hidden' : 'visible';
         overlay.style.display = isOpen ? 'block' : 'none';
     }
