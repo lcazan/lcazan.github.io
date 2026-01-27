@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | Sticky Editor</title>
+    <title>Snoozing Builder | Mobile Default</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -11,29 +11,16 @@
             --brand-pink: #ebd5c9;
         }
 
-        /* Prevent the main window from ever scrolling */
         body { 
-            margin: 0; 
-            display: flex; 
-            height: 100vh; 
-            width: 100vw;
-            font-family: 'Source Sans Pro', sans-serif; 
-            background: #111; 
-            overflow: hidden; 
+            margin: 0; display: flex; height: 100vh; width: 100vw;
+            font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; 
         }
 
-        /* SIDEBAR - Fixed Width and Height */
+        /* SIDEBAR - Fixed */
         #sidebar { 
-            width: 90px; 
-            height: 100vh;
-            background: var(--panel-bg); 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center;
-            padding: 20px 0; 
-            border-right: 2px solid #000; 
-            flex-shrink: 0;
-            z-index: 100;
+            width: 90px; height: 100vh; background: var(--panel-bg); 
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 100;
         }
 
         .insert-btn { 
@@ -44,72 +31,37 @@
         }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
 
-        /* PREVIEW AREA */
+        /* PREVIEW CONTAINER */
         #preview-container { 
-            flex-grow: 1; 
-            display: flex; 
-            flex-direction: column; 
-            background: #333; 
-            position: relative; 
-            height: 100vh;
+            flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh;
         }
         
-        /* TOP BAR - Fixed Height */
         #device-bar {
-            height: 45px; 
-            background: #222; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 20px; 
-            border-bottom: 1px solid #000; 
-            flex-shrink: 0;
+            height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #000; flex-shrink: 0;
         }
 
-        .device-btn {
-            background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; transition: 0.2s;
-        }
+        .device-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; transition: 0.2s; }
         .device-btn.active { color: var(--brand-pink); }
         
         /* SCROLLABLE WRAPPER */
         #frame-wrapper {
-            flex-grow: 1; 
-            display: flex; 
-            justify-content: center; 
-            align-items: flex-start; 
-            overflow-x: hidden; 
-            overflow-y: auto; 
-            background: #333;
-            position: relative;
+            flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
+            overflow-x: hidden; overflow-y: auto; background: #333; position: relative;
         }
 
         #preview-frame { 
-            width: 100%; 
-            height: 100%; 
-            border: none; 
-            background: white; 
-            transition: transform 0.2s ease-out; 
-            transform-origin: top center;
+            width: 100%; border: none; background: white; 
+            transition: transform 0.2s ease-out; transform-origin: top center;
+            /* Start with standard height, mobile logic will override */
+            height: 100%;
         }
 
-        /* Mobile specific sizing */
-        #preview-frame.mobile { 
-            width: 390px; 
-            min-height: 100%; /* Ensures it fills height if empty */
-            height: auto; 
-        }
+        #preview-frame.mobile { width: 390px; height: auto; min-height: 0; }
 
-        /* FLOATING TOOLBAR */
+        /* TOOLBAR */
         #floating-toolbar {
-            position: absolute; 
-            display: none; 
-            background: #111; 
-            border-radius: 4px;
-            padding: 6px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
-            z-index: 2000; 
-            gap: 5px; 
-            align-items: center;
+            position: absolute; display: none; background: #111; border-radius: 4px;
+            padding: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 2000; gap: 5px; align-items: center;
             border: 1px solid #444;
         }
         .float-btn { background: transparent; border: none; color: white; padding: 5px 10px; cursor: pointer; border-radius: 2px; }
@@ -127,14 +79,14 @@
 
 <div id="preview-container">
     <div id="device-bar">
-        <button class="device-btn active" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
+        <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
         <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
     </div>
 
     <div id="frame-wrapper">
         <div id="floating-toolbar">
             <button class="float-btn" title="Bold" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
-            <button class="float-btn" id="float-underline" title="Toggle Bottom Line" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>
+            <button class="float-btn" id="float-underline" title="Toggle Line" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>
             <span class="sep">|</span>
             <button class="float-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
             <button class="float-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
@@ -167,16 +119,20 @@
                 .heading-wrapper { width: 100%; display: block; clear: both; margin-bottom: 10px; }
                 .selected-item { outline: 2px solid #877267 !important; outline-offset: 4px; }
                 .no-line { border-bottom: 1px solid transparent !important; }
+                body { overflow-x: hidden; } /* Prevent horizontal scroll inside iframe */
             `;
             innerDoc.head.appendChild(style);
+            
             innerDoc.addEventListener('click', (e) => {
                 const el = e.target.closest('.editable');
                 if (el) selectElement(el); else deselectAll();
             });
             
-            // Sync internal scroll for toolbar positioning
             innerDoc.addEventListener('scroll', updateToolbarPos);
             wrapper.addEventListener('scroll', updateToolbarPos);
+
+            // Set Mobile as default on load
+            setTimeout(() => setDevice('mobile'), 150);
         };
     }
 
@@ -189,8 +145,8 @@
             document.getElementById('btn-mobile').classList.add('active');
             const scale = wrapper.offsetWidth / 390;
             frame.style.transform = `scale(${scale})`;
-            // Allow the frame to be as long as its content
-            frame.style.height = 'auto'; 
+            // Sync height to internal content
+            updateFrameHeight();
         } else {
             frame.classList.remove('mobile');
             document.getElementById('btn-desktop').classList.add('active');
@@ -200,12 +156,19 @@
         }
     }
 
+    function updateFrameHeight() {
+        if (frame.classList.contains('mobile') && frame.contentDocument) {
+            // Force the frame height to match the internal body scroll height
+            frame.style.height = frame.contentDocument.body.scrollHeight + 'px';
+        }
+    }
+
     function insertElement(type) {
         const root = frame.contentDocument.getElementById('editor-root');
         const newEl = frame.contentDocument.createElement('div');
         newEl.className = `editable ${type}`;
         newEl.contentEditable = "true";
-        newEl.innerText = type === 'section_heading' ? "SECTION TITLE" : type === 'block_heading' ? "HEADING TITLE" : "Paragraph text...";
+        newEl.innerText = type === 'section_heading' ? "SECTION TITLE" : type === 'block_heading' ? "HEADING TITLE" : "Enter text here...";
 
         if (type === 'block_heading') {
             const wrap = frame.contentDocument.createElement('div');
@@ -217,10 +180,8 @@
             root.appendChild(newEl);
         }
         
-        // Ensure frame height updates for mobile auto-sizing
-        if(frame.classList.contains('mobile')) frame.style.height = frame.contentDocument.body.scrollHeight + 'px';
-        
-        setTimeout(() => selectElement(newEl), 10);
+        // Passive Add: Only update height, do not auto-focus or show toolbar
+        updateFrameHeight();
     }
 
     function selectElement(el) {
@@ -279,6 +240,7 @@
             const toRemove = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
             toRemove.remove();
             deselectAll();
+            updateFrameHeight();
         }
     }
 
