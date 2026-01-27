@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | Step-by-Step</title>
+    <title>Snoozing Builder | Interactive Editor</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -13,64 +13,76 @@
         }
         body { margin: 0; display: flex; height: 100vh; font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; }
 
-        /* LEFT CONTROL PANEL */
-        #control-panel { width: 350px; background: var(--panel-bg); color: var(--text-light); display: flex; flex-direction: column; border-right: 2px solid #000; z-index: 10; }
-        .tab-header { padding: 20px; background: #222; border-bottom: 1px solid #444; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--brand-pink); }
+        /* SIDEBAR PANEL */
+        #sidebar { width: 380px; background: var(--panel-bg); display: flex; flex-direction: column; border-right: 2px solid #000; z-index: 100; }
         
-        .scroll-area { flex-grow: 1; overflow-y: auto; padding: 20px; }
-        .tool-section { margin-bottom: 30px; }
-        .label { font-size: 10px; color: #888; text-transform: uppercase; margin-bottom: 12px; display: block; font-weight: bold; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        .tabs-nav { display: flex; background: #222; border-bottom: 1px solid #444; }
+        .tab-btn { flex: 1; padding: 15px; border: none; background: none; color: #888; cursor: pointer; text-transform: uppercase; font-size: 11px; font-weight: bold; }
+        .tab-btn.active { color: var(--brand-pink); border-bottom: 2px solid var(--brand-pink); background: #2d2d2d; }
 
-        /* INSERT TABS (Draggable) */
-        .drag-item { 
-            background: #3d3d3d; border: 1px solid #555; padding: 15px; margin-bottom: 10px; 
-            cursor: grab; border-radius: 4px; font-size: 12px; transition: 0.2s; display: flex; align-items: center;
-        }
-        .drag-item:hover { border-color: var(--brand-pink); background: #444; }
-        .drag-item i { margin-right: 12px; color: var(--brand-pink); width: 15px; text-align: center; }
+        .tab-content { flex-grow: 1; overflow-y: auto; padding: 20px; display: none; }
+        .tab-content.active { display: block; }
 
-        /* FORMATTING TOOLBAR */
-        #toolbar { display: none; background: #222; padding: 15px; border-top: 1px solid #444; }
-        .tool-group { display: flex; gap: 8px; margin-bottom: 10px; justify-content: center; }
-        .tool-btn { background: #444; border: 1px solid #666; color: #fff; padding: 8px 12px; cursor: pointer; border-radius: 3px; font-size: 14px; }
+        .label { font-size: 10px; color: #888; text-transform: uppercase; margin-bottom: 15px; display: block; border-bottom: 1px solid #444; padding-bottom: 5px; }
+
+        /* INSERT BUTTONS */
+        .insert-card { background: #3d3d3d; border: 1px solid #555; padding: 12px; margin-bottom: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .btn-insert { background: var(--brand-pink); border: none; color: #000; padding: 5px 12px; border-radius: 3px; cursor: pointer; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+        .btn-insert:hover { background: #fff; }
+
+        /* EDIT TOOLS */
+        textarea { width: 100%; height: 150px; background: #111; color: #fff; border: 1px solid #555; padding: 10px; box-sizing: border-box; font-family: inherit; margin-bottom: 15px; }
+        .tool-group { display: flex; gap: 8px; margin-bottom: 15px; }
+        .tool-btn { background: #444; border: 1px solid #666; color: #fff; padding: 10px; cursor: pointer; border-radius: 3px; flex: 1; }
         .tool-btn:hover { background: var(--brand-pink); color: #000; }
 
-        /* PREVIEW WINDOW */
-        #preview-container { flex-grow: 1; background: #555; display: flex; justify-content: center; align-items: center; padding: 20px; position: relative; }
-        #preview-frame { width: 100%; height: 100%; background: white; border: none; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
+        /* PREVIEW AREA */
+        #preview-container { flex-grow: 1; height: 100vh; background: #555; position: relative; }
+        #preview-frame { width: 100%; height: 100%; border: none; background: white; }
     </style>
 </head>
 <body>
 
-<div id="control-panel">
-    <div class="tab-header">Insert Elements</div>
-    
-    <div class="scroll-area">
-        <div class="tool-section">
-            <span class="label">Drag to Preview</span>
-            <div class="drag-item" draggable="true" ondragstart="onDragStart(event, 'section_heading')">
-                <i class="fa-solid fa-font"></i> Section Heading
-            </div>
-            <div class="drag-item" draggable="true" ondragstart="onDragStart(event, 'block_heading')">
-                <i class="fa-solid fa-heading"></i> Block Heading
-            </div>
-            <div class="drag-item" draggable="true" ondragstart="onDragStart(event, 'block_text')">
-                <i class="fa-solid fa-paragraph"></i> Block Paragraph
-            </div>
+<div id="sidebar">
+    <div class="tabs-nav">
+        <button class="tab-btn active" id="tab-insert-btn" onclick="showTab('insert')">Insert</button>
+        <button class="tab-btn" id="tab-edit-btn" onclick="showTab('edit')">Edit</button>
+    </div>
+
+    <div id="tab-insert" class="tab-content active">
+        <span class="label">Available Text Blocks</span>
+        <div class="insert-card">
+            <span>Section Heading</span>
+            <button class="btn-insert" onclick="insertElement('section_heading')">Add</button>
+        </div>
+        <div class="insert-card">
+            <span>Block Heading</span>
+            <button class="btn-insert" onclick="insertElement('block_heading')">Add</button>
+        </div>
+        <div class="insert-card">
+            <span>Block Text</span>
+            <button class="btn-insert" onclick="insertElement('block_text')">Add</button>
         </div>
     </div>
 
-    <div id="toolbar">
-        <span class="label">Text Alignment & Style</span>
+    <div id="tab-edit" class="tab-content">
+        <span class="label">Modify Selected Element</span>
+        <textarea id="edit-textarea" placeholder="Select an element in the preview to edit..." oninput="syncText(this.value)"></textarea>
+        
+        <span class="label">Alignment</span>
         <div class="tool-group">
             <button class="tool-btn" onclick="applyFormat('justifyLeft')"><i class="fa-solid fa-align-left"></i></button>
             <button class="tool-btn" onclick="applyFormat('justifyCenter')"><i class="fa-solid fa-align-center"></i></button>
             <button class="tool-btn" onclick="applyFormat('justifyFull')"><i class="fa-solid fa-align-justify"></i></button>
         </div>
+
+        <span class="label">Style</span>
         <div class="tool-group">
             <button class="tool-btn" onclick="applyFormat('bold')"><i class="fa-solid fa-bold"></i></button>
             <button class="tool-btn" onclick="applyFormat('underline')"><i class="fa-solid fa-underline"></i></button>
         </div>
+        
+        <button class="tool-btn" style="width:100%; background:#742a2a; border:none;" onclick="deleteElement()">Delete Element</button>
     </div>
 </div>
 
@@ -80,76 +92,89 @@
 
 <script>
     const frame = document.getElementById('preview-frame');
-    let templateHTML = "";
+    let selectedEl = null;
 
-    // 1. INITIAL LOAD: FETCH EXTERNAL FILES
-    async function loadResources() {
-        try {
-            // Fetch the template.html
-            const response = await fetch('template.html');
-            templateHTML = await response.text();
-            
-            // Inject the initial view
-            renderPreview("<h2>Drag content into this area</h2>");
-        } catch (err) {
-            console.error("Could not load template.html or styles.css. Ensure you are running on a local server.", err);
-        }
-    }
-
-    function renderPreview(content) {
-        // This injects the template and ensures styles.css is called inside the iframe
-        const doc = templateHTML.replace('{{CONTENT}}', `<div id="editor-root">${content}</div>`);
-        frame.srcdoc = doc;
+    // Load external resources
+    async function init() {
+        const resp = await fetch('template.html');
+        const html = await resp.text();
         
-        // Setup listeners once the iframe loads
+        // Ensure styles.css link exists and target the content-container
+        frame.srcdoc = html.replace('<div class="content-container">', '<div class="content-container" id="editor-root">');
+        
         frame.onload = () => {
-            setupIframeInteractions();
-        };
-    }
-
-    // 2. DRAG & DROP LOGIC
-    function onDragStart(ev, type) {
-        ev.dataTransfer.setData("text/type", type);
-    }
-
-    function setupIframeInteractions() {
-        const innerDoc = frame.contentDocument || frame.contentWindow.document;
-        const root = innerDoc.getElementById('editor-root');
-
-        // Allow Dropping
-        root.ondragover = (e) => e.preventDefault();
-        root.ondrop = (e) => {
-            e.preventDefault();
-            const type = e.dataTransfer.getData("text/type");
-            if(!type) return;
-
-            const newEl = innerDoc.createElement('div');
-            newEl.className = 'editable-block';
-            newEl.contentEditable = "true";
+            const innerDoc = frame.contentDocument;
             
-            // Apply the styles from styles.css
-            if(type === 'section_heading') newEl.innerHTML = `<div class="section_heading">NEW SECTION</div>`;
-            if(type === 'block_heading')   newEl.innerHTML = `<h2 class="block_heading">Block Title</h2>`;
-            if(type === 'block_text')      newEl.innerHTML = `<p class="block_text">Sample body text...</p>`;
-
-            root.appendChild(newEl);
-            attachBlockListeners(newEl);
+            // Add Global Interaction Styles to the Iframe
+            const style = innerDoc.createElement('style');
+            style.innerHTML = `
+                .editable { cursor: pointer; transition: 0.2s; position: relative; }
+                .editable:hover { outline: 2px dashed #ebd5c9; outline-offset: 5px; }
+                .selected-outline { outline: 2px solid #877267 !important; outline-offset: 5px; }
+            `;
+            innerDoc.head.appendChild(style);
         };
     }
 
-    // 3. SELECTION & EDITING
-    function attachBlockListeners(el) {
-        el.onfocus = () => {
-            document.getElementById('toolbar').style.display = 'block';
+    function showTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+        document.getElementById(`tab-${tabName}-btn`).classList.add('active');
+    }
+
+    function insertElement(type) {
+        const root = frame.contentDocument.getElementById('editor-root');
+        const newEl = frame.contentDocument.createElement('div');
+        newEl.className = `editable ${type}`;
+        
+        if(type === 'section_heading') newEl.innerHTML = "NEW SECTION";
+        if(type === 'block_heading') newEl.innerHTML = "New Heading";
+        if(type === 'block_text') newEl.innerHTML = "Sample paragraph text goes here.";
+
+        newEl.onclick = (e) => {
+            e.stopPropagation();
+            selectElement(newEl);
         };
-        // Re-ordering logic would go here in next step
+
+        root.appendChild(newEl);
+    }
+
+    function selectElement(el) {
+        // Remove previous selection highlight
+        if(selectedEl) selectedEl.classList.remove('selected-outline');
+        
+        selectedEl = el;
+        selectedEl.classList.add('selected-outline');
+        
+        // Switch to Edit Tab
+        showTab('edit');
+        
+        // Load text into textarea
+        document.getElementById('edit-textarea').value = selectedEl.innerHTML;
+    }
+
+    function syncText(val) {
+        if(selectedEl) selectedEl.innerHTML = val;
     }
 
     function applyFormat(cmd) {
+        // This targets the specific selected element's content
         frame.contentWindow.document.execCommand(cmd, false, null);
+        // Update the textarea to reflect formatting changes (like <b> tags)
+        document.getElementById('edit-textarea').value = selectedEl.innerHTML;
     }
 
-    window.onload = loadResources;
+    function deleteElement() {
+        if(selectedEl) {
+            selectedEl.remove();
+            selectedEl = null;
+            document.getElementById('edit-textarea').value = "";
+            showTab('insert');
+        }
+    }
+
+    window.onload = init;
 </script>
 
 </body>
