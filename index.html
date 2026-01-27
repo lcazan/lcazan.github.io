@@ -37,30 +37,27 @@
             font-family: 'Cinzel', serif;
             font-size: 1.25rem; 
             text-transform: uppercase; 
-            letter-spacing: 3px; 
+            letter-spacing: 1px; /* Closer letter spacing */
             border: 1px solid var(--text-dark); 
             padding: 8px 20px; 
             display: inline-block;
             white-space: nowrap;
             transition: all 0.2s ease;
-            /* Non-selectable logo */
             user-select: none;
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
         }
-        .version-header { display: block; font-size: 0.65rem; color: #888; margin-top: 5px; letter-spacing: 1px; }
 
         .menu-icon { 
             position: absolute; 
-            top: 50%; /* Center the icon relative to the header height */
+            top: 50%; 
             left: 20px; 
-            transform: translateY(-50%); /* Offset by half its own height to ensure center alignment */
+            transform: translateY(-50%); 
             cursor: pointer; 
             z-index: 10005; 
             padding: 5px; 
         }
-        /* Restored original compact spacing */
         .menu-icon div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0.2s; }
         .menu-icon.active .line1 { transform: rotate(-45deg) translate(-4.5px, 5px); }
         .menu-icon.active .line2 { opacity: 0; }
