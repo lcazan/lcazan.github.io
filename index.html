@@ -74,10 +74,10 @@
             background: var(--brand-cream); 
             transition: left 0.2s ease-in-out; 
             z-index: 9000; 
-            padding-top: 80px; /* Reduced to allow more room for links */
-            padding-bottom: 60px; /* Essential for landscape visibility */
+            padding-top: 80px; 
+            padding-bottom: 80px; /* Enhanced for landscape mobile */
             box-shadow: 4px 0 15px rgba(0,0,0,0.1); 
-            overflow-y: auto; /* Enables scrolling for short screens */
+            overflow-y: auto; 
             -webkit-overflow-scrolling: touch;
         }
         nav.open { left: 0; }
@@ -165,7 +165,7 @@
     </div>
     <div class="logo-container">
         <div class="logo">My Snoozing Baby</div>
-        </div>
+    </div>
 </header>
 
 <div id="navOverlay" onclick="toggleNav(event)"></div>
@@ -256,8 +256,12 @@
         const headerHamburger = document.getElementById('headerHamburger');
         const overlay = document.getElementById('navOverlay');
         const isOpen = nav.classList.toggle('open');
+        
         headerHamburger.style.visibility = isOpen ? 'hidden' : 'visible';
         overlay.style.display = isOpen ? 'block' : 'none';
+        
+        // Prevent background scrolling when menu is open
+        document.body.style.overflow = isOpen ? 'hidden' : 'auto';
     }
 
     function toggleDropdown(btn) {
