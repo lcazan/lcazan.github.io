@@ -49,20 +49,24 @@
             -ms-user-select: none;
         }
 
-        /* Option 1: Increased z-index so it sits above the sidebar (9000) */
-        .menu-icon { 
+        /* Initial Hamburger in Header */
+        .header-menu-icon {
             position: absolute; 
             top: 50%; 
             left: 20px; 
             transform: translateY(-50%); 
             cursor: pointer; 
-            z-index: 10005; 
-            padding: 5px; 
+            z-index: 8001; 
+            padding: 5px;
         }
-        .menu-icon div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0.2s; }
-        .menu-icon.active .line1 { transform: rotate(-45deg) translate(-4.5px, 5px); }
-        .menu-icon.active .line2 { opacity: 0; }
-        .menu-icon.active .line3 { transform: rotate(45deg) translate(-4.5px, -5.5px); }
+
+        /* Icon Lines Styling */
+        .menu-lines div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0.2s; }
+        
+        /* Transform to X */
+        .active .line1 { transform: rotate(-45deg) translate(-4.5px, 5px); }
+        .active .line2 { opacity: 0; }
+        .active .line3 { transform: rotate(45deg) translate(-4.5px, -5.5px); }
 
         nav { 
             position: fixed;
@@ -78,6 +82,18 @@
             overflow-y: auto;
         }
         nav.open { left: 0; }
+        
+        /* The Close X inside the Sidebar */
+        .sidebar-close-icon {
+            position: absolute;
+            top: 25px; /* Aligned vertically with original header height */
+            left: 20px;
+            cursor: pointer;
+            padding: 5px;
+            display: none; /* Only visible when sidebar is open */
+        }
+        nav.open .sidebar-close-icon { display: block; }
+
         nav a { 
             display: block;
             padding: 15px 30px; 
@@ -124,7 +140,6 @@
         .gallery-item { 
             cursor: pointer; 
             background: #f9f9f9; 
-            /* Remove blue highlight on tap */
             -webkit-tap-highlight-color: transparent; 
         }
         .gallery-item img { width: 100%; height: auto; display: block; }
@@ -149,7 +164,7 @@
 <body>
 
 <header>
-    <div class="menu-icon" id="hamburger" onclick="toggleNav(event)">
+    <div class="header-menu-icon menu-lines" id="headerHamburger" onclick="toggleNav(event)">
         <div class="line1"></div>
         <div class="line2"></div>
         <div class="line3"></div>
@@ -162,6 +177,12 @@
 <div id="navOverlay" onclick="toggleNav(event)"></div>
 
 <nav id="sidebar">
+    <div class="sidebar-close-icon menu-lines active" onclick="toggleNav(event)">
+        <div class="line1"></div>
+        <div class="line2"></div>
+        <div class="line3"></div>
+    </div>
+
     <a href="https://mysnoozingbaby.com/">Home</a>
     <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">Snoo Smart Sleeper <i class="fa-solid fa-caret-down"></i></a>
     <div class="sub-nav">
@@ -239,10 +260,13 @@
     function toggleNav(e) {
         if(e) e.stopPropagation();
         const nav = document.getElementById('sidebar');
-        const hamburger = document.getElementById('hamburger');
+        const headerHamburger = document.getElementById('headerHamburger');
         const overlay = document.getElementById('navOverlay');
+        
         const isOpen = nav.classList.toggle('open');
-        hamburger.classList.toggle('active');
+        
+        // Hide/Show the header icon based on sidebar state
+        headerHamburger.style.visibility = isOpen ? 'hidden' : 'visible';
         overlay.style.display = isOpen ? 'block' : 'none';
     }
 
@@ -309,7 +333,7 @@
     function openModal(index) {
         currentIndex = index;
         document.getElementById('imageModal').style.display = "block";
-        document.getElementById('hamburger').style.display = "none";
+        document.getElementById('headerHamburger').style.visibility = "hidden";
         updateTrackPos(false);
         document.body.style.overflow = "hidden";
         loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
@@ -323,7 +347,7 @@
 
     function closeModal() { 
         document.getElementById('imageModal').style.display = "none"; 
-        document.getElementById('hamburger').style.display = "block";
+        document.getElementById('headerHamburger').style.visibility = "visible";
         document.body.style.overflow = "auto"; 
     }
 
