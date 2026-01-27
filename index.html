@@ -23,14 +23,14 @@
             display: flex;
             align-items: center; 
             justify-content: center; 
-            padding: 15px 10px; 
+            padding: 10px 10px; 
             background: rgba(255, 255, 255, 0.95); 
             backdrop-filter: blur(5px);
             position: sticky; 
             top: 0;
             z-index: 8000;
             border-bottom: 1px solid rgba(0,0,0,0.05);
-            min-height: 60px;
+            min-height: 70px; /* Slightly adjusted for vertical centering */
         }
         .logo-container { text-align: center; max-width: 70%; flex-shrink: 1; }
         .logo { 
@@ -43,16 +43,23 @@
             display: inline-block;
             white-space: nowrap;
             transition: all 0.2s ease;
+            /* Make text non-selectable */
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
         .version-header { display: block; font-size: 0.65rem; color: #888; margin-top: 5px; letter-spacing: 1px; }
 
         .menu-icon { 
-            position: fixed; 
-            top: 15px;      
+            position: absolute; /* Positioned relative to the header for vertical centering */
             left: 20px; 
             cursor: pointer; 
             z-index: 10005; 
-            padding: 5px; 
+            padding: 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         .menu-icon div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0.2s; }
         .menu-icon.active .line1 { transform: rotate(-45deg) translate(-4.5px, 5px); }
@@ -138,13 +145,12 @@
 </head>
 <body>
 
-<div class="menu-icon" id="hamburger" onclick="toggleNav(event)">
-    <div class="line1"></div>
-    <div class="line2"></div>
-    <div class="line3"></div>
-</div>
-
 <header>
+    <div class="menu-icon" id="hamburger" onclick="toggleNav(event)">
+        <div class="line1"></div>
+        <div class="line2"></div>
+        <div class="line3"></div>
+    </div>
     <div class="logo-container">
         <div class="logo">My Snoozing Baby</div>
         </div>
