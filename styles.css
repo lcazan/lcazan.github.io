@@ -1,0 +1,36 @@
+/* 1. section_heading: Matches "PHOTO GALLERY" style */
+.section_heading {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #877267; /* --icon-brown */
+    margin: 40px 0 30px;
+    display: block;
+    text-align: left;
+}
+
+/* 2. block_heading: Matches "SNOO Smart Bassinet Rental" style */
+.block_heading {
+    font-family: 'Cinzel', serif;
+    font-size: 1.2rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    color: #151515; /* --text-dark */
+    border-bottom: 1px solid #ebd5c9; /* --brand-pink underline */
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+    display: inline-block;
+}
+
+/* 3. block_text: Matches "Let a smart bassinet..." style */
+.block_text {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 1rem;
+    color: #151515;
+    line-height: 1.8;
+    margin: 5px auto 25px;
+    max-width: 800px;
+    text-align: center;
+}
