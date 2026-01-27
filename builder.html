@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | Direct Preview Editor</title>
+    <title>Snoozing Builder | CSS-Driven Editor</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -23,7 +23,7 @@
         .insert-card { background: #3d3d3d; border: 1px solid #555; padding: 12px; margin-bottom: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; color: #fff; }
         .btn-insert { background: var(--brand-pink); border: none; color: #000; padding: 5px 12px; border-radius: 3px; cursor: pointer; font-size: 10px; font-weight: bold; text-transform: uppercase; }
 
-        /* FLOATING TOOLBAR (Appears when editing) */
+        /* TOOLBAR */
         #toolbar { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #444; }
         .tool-group { display: flex; gap: 8px; margin-bottom: 15px; }
         .tool-btn { background: #444; border: 1px solid #666; color: #fff; padding: 10px; cursor: pointer; border-radius: 3px; flex: 1; text-align: center; }
@@ -45,6 +45,12 @@
         <div class="insert-card"><span>Block Text</span><button class="btn-insert" onclick="insertElement('block_text')">Add</button></div>
 
         <div id="toolbar">
+            <span class="label">Text Style</span>
+            <div class="tool-group">
+                <button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
+                <button class="tool-btn" id="underline-btn" onclick="execCmd('underline')"><i class="fa-solid fa-underline"></i></button>
+            </div>
+            
             <span class="label">Alignment</span>
             <div class="tool-group">
                 <button class="tool-btn" onclick="execCmd('justifyLeft')"><i class="fa-solid fa-align-left"></i></button>
@@ -52,12 +58,6 @@
                 <button class="tool-btn" onclick="execCmd('justifyFull')"><i class="fa-solid fa-align-justify"></i></button>
             </div>
 
-            <span class="label">Text Style</span>
-            <div class="tool-group">
-                <button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
-                <button class="tool-btn" id="underline-btn" onclick="execCmd('underline')"><i class="fa-solid fa-underline"></i></button>
-            </div>
-            
             <button class="tool-btn" style="width:100%; background:#742a2a; border:none; margin-top: 10px;" onclick="deleteElement()">Delete Element</button>
         </div>
     </div>
@@ -76,48 +76,50 @@
         const resp = await fetch('template.html');
         let html = await resp.text();
         
-        // Link styles.css and prepare root
+        // Ensure styles.css is loaded inside the head
+        const cssLink = '<link rel="stylesheet" href="styles.css">';
+        if (!html.includes('styles.css')) {
+            html = html.replace('</head>', cssLink + '</head>');
+        }
+        
+        // Target the correct content-container
         frame.srcdoc = html.replace('<div class="content-container">', '<div class="content-container" id="editor-root">');
         
         frame.onload = () => {
             const innerDoc = frame.contentDocument;
             
-            // Add interaction styles to iframe
+            // Interaction helpers
             const style = innerDoc.createElement('style');
             style.innerHTML = `
-                .editable { cursor: text; transition: 0.1s; position: relative; min-height: 20px; outline: none; }
-                .editable:hover { outline: 1px dashed #ebd5c9; outline-offset: 5px; }
-                .selected-outline { outline: 2px solid #877267 !important; outline-offset: 5px; }
-                [contenteditable="true"]:focus { outline: 2px solid #877267 !important; outline-offset: 5px; }
+                .editable { cursor: text; min-height: 1.2em; transition: 0.1s; outline: none; }
+                .editable:hover { outline: 1px dashed var(--brand-pink, #ebd5c9); outline-offset: 5px; }
+                [contenteditable="true"]:focus { outline: 2px solid var(--icon-brown, #877267) !important; outline-offset: 5px; }
             `;
             innerDoc.head.appendChild(style);
 
-            // Clicking outside of an element "sets" the changes
             innerDoc.addEventListener('click', (e) => {
-                if (!e.target.classList.contains('editable')) {
-                    deselectAll();
-                }
+                if (!e.target.closest('.editable')) deselectAll();
             });
         };
     }
 
     function insertElement(type) {
         const root = frame.contentDocument.getElementById('editor-root');
+        
+        // Create the element with the exact class from styles.css
         const newEl = frame.contentDocument.createElement('div');
-        newEl.className = `editable ${type}`;
+        newEl.className = `editable ${type}`; // e.g. "editable section_heading"
         newEl.contentEditable = "true";
         
-        // Set default text
-        if(type === 'section_heading') newEl.innerText = "NEW SECTION";
-        if(type === 'block_heading') newEl.innerText = "New Heading";
-        if(type === 'block_text') newEl.innerText = "Click here to start typing your paragraph...";
+        // Set placeholder content
+        if(type === 'section_heading') newEl.innerText = "SECTION TITLE";
+        if(type === 'block_heading') newEl.innerText = "Block Title Here";
+        if(type === 'block_text') newEl.innerText = "Start typing your content here...";
 
-        // Handle selection and toolbar visibility
         newEl.onfocus = () => {
             selectedEl = newEl;
             document.getElementById('toolbar').style.display = 'block';
-            
-            // Only show underline for block_heading
+            // Underline only for block_heading
             document.getElementById('underline-btn').style.display = 
                 newEl.classList.contains('block_heading') ? 'block' : 'none';
         };
@@ -129,13 +131,12 @@
     function deselectAll() {
         selectedEl = null;
         document.getElementById('toolbar').style.display = 'none';
-        frame.contentDocument.activeElement.blur();
+        if(frame.contentDocument.activeElement) frame.contentDocument.activeElement.blur();
     }
 
-    // Native Browser Commands handle Toggling Bold/Underline/Align automatically
     function execCmd(command) {
         frame.contentDocument.execCommand(command, false, null);
-        frame.contentWindow.focus(); // Keep focus on the iframe
+        frame.contentWindow.focus();
     }
 
     function deleteElement() {
