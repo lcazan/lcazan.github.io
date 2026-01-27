@@ -89,11 +89,11 @@
         const resp = await fetch('template.html');
         let html = await resp.text();
         
-        // Inject styles.css directly into the frame head
+        // Inject styles.css link directly into frame head
         const cssLink = '<link rel="stylesheet" href="styles.css">';
         html = html.replace('</head>', cssLink + '</head>');
         
-        // Prepare editor root
+        // Prepare editor root inside the content-container
         frame.srcdoc = html.replace('<div class="content-container">', '<div class="content-container" id="editor-root">');
         
         frame.onload = () => {
@@ -145,23 +145,35 @@
         if(selectedEl) selectedEl.innerHTML = val;
     }
 
-    // Fixed Formatting Functions
     function setAlign(pos) {
         if(selectedEl) {
             selectedEl.style.textAlign = pos;
-            selectedEl.style.display = 'block'; // Ensure it takes full width for alignment
+            selectedEl.style.display = 'block'; 
         }
     }
 
+    // Fixed Formatting Logic: Directly wraps selection in editing box
     function applyStyle(type) {
-        if(!selectedEl) return;
-        // We use designMode to allow execCommand on the iframe's selection
-        frame.contentDocument.designMode = "on";
-        frame.contentWindow.focus();
-        frame.contentDocument.execCommand(type, false, null);
-        frame.contentDocument.designMode = "off";
-        // Refresh textarea to show the <b> or <u> tags
-        document.getElementById('edit-textarea').value = selectedEl.innerHTML;
+        const textarea = document.getElementById('edit-textarea');
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        
+        if (start === end) return; // No text selected
+
+        const selectedText = textarea.value.substring(start, end);
+        let replacement = "";
+
+        if (type === 'bold') {
+            replacement = `<b>${selectedText}</b>`;
+        } else if (type === 'underline') {
+            replacement = `<span style="text-decoration: underline;">${selectedText}</span>`;
+        }
+
+        textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+        
+        // Sync the changes to the preview iframe
+        syncText(textarea.value);
+        textarea.focus();
     }
 
     function deleteElement() {
