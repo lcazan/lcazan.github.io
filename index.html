@@ -51,7 +51,7 @@
             letter-spacing: 1px;
         }
         
-        /* --- Menu Icon (3 Lines Persistent) --- */
+        /* --- Menu Icon (Persistent Lines) --- */
         .menu-icon { 
             position: fixed; 
             left: 20px; 
@@ -67,7 +67,7 @@
             margin: 6px 0; 
         }
 
-        /* --- Sidebar Navigation (Instant/Larger Font) --- */
+        /* --- Sidebar Navigation (Instant/Larger Font/LOCKED) --- */
         nav { 
             position: fixed; 
             top: 0; 
@@ -75,7 +75,7 @@
             width: 260px; 
             height: 100%; 
             background: var(--brand-cream); 
-            transition: 0s; 
+            transition: 0s; /* INSTANT OPEN/CLOSE */
             z-index: 9000; 
             padding-top: 100px; 
             box-shadow: 4px 0 15px rgba(0,0,0,0.1); 
@@ -87,12 +87,10 @@
             text-decoration: none; 
             color: var(--text-dark); 
             font-weight: 400; 
-            font-size: 18px; 
+            font-size: 18px; /* LARGER FONT */
             text-transform: uppercase; 
             letter-spacing: 1px; 
         }
-        .sub-nav { background: rgba(0, 0, 0, 0.03); padding-left: 20px; }
-        .sub-nav a { font-size: 1rem; text-transform: none; padding: 10px 30px; }
         
         #navOverlay { 
             display: none; 
@@ -130,7 +128,7 @@
         /* --- Instagram (LOCKED) --- */
         .instagram-container { min-height: 200px; margin-bottom: 60px; width: 100%; }
 
-        /* --- Dynamic Gallery --- */
+        /* --- Photo Gallery --- */
         .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
         .gallery-item { cursor: pointer; background: #f9f9f9; }
@@ -176,10 +174,6 @@
 <nav id="sidebar">
     <a href="#">Home</a>
     <a href="#">SNOO SMART SLEEPER</a>
-    <div class="sub-nav">
-        <a href="#">SNOO Rental</a>
-        <a href="#">SNOO Cleaning/Repair</a>
-    </div>
     <a href="#">Baby Gear Rentals</a>
     <a href="#">Toddler Party Rentals</a>
     <a href="#">About Us</a>
@@ -251,19 +245,28 @@
         overlay.style.display = isOpen ? 'block' : 'none';
     }
 
-    let galleryData = [];
-    let currentIndex = 0;
+    // GALLERY DATA EMBEDDED
+    const galleryData = [
+        {"id": 1, "small": "1-small.jpg", "large": "1-large.jpg"},
+        {"id": 2, "small": "2-small.jpg", "large": "2-large.jpg"},
+        {"id": 3, "small": "3-small.jpg", "large": "3-large.jpg"},
+        {"id": 4, "small": "4-small.jpg", "large": "4-large.jpg"},
+        {"id": 5, "small": "5-small.jpg", "large": "5-large.jpg"},
+        {"id": 6, "small": "6-small.jpg", "large": "6-large.jpg"},
+        {"id": 7, "small": "7-small.jpg", "large": "7-large.jpg"},
+        {"id": 8, "small": "8-small.jpg", "large": "8-large.jpg"},
+        {"id": 9, "small": "9-small.jpg", "large": "9-large.jpg"},
+        {"id": 10, "small": "10-small.jpg", "large": "10-large.jpg"},
+        {"id": 11, "small": "11-small.jpg", "large": "11-large.jpg"},
+        {"id": 12, "small": "12-small.jpg", "large": "12-large.jpg"},
+        {"id": 13, "small": "13-small.jpg", "large": "13-large.jpg"},
+        {"id": 14, "small": "14-small.jpg", "large": "14-large.jpg"},
+        {"id": 15, "small": "15-small.jpg", "large": "15-large.jpg"},
+        {"id": 16, "small": "16-small.jpg", "large": "16-large.jpg"},
+        {"id": 17, "small": "17-small.jpg", "large": "17-large.jpg"}
+    ];
 
-    async function loadGallery() {
-        try {
-            const response = await fetch('./images.json'); // Added relative path check
-            if (!response.ok) throw new Error("Could not find images.json");
-            galleryData = await response.json();
-            renderGallery();
-        } catch (err) {
-            console.error("Gallery failed:", err);
-        }
-    }
+    let currentIndex = 0;
 
     function renderGallery() {
         const left = document.getElementById('col-left'), 
@@ -272,12 +275,12 @@
         
         galleryData.forEach((item, index) => {
             const itemHtml = `<div class="gallery-item" onclick="openModal(${index})">
-                                <img src="${item.small}" loading="lazy" alt="Snoozing Baby Gear">
+                                <img src="${item.small}" loading="lazy" alt="Gallery Image ${item.id}">
                               </div>`;
             index % 2 === 0 ? left.innerHTML += itemHtml : right.innerHTML += itemHtml;
             
-            const slide = document.createElement('div'); 
-            slide.className = 'slide'; 
+            const slide = document.createElement('div');
+            slide.className = 'slide';
             slide.innerHTML = `<div class="image-wrapper" data-index="${index}">
                                  <div class="loader"></div>
                                  <img data-src="${item.large}">
@@ -295,7 +298,8 @@
     }
 
     function updateSlide(index) {
-        const track = document.getElementById('sliderTrack'), width = document.getElementById('imageModal').offsetWidth;
+        const track = document.getElementById('sliderTrack');
+        const width = document.getElementById('imageModal').offsetWidth;
         track.style.transform = `translateX(${index * -width}px)`;
         document.getElementById('modalCounter').innerText = `${index + 1} / ${galleryData.length}`;
         
@@ -303,13 +307,19 @@
         const img = wrapper.querySelector('img');
         if (img && img.dataset.src) {
             img.src = img.dataset.src;
-            img.onload = () => { img.classList.add('loaded'); wrapper.querySelector('.loader').style.display = 'none'; };
+            img.onload = () => {
+                img.classList.add('loaded');
+                wrapper.querySelector('.loader').style.display = 'none';
+            };
         }
     }
 
-    function closeModal() { document.getElementById('imageModal').style.display = "none"; document.body.style.overflow = "auto"; }
+    function closeModal() {
+        document.getElementById('imageModal').style.display = "none";
+        document.body.style.overflow = "auto";
+    }
 
-    window.addEventListener('load', loadGallery);
+    window.onload = renderGallery;
 </script>
 
 </body>
