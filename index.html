@@ -51,7 +51,6 @@
             letter-spacing: 1px;
         }
         
-        /* --- Menu Icon (Persistent Lines) --- */
         .menu-icon { 
             position: fixed; 
             left: 20px; 
@@ -65,9 +64,13 @@
             height: 2px; 
             background-color: var(--icon-brown); 
             margin: 6px 0; 
+            transition: 0.2s; 
         }
+        .menu-icon.active .line1 { transform: rotate(-45deg) translate(-5px, 6px); }
+        .menu-icon.active .line2 { opacity: 0; }
+        .menu-icon.active .line3 { transform: rotate(45deg) translate(-5px, -7px); }
 
-        /* --- Sidebar Navigation (LOCKED) --- */
+        /* --- Sidebar Navigation --- */
         nav { 
             position: fixed; 
             top: 0; 
@@ -75,7 +78,7 @@
             width: 260px; 
             height: 100%; 
             background: var(--brand-cream); 
-            transition: 0s; /* Instant */
+            transition: left 0.2s ease-in-out; 
             z-index: 9000; 
             padding-top: 100px; 
             box-shadow: 4px 0 15px rgba(0,0,0,0.1); 
@@ -87,10 +90,12 @@
             text-decoration: none; 
             color: var(--text-dark); 
             font-weight: 400; 
-            font-size: 18px; /* Bigger Font */
+            font-size: 18px; 
             text-transform: uppercase; 
             letter-spacing: 1px; 
         }
+        .sub-nav { background: rgba(0, 0, 0, 0.03); padding-left: 20px; }
+        .sub-nav a { font-size: 1rem; text-transform: none; padding: 10px 30px; }
         
         #navOverlay { 
             display: none; 
@@ -107,6 +112,10 @@
         .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
         .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
 
+        /* --- Instagram --- */
+        .instagram-container { min-height: 200px; margin-bottom: 60px; width: 100%; }
+
+        /* --- Hero --- */
         .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; align-items: stretch; }
         .hero-banner img { width: 50%; height: auto; display: block; object-fit: cover; }
         .tagline-container { width: 50%; padding: 60px; display: flex; align-items: center; box-sizing: border-box; }
@@ -118,34 +127,30 @@
             .tagline-container { padding: 40px 20px; text-align: center; justify-content: center; }
         }
 
-        /* --- Services (LOCKED) --- */
+        /* --- Services --- */
         section { margin-bottom: 60px; text-align: center; }
         h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 8px; margin-bottom: 10px; display: inline-block; font-size: 1.2rem; font-weight: 400; text-transform: uppercase; }
         section p { text-align: center; line-height: 1.8; margin-top: 5px; margin-bottom: 25px; max-width: 800px; margin-left: auto; margin-right: auto; }
         .btn-find-out { display: inline-block; padding: 10px 25px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* --- Instagram (LOCKED) --- */
-        .instagram-container { min-height: 200px; margin-bottom: 60px; width: 100%; }
-
-        /* --- Photo Gallery (LOCKED Logic) --- */
+        /* --- Gallery & Lightbox --- */
         .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
         .gallery-item { cursor: pointer; background: #f9f9f9; }
         .gallery-item img { width: 100%; height: auto; display: block; }
 
-        /* --- Modal / Lightbox (LOCKED) --- */
         .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
-        .slider-track { display: flex; height: 100%; width: 100%; transition: transform 0.3s ease-out; }
+        .slider-track { display: flex; height: 100%; width: 100%; }
         .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         .image-wrapper { position: relative; display: flex; align-items: center; justify-content: center; width: 90%; height: 70vh; }
         .slide img { max-width: 100%; max-height: 100%; width: auto; height: auto; border: 2px solid #fff; object-fit: contain; opacity: 0; transition: opacity 0.3s ease; }
         .slide img.loaded { opacity: 1; }
-        .counter { position: fixed; top: 25px; left: 25px; color: #fff; font-size: 22px; letter-spacing: 2px; font-weight: 600; z-index: 10005; }
+        .counter { position: fixed; top: 25px; left: 25px; color: #fff; font-size: 22px; letter-spacing: 2px; font-weight: 600; z-index: 10005; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none; }
         .close-modal { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 40px; cursor: pointer; z-index: 10005; }
         .loader { width: 30px; height: 30px; border: 3px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 1s infinite linear; position: absolute; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* --- Footer (LOCKED) --- */
+        /* --- Footer --- */
         footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; position: relative; margin-top: auto; }
         .social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
         .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; }
@@ -173,6 +178,10 @@
 <nav id="sidebar">
     <a href="#">Home</a>
     <a href="#">SNOO SMART SLEEPER</a>
+    <div class="sub-nav">
+        <a href="#">SNOO Rental</a>
+        <a href="#">SNOO Cleaning/Repair</a>
+    </div>
     <a href="#">Baby Gear Rentals</a>
     <a href="#">Toddler Party Rentals</a>
     <a href="#">About Us</a>
@@ -195,12 +204,12 @@
     </section>
     <section>
         <h2>SNOO deep-cleaning, servicing, and repairs</h2>
-        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO.</p>
+        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
     <section>
         <h2>Traveling to the DC Metro area?</h2>
-        <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more.</p>
+        <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC or surrounding parts of Virginia and Maryland. Travel light and let us handle the rest.</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
 
@@ -218,7 +227,7 @@
 </div>
 
 <div id="imageModal" class="modal">
-    <div class="counter" id="modalCounter">1 / 1</div>
+    <div class="counter" id="modalCounter">1 / 17</div>
     <span class="close-modal" onclick="closeModal()">&times;</span>
     <div id="sliderTrack" class="slider-track"></div>
 </div>
@@ -239,76 +248,76 @@
     function toggleNav(e) {
         if(e) e.stopPropagation();
         const nav = document.getElementById('sidebar');
+        const hamburger = document.getElementById('hamburger');
         const overlay = document.getElementById('navOverlay');
         const isOpen = nav.classList.toggle('open');
+        hamburger.classList.toggle('active');
         overlay.style.display = isOpen ? 'block' : 'none';
     }
 
-    // EMBEDDED DATA
-    const galleryData = [
-        {"id": 1, "small": "1-small.jpg", "large": "1-large.jpg"},
-        {"id": 2, "small": "2-small.jpg", "large": "2-large.jpg"},
-        {"id": 3, "small": "3-small.jpg", "large": "3-large.jpg"},
-        {"id": 4, "small": "4-small.jpg", "large": "4-large.jpg"},
-        {"id": 5, "small": "5-small.jpg", "large": "5-large.jpg"},
-        {"id": 6, "small": "6-small.jpg", "large": "6-large.jpg"},
-        {"id": 7, "small": "7-small.jpg", "large": "7-large.jpg"},
-        {"id": 8, "small": "8-small.jpg", "large": "8-large.jpg"},
-        {"id": 9, "small": "9-small.jpg", "large": "9-large.jpg"},
-        {"id": 10, "small": "10-small.jpg", "large": "10-large.jpg"},
-        {"id": 11, "small": "11-small.jpg", "large": "11-large.jpg"},
-        {"id": 12, "small": "12-small.jpg", "large": "12-large.jpg"},
-        {"id": 13, "small": "13-small.jpg", "large": "13-large.jpg"},
-        {"id": 14, "small": "14-small.jpg", "large": "14-large.jpg"},
-        {"id": 15, "small": "15-small.jpg", "large": "15-large.jpg"},
-        {"id": 16, "small": "16-small.jpg", "large": "16-large.jpg"},
-        {"id": 17, "small": "17-small.jpg", "large": "17-large.jpg"}
-    ];
+    const imageList = ["1.jpeg", "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg", "9.jpeg", "10.jpeg", "11.jpeg", "12.jpeg", "13.jpeg", "14.jpeg", "15.jpeg", "16.jpeg", "17.jpeg"];
+    let currentIndex = 0, startX = 0, currentTranslate = 0, prevTranslate = 0, isDragging = false;
+    const VELOCITY = 2500; 
 
     function renderGallery() {
-        const left = document.getElementById('col-left'), 
-              right = document.getElementById('col-right'), 
-              track = document.getElementById('sliderTrack');
-        
-        galleryData.forEach((item, index) => {
-            const itemHtml = `<div class="gallery-item" onclick="openModal(${index})">
-                                <img src="${item.small}" loading="lazy" alt="Gallery Image ${item.id}">
-                              </div>`;
+        const left = document.getElementById('col-left'), right = document.getElementById('col-right'), track = document.getElementById('sliderTrack');
+        imageList.forEach((img, index) => {
+            const itemHtml = `<div class="gallery-item" onclick="openModal(${index})"><img src="${img}" loading="lazy"></div>`;
             index % 2 === 0 ? left.innerHTML += itemHtml : right.innerHTML += itemHtml;
-            
-            const slide = document.createElement('div');
-            slide.className = 'slide';
-            slide.innerHTML = `<div class="image-wrapper" data-index="${index}">
-                                 <div class="loader"></div>
-                                 <img data-src="${item.large}">
-                               </div>`;
+            const slide = document.createElement('div'); 
+            slide.className = 'slide'; 
+            slide.innerHTML = `<div class="image-wrapper" data-index="${index}"><div class="loader"></div><img data-src="${img}"></div>`;
             track.appendChild(slide);
         });
-        document.getElementById('modalCounter').innerText = `1 / ${galleryData.length}`;
+    }
+
+    function loadImage(index) {
+        const slide = document.querySelector(`.image-wrapper[data-index="${index}"]`);
+        if (!slide) return;
+        const img = slide.querySelector('img'), loader = slide.querySelector('.loader');
+        if (img && img.dataset.src) {
+            img.src = img.dataset.src; img.onload = () => { img.classList.add('loaded'); if (loader) loader.style.display = 'none'; };
+        }
+    }
+
+    function updateTrackPos(animate = false) {
+        const track = document.getElementById('sliderTrack'), width = document.getElementById('imageModal').offsetWidth;
+        currentTranslate = currentIndex * -width;
+        prevTranslate = currentTranslate;
+        track.style.transition = animate ? `transform ${width / VELOCITY}s ease-out` : 'none';
+        track.style.transform = `translateX(${currentTranslate}px)`;
+        document.getElementById('modalCounter').innerText = `${currentIndex + 1} / ${imageList.length}`;
     }
 
     function openModal(index) {
+        currentIndex = index;
         document.getElementById('imageModal').style.display = "block";
+        updateTrackPos(false);
         document.body.style.overflow = "hidden";
-        updateSlide(index);
+        loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
     }
 
-    function updateSlide(index) {
-        const track = document.getElementById('sliderTrack'), width = document.getElementById('imageModal').offsetWidth;
-        track.style.transform = `translateX(${index * -width}px)`;
-        document.getElementById('modalCounter').innerText = `${index + 1} / ${galleryData.length}`;
-        
-        const wrapper = document.querySelector(`.image-wrapper[data-index="${index}"]`);
-        const img = wrapper.querySelector('img');
-        if (img && img.dataset.src) {
-            img.src = img.dataset.src;
-            img.onload = () => { img.classList.add('loaded'); wrapper.querySelector('.loader').style.display = 'none'; };
-        }
+    function moveSlide(step) {
+        currentIndex = Math.max(0, Math.min(currentIndex + step, imageList.length - 1));
+        updateTrackPos(true);
+        loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
     }
 
     function closeModal() { document.getElementById('imageModal').style.display = "none"; document.body.style.overflow = "auto"; }
 
-    window.onload = renderGallery;
+    window.addEventListener('resize', () => {
+        if (document.getElementById('imageModal').style.display === "block") updateTrackPos(false);
+    });
+
+    const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
+    modal.addEventListener('touchstart', e => { isDragging = true; startX = e.touches[0].clientX; track.style.transition = 'none'; });
+    modal.addEventListener('touchmove', e => { if (!isDragging) return; track.style.transform = `translateX(${prevTranslate + (e.touches[0].clientX - startX)}px)`; });
+    modal.addEventListener('touchend', e => { 
+        isDragging = false; const diff = e.changedTouches[0].clientX - startX;
+        if (diff < -50) moveSlide(1); else if (diff > 50) moveSlide(-1); else moveSlide(0);
+    });
+
+    window.addEventListener('load', renderGallery);
 </script>
 
 </body>
