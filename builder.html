@@ -2,58 +2,57 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | Advanced Heading Controls</title>
+    <title>Snoozing Builder | Pure Editor</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
             --admin-bg: #1e1e1e;
             --panel-bg: #2d2d2d;
             --brand-pink: #ebd5c9;
-            --text-light: #eee;
         }
         body { margin: 0; display: flex; height: 100vh; font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; }
 
         /* SLIM SIDEBAR */
         #sidebar { 
-            width: 90px; 
-            background: var(--panel-bg); 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center;
-            padding: 20px 0;
-            border-right: 2px solid #000; 
-            z-index: 100; 
+            width: 90px; background: var(--panel-bg); 
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px 0; border-right: 2px solid #000; z-index: 100; 
         }
         .insert-btn { 
-            width: 65px; height: 65px; 
-            background: #444; border: 1px solid #666; color: #fff; 
+            width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; 
             margin-bottom: 15px; border-radius: 8px; cursor: pointer;
             font-size: 9px; font-weight: bold; text-transform: uppercase;
             display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px;
         }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
-        .insert-btn i { font-size: 16px; }
 
-        /* PREVIEW AREA */
-        #preview-container { flex-grow: 1; height: 100vh; background: #555; position: relative; }
-        #preview-frame { width: 100%; height: 100%; border: none; background: white; }
+        /* PREVIEW CONTAINER & DEVICE BAR */
+        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #444; position: relative; }
+        
+        #device-bar {
+            height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #000;
+        }
+        .device-btn {
+            background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; transition: 0.2s;
+        }
+        .device-btn.active { color: var(--brand-pink); }
+        
+        #frame-wrapper {
+            flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; padding: 20px; overflow: auto;
+        }
+        #preview-frame { 
+            width: 100%; height: 100%; border: none; background: white; 
+            transition: width 0.3s ease-in-out; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+        #preview-frame.mobile { width: 390px; height: 844px; }
 
         /* FLOATING TOOLBAR */
         #floating-toolbar {
-            position: absolute;
-            display: none;
-            background: #333;
-            border-radius: 4px;
-            padding: 5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            z-index: 1000;
-            gap: 5px;
-            align-items: center;
+            position: absolute; display: none; background: #333; border-radius: 4px;
+            padding: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 1000; gap: 5px; align-items: center;
         }
-        .float-btn {
-            background: transparent; border: none; color: white;
-            padding: 5px 10px; cursor: pointer; border-radius: 2px;
-        }
+        .float-btn { background: transparent; border: none; color: white; padding: 5px 10px; cursor: pointer; border-radius: 2px; }
         .float-btn:hover { background: var(--brand-pink); color: #000; }
         .sep { color: #555; font-size: 12px; }
     </style>
@@ -67,17 +66,24 @@
 </div>
 
 <div id="preview-container">
-    <div id="floating-toolbar">
-        <button class="float-btn" title="Bold" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
-        <button class="float-btn" id="float-underline" title="Toggle Bottom Line" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>
-        <span class="sep">|</span>
-        <button class="float-btn" title="Left" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
-        <button class="float-btn" title="Center" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
-        <button class="float-btn" title="Justify" onclick="setAlign('justify')"><i class="fa-solid fa-align-justify"></i></button>
-        <span class="sep">|</span>
-        <button class="float-btn" title="Delete" onclick="deleteElement()" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>
+    <div id="device-bar">
+        <button class="device-btn active" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
+        <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
     </div>
-    <iframe id="preview-frame"></iframe>
+
+    <div id="frame-wrapper">
+        <div id="floating-toolbar">
+            <button class="float-btn" title="Bold" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
+            <button class="float-btn" id="float-underline" title="Toggle Line" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>
+            <span class="sep">|</span>
+            <button class="float-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
+            <button class="float-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
+            <button class="float-btn" onclick="setAlign('justify')"><i class="fa-solid fa-align-justify"></i></button>
+            <span class="sep">|</span>
+            <button class="float-btn" onclick="deleteElement()" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>
+        </div>
+        <iframe id="preview-frame"></iframe>
+    </div>
 </div>
 
 <script>
@@ -86,12 +92,14 @@
     let selectedEl = null;
 
     async function init() {
+        // We load the template only for the structure and styles, 
+        // but we empty out the content-container to start fresh.
         const resp = await fetch('template.html');
         let html = await resp.text();
-        
-        // Inject styles and setup root
         const cssLink = '<link rel="stylesheet" href="styles.css">';
         html = html.replace('</head>', cssLink + '</head>');
+        
+        // Ensure the editor-root is empty for new work
         frame.srcdoc = html.replace('<div class="content-container">', '<div class="content-container" id="editor-root">');
         
         frame.onload = () => {
@@ -101,11 +109,9 @@
                 .editable { cursor: text; outline: none; position: relative; }
                 .heading-wrapper { width: 100%; display: block; clear: both; margin-bottom: 10px; }
                 .selected-item { outline: 2px solid #877267 !important; outline-offset: 4px; }
-                /* Custom class to hide the border-bottom defined in styles.css */
-                .no-line { border-bottom: none !important; }
+                .no-line { border-bottom: 1px solid transparent !important; }
             `;
             innerDoc.head.appendChild(style);
-
             innerDoc.addEventListener('click', (e) => {
                 const el = e.target.closest('.editable');
                 if (el) selectElement(el); else deselectAll();
@@ -113,24 +119,34 @@
         };
     }
 
+    function setDevice(type) {
+        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+        if (type === 'mobile') {
+            frame.classList.add('mobile');
+            document.getElementById('btn-mobile').classList.add('active');
+        } else {
+            frame.classList.remove('mobile');
+            document.getElementById('btn-desktop').classList.add('active');
+        }
+        deselectAll(); 
+    }
+
     function insertElement(type) {
         const root = frame.contentDocument.getElementById('editor-root');
         const newEl = frame.contentDocument.createElement('div');
         newEl.className = `editable ${type}`;
         newEl.contentEditable = "true";
-        newEl.innerText = type === 'section_heading' ? "SECTION" : type === 'block_heading' ? "HEADING TITLE" : "Enter text here...";
+        newEl.innerText = type === 'section_heading' ? "SECTION TITLE" : type === 'block_heading' ? "HEADING TITLE" : "Enter paragraph text...";
 
-        // Wrap Heading to allow centering while maintaining the inline-block border
         if (type === 'block_heading') {
             const wrapper = frame.contentDocument.createElement('div');
             wrapper.className = "heading-wrapper";
-            wrapper.style.textAlign = "center"; // Default for block_heading
+            wrapper.style.textAlign = "center";
             wrapper.appendChild(newEl);
             root.appendChild(wrapper);
         } else {
             root.appendChild(newEl);
         }
-        
         selectElement(newEl);
     }
 
@@ -144,24 +160,22 @@
         const frameRect = frame.getBoundingClientRect();
         
         toolbar.style.display = 'flex';
-        toolbar.style.left = Math.max(10, (frameRect.left + rect.left + (rect.width/2) - (toolbar.offsetWidth/2))) + "px";
-        toolbar.style.top = (frameRect.top + rect.top - 50) + "px";
+        toolbar.style.left = (frameRect.left + rect.left + (rect.width/2) - (toolbar.offsetWidth/2)) + "px";
+        toolbar.style.top = (frameRect.top + rect.top - 55) + "px";
 
-        // Show Underline toggle ONLY for block_heading
         document.getElementById('float-underline').style.display = 
             el.classList.contains('block_heading') ? 'inline-block' : 'none';
     }
 
     function setAlign(pos) {
         if (!selectedEl) return;
-        // If it's a heading, align its wrapper. Otherwise, align the element itself.
         if (selectedEl.classList.contains('block_heading')) {
             selectedEl.parentElement.style.textAlign = pos;
         } else {
             selectedEl.style.textAlign = pos;
             selectedEl.style.display = 'block';
         }
-        selectElement(selectedEl); // Reposition toolbar
+        selectElement(selectedEl);
     }
 
     function toggleHeadingLine() {
