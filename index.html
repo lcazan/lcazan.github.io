@@ -147,23 +147,23 @@
 <header>
     <div class="logo-container">
         <div class="logo">My Snoozing Baby</div>
-        <span class="version-header">Version 2.3.4</span>
-    </div>
+        </div>
 </header>
 
 <div id="navOverlay" onclick="toggleNav(event)"></div>
 
 <nav id="sidebar">
-    <a href="#">Home</a>
+    <a href="https://mysnoozingbaby.com/">Home</a>
     <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">Snoo Smart Sleeper <i class="fa-solid fa-caret-down"></i></a>
     <div class="sub-nav">
-        <a href="#">SNOO Rental</a>
-        <a href="#">SNOO Cleaning/Repair</a>
+        <a href="https://mysnoozingbaby.com/snoo-rental">SNOO Rental</a>
+        <a href="https://mysnoozingbaby.com/snoo-cleaning-and-repairs">SNOO Cleaning/Repair</a>
     </div>
-    <a href="#">Baby Gear Rentals</a>
-    <a href="#">Toddler Party Rentals</a>
-    <a href="#">About Us</a>
-    <a href="#">Contact Us</a>
+    <a href="https://mysnoozingbaby.com/baby-gear-rentals">Baby Gear Rentals</a>
+    <a href="https://mysnoozingbaby.com/toddler-party-rentals">Toddler Party Rentals</a>
+    <a href="https://mysnoozingbaby.com/about-us">About Us</a>
+    <a href="https://mysnoozingbaby.com/contact-us">Contact Us</a>
+    <a href="https://mysnoozingbaby.com/faqs">FAQs</a>
 </nav>
 
 <div class="hero-banner">
@@ -300,7 +300,7 @@
     function openModal(index) {
         currentIndex = index;
         document.getElementById('imageModal').style.display = "block";
-        document.getElementById('hamburger').style.display = "none"; // Hide Menu Icon
+        document.getElementById('hamburger').style.display = "none";
         updateTrackPos(false);
         document.body.style.overflow = "hidden";
         loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
@@ -314,7 +314,7 @@
 
     function closeModal() { 
         document.getElementById('imageModal').style.display = "none"; 
-        document.getElementById('hamburger').style.display = "block"; // Show Menu Icon
+        document.getElementById('hamburger').style.display = "block";
         document.body.style.overflow = "auto"; 
     }
 
