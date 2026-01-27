@@ -28,12 +28,11 @@
         /* INSERT BUTTONS */
         .insert-card { background: #3d3d3d; border: 1px solid #555; padding: 12px; margin-bottom: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
         .btn-insert { background: var(--brand-pink); border: none; color: #000; padding: 5px 12px; border-radius: 3px; cursor: pointer; font-size: 10px; font-weight: bold; text-transform: uppercase; }
-        .btn-insert:hover { background: #fff; }
 
         /* EDIT TOOLS */
-        textarea { width: 100%; height: 150px; background: #111; color: #fff; border: 1px solid #555; padding: 10px; box-sizing: border-box; font-family: inherit; margin-bottom: 15px; }
+        textarea { width: 100%; height: 150px; background: #111; color: #fff; border: 1px solid #555; padding: 10px; box-sizing: border-box; font-family: inherit; margin-bottom: 15px; resize: none; }
         .tool-group { display: flex; gap: 8px; margin-bottom: 15px; }
-        .tool-btn { background: #444; border: 1px solid #666; color: #fff; padding: 10px; cursor: pointer; border-radius: 3px; flex: 1; }
+        .tool-btn { background: #444; border: 1px solid #666; color: #fff; padding: 10px; cursor: pointer; border-radius: 3px; flex: 1; text-align: center; }
         .tool-btn:hover { background: var(--brand-pink); color: #000; }
 
         /* PREVIEW AREA */
@@ -51,38 +50,29 @@
 
     <div id="tab-insert" class="tab-content active">
         <span class="label">Available Text Blocks</span>
-        <div class="insert-card">
-            <span>Section Heading</span>
-            <button class="btn-insert" onclick="insertElement('section_heading')">Add</button>
-        </div>
-        <div class="insert-card">
-            <span>Block Heading</span>
-            <button class="btn-insert" onclick="insertElement('block_heading')">Add</button>
-        </div>
-        <div class="insert-card">
-            <span>Block Text</span>
-            <button class="btn-insert" onclick="insertElement('block_text')">Add</button>
-        </div>
+        <div class="insert-card"><span>Section Heading</span><button class="btn-insert" onclick="insertElement('section_heading')">Add</button></div>
+        <div class="insert-card"><span>Block Heading</span><button class="btn-insert" onclick="insertElement('block_heading')">Add</button></div>
+        <div class="insert-card"><span>Block Text</span><button class="btn-insert" onclick="insertElement('block_text')">Add</button></div>
     </div>
 
     <div id="tab-edit" class="tab-content">
-        <span class="label">Modify Selected Element</span>
-        <textarea id="edit-textarea" placeholder="Select an element in the preview to edit..." oninput="syncText(this.value)"></textarea>
+        <span class="label">Modify Text</span>
+        <textarea id="edit-textarea" oninput="syncText(this.value)"></textarea>
         
         <span class="label">Alignment</span>
         <div class="tool-group">
-            <button class="tool-btn" onclick="applyFormat('justifyLeft')"><i class="fa-solid fa-align-left"></i></button>
-            <button class="tool-btn" onclick="applyFormat('justifyCenter')"><i class="fa-solid fa-align-center"></i></button>
-            <button class="tool-btn" onclick="applyFormat('justifyFull')"><i class="fa-solid fa-align-justify"></i></button>
+            <button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
+            <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
+            <button class="tool-btn" onclick="setAlign('justify')"><i class="fa-solid fa-align-justify"></i></button>
         </div>
 
-        <span class="label">Style</span>
+        <span class="label">Formatting</span>
         <div class="tool-group">
-            <button class="tool-btn" onclick="applyFormat('bold')"><i class="fa-solid fa-bold"></i></button>
-            <button class="tool-btn" onclick="applyFormat('underline')"><i class="fa-solid fa-underline"></i></button>
+            <button class="tool-btn" onclick="applyStyle('bold')"><i class="fa-solid fa-bold"></i></button>
+            <button class="tool-btn" onclick="applyStyle('underline')"><i class="fa-solid fa-underline"></i></button>
         </div>
         
-        <button class="tool-btn" style="width:100%; background:#742a2a; border:none;" onclick="deleteElement()">Delete Element</button>
+        <button class="tool-btn" style="width:100%; background:#742a2a; border:none; margin-top: 20px;" onclick="deleteElement()">Delete Element</button>
     </div>
 </div>
 
@@ -94,21 +84,23 @@
     const frame = document.getElementById('preview-frame');
     let selectedEl = null;
 
-    // Load external resources
     async function init() {
+        // Fetch external template
         const resp = await fetch('template.html');
-        const html = await resp.text();
+        let html = await resp.text();
         
-        // Ensure styles.css link exists and target the content-container
+        // Inject styles.css directly into the frame head
+        const cssLink = '<link rel="stylesheet" href="styles.css">';
+        html = html.replace('</head>', cssLink + '</head>');
+        
+        // Prepare editor root
         frame.srcdoc = html.replace('<div class="content-container">', '<div class="content-container" id="editor-root">');
         
         frame.onload = () => {
             const innerDoc = frame.contentDocument;
-            
-            // Add Global Interaction Styles to the Iframe
             const style = innerDoc.createElement('style');
             style.innerHTML = `
-                .editable { cursor: pointer; transition: 0.2s; position: relative; }
+                .editable { cursor: pointer; transition: 0.1s; position: relative; }
                 .editable:hover { outline: 2px dashed #ebd5c9; outline-offset: 5px; }
                 .selected-outline { outline: 2px solid #877267 !important; outline-offset: 5px; }
             `;
@@ -138,19 +130,14 @@
         };
 
         root.appendChild(newEl);
+        selectElement(newEl);
     }
 
     function selectElement(el) {
-        // Remove previous selection highlight
         if(selectedEl) selectedEl.classList.remove('selected-outline');
-        
         selectedEl = el;
         selectedEl.classList.add('selected-outline');
-        
-        // Switch to Edit Tab
         showTab('edit');
-        
-        // Load text into textarea
         document.getElementById('edit-textarea').value = selectedEl.innerHTML;
     }
 
@@ -158,10 +145,22 @@
         if(selectedEl) selectedEl.innerHTML = val;
     }
 
-    function applyFormat(cmd) {
-        // This targets the specific selected element's content
-        frame.contentWindow.document.execCommand(cmd, false, null);
-        // Update the textarea to reflect formatting changes (like <b> tags)
+    // Fixed Formatting Functions
+    function setAlign(pos) {
+        if(selectedEl) {
+            selectedEl.style.textAlign = pos;
+            selectedEl.style.display = 'block'; // Ensure it takes full width for alignment
+        }
+    }
+
+    function applyStyle(type) {
+        if(!selectedEl) return;
+        // We use designMode to allow execCommand on the iframe's selection
+        frame.contentDocument.designMode = "on";
+        frame.contentWindow.focus();
+        frame.contentDocument.execCommand(type, false, null);
+        frame.contentDocument.designMode = "off";
+        // Refresh textarea to show the <b> or <u> tags
         document.getElementById('edit-textarea').value = selectedEl.innerHTML;
     }
 
@@ -169,7 +168,6 @@
         if(selectedEl) {
             selectedEl.remove();
             selectedEl = null;
-            document.getElementById('edit-textarea').value = "";
             showTab('insert');
         }
     }
