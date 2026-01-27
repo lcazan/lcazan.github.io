@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | Interactive Editor</title>
+    <title>Snoozing Builder | Direct Preview Editor</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -15,22 +15,16 @@
 
         /* SIDEBAR PANEL */
         #sidebar { width: 380px; background: var(--panel-bg); display: flex; flex-direction: column; border-right: 2px solid #000; z-index: 100; }
-        
-        .tabs-nav { display: flex; background: #222; border-bottom: 1px solid #444; }
-        .tab-btn { flex: 1; padding: 15px; border: none; background: none; color: #888; cursor: pointer; text-transform: uppercase; font-size: 11px; font-weight: bold; }
-        .tab-btn.active { color: var(--brand-pink); border-bottom: 2px solid var(--brand-pink); background: #2d2d2d; }
-
-        .tab-content { flex-grow: 1; overflow-y: auto; padding: 20px; display: none; }
-        .tab-content.active { display: block; }
-
+        .tab-header { padding: 20px; background: #222; border-bottom: 1px solid #444; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--brand-pink); }
+        .tab-content { flex-grow: 1; overflow-y: auto; padding: 20px; }
         .label { font-size: 10px; color: #888; text-transform: uppercase; margin-bottom: 15px; display: block; border-bottom: 1px solid #444; padding-bottom: 5px; }
 
         /* INSERT BUTTONS */
-        .insert-card { background: #3d3d3d; border: 1px solid #555; padding: 12px; margin-bottom: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .insert-card { background: #3d3d3d; border: 1px solid #555; padding: 12px; margin-bottom: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; color: #fff; }
         .btn-insert { background: var(--brand-pink); border: none; color: #000; padding: 5px 12px; border-radius: 3px; cursor: pointer; font-size: 10px; font-weight: bold; text-transform: uppercase; }
 
-        /* EDIT TOOLS */
-        textarea { width: 100%; height: 150px; background: #111; color: #fff; border: 1px solid #555; padding: 10px; box-sizing: border-box; font-family: inherit; margin-bottom: 15px; resize: none; }
+        /* FLOATING TOOLBAR (Appears when editing) */
+        #toolbar { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #444; }
         .tool-group { display: flex; gap: 8px; margin-bottom: 15px; }
         .tool-btn { background: #444; border: 1px solid #666; color: #fff; padding: 10px; cursor: pointer; border-radius: 3px; flex: 1; text-align: center; }
         .tool-btn:hover { background: var(--brand-pink); color: #000; }
@@ -43,36 +37,29 @@
 <body>
 
 <div id="sidebar">
-    <div class="tabs-nav">
-        <button class="tab-btn active" id="tab-insert-btn" onclick="showTab('insert')">Insert</button>
-        <button class="tab-btn" id="tab-edit-btn" onclick="showTab('edit')">Edit</button>
-    </div>
-
-    <div id="tab-insert" class="tab-content active">
-        <span class="label">Available Text Blocks</span>
+    <div class="tab-header">Editor Controls</div>
+    <div class="tab-content">
+        <span class="label">Insert Elements</span>
         <div class="insert-card"><span>Section Heading</span><button class="btn-insert" onclick="insertElement('section_heading')">Add</button></div>
         <div class="insert-card"><span>Block Heading</span><button class="btn-insert" onclick="insertElement('block_heading')">Add</button></div>
         <div class="insert-card"><span>Block Text</span><button class="btn-insert" onclick="insertElement('block_text')">Add</button></div>
-    </div>
 
-    <div id="tab-edit" class="tab-content">
-        <span class="label">Modify Text</span>
-        <textarea id="edit-textarea" oninput="syncText(this.value)"></textarea>
-        
-        <span class="label">Alignment</span>
-        <div class="tool-group">
-            <button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
-            <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
-            <button class="tool-btn" onclick="setAlign('justify')"><i class="fa-solid fa-align-justify"></i></button>
-        </div>
+        <div id="toolbar">
+            <span class="label">Alignment</span>
+            <div class="tool-group">
+                <button class="tool-btn" onclick="execCmd('justifyLeft')"><i class="fa-solid fa-align-left"></i></button>
+                <button class="tool-btn" onclick="execCmd('justifyCenter')"><i class="fa-solid fa-align-center"></i></button>
+                <button class="tool-btn" onclick="execCmd('justifyFull')"><i class="fa-solid fa-align-justify"></i></button>
+            </div>
 
-        <span class="label">Formatting</span>
-        <div class="tool-group">
-            <button class="tool-btn" onclick="applyStyle('bold')"><i class="fa-solid fa-bold"></i></button>
-            <button class="tool-btn" id="underline-btn" onclick="applyStyle('underline')"><i class="fa-solid fa-underline"></i></button>
+            <span class="label">Text Style</span>
+            <div class="tool-group">
+                <button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
+                <button class="tool-btn" id="underline-btn" onclick="execCmd('underline')"><i class="fa-solid fa-underline"></i></button>
+            </div>
+            
+            <button class="tool-btn" style="width:100%; background:#742a2a; border:none; margin-top: 10px;" onclick="deleteElement()">Delete Element</button>
         </div>
-        
-        <button class="tool-btn" style="width:100%; background:#742a2a; border:none; margin-top: 20px;" onclick="deleteElement()">Delete Element</button>
     </div>
 </div>
 
@@ -85,116 +72,76 @@
     let selectedEl = null;
 
     async function init() {
+        // Fetch external template
         const resp = await fetch('template.html');
         let html = await resp.text();
-        const cssLink = '<link rel="stylesheet" href="styles.css">';
-        html = html.replace('</head>', cssLink + '</head>');
+        
+        // Link styles.css and prepare root
         frame.srcdoc = html.replace('<div class="content-container">', '<div class="content-container" id="editor-root">');
         
         frame.onload = () => {
             const innerDoc = frame.contentDocument;
+            
+            // Add interaction styles to iframe
             const style = innerDoc.createElement('style');
             style.innerHTML = `
-                .editable { cursor: pointer; transition: 0.1s; position: relative; }
-                .editable:hover { outline: 2px dashed #ebd5c9; outline-offset: 5px; }
+                .editable { cursor: text; transition: 0.1s; position: relative; min-height: 20px; outline: none; }
+                .editable:hover { outline: 1px dashed #ebd5c9; outline-offset: 5px; }
                 .selected-outline { outline: 2px solid #877267 !important; outline-offset: 5px; }
+                [contenteditable="true"]:focus { outline: 2px solid #877267 !important; outline-offset: 5px; }
             `;
             innerDoc.head.appendChild(style);
-        };
-    }
 
-    function showTab(tabName) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(`tab-${tabName}`).classList.add('active');
-        document.getElementById(`tab-${tabName}-btn`).classList.add('active');
+            // Clicking outside of an element "sets" the changes
+            innerDoc.addEventListener('click', (e) => {
+                if (!e.target.classList.contains('editable')) {
+                    deselectAll();
+                }
+            });
+        };
     }
 
     function insertElement(type) {
         const root = frame.contentDocument.getElementById('editor-root');
         const newEl = frame.contentDocument.createElement('div');
         newEl.className = `editable ${type}`;
+        newEl.contentEditable = "true";
         
-        if(type === 'section_heading') newEl.innerHTML = "NEW SECTION";
-        if(type === 'block_heading') newEl.innerHTML = "New Heading";
-        if(type === 'block_text') newEl.innerHTML = "Sample paragraph text goes here.";
+        // Set default text
+        if(type === 'section_heading') newEl.innerText = "NEW SECTION";
+        if(type === 'block_heading') newEl.innerText = "New Heading";
+        if(type === 'block_text') newEl.innerText = "Click here to start typing your paragraph...";
 
-        newEl.onclick = (e) => {
-            e.stopPropagation();
-            selectElement(newEl);
+        // Handle selection and toolbar visibility
+        newEl.onfocus = () => {
+            selectedEl = newEl;
+            document.getElementById('toolbar').style.display = 'block';
+            
+            // Only show underline for block_heading
+            document.getElementById('underline-btn').style.display = 
+                newEl.classList.contains('block_heading') ? 'block' : 'none';
         };
 
         root.appendChild(newEl);
-        selectElement(newEl);
+        newEl.focus();
     }
 
-    function selectElement(el) {
-        if(selectedEl) selectedEl.classList.remove('selected-outline');
-        selectedEl = el;
-        selectedEl.classList.add('selected-outline');
-        
-        // Show/Hide Underline button based on style
-        const underlineBtn = document.getElementById('underline-btn');
-        if (selectedEl.classList.contains('block_heading')) {
-            underlineBtn.style.display = 'block';
-        } else {
-            underlineBtn.style.display = 'none';
-        }
-
-        showTab('edit');
-        document.getElementById('edit-textarea').value = selectedEl.innerHTML;
+    function deselectAll() {
+        selectedEl = null;
+        document.getElementById('toolbar').style.display = 'none';
+        frame.contentDocument.activeElement.blur();
     }
 
-    function syncText(val) {
-        if(selectedEl) selectedEl.innerHTML = val;
-    }
-
-    function setAlign(pos) {
-        if(selectedEl) {
-            selectedEl.style.textAlign = pos;
-            selectedEl.style.display = 'block'; 
-        }
-    }
-
-    // Toggle Style Logic: Bolds or Unbolds based on current state
-    function applyStyle(type) {
-        const textarea = document.getElementById('edit-textarea');
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        
-        if (start === end) return;
-
-        const selectedText = textarea.value.substring(start, end);
-        let replacement = "";
-
-        if (type === 'bold') {
-            // Toggle Bold: Check if selection is already wrapped in <b>
-            if (selectedText.startsWith('<b>') && selectedText.endsWith('</b>')) {
-                replacement = selectedText.slice(3, -4);
-            } else {
-                replacement = `<b>${selectedText}</b>`;
-            }
-        } else if (type === 'underline') {
-            // Toggle Underline: Check if already wrapped
-            const openTag = '<span style="text-decoration: underline;">';
-            const closeTag = '</span>';
-            if (selectedText.startsWith(openTag) && selectedText.endsWith(closeTag)) {
-                replacement = selectedText.slice(openTag.length, -closeTag.length);
-            } else {
-                replacement = `${openTag}${selectedText}${closeTag}`;
-            }
-        }
-
-        textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
-        syncText(textarea.value);
-        textarea.focus();
+    // Native Browser Commands handle Toggling Bold/Underline/Align automatically
+    function execCmd(command) {
+        frame.contentDocument.execCommand(command, false, null);
+        frame.contentWindow.focus(); // Keep focus on the iframe
     }
 
     function deleteElement() {
         if(selectedEl) {
             selectedEl.remove();
-            selectedEl = null;
-            showTab('insert');
+            deselectAll();
         }
     }
 
