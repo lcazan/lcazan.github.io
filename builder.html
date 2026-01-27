@@ -2,13 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | Pure Editor</title>
+    <title>Snoozing Builder | Zoomed Mobile Editor</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
             --admin-bg: #1e1e1e;
             --panel-bg: #2d2d2d;
             --brand-pink: #ebd5c9;
+            --text-light: #eee;
         }
         body { margin: 0; display: flex; height: 100vh; font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; }
 
@@ -25,12 +26,13 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px;
         }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
+        .insert-btn i { font-size: 16px; }
 
         /* PREVIEW CONTAINER & DEVICE BAR */
-        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #444; position: relative; }
+        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; }
         
         #device-bar {
-            height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #000;
+            height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #000; z-index: 10;
         }
         .device-btn {
             background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; transition: 0.2s;
@@ -38,23 +40,26 @@
         .device-btn.active { color: var(--brand-pink); }
         
         #frame-wrapper {
-            flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; padding: 20px; overflow: auto;
+            flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; padding: 40px; overflow: auto;
         }
+
         #preview-frame { 
             width: 100%; height: 100%; border: none; background: white; 
-            transition: width 0.3s ease-in-out; 
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            transition: transform 0.3s ease, width 0.3s ease; 
+            box-shadow: 0 0 50px rgba(0,0,0,0.6);
+            transform-origin: top center;
         }
         #preview-frame.mobile { width: 390px; height: 844px; }
 
         /* FLOATING TOOLBAR */
         #floating-toolbar {
-            position: absolute; display: none; background: #333; border-radius: 4px;
-            padding: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 1000; gap: 5px; align-items: center;
+            position: absolute; display: none; background: #111; border-radius: 4px;
+            padding: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 2000; gap: 5px; align-items: center;
+            border: 1px solid #444;
         }
         .float-btn { background: transparent; border: none; color: white; padding: 5px 10px; cursor: pointer; border-radius: 2px; }
         .float-btn:hover { background: var(--brand-pink); color: #000; }
-        .sep { color: #555; font-size: 12px; }
+        .sep { color: #444; margin: 0 4px; }
     </style>
 </head>
 <body>
@@ -67,14 +72,14 @@
 
 <div id="preview-container">
     <div id="device-bar">
-        <button class="device-btn active" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
-        <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
+        <button class="device-btn active" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop" title="Desktop View"></i></button>
+        <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button" title="Mobile Zoom View"></i></button>
     </div>
 
     <div id="frame-wrapper">
         <div id="floating-toolbar">
             <button class="float-btn" title="Bold" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
-            <button class="float-btn" id="float-underline" title="Toggle Line" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>
+            <button class="float-btn" id="float-underline" title="Toggle Bottom Line" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>
             <span class="sep">|</span>
             <button class="float-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
             <button class="float-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
@@ -92,14 +97,10 @@
     let selectedEl = null;
 
     async function init() {
-        // We load the template only for the structure and styles, 
-        // but we empty out the content-container to start fresh.
         const resp = await fetch('template.html');
         let html = await resp.text();
         const cssLink = '<link rel="stylesheet" href="styles.css">';
         html = html.replace('</head>', cssLink + '</head>');
-        
-        // Ensure the editor-root is empty for new work
         frame.srcdoc = html.replace('<div class="content-container">', '<div class="content-container" id="editor-root">');
         
         frame.onload = () => {
@@ -120,15 +121,21 @@
     }
 
     function setDevice(type) {
+        const wrapper = document.getElementById('frame-wrapper');
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+        deselectAll(); 
+
         if (type === 'mobile') {
             frame.classList.add('mobile');
             document.getElementById('btn-mobile').classList.add('active');
+            const scale = (wrapper.offsetWidth - 80) / 390;
+            if (scale > 1) frame.style.transform = `scale(${scale})`;
         } else {
             frame.classList.remove('mobile');
             document.getElementById('btn-desktop').classList.add('active');
+            frame.style.transform = 'scale(1)';
+            frame.style.width = '100%';
         }
-        deselectAll(); 
     }
 
     function insertElement(type) {
@@ -136,7 +143,7 @@
         const newEl = frame.contentDocument.createElement('div');
         newEl.className = `editable ${type}`;
         newEl.contentEditable = "true";
-        newEl.innerText = type === 'section_heading' ? "SECTION TITLE" : type === 'block_heading' ? "HEADING TITLE" : "Enter paragraph text...";
+        newEl.innerText = type === 'section_heading' ? "SECTION TITLE" : type === 'block_heading' ? "HEADING TITLE" : "Enter paragraph text here...";
 
         if (type === 'block_heading') {
             const wrapper = frame.contentDocument.createElement('div');
@@ -158,10 +165,11 @@
 
         const rect = el.getBoundingClientRect();
         const frameRect = frame.getBoundingClientRect();
+        const scale = frame.classList.contains('mobile') ? parseFloat(frame.style.transform.replace('scale(','')) : 1;
         
         toolbar.style.display = 'flex';
-        toolbar.style.left = (frameRect.left + rect.left + (rect.width/2) - (toolbar.offsetWidth/2)) + "px";
-        toolbar.style.top = (frameRect.top + rect.top - 55) + "px";
+        toolbar.style.left = (frameRect.left + (rect.left * scale) + (rect.width * scale / 2) - (toolbar.offsetWidth / 2)) + "px";
+        toolbar.style.top = (frameRect.top + (rect.top * scale) - 60) + "px";
 
         document.getElementById('float-underline').style.display = 
             el.classList.contains('block_heading') ? 'inline-block' : 'none';
@@ -203,6 +211,7 @@
         }
     }
 
+    window.onresize = () => { if (frame.classList.contains('mobile')) setDevice('mobile'); };
     window.onload = init;
 </script>
 
