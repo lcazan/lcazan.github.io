@@ -67,7 +67,7 @@
             margin: 6px 0; 
         }
 
-        /* --- Sidebar Navigation (Instant/Larger Font/LOCKED) --- */
+        /* --- Sidebar Navigation (LOCKED) --- */
         nav { 
             position: fixed; 
             top: 0; 
@@ -75,7 +75,7 @@
             width: 260px; 
             height: 100%; 
             background: var(--brand-cream); 
-            transition: 0s; /* INSTANT OPEN/CLOSE */
+            transition: 0s; /* Instant */
             z-index: 9000; 
             padding-top: 100px; 
             box-shadow: 4px 0 15px rgba(0,0,0,0.1); 
@@ -87,7 +87,7 @@
             text-decoration: none; 
             color: var(--text-dark); 
             font-weight: 400; 
-            font-size: 18px; /* LARGER FONT */
+            font-size: 18px; /* Bigger Font */
             text-transform: uppercase; 
             letter-spacing: 1px; 
         }
@@ -107,7 +107,6 @@
         .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
         .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
 
-        /* --- Hero --- */
         .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; align-items: stretch; }
         .hero-banner img { width: 50%; height: auto; display: block; object-fit: cover; }
         .tagline-container { width: 50%; padding: 60px; display: flex; align-items: center; box-sizing: border-box; }
@@ -128,7 +127,7 @@
         /* --- Instagram (LOCKED) --- */
         .instagram-container { min-height: 200px; margin-bottom: 60px; width: 100%; }
 
-        /* --- Photo Gallery --- */
+        /* --- Photo Gallery (LOCKED Logic) --- */
         .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
         .gallery-item { cursor: pointer; background: #f9f9f9; }
@@ -136,7 +135,7 @@
 
         /* --- Modal / Lightbox (LOCKED) --- */
         .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
-        .slider-track { display: flex; height: 100%; width: 100%; }
+        .slider-track { display: flex; height: 100%; width: 100%; transition: transform 0.3s ease-out; }
         .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         .image-wrapper { position: relative; display: flex; align-items: center; justify-content: center; width: 90%; height: 70vh; }
         .slide img { max-width: 100%; max-height: 100%; width: auto; height: auto; border: 2px solid #fff; object-fit: contain; opacity: 0; transition: opacity 0.3s ease; }
@@ -165,7 +164,7 @@
 <header>
     <div class="logo-container">
         <div class="logo">My Snoozing Baby</div>
-        <span class="version-header">Version 2.2.1</span>
+        <span class="version-header">Version 2.2.0</span>
     </div>
 </header>
 
@@ -196,12 +195,12 @@
     </section>
     <section>
         <h2>SNOO deep-cleaning, servicing, and repairs</h2>
-        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
+        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO.</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
     <section>
         <h2>Traveling to the DC Metro area?</h2>
-        <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC or surrounding parts of Virginia and Maryland. Travel light and let us handle the rest.</p>
+        <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more.</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
 
@@ -245,7 +244,7 @@
         overlay.style.display = isOpen ? 'block' : 'none';
     }
 
-    // GALLERY DATA EMBEDDED
+    // EMBEDDED DATA
     const galleryData = [
         {"id": 1, "small": "1-small.jpg", "large": "1-large.jpg"},
         {"id": 2, "small": "2-small.jpg", "large": "2-large.jpg"},
@@ -265,8 +264,6 @@
         {"id": 16, "small": "16-small.jpg", "large": "16-large.jpg"},
         {"id": 17, "small": "17-small.jpg", "large": "17-large.jpg"}
     ];
-
-    let currentIndex = 0;
 
     function renderGallery() {
         const left = document.getElementById('col-left'), 
@@ -291,15 +288,13 @@
     }
 
     function openModal(index) {
-        currentIndex = index;
         document.getElementById('imageModal').style.display = "block";
         document.body.style.overflow = "hidden";
         updateSlide(index);
     }
 
     function updateSlide(index) {
-        const track = document.getElementById('sliderTrack');
-        const width = document.getElementById('imageModal').offsetWidth;
+        const track = document.getElementById('sliderTrack'), width = document.getElementById('imageModal').offsetWidth;
         track.style.transform = `translateX(${index * -width}px)`;
         document.getElementById('modalCounter').innerText = `${index + 1} / ${galleryData.length}`;
         
@@ -307,17 +302,11 @@
         const img = wrapper.querySelector('img');
         if (img && img.dataset.src) {
             img.src = img.dataset.src;
-            img.onload = () => {
-                img.classList.add('loaded');
-                wrapper.querySelector('.loader').style.display = 'none';
-            };
+            img.onload = () => { img.classList.add('loaded'); wrapper.querySelector('.loader').style.display = 'none'; };
         }
     }
 
-    function closeModal() {
-        document.getElementById('imageModal').style.display = "none";
-        document.body.style.overflow = "auto";
-    }
+    function closeModal() { document.getElementById('imageModal').style.display = "none"; document.body.style.overflow = "auto"; }
 
     window.onload = renderGallery;
 </script>
