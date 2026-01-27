@@ -31,12 +31,12 @@
         .active .line3 { transform: rotate(45deg) translate(-4.5px, -5.5px); }
 
         nav { 
-            position: fixed; top: 0; left: -340px; width: 320px; height: 100dvh; background: var(--brand-cream); transition: left 0.2s ease-in-out; z-index: 9000; box-shadow: 4px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto !important; -webkit-overflow-scrolling: touch;
+            position: fixed; top: 0; left: -340px; width: 320px; height: 100%; background: var(--brand-cream); transition: left 0.2s ease-in-out; z-index: 9000; box-shadow: 4px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch;
         }
         nav.open { left: 0; }
-        .sidebar-close-icon { position: sticky; top: 25px; left: 20px; padding: 5px; margin-bottom: 20px; display: none; z-index: 9001; }
+        .sidebar-close-icon { position: absolute; top: 25px; left: 20px; padding: 5px; display: none; z-index: 9001; }
         nav.open .sidebar-close-icon { display: block; }
-        .nav-content { padding-top: 60px; padding-bottom: 120px; flex-grow: 1; }
+        .nav-content { padding-top: 100px; padding-bottom: 50px; }
         nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
 
         .dropdown-btn { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
@@ -45,7 +45,6 @@
         .sub-nav a { font-size: 1rem; padding: 10px 45px; }
         #navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.3); z-index: 8500; }
 
-        /* Hero Image - Locked Height Logic */
         .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; align-items: stretch; overflow: hidden; }
         .hero-banner .img-box { width: 50%; display: block; position: relative; background: var(--brand-cream); }
         .hero-banner img { width: 100%; height: 100%; display: block; object-fit: cover; }
@@ -58,37 +57,33 @@
             .tagline-container { width: 100%; padding: 40px 20px; text-align: center; justify-content: center; }
         }
 
-        /* Content Sections */
         .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
         .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
 
         section { margin-bottom: 60px; text-align: center; }
         h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 8px; margin-bottom: 10px; display: inline-block; font-size: 1.2rem; font-weight: 400; text-transform: uppercase; }
-        section p { text-align: justify; line-height: 1.8; margin: 5px auto 25px; max-width: 800px; }
+        section p { text-align: center; line-height: 1.8; margin: 5px auto 25px; max-width: 800px; }
         .btn-find-out { display: inline-block; padding: 10px 25px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* Gallery Columns (LOCKED) */
         .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
         .gallery-item { cursor: pointer; background: #f9f9f9; -webkit-tap-highlight-color: transparent; }
         .gallery-item img { width: 100%; height: auto; display: block; }
         
-        /* Modal / Lightbox (LOCKED) */
         .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
         .slider-track { display: flex; height: 100%; width: 100%; }
         .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         .image-wrapper { position: relative; width: 90%; height: 70vh; display: flex; align-items: center; justify-content: center; }
         .slide img { max-width: 100%; max-height: 100%; border: 2px solid #fff; object-fit: contain; opacity: 0; transition: opacity 0.3s ease; }
         .slide img.loaded { opacity: 1; }
-        .counter { position: fixed; top: 25px; left: 25px; color: #fff; font-size: 22px; z-index: 10005; pointer-events: none; }
+        .counter { position: fixed; top: 25px; left: 25px; color: #fff; font-size: 22px; z-index: 10005; pointer-events: none; letter-spacing: 2px; font-weight: 600; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
         .close-modal { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 40px; cursor: pointer; z-index: 10005; }
         .loader { width: 30px; height: 30px; border: 3px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 1s infinite linear; position: absolute; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Footer (LOCKED) */
-        footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; margin-top: auto; }
+        footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; margin-top: auto; position: relative; }
         .social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
-        .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; }
+        .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; -webkit-tap-highlight-color: transparent; }
         .copyright-text { font-weight: 600; display: block; margin-bottom: 15px; font-size: 0.85rem; }
         .disclaimer { font-size: 0.75rem; color: #666; max-width: 850px; margin: 0 auto; line-height: 1.7; text-align: center; }
     </style>
@@ -145,19 +140,19 @@
     </section>
     <section>
         <h2>SNOO deep-cleaning, servicing, and repairs</h2>
-        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. [span_6](start_span)Just send us a message and we'll take care of the rest[span_6](end_span)!</p>
+        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
     <section>
         <h2>Traveling to the DC Metro area?</h2>
-        <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC or surrounding parts of Virginia and Maryland. [span_7](start_span)Travel light and let us handle the rest.[span_7](end_span)</p>
+        <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC or surrounding parts of Virginia and Maryland. Travel light and let us handle the rest.</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
 
     <div class="section-label">INSTAGRAM</div>
     <div class="instagram-container">
         <script src="https://elfsightcdn.com/platform.js" async></script>
-        [span_8](start_span)<div class="elfsight-app-5eadd9db-134a-45fa-bb7d-32ad1f117149" data-elfsight-app-lazy></div>[span_8](end_span)
+        <div class="elfsight-app-5eadd9db-134a-45fa-bb7d-32ad1f117149" data-elfsight-app-lazy></div>
     </div>
 
     <div class="section-label">PHOTO GALLERY</div>
@@ -181,7 +176,7 @@
     </div>
     <span class="copyright-text">Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.</span>
     <div class="disclaimer">
-        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. [span_9](start_span)These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.[span_9](end_span)
+        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.
     </div>
 </footer>
 
@@ -221,7 +216,7 @@
         btn.nextElementSibling.classList.toggle('show');
     }
 
-    /* GALLERY LOGIC - RESTORED */
+    /* GALLERY LOGIC - RESTORED FROM 2.4.3 */
     const galleryItems = [
         {"id": 1, "small": "1-small.jpg", "large": "1-large.jpg"},
         {"id": 2, "small": "2-small.jpg", "large": "2-large.jpg"},
@@ -240,7 +235,7 @@
         {"id": 15, "small": "15-small.jpg", "large": "15-large.jpg"},
         {"id": 16, "small": "16-small.jpg", "large": "16-large.jpg"},
         {"id": 17, "small": "17-small.jpg", "large": "17-large.jpg"}
-    [span_10](start_span)];[span_10](end_span)
+    ];
 
     let currentIndex = 0, startX = 0, prevTranslate = 0, isDragging = false;
     const VELOCITY = 2500;
