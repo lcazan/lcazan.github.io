@@ -30,7 +30,6 @@
         .active .line2 { opacity: 0; }
         .active .line3 { transform: rotate(45deg) translate(-4.5px, -5.5px); }
 
-        /* Sidebar - Scrollability Fix */
         nav { 
             position: fixed; top: 0; left: -340px; width: 320px; height: 100dvh; background: var(--brand-cream); transition: left 0.2s ease-in-out; z-index: 9000; box-shadow: 4px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto !important; -webkit-overflow-scrolling: touch;
         }
@@ -46,7 +45,7 @@
         .sub-nav a { font-size: 1rem; padding: 10px 45px; }
         #navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.3); z-index: 8500; }
 
-        /* Hero Banner - Responsive / JS Locked Height */
+        /* Hero Image - Locked Height Logic */
         .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; align-items: stretch; overflow: hidden; }
         .hero-banner .img-box { width: 50%; display: block; position: relative; background: var(--brand-cream); }
         .hero-banner img { width: 100%; height: 100%; display: block; object-fit: cover; }
@@ -59,22 +58,34 @@
             .tagline-container { width: 100%; padding: 40px 20px; text-align: center; justify-content: center; }
         }
 
-        /* Content Structure */
+        /* Content Sections */
         .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
         .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
 
         section { margin-bottom: 60px; text-align: center; }
-        h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 8px; margin-bottom: 10px; display: inline-block; font-size: 1.2rem; font-weight: 400; text-transform: uppercase; text-align: center; }
+        h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 8px; margin-bottom: 10px; display: inline-block; font-size: 1.2rem; font-weight: 400; text-transform: uppercase; }
         section p { text-align: justify; line-height: 1.8; margin: 5px auto 25px; max-width: 800px; }
         .btn-find-out { display: inline-block; padding: 10px 25px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* Photo Gallery (LOCKED STRUCTURE) */
+        /* Gallery Columns (LOCKED) */
         .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
         .gallery-item { cursor: pointer; background: #f9f9f9; -webkit-tap-highlight-color: transparent; }
         .gallery-item img { width: 100%; height: auto; display: block; }
+        
+        /* Modal / Lightbox (LOCKED) */
+        .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
+        .slider-track { display: flex; height: 100%; width: 100%; }
+        .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
+        .image-wrapper { position: relative; width: 90%; height: 70vh; display: flex; align-items: center; justify-content: center; }
+        .slide img { max-width: 100%; max-height: 100%; border: 2px solid #fff; object-fit: contain; opacity: 0; transition: opacity 0.3s ease; }
+        .slide img.loaded { opacity: 1; }
+        .counter { position: fixed; top: 25px; left: 25px; color: #fff; font-size: 22px; z-index: 10005; pointer-events: none; }
+        .close-modal { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 40px; cursor: pointer; z-index: 10005; }
+        .loader { width: 30px; height: 30px; border: 3px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 1s infinite linear; position: absolute; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Footer Restoration */
+        /* Footer (LOCKED) */
         footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; margin-top: auto; }
         .social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
         .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; }
@@ -134,19 +145,32 @@
     </section>
     <section>
         <h2>SNOO deep-cleaning, servicing, and repairs</h2>
-        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO.</p>
+        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. [span_6](start_span)Just send us a message and we'll take care of the rest[span_6](end_span)!</p>
+        <a href="#" class="btn-find-out">Find out more</a>
+    </section>
+    <section>
+        <h2>Traveling to the DC Metro area?</h2>
+        <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC or surrounding parts of Virginia and Maryland. [span_7](start_span)Travel light and let us handle the rest.[span_7](end_span)</p>
         <a href="#" class="btn-find-out">Find out more</a>
     </section>
 
     <div class="section-label">INSTAGRAM</div>
     <div class="instagram-container">
-        </div>
+        <script src="https://elfsightcdn.com/platform.js" async></script>
+        [span_8](start_span)<div class="elfsight-app-5eadd9db-134a-45fa-bb7d-32ad1f117149" data-elfsight-app-lazy></div>[span_8](end_span)
+    </div>
 
     <div class="section-label">PHOTO GALLERY</div>
     <div class="gallery-columns">
         <div id="col-left" class="gallery-column"></div>
         <div id="col-right" class="gallery-column"></div>
     </div>
+</div>
+
+<div id="imageModal" class="modal">
+    <div class="counter" id="modalCounter">1 / 17</div>
+    <span class="close-modal" onclick="closeModal()">&times;</span>
+    <div id="sliderTrack" class="slider-track"></div>
 </div>
 
 <footer>
@@ -157,13 +181,13 @@
     </div>
     <span class="copyright-text">Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.</span>
     <div class="disclaimer">
-        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. 
+        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. [span_9](start_span)These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.[span_9](end_span)
     </div>
 </footer>
 
 <script>
+    /* HEIGHT LOCK LOGIC */
     let portraitHeight = 0;
-
     function lockHeroHeight() {
         const imgBox = document.getElementById('heroImgBox');
         const img = document.getElementById('heroImage');
@@ -178,11 +202,11 @@
             imgBox.style.height = 'auto';
         }
     }
-
     window.addEventListener('load', lockHeroHeight);
     window.addEventListener('resize', lockHeroHeight);
     window.addEventListener('orientationchange', lockHeroHeight);
 
+    /* NAVIGATION LOGIC */
     function toggleNav(e) {
         if(e) e.stopPropagation();
         const nav = document.getElementById('sidebar');
@@ -197,18 +221,89 @@
         btn.nextElementSibling.classList.toggle('show');
     }
 
-    /* GALLERY LOGIC - LOCKED */
+    /* GALLERY LOGIC - RESTORED */
     const galleryItems = [
-        {"id": 1, "small": "1-small.jpg"}, {"id": 2, "small": "2-small.jpg"},
-        {"id": 3, "small": "3-small.jpg"}, {"id": 4, "small": "4-small.jpg"}
-    ];
+        {"id": 1, "small": "1-small.jpg", "large": "1-large.jpg"},
+        {"id": 2, "small": "2-small.jpg", "large": "2-large.jpg"},
+        {"id": 3, "small": "3-small.jpg", "large": "3-large.jpg"},
+        {"id": 4, "small": "4-small.jpg", "large": "4-large.jpg"},
+        {"id": 5, "small": "5-small.jpg", "large": "5-large.jpg"},
+        {"id": 6, "small": "6-small.jpg", "large": "6-large.jpg"},
+        {"id": 7, "small": "7-small.jpg", "large": "7-large.jpg"},
+        {"id": 8, "small": "8-small.jpg", "large": "8-large.jpg"},
+        {"id": 9, "small": "9-small.jpg", "large": "9-large.jpg"},
+        {"id": 10, "small": "10-small.jpg", "large": "10-large.jpg"},
+        {"id": 11, "small": "11-small.jpg", "large": "11-large.jpg"},
+        {"id": 12, "small": "12-small.jpg", "large": "12-large.jpg"},
+        {"id": 13, "small": "13-small.jpg", "large": "13-large.jpg"},
+        {"id": 14, "small": "14-small.jpg", "large": "14-large.jpg"},
+        {"id": 15, "small": "15-small.jpg", "large": "15-large.jpg"},
+        {"id": 16, "small": "16-small.jpg", "large": "16-large.jpg"},
+        {"id": 17, "small": "17-small.jpg", "large": "17-large.jpg"}
+    [span_10](start_span)];[span_10](end_span)
+
+    let currentIndex = 0, startX = 0, prevTranslate = 0, isDragging = false;
+    const VELOCITY = 2500;
+
     function renderGallery() {
-        const left = document.getElementById('col-left'), right = document.getElementById('col-right');
+        const left = document.getElementById('col-left'), right = document.getElementById('col-right'), track = document.getElementById('sliderTrack');
         galleryItems.forEach((item, index) => {
-            const html = `<div class="gallery-item"><img src="${item.small}"></div>`;
-            index % 2 === 0 ? left.innerHTML += html : right.innerHTML += html;
+            const itemHtml = `<div class="gallery-item" onclick="openModal(${index})"><img src="${item.small}" loading="lazy"></div>`;
+            index % 2 === 0 ? left.innerHTML += itemHtml : right.innerHTML += itemHtml;
+            const slide = document.createElement('div'); slide.className = 'slide'; 
+            slide.innerHTML = `<div class="image-wrapper" data-index="${index}"><div class="loader"></div><img data-src="${item.large}"></div>`;
+            track.appendChild(slide);
         });
     }
+
+    function loadImage(index) {
+        const slide = document.querySelector(`.image-wrapper[data-index="${index}"]`);
+        if (!slide) return;
+        const img = slide.querySelector('img'), loader = slide.querySelector('.loader');
+        if (img && img.dataset.src) {
+            img.src = img.dataset.src;
+            img.onload = () => { img.classList.add('loaded'); if (loader) loader.style.display = 'none'; };
+        }
+    }
+
+    function updateTrackPos(animate = false) {
+        const track = document.getElementById('sliderTrack'), width = document.getElementById('imageModal').offsetWidth;
+        const currentTranslate = currentIndex * -width;
+        prevTranslate = currentTranslate;
+        track.style.transition = animate ? `transform ${width / VELOCITY}s ease-out` : 'none';
+        track.style.transform = `translateX(${currentTranslate}px)`;
+        document.getElementById('modalCounter').innerText = `${currentIndex + 1} / ${galleryItems.length}`;
+    }
+
+    function openModal(index) {
+        currentIndex = index;
+        document.getElementById('imageModal').style.display = "block";
+        document.getElementById('headerHamburger').style.visibility = "hidden";
+        updateTrackPos(false);
+        document.body.style.overflow = "hidden";
+        loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
+    }
+
+    function moveSlide(step) {
+        currentIndex = Math.max(0, Math.min(currentIndex + step, galleryItems.length - 1));
+        updateTrackPos(true);
+        loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
+    }
+
+    function closeModal() { 
+        document.getElementById('imageModal').style.display = "none";
+        document.getElementById('headerHamburger').style.visibility = "visible";
+        document.body.style.overflow = "auto"; 
+    }
+
+    const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
+    modal.addEventListener('touchstart', e => { isDragging = true; startX = e.touches[0].clientX; track.style.transition = 'none'; });
+    modal.addEventListener('touchmove', e => { if (!isDragging) return; track.style.transform = `translateX(${prevTranslate + (e.touches[0].clientX - startX)}px)`; });
+    modal.addEventListener('touchend', e => { 
+        isDragging = false; const diff = e.changedTouches[0].clientX - startX;
+        if (diff < -50) moveSlide(1); else if (diff > 50) moveSlide(-1); else moveSlide(0);
+    });
+
     window.addEventListener('load', renderGallery);
 </script>
 
