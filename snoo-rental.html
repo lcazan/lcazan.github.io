@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snoo Rental | Snoozing Baby</title>
+    <style>
+        /* UI Requirements: Menu Fonts & Instant Menu */
+        :root {
+            --menu-font-size: 1.2rem; /* Bigger menu fonts */
+        }
+
+        nav .menu-link {
+            font-size: var(--menu-font-size);
+            text-decoration: none;
+            color: #333;
+        }
+
+        /* Instant Hamburger Menu Logic */
+        #menu-toggle:checked ~ .menu-content {
+            display: block !important;
+            transition: none !important; /* Instant open */
+        }
+
+        /* 3 lines always visible */
+        .hamburger-icon {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 10px;
+            z-index: 1000;
+        }
+        .hamburger-icon span {
+            width: 30px;
+            height: 3px;
+            background-color: #333;
+            display: block;
+        }
+
+        /* Rental Pricing Layout */
+        .pricing-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            font-family: sans-serif;
+        }
+
+        .price-list-title {
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 50px;
+        }
+
+        .rental-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .package-card {
+            border: 1px solid #eee;
+            padding: 30px;
+            text-align: center;
+            background: #fff;
+        }
+
+        .package-name { font-weight: bold; text-transform: uppercase; }
+        .package-tagline { font-size: 0.8rem; color: #666; margin-bottom: 15px; }
+        .package-price { font-size: 2rem; font-weight: bold; margin: 15px 0; }
+        .package-includes { font-size: 0.9rem; line-height: 1.6; color: #444; }
+
+        .extras-section {
+            margin-top: 60px;
+            border-top: 2px solid #f4f4f4;
+            padding-top: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-container">
+            <img src="logo.png" alt="Snoozing Baby Logo" class="main-logo">
+        </div>
+        
+        <label for="menu-toggle" class="hamburger-icon">
+            <span></span><span></span><span></span>
+        </label>
+        <input type="checkbox" id="menu-toggle" style="display:none;">
+        
+        <nav class="menu-content" style="display:none;">
+            </nav>
+    </header>
+
+    <main class="pricing-container">
+        <h1 class="price-list-title">Price List</h1>
+
+        <div class="rental-grid">
+            <div class="package-card">
+                <div class="package-name">Month-To-Month Rental</div>
+                <div class="package-tagline">COMMITMENT-FREE, MAXIMUM FLEXIBILITY</div>
+                <div class="package-price">$149</div>
+                <p><strong>WHAT'S INCLUDED:</strong></p>
+                <p class="package-includes">One smart bassinet, one organic cotton sheet, and one organic cotton sleep sack. One mattress and one water-resistant cover are also included.</p>
+            </div>
+
+            <div class="package-card">
+                <div class="package-name">Two-Month Package</div>
+                <div class="package-tagline">GREAT WAY TO TEST HOW BABY LIKES IT</div>
+                <div class="package-price">$279</div>
+                <p><strong>WHAT'S INCLUDED:</strong></p>
+                <p class="package-includes">One smart bassinet, one organic cotton sheet, and one organic cotton sleep sack. One mattress and a water-resistant cover are also included.</p>
+            </div>
+
+            <div class="package-card">
+                <div class="package-name">Three-Month Package</div>
+                <div class="package-tagline">MOST POPULAR, BETTER VALUE</div>
+                <div class="package-price">$399</div>
+                <p><strong>WHAT'S INCLUDED:</strong></p>
+                <p class="package-includes">One smart bassinet, one organic cotton sheet, and one organic cotton sleep sack. One mattress and a water-resistant cover are also included.</p>
+            </div>
+
+            <div class="package-card">
+                <div class="package-name">Four-Month Package</div>
+                <div class="package-tagline">GETS YOU PAST THE DREADED SLEEP REGRESSION</div>
+                <div class="package-price">$529</div>
+                <p><strong>WHAT'S INCLUDED:</strong></p>
+                <p class="package-includes">One smart bassinet, two organic cotton sheets, and two organic cotton sleep sacks. One mattress and a water-resistant cover are also included.</p>
+            </div>
+
+            <div class="package-card">
+                <div class="package-name">Five-Month Package</div>
+                <div class="package-tagline">BEST VALUE TO THE SLEEP-TRAINING STAGE</div>
+                <div class="package-price">$649</div>
+                <p><strong>WHAT'S INCLUDED:</strong></p>
+                <p class="package-includes">One smart bassinet, two organic cotton sheets, and two organic cotton sleep sacks. One mattress and a water-resistant cover are also included.</p>
+            </div>
+
+            <div class="package-card">
+                <div class="package-name">Six-Month Package</div>
+                <div class="package-tagline">PERFECT FOR NATURALLY SLEEP TRAINING BABIES. EASY CRIB TRANSITION</div>
+                <div class="package-price">$749</div>
+                <p><strong>WHAT'S INCLUDED:</strong></p>
+                <p class="package-includes">Without a doubt, this is our best value package, covering your baby from the newborn stage to the 6-month milestone. Includes six organic cotton sleep sacks (S, M, L), two organic cotton sheets, and one mattress with a water-resistant cover.</p>
+            </div>
+        </div>
+
+        <section class="extras-section">
+            <h2>EXTRAS - SACKS, SHEETS AND LEG LIFTERS</h2>
+            <p><em>Sacks and sheets are always organic cotton, for your baby's best comfort!</em></p>
+            
+            <div class="extra-item">
+                <h3>Extra Set of Sack & Sheet — $10</h3>
+                <p>Add an extra sleep sack and sheet set for only $10 a month. We offer gender-neutral colors (white and ivory) as well as gender-specific options (blush pink, teal, navy, and gray).</p>
+            </div>
+
+            <div class="extra-item">
+                <h3>Leg Lifters — $10</h3>
+                <p>Ideal for colicky babies or those whose doctors recommend elevating the head for reflux or colds. Includes two slip-resistant leg lifters.</p>
+            </div>
+        </section>
+    </main>
+
+    <div id="services-placeholder"></div>
+    <footer id="footer-placeholder"></footer>
+
+</body>
+</html>
