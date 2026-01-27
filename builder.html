@@ -2,14 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | Zoomed Mobile Editor</title>
+    <title>Snoozing Builder | Perfect Mobile Zoom</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
             --admin-bg: #1e1e1e;
             --panel-bg: #2d2d2d;
             --brand-pink: #ebd5c9;
-            --text-light: #eee;
         }
         body { margin: 0; display: flex; height: 100vh; font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; }
 
@@ -26,9 +25,8 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px;
         }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
-        .insert-btn i { font-size: 16px; }
 
-        /* PREVIEW CONTAINER & DEVICE BAR */
+        /* PREVIEW AREA */
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; }
         
         #device-bar {
@@ -39,17 +37,17 @@
         }
         .device-btn.active { color: var(--brand-pink); }
         
+        /* The wrapper now has NO padding to ensure the zoom can hit the edges */
         #frame-wrapper {
-            flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; padding: 40px; overflow: auto;
+            flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; overflow-x: hidden; overflow-y: auto; background: #333;
         }
 
         #preview-frame { 
             width: 100%; height: 100%; border: none; background: white; 
-            transition: transform 0.3s ease, width 0.3s ease; 
-            box-shadow: 0 0 50px rgba(0,0,0,0.6);
+            transition: transform 0.2s ease-out; 
             transform-origin: top center;
         }
-        #preview-frame.mobile { width: 390px; height: 844px; }
+        #preview-frame.mobile { width: 390px; height: 3000px; /* Long height for scrolling */ }
 
         /* FLOATING TOOLBAR */
         #floating-toolbar {
@@ -72,8 +70,8 @@
 
 <div id="preview-container">
     <div id="device-bar">
-        <button class="device-btn active" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop" title="Desktop View"></i></button>
-        <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button" title="Mobile Zoom View"></i></button>
+        <button class="device-btn active" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
+        <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
     </div>
 
     <div id="frame-wrapper">
@@ -128,8 +126,9 @@
         if (type === 'mobile') {
             frame.classList.add('mobile');
             document.getElementById('btn-mobile').classList.add('active');
-            const scale = (wrapper.offsetWidth - 80) / 390;
-            if (scale > 1) frame.style.transform = `scale(${scale})`;
+            // Scale is calculated to match the wrapper width exactly
+            const scale = wrapper.offsetWidth / 390;
+            frame.style.transform = `scale(${scale})`;
         } else {
             frame.classList.remove('mobile');
             document.getElementById('btn-desktop').classList.add('active');
@@ -143,7 +142,7 @@
         const newEl = frame.contentDocument.createElement('div');
         newEl.className = `editable ${type}`;
         newEl.contentEditable = "true";
-        newEl.innerText = type === 'section_heading' ? "SECTION TITLE" : type === 'block_heading' ? "HEADING TITLE" : "Enter paragraph text here...";
+        newEl.innerText = type === 'section_heading' ? "SECTION TITLE" : type === 'block_heading' ? "HEADING TITLE" : "Paragraph text...";
 
         if (type === 'block_heading') {
             const wrapper = frame.contentDocument.createElement('div');
@@ -165,11 +164,15 @@
 
         const rect = el.getBoundingClientRect();
         const frameRect = frame.getBoundingClientRect();
-        const scale = frame.classList.contains('mobile') ? parseFloat(frame.style.transform.replace('scale(','')) : 1;
+        const scale = frame.classList.contains('mobile') ? (document.getElementById('frame-wrapper').offsetWidth / 390) : 1;
         
         toolbar.style.display = 'flex';
-        toolbar.style.left = (frameRect.left + (rect.left * scale) + (rect.width * scale / 2) - (toolbar.offsetWidth / 2)) + "px";
-        toolbar.style.top = (frameRect.top + (rect.top * scale) - 60) + "px";
+        // Precise math for the toolbar positioning on a scaled iframe
+        const leftPos = frameRect.left + (rect.left * scale) + (rect.width * scale / 2) - (toolbar.offsetWidth / 2);
+        const topPos = frameRect.top + (rect.top * scale) - 60;
+
+        toolbar.style.left = `${leftPos}px`;
+        toolbar.style.top = `${topPos}px`;
 
         document.getElementById('float-underline').style.display = 
             el.classList.contains('block_heading') ? 'inline-block' : 'none';
