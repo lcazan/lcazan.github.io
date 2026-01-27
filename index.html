@@ -2,7 +2,7 @@
 <html lang="en-US">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Snoozing Baby | Home</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Source+Sans+Pro:wght@300;400;600&display=swap" rel="stylesheet">
@@ -42,11 +42,6 @@
             padding: 8px 20px; 
             display: inline-block;
             white-space: nowrap;
-            transition: all 0.2s ease;
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
         }
 
         .menu-lines { cursor: pointer; -webkit-tap-highlight-color: transparent; }
@@ -60,36 +55,40 @@
         }
 
         .menu-lines div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0.2s; }
-        
         .active .line1 { transform: rotate(-45deg) translate(-4.5px, 5px); }
         .active .line2 { opacity: 0; }
         .active .line3 { transform: rotate(45deg) translate(-4.5px, -5.5px); }
 
+        /* Sidebar Fixes */
         nav { 
             position: fixed;
             top: 0; 
             left: -340px; 
             width: 320px; 
-            height: 100%; 
+            height: 100dvh; /* Dynamic viewport height for mobile browsers */
             background: var(--brand-cream); 
             transition: left 0.2s ease-in-out; 
             z-index: 9000; 
-            padding-top: 80px; 
-            padding-bottom: 120px; /* Increased for landscape accessibility */
             box-shadow: 4px 0 15px rgba(0,0,0,0.1); 
+            display: flex;
+            flex-direction: column;
             overflow-y: auto; 
             -webkit-overflow-scrolling: touch;
         }
         nav.open { left: 0; }
         
         .sidebar-close-icon {
-            position: absolute;
+            position: sticky;
             top: 25px; 
             left: 20px;
             padding: 5px;
+            margin-bottom: 20px;
             display: none;
+            z-index: 9001;
         }
         nav.open .sidebar-close-icon { display: block; }
+
+        .nav-content { padding-top: 60px; padding-bottom: 100px; }
 
         nav a { 
             display: block;
@@ -105,28 +104,27 @@
         }
 
         .dropdown-btn { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .dropdown-btn i { font-size: 0.9rem; transition: transform 0.2s; }
-        .dropdown-btn.active i { transform: rotate(180deg); }
-
         .sub-nav { display: none; background: var(--brand-cream); padding-left: 0; }
         .sub-nav.show { display: block; }
         .sub-nav a { font-size: 1rem; text-transform: uppercase; padding: 10px 45px; }
         
         #navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.3); z-index: 8500; }
 
-        .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
-        .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
-
-        .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; align-items: stretch; }
-        .hero-banner picture, .hero-banner img { width: 50%; height: auto; display: block; object-fit: cover; }
+        /* Hero Image - Size Lock */
+        .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; align-items: stretch; overflow: hidden; }
+        .hero-banner picture, .hero-banner img { width: 50%; height: auto; display: block; object-fit: cover; min-height: 300px; }
         .tagline-container { width: 50%; padding: 60px; display: flex; align-items: center; box-sizing: border-box; }
         .hero-tagline { font-family: 'Cinzel', serif; font-size: 1.2rem; text-transform: uppercase; margin: 0; line-height: 1.6; letter-spacing: 1px; }
 
         @media (max-width: 767px) {
             .hero-banner { flex-direction: column; }
-            .hero-banner picture, .hero-banner img { width: 100%; }
+            .hero-banner picture, .hero-banner img { width: 100%; min-height: 400px; max-height: 500px; }
             .tagline-container { width: 100%; padding: 40px 20px; text-align: center; justify-content: center; }
         }
+
+        /* Services Text Alignment */
+        .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
+        .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
 
         section { margin-bottom: 60px; text-align: center; }
         h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 8px; margin-bottom: 10px; display: inline-block; font-size: 1.2rem; font-weight: 400; text-transform: uppercase; text-align: center; }
@@ -138,6 +136,7 @@
         .gallery-item { cursor: pointer; background: #f9f9f9; -webkit-tap-highlight-color: transparent; }
         .gallery-item img { width: 100%; height: auto; display: block; }
 
+        /* Modal / Gallery (Locked) */
         .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
         .slider-track { display: flex; height: 100%; width: 100%; }
         .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
@@ -148,6 +147,7 @@
         .close-modal { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 40px; cursor: pointer; z-index: 10005; -webkit-tap-highlight-color: transparent; }
         .loader { width: 30px; height: 30px; border: 3px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 1s infinite linear; position: absolute; }
 
+        /* Footer (Locked) */
         footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; position: relative; margin-top: auto; }
         .social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
         .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; -webkit-tap-highlight-color: transparent; }
@@ -176,17 +176,19 @@
         <div class="line2"></div>
         <div class="line3"></div>
     </div>
-    <a href="https://mysnoozingbaby.com/">Home</a>
-    <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">Snoo Smart Sleeper <i class="fa-solid fa-caret-down"></i></a>
-    <div class="sub-nav">
-        <a href="https://mysnoozingbaby.com/snoo-rental">SNOO Rental</a>
-        <a href="https://mysnoozingbaby.com/snoo-cleaning-and-repairs">SNOO Cleaning/Repair</a>
+    <div class="nav-content">
+        <a href="https://mysnoozingbaby.com/">Home</a>
+        <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">Snoo Smart Sleeper <i class="fa-solid fa-caret-down"></i></a>
+        <div class="sub-nav">
+            <a href="https://mysnoozingbaby.com/snoo-rental">SNOO Rental</a>
+            <a href="https://mysnoozingbaby.com/snoo-cleaning-and-repairs">SNOO Cleaning/Repair</a>
+        </div>
+        <a href="https://mysnoozingbaby.com/baby-gear-rentals">Baby Gear Rentals</a>
+        <a href="https://mysnoozingbaby.com/toddler-party-rentals">Toddler Party Rentals</a>
+        <a href="https://mysnoozingbaby.com/about-us">About Us</a>
+        <a href="https://mysnoozingbaby.com/contact-us">Contact Us</a>
+        <a href="https://mysnoozingbaby.com/faqs">FAQs</a>
     </div>
-    <a href="https://mysnoozingbaby.com/baby-gear-rentals">Baby Gear Rentals</a>
-    <a href="https://mysnoozingbaby.com/toddler-party-rentals">Toddler Party Rentals</a>
-    <a href="https://mysnoozingbaby.com/about-us">About Us</a>
-    <a href="https://mysnoozingbaby.com/contact-us">Contact Us</a>
-    <a href="https://mysnoozingbaby.com/faqs">FAQs</a>
 </nav>
 
 <div class="hero-banner">
@@ -268,6 +270,7 @@
         subNav.classList.toggle('show');
     }
 
+    /* GALLERY LOGIC - LOCKED */
     const galleryItems = [
         {"id": 1, "small": "1-small.jpg", "large": "1-large.jpg"},
         {"id": 2, "small": "2-small.jpg", "large": "2-large.jpg"},
