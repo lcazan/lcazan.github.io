@@ -74,9 +74,11 @@
             background: var(--brand-cream); 
             transition: left 0.2s ease-in-out; 
             z-index: 9000; 
-            padding-top: 100px;
+            padding-top: 80px; /* Reduced to allow more room for links */
+            padding-bottom: 60px; /* Essential for landscape visibility */
             box-shadow: 4px 0 15px rgba(0,0,0,0.1); 
-            overflow-y: auto;
+            overflow-y: auto; /* Enables scrolling for short screens */
+            -webkit-overflow-scrolling: touch;
         }
         nav.open { left: 0; }
         
