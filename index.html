@@ -17,16 +17,7 @@
             --gallery-gap: 15px; 
         }
 
-        body { 
-            font-family: 'Source Sans Pro', sans-serif; 
-            margin: 0; 
-            color: var(--text-dark); 
-            background-color: #fff; 
-            display: flex; 
-            flex-direction: column; 
-            min-height: 100vh; 
-            overflow-x: hidden; 
-        }
+        body { font-family: 'Source Sans Pro', sans-serif; margin: 0; color: var(--text-dark); background-color: #fff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
 
         /* --- STICKY HEADER (LOCKED) --- */
         header { 
@@ -60,7 +51,7 @@
             letter-spacing: 1px;
         }
         
-        /* --- Sidebar Toggle (LOCKED: INSTANT & VISIBLE) --- */
+        /* --- Sidebar Toggle (LOCKED 2.2.4 Logic) --- */
         .menu-icon { 
             position: fixed; 
             left: 20px; 
@@ -74,18 +65,21 @@
             height: 2px; 
             background-color: var(--icon-brown); 
             margin: 6px 0; 
-            transition: 0s; 
+            transition: 0.2s; 
         }
+        .menu-icon.active .line1 { transform: rotate(-45deg) translate(-5px, 6px); }
+        .menu-icon.active .line2 { opacity: 0; }
+        .menu-icon.active .line3 { transform: rotate(45deg) translate(-5px, -7px); }
 
-        /* --- Sidebar Navigation (LOCKED: DROPDOWN & 18PX FONT) --- */
+        /* --- Sidebar Navigation (UPDATED: WIDTH & DROPDOWN) --- */
         nav { 
             position: fixed; 
             top: 0; 
-            left: -280px; 
-            width: 260px; 
+            left: -340px; /* Adjusted for wider width */
+            width: 320px; /* Increased width to prevent wrapping */
             height: 100%; 
             background: var(--brand-cream); 
-            transition: 0s; 
+            transition: left 0.2s ease-in-out; 
             z-index: 9000; 
             padding-top: 100px; 
             box-shadow: 4px 0 15px rgba(0,0,0,0.1); 
@@ -101,33 +95,21 @@
             font-size: 18px; 
             text-transform: uppercase; 
             letter-spacing: 1px; 
+            white-space: nowrap; /* Prevent wrapping */
         }
-        
-        /* Dropdown styling */
-        .dropdown-btn { 
-            cursor: pointer; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-        }
-        .dropdown-btn i { 
-            font-size: 14px; 
-            transition: 0s; 
-            color: var(--icon-brown);
-        }
+
+        /* Dropdown Trigger Styling */
+        .dropdown-btn { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .dropdown-btn i { font-size: 0.9rem; transition: transform 0.2s; }
         .dropdown-btn.active i { transform: rotate(180deg); }
 
         .sub-nav { 
             display: none; 
-            background: var(--brand-cream); 
+            background: rgba(0, 0, 0, 0.03); 
             padding-left: 0; 
         }
         .sub-nav.show { display: block; }
-        .sub-nav a { 
-            font-size: 1rem; 
-            text-transform: none; 
-            padding: 10px 45px; 
-        }
+        .sub-nav a { font-size: 1rem; text-transform: none; padding: 10px 45px; }
         
         #navOverlay { 
             display: none; 
@@ -144,7 +126,7 @@
         .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
         .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
 
-        /* --- Hero (LOCKED: RESPONSIVE) --- */
+        /* --- Hero (LOCKED) --- */
         .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; align-items: stretch; }
         .hero-banner picture, .hero-banner img { width: 50%; height: auto; display: block; object-fit: cover; }
         .tagline-container { width: 50%; padding: 60px; display: flex; align-items: center; box-sizing: border-box; }
@@ -198,7 +180,7 @@
 <header>
     <div class="logo-container">
         <div class="logo">My Snoozing Baby</div>
-        <span class="version-header">Version 2.2.7</span>
+        <span class="version-header">Version 2.2.8</span>
     </div>
 </header>
 
@@ -206,9 +188,7 @@
 
 <nav id="sidebar">
     <a href="#">Home</a>
-    <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">
-        SNOO SMART SLEEPER <i class="fa-solid fa-caret-down"></i>
-    </a>
+    <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">SNOO SMART SLEEPER <i class="fa-solid fa-caret-down"></i></a>
     <div class="sub-nav">
         <a href="#">SNOO Rental</a>
         <a href="#">SNOO Cleaning/Repair</a>
@@ -283,8 +263,10 @@
     function toggleNav(e) {
         if(e) e.stopPropagation();
         const nav = document.getElementById('sidebar');
+        const hamburger = document.getElementById('hamburger');
         const overlay = document.getElementById('navOverlay');
         const isOpen = nav.classList.toggle('open');
+        hamburger.classList.toggle('active');
         overlay.style.display = isOpen ? 'block' : 'none';
     }
 
