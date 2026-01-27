@@ -18,31 +18,29 @@
 
         body { font-family: 'Source Sans Pro', sans-serif; margin: 0; color: var(--text-dark); background-color: #fff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
 
-        /* STICKY HEADER - EXACTLY AS INDEX.HTML */
+        /* STICKY HEADER - EXACTLY AS INDEX */
         header { 
             display: flex; align-items: center; justify-content: center; padding: 15px 10px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); position: sticky; top: 0; z-index: 8000; border-bottom: 1px solid rgba(0,0,0,0.05); min-height: 60px;
         }
         .logo { font-family: 'Cinzel', serif; font-size: 1.25rem; text-transform: uppercase; letter-spacing: 1px; border: 1px solid var(--text-dark); padding: 8px 20px; display: inline-block; white-space: nowrap; }
 
-        /* HAMBURGER & X ANIMATION - EXACTLY AS INDEX.HTML */
+        /* HAMBURGER & X ANIMATION - EXACTLY AS INDEX */
         .header-menu-icon { position: absolute; top: 50%; left: 20px; transform: translateY(-50%); z-index: 8001; padding: 5px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-        .menu-lines div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0s; /* INSTANT TOGGLE PER INSTRUCTIONS */ }
+        .menu-lines div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0s; }
         
-        /* The X Transformation Logic from Index */
         .active .line1 { transform: rotate(-45deg) translate(-4.5px, 5px); }
         .active .line2 { opacity: 0; }
         .active .line3 { transform: rotate(45deg) translate(-4.5px, -5.5px); }
 
-        /* SIDEBAR - EXACTLY AS INDEX.HTML (Instant transition added) */
+        /* SIDEBAR - EXACTLY AS INDEX BUT WITH 22PX FONTS & INSTANT TOGGLE */
         nav { 
             position: fixed; top: 0; left: -340px; width: 320px; height: 100%; background: var(--brand-cream); transition: left 0s; z-index: 9000; box-shadow: 4px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch;
         }
         nav.open { left: 0; }
         .sidebar-close-icon { position: absolute; top: 25px; left: 20px; padding: 5px; display: none; z-index: 9001; }
         nav.open .sidebar-close-icon { display: block; }
-        .nav-content { padding-top: 100px; padding-bottom: 50px; }
         
-        /* Larger Font (22px) per previous instructions */
+        .nav-content { padding-top: 100px; padding-bottom: 50px; }
         nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
 
         .dropdown-btn { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
@@ -51,11 +49,10 @@
         .sub-nav a { font-size: 1.1rem; padding: 10px 45px; }
         #navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.3); z-index: 8500; }
 
-        /* CONTENT STYLING */
+        /* RENTAL PAGE CONTENT */
         .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
         .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
         
-        /* Package card with vertical line removed */
         .package-card { margin-bottom: 50px; text-align: left; padding-left: 0; } 
         .package-title { font-family: 'Cinzel', serif; font-size: 1.25rem; margin: 0; text-transform: uppercase; border-bottom: 1px solid var(--brand-pink); display: inline-block; padding-bottom: 5px; margin-bottom: 10px;}
         .package-subtitle { color: var(--icon-brown); font-size: 0.8rem; letter-spacing: 1px; margin-bottom: 10px; display: block; font-weight: 600; }
@@ -65,7 +62,8 @@
         /* FOOTER - EXACTLY AS INDEX.HTML */
         footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; margin-top: auto; }
         .social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
-        .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; }
+        .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; transition: color 0.3s; }
+        .social-icons a:hover { color: var(--icon-brown); }
         .copyright-text { font-weight: 600; display: block; margin-bottom: 15px; font-size: 0.85rem; }
         .disclaimer { font-size: 0.75rem; color: #666; max-width: 850px; margin: 0 auto; line-height: 1.7; text-align: center; }
     </style>
@@ -89,7 +87,7 @@
         <a href="index.html">Home</a>
         <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">Snoo Smart Sleeper <i class="fa-solid fa-caret-down"></i></a>
         <div class="sub-nav show">
-            <a href="snoo-rental" style="color: var(--icon-brown);">SNOO Rental</a>
+            <a href="snoo-rental.html" style="color: var(--icon-brown);">SNOO Rental</a>
             <a href="https://mysnoozingbaby.com/snoo-cleaning-and-repairs">SNOO Cleaning/Repair</a>
         </div>
         <a href="https://mysnoozingbaby.com/baby-gear-rentals">Baby Gear Rentals</a>
@@ -111,14 +109,6 @@
         This package includes one smart bassinet, one organic cotton sheet, and one organic cotton sleep sack. One mattress and one water-resistant cover are also included.</p>
     </div>
 
-    <div class="package-card">
-        <div class="package-title">Six-Month Package</div>
-        <span class="package-subtitle">PERFECT FOR NATURALLY SLEEP TRAINING BABIES. EASY CRIB TRANSITION</span>
-        <div class="package-price">$749</div>
-        <p class="package-includes"><strong>WHAT'S INCLUDED:</strong><br>
-        Without a doubt, this is our best value package, covering your baby from the newborn stage to the 6-month milestone. This package includes a total of six organic cotton sleep sacks (sizes S, M, and L), two organic cotton sheets, and one mattress with a water-resistant cover.</p>
-    </div>
-
     <div class="section-label">EXTRAS - SACKS, SHEETS AND LEG LIFTERS</div>
     
     <div class="package-card">
@@ -136,27 +126,23 @@
 
 <footer>
     <div class="social-icons">
-        <a href="#"><i class="fa-brands fa-facebook"></i></a>
-        <a href="#"><i class="fa-brands fa-instagram"></i></a>
-        <a href="#"><i class="fa-brands fa-tiktok"></i></a>
+        <a href="https://www.facebook.com/mysnoozingbaby" target="_blank"><i class="fa-brands fa-facebook"></i></a>
+        <a href="https://www.instagram.com/mysnoozingbaby/" target="_blank"><i class="fa-brands fa-instagram"></i></a>
+        <a href="https://www.tiktok.com/@mysnoozingbaby" target="_blank"><i class="fa-brands fa-tiktok"></i></a>
     </div>
     <span class="copyright-text">Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.</span>
     <div class="disclaimer">
-        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc.
+        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.
     </div>
 </footer>
 
 <script>
-    /* NAVIGATION LOGIC - MIRRORED FROM INDEX.HTML */
     function toggleNav(e) {
         if(e) e.stopPropagation();
         const nav = document.getElementById('sidebar');
         const hamburger = document.getElementById('headerHamburger');
         const isOpen = nav.classList.toggle('open');
-        
-        // This toggles the 'active' class to create the X effect
         hamburger.classList.toggle('active'); 
-        
         document.getElementById('navOverlay').style.display = isOpen ? 'block' : 'none';
         document.body.style.overflow = isOpen ? 'hidden' : 'auto';
     }
