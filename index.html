@@ -19,7 +19,7 @@
 
         body { font-family: 'Source Sans Pro', sans-serif; margin: 0; color: var(--text-dark); background-color: #fff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
 
-        /* --- STICKY HEADER (LOCKED) --- */
+        /* --- STICKY HEADER --- */
         header { 
             display: flex; 
             flex-direction: column;
@@ -51,6 +51,7 @@
             letter-spacing: 1px;
         }
         
+        /* Fixed Icon stays visible over the sidebar */
         .menu-icon { 
             position: fixed; 
             left: 20px; 
@@ -70,7 +71,7 @@
         .menu-icon.active .line2 { opacity: 0; }
         .menu-icon.active .line3 { transform: rotate(45deg) translate(-5px, -7px); }
 
-        /* --- Sidebar Navigation (LOCKED) --- */
+        /* --- Sidebar Navigation --- */
         nav { 
             position: fixed; 
             top: 0; 
@@ -108,13 +109,6 @@
             z-index: 8500; 
         }
 
-        /* --- Content Layout --- */
-        .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
-        .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
-
-        /* --- Instagram Container (NEW) --- */
-        .instagram-container { min-height: 200px; margin-bottom: 60px; width: 100%; }
-
         /* --- Hero --- */
         .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; align-items: stretch; }
         .hero-banner img { width: 50%; height: auto; display: block; object-fit: cover; }
@@ -127,13 +121,42 @@
             .tagline-container { padding: 40px 20px; text-align: center; justify-content: center; }
         }
 
-        /* --- Services (LOCKED) --- */
+        /* --- Content Layout --- */
+        .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
+        .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
+
+        /* --- Services --- */
         section { margin-bottom: 60px; text-align: center; }
         h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 8px; margin-bottom: 10px; display: inline-block; font-size: 1.2rem; font-weight: 400; text-transform: uppercase; }
         section p { text-align: center; line-height: 1.8; margin-top: 5px; margin-bottom: 25px; max-width: 800px; margin-left: auto; margin-right: auto; }
         .btn-find-out { display: inline-block; padding: 10px 25px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* --- Gallery & Lightbox (LOCKED) --- */
+        /* --- Instagram & Brute Force Masonry --- */
+        .instagram-container { min-height: 200px; margin-bottom: 60px; width: 100%; }
+
+        [class*="PostsContainer__PostsContainerComponent"], .e-instagram-feed-posts-container {
+            display: block !important;
+            column-count: 2 !important;
+            column-gap: 10px !important;
+        }
+        [class*="Post__PostComponent"], .e-instagram-feed-posts-item {
+            display: inline-block !important;
+            width: 100% !important;
+            margin-bottom: 10px !important;
+            break-inside: avoid !important;
+            height: auto !important;
+        }
+        [class*="Media__MediaContainer"], .e-instagram-feed-posts-item-image-wrapper {
+            padding-top: 0 !important;
+            height: auto !important;
+        }
+        [class*="Media__MediaComponent"], .e-instagram-feed-posts-item-image {
+            position: relative !important;
+            height: auto !important;
+            object-fit: contain !important;
+        }
+
+        /* --- Gallery & Lightbox --- */
         .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
         .gallery-item { cursor: pointer; background: #f9f9f9; }
@@ -150,7 +173,7 @@
         .loader { width: 30px; height: 30px; border: 3px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 1s infinite linear; position: absolute; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* --- Footer (LOCKED) --- */
+        /* --- Footer --- */
         footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; position: relative; margin-top: auto; }
         .social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
         .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; }
@@ -169,7 +192,7 @@
 <header>
     <div class="logo-container">
         <div class="logo">My Snoozing Baby</div>
-        <span class="version-header">Version 2.1.7</span>
+        <span class="version-header">Version 2.1.8</span>
     </div>
 </header>
 
