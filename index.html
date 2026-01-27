@@ -147,7 +147,7 @@
 <header>
     <div class="logo-container">
         <div class="logo">My Snoozing Baby</div>
-        <span class="version-header">Version 2.3.3</span>
+        <span class="version-header">Version 2.3.4</span>
     </div>
 </header>
 
@@ -300,6 +300,7 @@
     function openModal(index) {
         currentIndex = index;
         document.getElementById('imageModal').style.display = "block";
+        document.getElementById('hamburger').style.display = "none"; // Hide Menu Icon
         updateTrackPos(false);
         document.body.style.overflow = "hidden";
         loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
@@ -311,7 +312,11 @@
         loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
     }
 
-    function closeModal() { document.getElementById('imageModal').style.display = "none"; document.body.style.overflow = "auto"; }
+    function closeModal() { 
+        document.getElementById('imageModal').style.display = "none"; 
+        document.getElementById('hamburger').style.display = "block"; // Show Menu Icon
+        document.body.style.overflow = "auto"; 
+    }
 
     window.addEventListener('resize', () => {
         if (document.getElementById('imageModal').style.display === "block") updateTrackPos(false);
