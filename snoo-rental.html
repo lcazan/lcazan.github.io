@@ -18,25 +18,23 @@
 
         body { font-family: 'Source Sans Pro', sans-serif; margin: 0; color: var(--text-dark); background-color: #fff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
 
-        /* HEADER - EXACTLY AS INDEX.HTML */
+        /* STICKY HEADER - EXACTLY AS INDEX.HTML */
         header { 
             display: flex; align-items: center; justify-content: center; padding: 15px 10px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); position: sticky; top: 0; z-index: 8000; border-bottom: 1px solid rgba(0,0,0,0.05); min-height: 60px;
         }
         .logo { font-family: 'Cinzel', serif; font-size: 1.25rem; text-transform: uppercase; letter-spacing: 1px; border: 1px solid var(--text-dark); padding: 8px 20px; display: inline-block; white-space: nowrap; }
 
         .header-menu-icon { position: absolute; top: 50%; left: 20px; transform: translateY(-50%); z-index: 8001; padding: 5px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-        .menu-lines div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0s; /* INSTANT TOGGLE */ }
+        .menu-lines div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0s; }
 
-        /* SIDEBAR - EXACTLY AS INDEX.HTML BUT WITH INSTANT OPEN/CLOSE & BIGGER FONTS */
+        /* SIDEBAR - INSTANT TOGGLE & 22PX FONT */
         nav { 
-            position: fixed; top: 0; left: -340px; width: 320px; height: 100%; background: var(--brand-cream); transition: left 0s; /* INSTANT OPEN */ z-index: 9000; box-shadow: 4px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch;
+            position: fixed; top: 0; left: -340px; width: 320px; height: 100%; background: var(--brand-cream); transition: left 0s; z-index: 9000; box-shadow: 4px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch;
         }
         nav.open { left: 0; }
         .sidebar-close-icon { position: absolute; top: 25px; left: 20px; padding: 5px; display: none; z-index: 9001; }
         nav.open .sidebar-close-icon { display: block; }
         .nav-content { padding-top: 100px; padding-bottom: 50px; }
-        
-        /* Larger Font Adjustment for Menu */
         nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
 
         .dropdown-btn { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
@@ -45,21 +43,19 @@
         .sub-nav a { font-size: 1.1rem; padding: 10px 45px; }
         #navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.3); z-index: 8500; }
 
-        /* RENTAL PAGE SPECIFIC CONTENT */
+        /* CONTENT STYLING */
         .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
         .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
         
-        h1 { font-family: 'Cinzel', serif; font-size: 1.8rem; text-align: center; margin-bottom: 40px; border-bottom: 1px solid var(--brand-pink); display: inline-block; width: 100%; padding-bottom: 10px;}
-        
         .package-card { margin-bottom: 50px; text-align: left; border-left: 3px solid var(--brand-pink); padding-left: 20px; }
-        .package-title { font-family: 'Cinzel', serif; font-size: 1.2rem; margin: 0; text-transform: uppercase; }
-        .package-subtitle { color: var(--icon-brown); font-size: 0.8rem; letter-spacing: 1px; margin-bottom: 10px; display: block; }
-        .package-price { font-size: 1.5rem; font-weight: 600; margin: 10px 0; }
-        .package-includes { line-height: 1.8; color: #444; }
+        .package-title { font-family: 'Cinzel', serif; font-size: 1.25rem; margin: 0; text-transform: uppercase; border-bottom: 1px solid var(--brand-pink); display: inline-block; padding-bottom: 5px; margin-bottom: 10px;}
+        .package-subtitle { color: var(--icon-brown); font-size: 0.8rem; letter-spacing: 1px; margin-bottom: 10px; display: block; font-weight: 600; }
+        .package-price { font-size: 1.6rem; font-weight: 600; margin: 15px 0; color: var(--text-dark); }
+        .package-includes { line-height: 1.8; color: #444; font-size: 1rem; }
 
         /* FOOTER - EXACTLY AS INDEX.HTML */
         footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; margin-top: auto; }
-        .social-icons { margin-bottom: 25px; display: justify-content: center; display: flex; justify-content: center; gap: 30px; }
+        .social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
         .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; }
         .copyright-text { font-weight: 600; display: block; margin-bottom: 15px; font-size: 0.85rem; }
         .disclaimer { font-size: 0.75rem; color: #666; max-width: 850px; margin: 0 auto; line-height: 1.7; text-align: center; }
@@ -83,7 +79,8 @@
     <div class="nav-content">
         <a href="https://mysnoozingbaby.com/">Home</a>
         <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">Snoo Smart Sleeper <i class="fa-solid fa-caret-down"></i></a>
-        <div class="sub-nav show"> <a href="snoo-rental" style="color: var(--icon-brown);">SNOO Rental</a>
+        <div class="sub-nav show">
+            <a href="snoo-rental" style="color: var(--icon-brown);">SNOO Rental</a>
             <a href="https://mysnoozingbaby.com/snoo-cleaning-and-repairs">SNOO Cleaning/Repair</a>
         </div>
         <a href="https://mysnoozingbaby.com/baby-gear-rentals">Baby Gear Rentals</a>
@@ -95,8 +92,7 @@
 </nav>
 
 <div class="content-container">
-    <div class="section-label">RENTAL OPTIONS</div>
-    <h1>Price List</h1>
+    <div class="section-label">Price List</div>
 
     <div class="package-card">
         <div class="package-title">Month-To-Month Rental</div>
@@ -114,17 +110,50 @@
         This 2-month commitment package includes one smart bassinet, one organic cotton sheet, and one organic cotton sleep sack. One mattress and a water-resistant cover are also included.</p>
     </div>
 
-    <div class="section-label">EXTRAS</div>
+    <div class="package-card">
+        <div class="package-title">Three-Month Package</div>
+        <span class="package-subtitle">MOST POPULAR, BETTER VALUE</span>
+        <div class="package-price">$399</div>
+        <p class="package-includes"><strong>WHAT'S INCLUDED:</strong><br>
+        This 3-month commitment package includes one smart bassinet, one organic cotton sheet, and one organic cotton sleep sack. One mattress and a water-resistant cover are also included.</p>
+    </div>
+
+    <div class="package-card">
+        <div class="package-title">Four-Month Package</div>
+        <span class="package-subtitle">GETS YOU PAST THE DREADED SLEEP REGRESSION</span>
+        <div class="package-price">$529</div>
+        <p class="package-includes"><strong>WHAT'S INCLUDED:</strong><br>
+        This 4-month commitment package includes one smart bassinet, two organic cotton sheets, and two organic cotton sleep sacks. One mattress and a water-resistant cover are also included.</p>
+    </div>
+
+    <div class="package-card">
+        <div class="package-title">Five-Month Package</div>
+        <span class="package-subtitle">BEST VALUE TO THE SLEEP-TRAINING STAGE</span>
+        <div class="package-price">$649</div>
+        <p class="package-includes"><strong>WHAT'S INCLUDED:</strong><br>
+        This 5-month commitment package includes one smart bassinet, two organic cotton sheets, and two organic cotton sleep sacks. One mattress and a water-resistant cover are also included.</p>
+    </div>
+
+    <div class="package-card">
+        <div class="package-title">Six-Month Package</div>
+        <span class="package-subtitle">PERFECT FOR NATURALLY SLEEP TRAINING BABIES. EASY CRIB TRANSITION</span>
+        <div class="package-price">$749</div>
+        <p class="package-includes"><strong>WHAT'S INCLUDED:</strong><br>
+        Without a doubt, this is our best value package, covering your baby from the newborn stage to the 6-month milestone. This package includes a total of six organic cotton sleep sacks (sizes S, M, and L), two organic cotton sheets, and one mattress with a water-resistant cover.</p>
+    </div>
+
+    <div class="section-label">EXTRAS - SACKS, SHEETS AND LEG LIFTERS</div>
+    
     <div class="package-card">
         <div class="package-title">Extra Set of Sack & Sheet</div>
         <div class="package-price">$10</div>
-        <p class="package-includes">Add an extra sleep sack and sheet set for only $10 a month. Available in gender-neutral colors (white and ivory) as well as gender-specific options.</p>
+        <p class="package-includes">Add an extra sleep sack and sheet set for only $10 a month. We offer gender-neutral colors (white and ivory) as well as gender-specific options (blush pink, teal, navy, and gray).</p>
     </div>
 
     <div class="package-card">
         <div class="package-title">Leg Lifters</div>
         <div class="package-price">$10</div>
-        <p class="package-includes">Ideal for colicky babies. Includes two slip-resistant leg lifters to raise one end of the bassinet at a slight, safe incline.</p>
+        <p class="package-includes">This accessory is for colicky babies. It includes two slip-resistant leg lifters that raise one end of the bassinet at a slight, safe incline.</p>
     </div>
 </div>
 
@@ -136,17 +165,15 @@
     </div>
     <span class="copyright-text">Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.</span>
     <div class="disclaimer">
-        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.
+        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc.
     </div>
 </footer>
 
 <script>
-    /* NAVIGATION LOGIC - MIRRORED FROM INDEX */
     function toggleNav(e) {
         if(e) e.stopPropagation();
         const nav = document.getElementById('sidebar');
         const isOpen = nav.classList.toggle('open');
-        // Hamburger stays visible in sidebar per requirements
         document.getElementById('navOverlay').style.display = isOpen ? 'block' : 'none';
         document.body.style.overflow = isOpen ? 'hidden' : 'auto';
     }
