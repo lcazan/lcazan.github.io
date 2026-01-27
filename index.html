@@ -37,7 +37,7 @@
             font-family: 'Cinzel', serif;
             font-size: 1.25rem; 
             text-transform: uppercase; 
-            letter-spacing: 1px; /* Closer letter spacing */
+            letter-spacing: 1px; 
             border: 1px solid var(--text-dark); 
             padding: 8px 20px; 
             display: inline-block;
@@ -49,6 +49,7 @@
             -ms-user-select: none;
         }
 
+        /* Option 1: Increased z-index so it sits above the sidebar (9000) */
         .menu-icon { 
             position: absolute; 
             top: 50%; 
@@ -120,7 +121,12 @@
 
         .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
-        .gallery-item { cursor: pointer; background: #f9f9f9; }
+        .gallery-item { 
+            cursor: pointer; 
+            background: #f9f9f9; 
+            /* Remove blue highlight on tap */
+            -webkit-tap-highlight-color: transparent; 
+        }
         .gallery-item img { width: 100%; height: auto; display: block; }
 
         .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
