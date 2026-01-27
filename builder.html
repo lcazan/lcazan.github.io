@@ -69,7 +69,7 @@
         <span class="label">Formatting</span>
         <div class="tool-group">
             <button class="tool-btn" onclick="applyStyle('bold')"><i class="fa-solid fa-bold"></i></button>
-            <button class="tool-btn" onclick="applyStyle('underline')"><i class="fa-solid fa-underline"></i></button>
+            <button class="tool-btn" id="underline-btn" onclick="applyStyle('underline')"><i class="fa-solid fa-underline"></i></button>
         </div>
         
         <button class="tool-btn" style="width:100%; background:#742a2a; border:none; margin-top: 20px;" onclick="deleteElement()">Delete Element</button>
@@ -85,15 +85,10 @@
     let selectedEl = null;
 
     async function init() {
-        // Fetch external template
         const resp = await fetch('template.html');
         let html = await resp.text();
-        
-        // Inject styles.css link directly into frame head
         const cssLink = '<link rel="stylesheet" href="styles.css">';
         html = html.replace('</head>', cssLink + '</head>');
-        
-        // Prepare editor root inside the content-container
         frame.srcdoc = html.replace('<div class="content-container">', '<div class="content-container" id="editor-root">');
         
         frame.onload = () => {
@@ -137,6 +132,15 @@
         if(selectedEl) selectedEl.classList.remove('selected-outline');
         selectedEl = el;
         selectedEl.classList.add('selected-outline');
+        
+        // Show/Hide Underline button based on style
+        const underlineBtn = document.getElementById('underline-btn');
+        if (selectedEl.classList.contains('block_heading')) {
+            underlineBtn.style.display = 'block';
+        } else {
+            underlineBtn.style.display = 'none';
+        }
+
         showTab('edit');
         document.getElementById('edit-textarea').value = selectedEl.innerHTML;
     }
@@ -152,26 +156,36 @@
         }
     }
 
-    // Fixed Formatting Logic: Directly wraps selection in editing box
+    // Toggle Style Logic: Bolds or Unbolds based on current state
     function applyStyle(type) {
         const textarea = document.getElementById('edit-textarea');
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
         
-        if (start === end) return; // No text selected
+        if (start === end) return;
 
         const selectedText = textarea.value.substring(start, end);
         let replacement = "";
 
         if (type === 'bold') {
-            replacement = `<b>${selectedText}</b>`;
+            // Toggle Bold: Check if selection is already wrapped in <b>
+            if (selectedText.startsWith('<b>') && selectedText.endsWith('</b>')) {
+                replacement = selectedText.slice(3, -4);
+            } else {
+                replacement = `<b>${selectedText}</b>`;
+            }
         } else if (type === 'underline') {
-            replacement = `<span style="text-decoration: underline;">${selectedText}</span>`;
+            // Toggle Underline: Check if already wrapped
+            const openTag = '<span style="text-decoration: underline;">';
+            const closeTag = '</span>';
+            if (selectedText.startsWith(openTag) && selectedText.endsWith(closeTag)) {
+                replacement = selectedText.slice(openTag.length, -closeTag.length);
+            } else {
+                replacement = `${openTag}${selectedText}${closeTag}`;
+            }
         }
 
         textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
-        
-        // Sync the changes to the preview iframe
         syncText(textarea.value);
         textarea.focus();
     }
