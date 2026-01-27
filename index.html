@@ -22,43 +22,64 @@
         header { 
             display: flex; align-items: center; justify-content: center; padding: 15px 10px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); position: sticky; top: 0; z-index: 8000; border-bottom: 1px solid rgba(0,0,0,0.05); min-height: 60px;
         }
-        .logo { font-family: 'Cinzel', serif; font-size: 1.25rem; text-transform: uppercase; letter-spacing: 1px; border: 1px solid var(--text-dark); padding: 8px 20px; display: inline-block; }
+        .logo { font-family: 'Cinzel', serif; font-size: 1.25rem; text-transform: uppercase; letter-spacing: 1px; border: 1px solid var(--text-dark); padding: 8px 20px; display: inline-block; white-space: nowrap; }
 
         .header-menu-icon { position: absolute; top: 50%; left: 20px; transform: translateY(-50%); z-index: 8001; padding: 5px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .menu-lines div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0.2s; }
+        .active .line1 { transform: rotate(-45deg) translate(-4.5px, 5px); }
+        .active .line2 { opacity: 0; }
+        .active .line3 { transform: rotate(45deg) translate(-4.5px, -5.5px); }
 
         /* Sidebar - Scrollability Fix */
         nav { 
             position: fixed; top: 0; left: -340px; width: 320px; height: 100dvh; background: var(--brand-cream); transition: left 0.2s ease-in-out; z-index: 9000; box-shadow: 4px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto !important; -webkit-overflow-scrolling: touch;
         }
         nav.open { left: 0; }
-        .nav-content { padding-top: 60px; padding-bottom: 120px; }
-        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
+        .sidebar-close-icon { position: sticky; top: 25px; left: 20px; padding: 5px; margin-bottom: 20px; display: none; z-index: 9001; }
+        nav.open .sidebar-close-icon { display: block; }
+        .nav-content { padding-top: 60px; padding-bottom: 120px; flex-grow: 1; }
+        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
 
-        /* Hero Image Container */
+        .dropdown-btn { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .sub-nav { display: none; background: var(--brand-cream); }
+        .sub-nav.show { display: block; }
+        .sub-nav a { font-size: 1rem; padding: 10px 45px; }
+        #navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.3); z-index: 8500; }
+
+        /* Hero Banner - Responsive / JS Locked Height */
         .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; align-items: stretch; overflow: hidden; }
-        .hero-banner .img-box { width: 50%; display: block; position: relative; }
+        .hero-banner .img-box { width: 50%; display: block; position: relative; background: var(--brand-cream); }
         .hero-banner img { width: 100%; height: 100%; display: block; object-fit: cover; }
         .tagline-container { width: 50%; padding: 60px; display: flex; align-items: center; box-sizing: border-box; }
-        .hero-tagline { font-family: 'Cinzel', serif; font-size: 1.2rem; text-transform: uppercase; line-height: 1.6; }
+        .hero-tagline { font-family: 'Cinzel', serif; font-size: 1.2rem; text-transform: uppercase; margin: 0; line-height: 1.6; letter-spacing: 1px; }
 
         @media (max-width: 767px) {
             .hero-banner { flex-direction: column; }
-            .hero-banner .img-box { width: 100%; } /* Height is managed by JS below */
-            .tagline-container { width: 100%; padding: 40px 20px; text-align: center; }
+            .hero-banner .img-box { width: 100%; } 
+            .tagline-container { width: 100%; padding: 40px 20px; text-align: center; justify-content: center; }
         }
 
-        /* Services Text Alignment */
-        .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; }
-        h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 8px; font-size: 1.2rem; text-align: center; display: block; margin: 0 auto 10px; }
-        section p { text-align: justify; line-height: 1.8; max-width: 800px; margin: 5px auto 25px; }
+        /* Content Structure */
+        .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
+        .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
 
-        /* Gallery Columns (LOCKED) */
-        .gallery-columns { display: flex; gap: var(--gallery-gap); }
+        section { margin-bottom: 60px; text-align: center; }
+        h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 8px; margin-bottom: 10px; display: inline-block; font-size: 1.2rem; font-weight: 400; text-transform: uppercase; text-align: center; }
+        section p { text-align: justify; line-height: 1.8; margin: 5px auto 25px; max-width: 800px; }
+        .btn-find-out { display: inline-block; padding: 10px 25px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Photo Gallery (LOCKED STRUCTURE) */
+        .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; }
         .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
-        .gallery-item img { width: 100%; display: block; }
-        
+        .gallery-item { cursor: pointer; background: #f9f9f9; -webkit-tap-highlight-color: transparent; }
+        .gallery-item img { width: 100%; height: auto; display: block; }
+
+        /* Footer Restoration */
         footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; margin-top: auto; }
+        .social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
+        .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; }
+        .copyright-text { font-weight: 600; display: block; margin-bottom: 15px; font-size: 0.85rem; }
+        .disclaimer { font-size: 0.75rem; color: #666; max-width: 850px; margin: 0 auto; line-height: 1.7; text-align: center; }
     </style>
 </head>
 <body>
@@ -73,10 +94,18 @@
 <div id="navOverlay" onclick="toggleNav(event)"></div>
 
 <nav id="sidebar">
+    <div class="sidebar-close-icon menu-lines active" onclick="toggleNav(event)">
+        <div class="line1"></div><div class="line2"></div><div class="line3"></div>
+    </div>
     <div class="nav-content">
         <a href="https://mysnoozingbaby.com/">Home</a>
-        <a href="https://mysnoozingbaby.com/snoo-rental">SNOO Rental</a>
+        <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">Snoo Smart Sleeper <i class="fa-solid fa-caret-down"></i></a>
+        <div class="sub-nav">
+            <a href="https://mysnoozingbaby.com/snoo-rental">SNOO Rental</a>
+            <a href="https://mysnoozingbaby.com/snoo-cleaning-and-repairs">SNOO Cleaning/Repair</a>
+        </div>
         <a href="https://mysnoozingbaby.com/baby-gear-rentals">Baby Gear Rentals</a>
+        <a href="https://mysnoozingbaby.com/toddler-party-rentals">Toddler Party Rentals</a>
         <a href="https://mysnoozingbaby.com/about-us">About Us</a>
         <a href="https://mysnoozingbaby.com/contact-us">Contact Us</a>
         <a href="https://mysnoozingbaby.com/faqs">FAQs</a>
@@ -85,7 +114,11 @@
 
 <div class="hero-banner">
     <div class="img-box" id="heroImgBox">
-        <img src="emerson-large.jpg" id="heroImage" alt="Baby Emerson">
+        <picture>
+            <source media="(max-width: 767px)" srcset="emerson-small.jpg">
+            <source media="(min-width: 768px)" srcset="emerson-large.jpg">
+            <img src="emerson-large.jpg" id="heroImage" alt="Baby Emerson">
+        </picture>
     </div>
     <div class="tagline-container">
         <p class="hero-tagline">FOR BETTER-SLEEPING BABIES. <br> FOR HAPPIER BABIES.</p>
@@ -93,15 +126,23 @@
 </div>
 
 <div class="content-container">
+    <div class="section-label">OUR SERVICES</div>
     <section>
         <h2>SNOO Smart Bassinet Rental</h2>
         <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
+        <a href="#" class="btn-find-out">Find out more</a>
     </section>
     <section>
         <h2>SNOO deep-cleaning, servicing, and repairs</h2>
-        <p>Professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
+        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO.</p>
+        <a href="#" class="btn-find-out">Find out more</a>
     </section>
 
+    <div class="section-label">INSTAGRAM</div>
+    <div class="instagram-container">
+        </div>
+
+    <div class="section-label">PHOTO GALLERY</div>
     <div class="gallery-columns">
         <div id="col-left" class="gallery-column"></div>
         <div id="col-right" class="gallery-column"></div>
@@ -109,7 +150,15 @@
 </div>
 
 <footer>
+    <div class="social-icons">
+        <a href="#"><i class="fa-brands fa-facebook"></i></a>
+        <a href="#"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#"><i class="fa-brands fa-tiktok"></i></a>
+    </div>
     <span class="copyright-text">Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.</span>
+    <div class="disclaimer">
+        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. 
+    </div>
 </footer>
 
 <script>
@@ -118,24 +167,18 @@
     function lockHeroHeight() {
         const imgBox = document.getElementById('heroImgBox');
         const img = document.getElementById('heroImage');
-        
-        // Only run on mobile
         if (window.innerWidth < 768) {
-            // If in portrait and height hasn't been saved yet, save it
             if (window.innerHeight > window.innerWidth && portraitHeight === 0) {
-                portraitHeight = img.offsetHeight || (window.innerWidth * 1.2); // Fallback to 1.2 ratio if not loaded
-                imgBox.style.height = portraitHeight + 'px';
+                portraitHeight = img.offsetHeight;
+                if (portraitHeight > 0) imgBox.style.height = portraitHeight + 'px';
             } else if (portraitHeight > 0) {
-                // If rotated to landscape, force the saved portrait height
                 imgBox.style.height = portraitHeight + 'px';
             }
         } else {
-            // Desktop reset
             imgBox.style.height = 'auto';
         }
     }
 
-    // Run on load and rotation
     window.addEventListener('load', lockHeroHeight);
     window.addEventListener('resize', lockHeroHeight);
     window.addEventListener('orientationchange', lockHeroHeight);
@@ -149,12 +192,21 @@
         document.body.style.overflow = isOpen ? 'hidden' : 'auto';
     }
 
-    // GALLERY LOGIC - LOCKED
-    const galleryItems = [{"id": 1, "small": "1-small.jpg"}]; 
+    function toggleDropdown(btn) {
+        btn.classList.toggle('active');
+        btn.nextElementSibling.classList.toggle('show');
+    }
+
+    /* GALLERY LOGIC - LOCKED */
+    const galleryItems = [
+        {"id": 1, "small": "1-small.jpg"}, {"id": 2, "small": "2-small.jpg"},
+        {"id": 3, "small": "3-small.jpg"}, {"id": 4, "small": "4-small.jpg"}
+    ];
     function renderGallery() {
-        const left = document.getElementById('col-left');
-        galleryItems.forEach((item) => {
-            left.innerHTML += `<div class="gallery-item"><img src="${item.small}"></div>`;
+        const left = document.getElementById('col-left'), right = document.getElementById('col-right');
+        galleryItems.forEach((item, index) => {
+            const html = `<div class="gallery-item"><img src="${item.small}"></div>`;
+            index % 2 === 0 ? left.innerHTML += html : right.innerHTML += html;
         });
     }
     window.addEventListener('load', renderGallery);
