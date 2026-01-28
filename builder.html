@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.3.5 Stable</title>
+    <title>Snoozing Builder | v2.3.6 Fixed</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -37,7 +37,7 @@
         <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
     </div>
     <div id="frame-wrapper">
-        <div id="floating-toolbar">
+        <div id="floating-toolbar" onmousedown="event.preventDefault()">
             <button class="float-btn" title="Bold" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
             <button class="float-btn" id="float-underline" title="Toggle Line" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>
             <span class="sep">|</span>
@@ -80,7 +80,6 @@
                 else { deselectAll(); }
             });
 
-            // FIXED: Delayed trigger to wait for keyboard before showing toolbar
             innerDoc.addEventListener('focusin', (e) => {
                 const el = e.target.closest('.editable');
                 if (el) setTimeout(() => selectElement(el), 200);
@@ -119,6 +118,25 @@
         toolbar.style.top = `${topPos}px`;
     }
 
+    function execCmd(cmd) {
+        frame.contentWindow.focus();
+        frame.contentDocument.execCommand(cmd, false, null);
+    }
+
+    function setAlign(pos) {
+        if (!selectedEl) return;
+        // If it's a heading, align the wrapper. If text, align the element itself.
+        const target = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
+        target.style.textAlign = pos;
+        updateToolbarPos();
+    }
+
+    function toggleHeadingLine() {
+        if (selectedEl && selectedEl.classList.contains('block_heading')) {
+            selectedEl.classList.toggle('no-line');
+        }
+    }
+
     function setDevice(type) {
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         deselectAll();
@@ -155,15 +173,8 @@
         updateFrameHeight();
     }
 
-    function setAlign(pos) {
-        if (!selectedEl) return;
-        if (selectedEl.classList.contains('block_heading')) { selectedEl.parentElement.style.textAlign = pos; } 
-        else { selectedEl.style.textAlign = pos; }
-        updateToolbarPos();
-    }
-    function toggleHeadingLine() { if (selectedEl && selectedEl.classList.contains('block_heading')) selectedEl.classList.toggle('no-line'); }
     function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbar.style.display = 'none'; }
-    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); frame.contentWindow.focus(); }
+    
     function deleteElement() {
         if (selectedEl) {
             const toRemove = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
