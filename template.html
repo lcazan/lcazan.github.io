@@ -7,73 +7,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Source+Sans+Pro:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <style>
-        :root {
-            --brand-cream: #FAF6F3;
-            --brand-pink: #ebd5c9;    
-            --icon-brown: #877267; 
-            --text-dark: #151515;
-        }
-
-        body { font-family: 'Source Sans Pro', sans-serif; margin: 0; color: var(--text-dark); background-color: #fff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
-
-        /* HEADER & HAMBURGER */
-        header { 
-            display: flex; align-items: center; justify-content: center; padding: 15px 10px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); position: sticky; top: 0; z-index: 8000; border-bottom: 1px solid rgba(0,0,0,0.05); min-height: 60px;
-        }
-        
-        /* LOGO - Non-selectable as requested */
-        .logo { 
-            font-family: 'Cinzel', serif; 
-            font-size: 1.25rem; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            border: 1px solid var(--text-dark); 
-            padding: 8px 20px; 
-            display: inline-block; 
-            white-space: nowrap;
-            user-select: none; 
-            -webkit-user-select: none; 
-            -moz-user-select: none; 
-            -ms-user-select: none;
-        }
-
-        .header-menu-icon { position: absolute; top: 50%; left: 20px; transform: translateY(-50%); z-index: 8001; padding: 5px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-        .menu-lines div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0.2s; }
-        .active .line1 { transform: rotate(-45deg) translate(-4.5px, 5px); }
-        .active .line2 { opacity: 0; }
-        .active .line3 { transform: rotate(45deg) translate(-4.5px, -5.5px); }
-
-        /* SIDEBAR NAVIGATION */
-        nav { 
-            position: fixed; top: 0; left: -340px; width: 320px; height: 100%; background: var(--brand-cream); transition: left 0.2s ease-in-out; z-index: 9000; box-shadow: 4px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch;
-        }
-        nav.open { left: 0; }
-        .sidebar-close-icon { position: absolute; top: 25px; left: 20px; padding: 5px; display: none; z-index: 9001; }
-        nav.open .sidebar-close-icon { display: block; }
-        .nav-content { padding-top: 100px; padding-bottom: 50px; }
-        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
-
-        .dropdown-btn { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .dropdown-btn i { transition: transform 0.3s ease; }
-        .dropdown-btn.active i { transform: rotate(180deg); }
-        .sub-nav { display: none; background: var(--brand-cream); }
-        .sub-nav.show { display: block; }
-        .sub-nav a { font-size: 1rem; padding: 10px 45px; }
-        #navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.3); z-index: 8500; }
-
-        /* MAIN CONTENT AREA (BLANK TEMPLATE) */
-        
-
-        /* FOOTER */
-        footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; margin-top: auto; }
-        .social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
-        .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; }
-        .copyright-text { font-weight: 600; display: block; margin-bottom: 15px; font-size: 0.85rem; }
-        .disclaimer { font-size: 0.75rem; color: #666; max-width: 850px; margin: 0 auto; line-height: 1.7; text-align: center; }
-    </style>
-</head>
+    </head>
 <body>
 
 <header>
@@ -85,7 +19,7 @@
 
 <div id="navOverlay" onclick="toggleNav(event)"></div>
 
-<nav id="sidebar">
+<nav id="nav-sidebar">
     <div class="sidebar-close-icon menu-lines active" onclick="toggleNav(event)">
         <div class="line1"></div><div class="line2"></div><div class="line3"></div>
     </div>
@@ -122,7 +56,7 @@
 <script>
     function toggleNav(e) {
         if(e) e.stopPropagation();
-        const nav = document.getElementById('sidebar');
+        const nav = document.getElementById('nav-sidebar');
         const isOpen = nav.classList.toggle('open');
         document.getElementById('headerHamburger').style.visibility = isOpen ? 'hidden' : 'visible';
         document.getElementById('navOverlay').style.display = isOpen ? 'block' : 'none';
