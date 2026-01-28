@@ -224,4 +224,37 @@ footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee
         margin-bottom: 0;
     }
 }
+/* --- Button Block Styles --- */
+.block_button_wrap {
+    width: 100%;
+    margin: 20px 0;
+    display: block;
+    clear: both;
+}
+
+.block_button {
+    display: inline-block;
+    padding: 12px 30px;
+    background-color: #ffffff;
+    border: 1px solid #151515; /* Thin black border */
+    border-radius: 4px; /* Slightly rounded corners */
+    color: #151515;
+    text-decoration: none;
+    
+    /* Font Styling: Same as section_heading but bold/smaller */
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 11px; 
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.block_button:hover {
+    background-color: #f8f8f8;
+    border-color: var(--icon-brown);
+}
+
 
