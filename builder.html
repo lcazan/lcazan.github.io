@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.6.1 Handle Fix</title>
+    <title>Snoozing Builder | v2.7 Responsive Pairing</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -94,46 +93,22 @@
         
         frame.onload = () => {
             const innerDoc = frame.contentDocument;
-            const style = innerDoc.createElement('style');
-            style.innerHTML = `
-                .editable { cursor: pointer; outline: none !important; display: inline-block; width: auto; position: relative; } 
-                .selected-item { outline: 2px solid #877267 !important; outline-offset: 4px; z-index: 10; } 
-                .block_image { line-height: 0; }
-                .block_image img { max-width: 100%; height: auto; display: block; pointer-events: none; }
-                .block_text, .block_heading { display: block; width: 100%; }
-                
-                /* FIX 1 & 3: Large hit-area and no touch-scrolling */
-                .resize-handle { 
-                    width: 12px; height: 12px; background: #877267; 
-                    position: absolute; right: -6px; bottom: -6px; 
-                    cursor: nwse-resize; z-index: 1000; 
-                    border: 1px solid white; border-radius: 2px;
-                    touch-action: none; 
-                }
-                .resize-handle::after {
-                    content: ""; position: absolute;
-                    width: 40px; height: 40px;
-                    top: -14px; left: -14px;
-                }
-            `;
-            innerDoc.head.appendChild(style);
             
-            // Re-using the logic that worked: mousedown with stopProp
+            // Re-apply Iframe Event Listeners
             innerDoc.addEventListener('mousedown', (e) => {
                 if (document.getElementById('moveModeCheckbox').checked || isResizing) return;
                 const el = e.target.closest('.editable');
                 if (el) { e.stopPropagation(); selectElement(el); } else { deselectAll(); }
             });
 
-            // Prevent scroll while resizing
             innerDoc.addEventListener('touchmove', (e) => { if(isResizing) e.preventDefault(); }, {passive: false});
-            
             innerDoc.addEventListener('scroll', syncTrackPositions);
             wrapper.addEventListener('scroll', syncTrackPositions);
             setTimeout(() => setDevice('mobile'), 200);
         };
     }
 
+    // --- Image Handling ---
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
     function handleImageUpload(input) {
         if (input.files && input.files[0]) {
@@ -158,8 +133,16 @@
         }
     }
 
+    // --- Content Insertion & Pairing ---
     function insertElement(type, data = null) {
         const root = frame.contentDocument.getElementById('editor-root');
+        
+        // If image is selected and we add text, wrap them in a media-group
+        if (selectedEl && selectedEl.classList.contains('block_image') && type.includes('block_') && type !== 'block_image') {
+            createMediaGroup(selectedEl, type);
+            return;
+        }
+
         const newEl = frame.contentDocument.createElement('div');
         newEl.className = `editable ${type}`;
         
@@ -184,6 +167,25 @@
         if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
     }
 
+    function createMediaGroup(existingImg, textType) {
+        const innerDoc = frame.contentDocument;
+        const container = innerDoc.createElement('div');
+        container.className = 'media-group';
+        
+        const textEl = innerDoc.createElement('div');
+        textEl.className = `editable ${textType}`;
+        textEl.contentEditable = "true";
+        textEl.innerText = "New paired text...";
+
+        existingImg.parentNode.insertBefore(container, existingImg);
+        container.appendChild(existingImg);
+        container.appendChild(textEl);
+        
+        deselectAll();
+        updateFrameHeight();
+    }
+
+    // --- Selection & Toolbar ---
     function selectElement(el) {
         if (selectedEl) {
             selectedEl.classList.remove('selected-item');
@@ -260,8 +262,7 @@
              selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
              selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
              selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none';
-             if (pos === 'center') selectedEl.style.display = 'block';
-             else selectedEl.style.display = 'inline-block';
+             selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
         }
         updateToolbarPos();
     }
@@ -277,6 +278,7 @@
         else if (selectedEl && !selectedEl.classList.contains('block_image')) execCmd('underline');
     }
 
+    // --- Device Preview ---
     function setDevice(type) {
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         deselectAll();
@@ -295,6 +297,7 @@
         setTimeout(updateFrameHeight, 50);
     }
 
+    // --- Move Mode (Sortable) ---
     function toggleMoveMode() {
         const active = document.getElementById('moveModeCheckbox').checked;
         track.classList.toggle('active', active);
@@ -364,6 +367,7 @@
             if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
         }
     }
+
     window.onresize = () => { if (frame.classList.contains('mobile')) setDevice('mobile'); };
     window.onload = init;
 </script>
