@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.8 Vertical Centering</title>
+    <title>Snoozing Builder | v2.9 Button Support</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -41,6 +41,7 @@
     <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i>Section</button>
     <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i>Heading</button>
     <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i>Text</button>
+    <button class="insert-btn" onclick="insertElement('block_button')"><i class="fa-solid fa-square"></i>Button</button>
     <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i>Image</button>
     
     <label class="move-toggle">
@@ -146,6 +147,9 @@
             const img = frame.contentDocument.createElement('img');
             img.src = data;
             newEl.appendChild(img);
+        } else if (type === 'block_button') {
+            newEl.contentEditable = "true";
+            newEl.innerText = "CLICK HERE";
         } else {
             newEl.contentEditable = "true";
             newEl.innerText = "New Block";
@@ -156,7 +160,14 @@
             wrap.className = "heading-wrapper";
             wrap.appendChild(newEl); 
             root.appendChild(wrap);
-        } else { root.appendChild(newEl); }
+        } else if (type === 'block_button') {
+            const wrap = frame.contentDocument.createElement('div');
+            wrap.className = "block_button_wrap";
+            wrap.appendChild(newEl);
+            root.appendChild(wrap);
+        } else { 
+            root.appendChild(newEl); 
+        }
 
         updateFrameHeight();
         if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
@@ -170,11 +181,21 @@
         const textEl = innerDoc.createElement('div');
         textEl.className = `editable ${textType}`;
         textEl.contentEditable = "true";
-        textEl.innerText = "Centered Side Text Content";
+        textEl.innerText = textType === 'block_button' ? "CLICK HERE" : "Side Content";
 
         existingImg.parentNode.insertBefore(container, existingImg);
         container.appendChild(existingImg);
-        container.appendChild(textEl);
+        
+        // If it's a button, it still needs its wrapper even inside a media-group
+        if (textType === 'block_button') {
+            const bWrap = innerDoc.createElement('div');
+            bWrap.className = 'block_button_wrap';
+            bWrap.style.width = 'auto'; // Let it float inside flex
+            bWrap.appendChild(textEl);
+            container.appendChild(bWrap);
+        } else {
+            container.appendChild(textEl);
+        }
         
         deselectAll();
         updateFrameHeight();
@@ -191,8 +212,8 @@
 
         const isImg = el.classList.contains('block_image');
         document.getElementById('tool-replace').style.display = isImg ? 'block' : 'none';
-        document.getElementById('tool-bold').style.display = isImg ? 'none' : 'block';
-        document.getElementById('tool-underline').style.display = isImg ? 'none' : 'block';
+        document.getElementById('tool-bold').style.display = (isImg || el.classList.contains('block_button')) ? 'none' : 'block';
+        document.getElementById('tool-underline').style.display = (isImg || el.classList.contains('block_button')) ? 'none' : 'block';
 
         if (isImg) addResizeHandle(el);
         updateToolbarPos();
@@ -250,8 +271,14 @@
 
     function setAlign(pos) {
         if (!selectedEl) return;
-        const target = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
+        
+        // Target correctly for headers, buttons, and images
+        let target = selectedEl;
+        if (selectedEl.classList.contains('block_heading')) target = selectedEl.parentElement;
+        if (selectedEl.classList.contains('block_button')) target = selectedEl.parentElement;
+
         target.style.textAlign = pos;
+
         if (selectedEl.classList.contains('block_image')) {
              selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
              selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
@@ -354,7 +381,7 @@
     
     function deleteElement() {
         if (selectedEl) {
-            const toRemove = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
+            const toRemove = selectedEl.classList.contains('block_heading') || selectedEl.classList.contains('block_button') ? selectedEl.parentElement : selectedEl;
             toRemove.remove(); deselectAll(); updateFrameHeight();
             if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
         }
