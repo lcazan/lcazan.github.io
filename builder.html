@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.4.5 Viewport Fix</title>
+    <title>Snoozing Builder | v2.4.7 Restored & Working</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -94,7 +94,12 @@
             innerDoc.addEventListener('mousedown', (e) => {
                 if (document.getElementById('moveModeCheckbox').checked) return;
                 const el = e.target.closest('.editable');
-                if (el) { e.stopPropagation(); selectElement(el); } else { deselectAll(); }
+                if (el) { 
+                    e.stopPropagation(); 
+                    selectElement(el); 
+                } else { 
+                    deselectAll(); 
+                }
             });
             
             innerDoc.addEventListener('scroll', syncTrackPositions);
@@ -103,75 +108,18 @@
         };
     }
 
-    function toggleMoveMode() {
-        const active = document.getElementById('moveModeCheckbox').checked;
-        track.classList.toggle('active', active);
-        deselectAll();
-        
-        if (active) {
-            syncTrackPositions();
-            sortableInstance = new Sortable(track, {
-                animation: 200,
-                onEnd: (evt) => {
-                    moveIframeElement(evt.oldIndex, evt.newIndex);
-                    setTimeout(syncTrackPositions, 50);
-                }
-            });
-        } else {
-            if (sortableInstance) sortableInstance.destroy();
-            track.innerHTML = "";
-        }
-    }
-
-    function syncTrackPositions() {
-        if (!document.getElementById('moveModeCheckbox').checked) return;
-        track.innerHTML = "";
-        const root = frame.contentDocument.getElementById('editor-root');
-        if (!root) return;
-
-        const blocks = Array.from(root.children);
-        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-
-        blocks.forEach((block) => {
-            const rect = block.getBoundingClientRect();
-            const handle = document.createElement('div');
-            handle.className = 'drag-handle-item';
-            handle.innerHTML = '⠿';
-            handle.style.top = (rect.top * scale) + "px";
-            handle.style.height = (rect.height * scale) + "px";
-            track.appendChild(handle);
-        });
-    }
-
-    function moveIframeElement(oldIdx, newIdx) {
-        const root = frame.contentDocument.getElementById('editor-root');
-        const blocks = Array.from(root.children);
-        const target = blocks[oldIdx];
-        if (newIdx >= blocks.length - 1) {
-            root.appendChild(target);
-        } else {
-            root.insertBefore(target, blocks[newIdx + (newIdx > oldIdx ? 1 : 0)]);
-        }
-        updateFrameHeight();
-    }
-
     function selectElement(el) {
         if (selectedEl) selectedEl.classList.remove('selected-item');
         selectedEl = el;
         selectedEl.classList.add('selected-item');
         
-        const vv = window.visualViewport;
-        if (vv) {
-            const updateOnResize = () => {
-                updateToolbarPos();
-                vv.removeEventListener('resize', updateOnResize);
-            };
-            vv.addEventListener('resize', updateOnResize);
-            // Fallback for cases where keyboard is already up
-            setTimeout(updateToolbarPos, 350);
-        } else {
+        // Hide immediately so it doesn't jump
+        toolbar.style.display = 'none';
+
+        // DELAYED SHOW: Wait for keyboard shift
+        setTimeout(() => {
             updateToolbarPos();
-        }
+        }, 400);
     }
 
     function updateToolbarPos() {
@@ -186,6 +134,7 @@
         toolbar.style.top = `${topPos}px`;
     }
 
+    // Standard Toolbar Functions
     function execCmd(cmd) {
         if (!selectedEl) return;
         frame.contentWindow.focus();
@@ -240,6 +189,58 @@
         setTimeout(updateFrameHeight, 50);
     }
 
+    function toggleMoveMode() {
+        const active = document.getElementById('moveModeCheckbox').checked;
+        track.classList.toggle('active', active);
+        deselectAll();
+        
+        if (active) {
+            syncTrackPositions();
+            sortableInstance = new Sortable(track, {
+                animation: 200,
+                onEnd: (evt) => {
+                    moveIframeElement(evt.oldIndex, evt.newIndex);
+                    setTimeout(syncTrackPositions, 50);
+                }
+            });
+        } else {
+            if (sortableInstance) sortableInstance.destroy();
+            track.innerHTML = "";
+        }
+    }
+
+    function syncTrackPositions() {
+        if (!document.getElementById('moveModeCheckbox').checked) return;
+        track.innerHTML = "";
+        const root = frame.contentDocument.getElementById('editor-root');
+        if (!root) return;
+
+        const blocks = Array.from(root.children);
+        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
+
+        blocks.forEach((block) => {
+            const rect = block.getBoundingClientRect();
+            const handle = document.createElement('div');
+            handle.className = 'drag-handle-item';
+            handle.innerHTML = '⠿';
+            handle.style.top = (rect.top * scale) + "px";
+            handle.style.height = (rect.height * scale) + "px";
+            track.appendChild(handle);
+        });
+    }
+
+    function moveIframeElement(oldIdx, newIdx) {
+        const root = frame.contentDocument.getElementById('editor-root');
+        const blocks = Array.from(root.children);
+        const target = blocks[oldIdx];
+        if (newIdx >= blocks.length - 1) {
+            root.appendChild(target);
+        } else {
+            root.insertBefore(target, blocks[newIdx + (newIdx > oldIdx ? 1 : 0)]);
+        }
+        updateFrameHeight();
+    }
+
     function updateFrameHeight() {
         if (frame.contentDocument) {
             frame.style.height = '0px'; 
@@ -265,7 +266,12 @@
         if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
     }
 
-    function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbar.style.display = 'none'; }
+    function deselectAll() { 
+        if (selectedEl) selectedEl.classList.remove('selected-item'); 
+        selectedEl = null; 
+        toolbar.style.display = 'none'; 
+    }
+    
     function deleteElement() {
         if (selectedEl) {
             const toRemove = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
