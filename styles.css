@@ -207,3 +207,21 @@ footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee
     .block_heading { font-size: 1.4rem; } 
     header { padding: 10px; } 
 }
+/* Landscape/Desktop: Side-by-side */
+@media (min-width: 500px) {
+    .media-group {
+        flex-direction: row; /* Horizontal layout */
+        align-items: center; /* Vertically centers text relative to image height */
+        text-align: left;
+    }
+    
+    .media-group .block_image {
+        flex-shrink: 0;
+    }
+
+    .media-group .editable {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+}
+
