@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.5.0 Move Mode</title>
+    <title>Snoozing Builder | v2.5.1 Move Mode Fixed</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -12,9 +12,8 @@
         .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
         
-        /* Move Checkbox Styling */
-        .move-toggle { color: white; font-size: 10px; text-align: center; margin-top: 10px; cursor: pointer; }
-        .move-toggle input { cursor: pointer; }
+        .move-toggle { color: white; font-size: 10px; text-align: center; margin-top: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .move-toggle input { width: 20px; height: 20px; cursor: pointer; }
 
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; }
         #device-bar { height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #000; flex-shrink: 0; }
@@ -82,8 +81,7 @@
             style.innerHTML = `
                 .editable { cursor: text; outline: none !important; position: relative; }
                 .selected-item { outline: 2px solid #877267 !important; outline-offset: 4px; }
-                .sortable-ghost { opacity: 0; }
-                .sortable-drag { background: #FAF6F3 !important; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+                .sortable-ghost { opacity: 0.2; background: #ebd5c9; }
             `;
             innerDoc.head.appendChild(style);
             
@@ -113,16 +111,16 @@
         const editables = innerDoc.querySelectorAll('.editable');
 
         if (isMoveMode) {
-            deselectAll();
+            deselectAll(); // Hide toolbar
             root.classList.add('move-mode-active');
             editables.forEach(el => el.contentEditable = "false");
             
-            // Init Sortable
+            // Initialize Sortable on the content container
+            // Use fallback to ensure it works across the iframe boundary smoothly
             sortableInstance = new Sortable(root, {
-                animation: 200,
+                animation: 150,
                 ghostClass: 'sortable-ghost',
-                dragClass: 'sortable-drag',
-                forceFallback: true,
+                forceFallback: true, 
                 onEnd: () => { updateFrameHeight(); }
             });
         } else {
@@ -223,7 +221,6 @@
             toRemove.remove(); deselectAll(); updateFrameHeight();
         }
     }
-    window.onresize = () => { if (frame.classList.contains('mobile')) setDevice('mobile'); };
     window.onload = init;
 </script>
 </body>
