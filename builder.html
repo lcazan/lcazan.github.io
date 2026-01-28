@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.3.3 Stable</title>
+    <title>Snoozing Builder | v2.3.5 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -79,23 +79,31 @@
                 if (el) { e.stopPropagation(); selectElement(el); } 
                 else { deselectAll(); }
             });
+
+            // FIXED: Delayed trigger to wait for keyboard before showing toolbar
+            innerDoc.addEventListener('focusin', (e) => {
+                const el = e.target.closest('.editable');
+                if (el) setTimeout(() => selectElement(el), 200);
+            });
             
             innerDoc.addEventListener('scroll', updateToolbarPos);
             wrapper.addEventListener('scroll', updateToolbarPos);
             if (window.visualViewport) {
-                window.visualViewport.addEventListener('resize', () => { if (selectedEl) updateToolbarPos(); });
+                window.visualViewport.addEventListener('resize', updateToolbarPos);
+                window.visualViewport.addEventListener('scroll', updateToolbarPos);
             }
             setTimeout(() => setDevice('mobile'), 200);
         };
     }
 
     function selectElement(el) {
-        if (selectedEl === el) { updateToolbarPos(); return; }
-        if (selectedEl) selectedEl.classList.remove('selected-item');
+        if (selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
         selectedEl.classList.add('selected-item');
-        setTimeout(updateToolbarPos, 150);
-        document.getElementById('float-underline').style.display = el.classList.contains('block_heading') ? 'inline-block' : 'none';
+        updateToolbarPos();
+        setTimeout(updateToolbarPos, 100);
+        const uBtn = document.getElementById('float-underline');
+        if (uBtn) uBtn.style.display = el.classList.contains('block_heading') ? 'inline-block' : 'none';
     }
 
     function updateToolbarPos() {
@@ -134,13 +142,6 @@
         }
     }
 
-    function setAlign(pos) {
-        if (!selectedEl) return;
-        if (selectedEl.classList.contains('block_heading')) { selectedEl.parentElement.style.textAlign = pos; } 
-        else { selectedEl.style.textAlign = pos; }
-        updateToolbarPos();
-    }
-
     function insertElement(type) {
         const root = frame.contentDocument.getElementById('editor-root');
         const newEl = frame.contentDocument.createElement('div');
@@ -154,6 +155,12 @@
         updateFrameHeight();
     }
 
+    function setAlign(pos) {
+        if (!selectedEl) return;
+        if (selectedEl.classList.contains('block_heading')) { selectedEl.parentElement.style.textAlign = pos; } 
+        else { selectedEl.style.textAlign = pos; }
+        updateToolbarPos();
+    }
     function toggleHeadingLine() { if (selectedEl && selectedEl.classList.contains('block_heading')) selectedEl.classList.toggle('no-line'); }
     function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbar.style.display = 'none'; }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); frame.contentWindow.focus(); }
