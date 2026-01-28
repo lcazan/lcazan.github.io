@@ -143,7 +143,13 @@ nav#nav-sidebar a {
 
 .sub-nav { display: none; background: var(--brand-cream); }
 .sub-nav.show { display: block; }
-.sub-nav a { font-size: 1rem; padding: 10px 100px; }
+
+/* FIXED INDENTATION: Uses higher specificity to override parent link padding */
+nav#nav-sidebar .sub-nav a { 
+    font-size: 1rem; 
+    padding: 10px 30px 10px 60px; /* Top, Right, Bottom, Left (Indented) */
+    text-transform: none; 
+}
 
 #navOverlay { 
     display: none; 
