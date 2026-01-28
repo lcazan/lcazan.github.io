@@ -41,6 +41,7 @@
     <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i>Section</button>
     <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i>Heading</button>
     <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i>Text</button>
+    <button class="insert-btn" onclick="insertElement('block_button')"><i class="fa-solid fa-square"></i>Button</button>
     <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i>Image</button>
     
     <label class="move-toggle">
@@ -83,7 +84,6 @@
     let selectedEl = null;
     let isResizing = false;
     let sortableInstance = null;
-    let storedMobileWidth = null;
 
     async function init() {
         const resp = await fetch('template.html');
@@ -93,14 +93,11 @@
         
         frame.onload = () => {
             const innerDoc = frame.contentDocument;
-            
-            // Re-apply Iframe Event Listeners
             innerDoc.addEventListener('mousedown', (e) => {
                 if (document.getElementById('moveModeCheckbox').checked || isResizing) return;
                 const el = e.target.closest('.editable');
                 if (el) { e.stopPropagation(); selectElement(el); } else { deselectAll(); }
             });
-
             innerDoc.addEventListener('touchmove', (e) => { if(isResizing) e.preventDefault(); }, {passive: false});
             innerDoc.addEventListener('scroll', syncTrackPositions);
             wrapper.addEventListener('scroll', syncTrackPositions);
@@ -108,7 +105,6 @@
         };
     }
 
-    // --- Image Handling ---
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
     function handleImageUpload(input) {
         if (input.files && input.files[0]) {
@@ -133,11 +129,9 @@
         }
     }
 
-    // --- Content Insertion & Pairing ---
     function insertElement(type, data = null) {
         const root = frame.contentDocument.getElementById('editor-root');
         
-        // If image is selected and we add text, wrap them in a media-group
         if (selectedEl && selectedEl.classList.contains('block_image') && type.includes('block_') && type !== 'block_image') {
             createMediaGroup(selectedEl, type);
             return;
@@ -151,6 +145,9 @@
             const img = frame.contentDocument.createElement('img');
             img.src = data;
             newEl.appendChild(img);
+        } else if (type === 'block_button') {
+            newEl.contentEditable = "true";
+            newEl.innerText = "FIND OUT MORE";
         } else {
             newEl.contentEditable = "true";
             newEl.innerText = "New Block";
@@ -160,6 +157,11 @@
             const wrap = frame.contentDocument.createElement('div'); 
             wrap.className = "heading-wrapper";
             wrap.appendChild(newEl); 
+            root.appendChild(wrap);
+        } else if (type === 'block_button') {
+            const wrap = frame.contentDocument.createElement('div');
+            wrap.className = "block_button_wrap";
+            wrap.appendChild(newEl);
             root.appendChild(wrap);
         } else { root.appendChild(newEl); }
 
@@ -175,17 +177,25 @@
         const textEl = innerDoc.createElement('div');
         textEl.className = `editable ${textType}`;
         textEl.contentEditable = "true";
-        textEl.innerText = "New paired text...";
+        textEl.innerText = textType === 'block_button' ? "FIND OUT MORE" : "New paired text...";
 
         existingImg.parentNode.insertBefore(container, existingImg);
         container.appendChild(existingImg);
-        container.appendChild(textEl);
+        
+        if (textType === 'block_button') {
+            const bWrap = innerDoc.createElement('div');
+            bWrap.className = 'block_button_wrap';
+            bWrap.style.width = 'auto'; // Shrink wrapper inside media group
+            bWrap.appendChild(textEl);
+            container.appendChild(bWrap);
+        } else {
+            container.appendChild(textEl);
+        }
         
         deselectAll();
         updateFrameHeight();
     }
 
-    // --- Selection & Toolbar ---
     function selectElement(el) {
         if (selectedEl) {
             selectedEl.classList.remove('selected-item');
@@ -196,9 +206,11 @@
         selectedEl.classList.add('selected-item');
 
         const isImg = el.classList.contains('block_image');
+        const isBtn = el.classList.contains('block_button');
+        
         document.getElementById('tool-replace').style.display = isImg ? 'block' : 'none';
-        document.getElementById('tool-bold').style.display = isImg ? 'none' : 'block';
-        document.getElementById('tool-underline').style.display = isImg ? 'none' : 'block';
+        document.getElementById('tool-bold').style.display = (isImg || isBtn) ? 'none' : 'block';
+        document.getElementById('tool-underline').style.display = (isImg || isBtn) ? 'none' : 'block';
 
         if (isImg) addResizeHandle(el);
         updateToolbarPos();
@@ -207,38 +219,25 @@
     function addResizeHandle(el) {
         const handle = frame.contentDocument.createElement('div');
         handle.className = 'resize-handle';
-        
         const startResize = (e) => {
             e.preventDefault(); e.stopPropagation();
             isResizing = true;
-            toolbar.style.display = 'none';
             const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             const startWidth = el.offsetWidth;
-
             const onMove = (mE) => {
                 const currentX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
-                const newWidth = startWidth + (currentX - startX);
-                if (newWidth > 40) el.style.width = newWidth + 'px';
+                el.style.width = (startWidth + (currentX - startX)) + 'px';
             };
-            
             const onUp = () => {
                 isResizing = false;
                 frame.contentDocument.removeEventListener('mousemove', onMove);
                 frame.contentDocument.removeEventListener('mouseup', onUp);
-                frame.contentDocument.removeEventListener('touchmove', onMove);
-                frame.contentDocument.removeEventListener('touchend', onUp);
-                updateToolbarPos();
-                updateFrameHeight();
+                updateToolbarPos(); updateFrameHeight();
             };
-
             frame.contentDocument.addEventListener('mousemove', onMove);
             frame.contentDocument.addEventListener('mouseup', onUp);
-            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
-            frame.contentDocument.addEventListener('touchend', onUp);
         };
-
         handle.addEventListener('mousedown', startResize);
-        handle.addEventListener('touchstart', startResize, {passive: false});
         el.appendChild(handle);
     }
 
@@ -256,12 +255,14 @@
 
     function setAlign(pos) {
         if (!selectedEl) return;
-        const target = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
+        let target = selectedEl;
+        if (selectedEl.classList.contains('block_heading')) target = selectedEl.parentElement;
+        if (selectedEl.classList.contains('block_button')) target = selectedEl.parentElement;
+        
         target.style.textAlign = pos;
         if (selectedEl.classList.contains('block_image')) {
              selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
              selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
-             selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none';
              selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
         }
         updateToolbarPos();
@@ -278,7 +279,6 @@
         else if (selectedEl && !selectedEl.classList.contains('block_image')) execCmd('underline');
     }
 
-    // --- Device Preview ---
     function setDevice(type) {
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         deselectAll();
@@ -286,8 +286,7 @@
             frame.classList.add('mobile');
             document.getElementById('btn-mobile').classList.add('active');
             frame.style.width = '390px'; 
-            const scale = wrapper.offsetWidth / 390;
-            frame.style.transform = `scale(${scale})`;
+            frame.style.transform = `scale(${wrapper.offsetWidth / 390})`;
         } else {
             frame.classList.remove('mobile');
             document.getElementById('btn-desktop').classList.add('active');
@@ -297,20 +296,13 @@
         setTimeout(updateFrameHeight, 50);
     }
 
-    // --- Move Mode (Sortable) ---
     function toggleMoveMode() {
         const active = document.getElementById('moveModeCheckbox').checked;
         track.classList.toggle('active', active);
         deselectAll();
         if (active) {
             syncTrackPositions();
-            sortableInstance = new Sortable(track, {
-                animation: 200,
-                onEnd: (evt) => {
-                    moveIframeElement(evt.oldIndex, evt.newIndex);
-                    setTimeout(syncTrackPositions, 50);
-                }
-            });
+            sortableInstance = new Sortable(track, { animation: 200, onEnd: (evt) => moveIframeElement(evt.oldIndex, evt.newIndex) });
         } else if (sortableInstance) { sortableInstance.destroy(); track.innerHTML = ""; }
     }
 
@@ -318,16 +310,13 @@
         if (!document.getElementById('moveModeCheckbox').checked) return;
         track.innerHTML = "";
         const root = frame.contentDocument.getElementById('editor-root');
-        if (!root) return;
         const blocks = Array.from(root.children);
         const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
         blocks.forEach((block) => {
             const rect = block.getBoundingClientRect();
             const handle = document.createElement('div');
-            handle.className = 'drag-handle-item';
-            handle.innerHTML = '⠿';
-            handle.style.top = (rect.top * scale) + "px";
-            handle.style.height = (rect.height * scale) + "px";
+            handle.className = 'drag-handle-item'; handle.innerHTML = '⠿';
+            handle.style.top = (rect.top * scale) + "px"; handle.style.height = (rect.height * scale) + "px";
             track.appendChild(handle);
         });
     }
@@ -344,25 +333,22 @@
     function updateFrameHeight() {
         if (frame.contentDocument) {
             frame.style.height = '0px'; 
-            const rawHeight = frame.contentDocument.documentElement.scrollHeight;
             const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-            frame.style.height = (rawHeight * scale) + 'px';
+            frame.style.height = (frame.contentDocument.documentElement.scrollHeight * scale) + 'px';
         }
     }
 
     function deselectAll() { 
         if (selectedEl) {
             selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if(h) h.remove();
+            const h = selectedEl.querySelector('.resize-handle'); if(h) h.remove();
         }
-        selectedEl = null; 
-        toolbar.style.display = 'none'; 
+        selectedEl = null; toolbar.style.display = 'none'; 
     }
     
     function deleteElement() {
         if (selectedEl) {
-            const toRemove = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
+            const toRemove = (selectedEl.classList.contains('block_heading') || selectedEl.classList.contains('block_button')) ? selectedEl.parentElement : selectedEl;
             toRemove.remove(); deselectAll(); updateFrameHeight();
             if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
         }
