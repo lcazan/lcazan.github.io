@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.5 Image Support</title>
+    <title>Snoozing Builder | v2.6 Image Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -30,7 +30,7 @@
         #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; height: auto; min-height: 0; }
         #preview-frame.mobile { width: 390px; }
         
-        #floating-toolbar { position: absolute; display: none; background: #111; border-radius: 4px; padding: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 2000; gap: 5px; border: 1px solid #444; }
+        #floating-toolbar { position: absolute; display: none; background: #111; border-radius: 4px; padding: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 2000; gap: 5px; border: 1px solid #444; align-items: center; }
         .float-btn { background: transparent; border: none; color: white; padding: 5px 10px; cursor: pointer; border-radius: 2px; }
         .float-btn:hover { background: var(--brand-pink); color: #000; }
     </style>
@@ -42,13 +42,15 @@
     <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i>Heading</button>
     <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i>Text</button>
     <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i>Image</button>
-    <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
     
     <label class="move-toggle">
         <input type="checkbox" id="moveModeCheckbox" onchange="toggleMoveMode()">
         <div>MOVE</div>
     </label>
 </div>
+
+<input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
+<input type="file" id="image-replace" style="display:none" accept="image/*" onchange="handleImageReplace(this)">
 
 <div id="drag-track"></div>
 
@@ -59,8 +61,9 @@
     </div>
     <div id="frame-wrapper">
         <div id="floating-toolbar" onmousedown="event.preventDefault()">
-            <button class="float-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
-            <button class="float-btn" id="float-underline" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>
+            <button class="float-btn" id="tool-bold" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
+            <button class="float-btn" id="tool-replace" onclick="triggerReplace()" style="display:none;"><i class="fa-solid fa-sync"></i> Replace</button>
+            <button class="float-btn" id="tool-underline" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>
             <span style="color:#444">|</span>
             <button class="float-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
             <button class="float-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
@@ -78,6 +81,7 @@
     const wrapper = document.getElementById('frame-wrapper');
     const track = document.getElementById('drag-track');
     let selectedEl = null;
+    let isResizing = false;
     let sortableInstance = null;
     let storedMobileWidth = null;
 
@@ -90,11 +94,18 @@
         frame.onload = () => {
             const innerDoc = frame.contentDocument;
             const style = innerDoc.createElement('style');
-            style.innerHTML = `.editable { cursor: pointer; outline: none !important; } .selected-item { outline: 2px solid #877267 !important; outline-offset: 4px; } .block_image img { max-width: 100%; display: block; pointer-events: none; }`;
+            style.innerHTML = `
+                .editable { cursor: pointer; outline: none !important; display: inline-block; width: auto; } 
+                .selected-item { outline: 2px solid #877267 !important; outline-offset: 4px; position: relative; } 
+                .block_image { line-height: 0; }
+                .block_image img { max-width: 100%; height: auto; display: block; pointer-events: none; }
+                .block_text, .block_heading { display: block; width: 100%; }
+                .resize-handle { width: 12px; height: 12px; background: #877267; position: absolute; right: -6px; bottom: -6px; cursor: nwse-resize; z-index: 100; border: 1px solid white; border-radius: 2px; }
+            `;
             innerDoc.head.appendChild(style);
             
             innerDoc.addEventListener('mousedown', (e) => {
-                if (document.getElementById('moveModeCheckbox').checked) return;
+                if (document.getElementById('moveModeCheckbox').checked || isResizing) return;
                 const el = e.target.closest('.editable');
                 if (el) { e.stopPropagation(); selectElement(el); } else { deselectAll(); }
             });
@@ -105,12 +116,26 @@
         };
     }
 
+    // IMAGE LOGIC
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
-
     function handleImageUpload(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = (e) => insertElement('block_image', e.target.result);
+            reader.readAsDataURL(input.files[0]);
+            input.value = '';
+        }
+    }
+    function triggerReplace() { document.getElementById('image-replace').click(); }
+    function handleImageReplace(input) {
+        if (input.files && input.files[0] && selectedEl) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = selectedEl.querySelector('img');
+                if (img) img.src = e.target.result;
+                updateFrameHeight();
+                updateToolbarPos();
+            };
             reader.readAsDataURL(input.files[0]);
             input.value = '';
         }
@@ -136,18 +161,56 @@
             wrap.className = "heading-wrapper";
             wrap.appendChild(newEl); 
             root.appendChild(wrap);
-        } else { 
-            root.appendChild(newEl); 
-        }
+        } else { root.appendChild(newEl); }
+
         updateFrameHeight();
         if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
     }
 
     function selectElement(el) {
-        if (selectedEl) selectedEl.classList.remove('selected-item');
+        if (selectedEl) {
+            selectedEl.classList.remove('selected-item');
+            const h = selectedEl.querySelector('.resize-handle');
+            if(h) h.remove();
+        }
         selectedEl = el;
         selectedEl.classList.add('selected-item');
+
+        // Toggle Toolbar Buttons
+        const isImg = el.classList.contains('block_image');
+        document.getElementById('tool-replace').style.display = isImg ? 'block' : 'none';
+        document.getElementById('tool-bold').style.display = isImg ? 'none' : 'block';
+        document.getElementById('tool-underline').style.display = isImg ? 'none' : 'block';
+
+        if (isImg) addResizeHandle(el);
         updateToolbarPos();
+    }
+
+    function addResizeHandle(el) {
+        const handle = frame.contentDocument.createElement('div');
+        handle.className = 'resize-handle';
+        handle.addEventListener('mousedown', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            isResizing = true;
+            toolbar.style.display = 'none';
+            const startX = e.clientX;
+            const startWidth = el.offsetWidth;
+
+            const onMove = (mE) => {
+                const newWidth = startWidth + (mE.clientX - startX);
+                if (newWidth > 40) el.style.width = newWidth + 'px';
+            };
+            const onUp = () => {
+                isResizing = false;
+                frame.contentDocument.removeEventListener('mousemove', onMove);
+                frame.contentDocument.removeEventListener('mouseup', onUp);
+                updateToolbarPos();
+                updateFrameHeight();
+            };
+            frame.contentDocument.addEventListener('mousemove', onMove);
+            frame.contentDocument.addEventListener('mouseup', onUp);
+        });
+        el.appendChild(handle);
     }
 
     function updateToolbarPos() {
@@ -162,29 +225,47 @@
         toolbar.style.top = `${topPos}px`;
     }
 
+    function setAlign(pos) {
+        if (!selectedEl) return;
+        const target = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
+        target.style.textAlign = pos;
+        if (selectedEl.classList.contains('block_image')) {
+             selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
+             selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
+             selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none';
+             if (pos === 'center') selectedEl.style.display = 'block';
+             else selectedEl.style.display = 'inline-block';
+        }
+        updateToolbarPos();
+    }
+
     function execCmd(cmd) {
         if (!selectedEl || selectedEl.classList.contains('block_image')) return;
         frame.contentWindow.focus();
         frame.contentDocument.execCommand(cmd, false, null);
     }
 
-    function setAlign(pos) {
-        if (!selectedEl) return;
-        const target = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
-        target.style.textAlign = pos;
-        target.style.display = (selectedEl.classList.contains('block_image')) ? 'flex' : 'block';
-        if (selectedEl.classList.contains('block_image')) {
-            target.style.justifyContent = pos === 'left' ? 'flex-start' : (pos === 'right' ? 'flex-end' : 'center');
-        }
-        updateToolbarPos();
+    function toggleHeadingLine() {
+        if (selectedEl && selectedEl.classList.contains('block_heading')) selectedEl.classList.toggle('no-line');
+        else if (selectedEl && !selectedEl.classList.contains('block_image')) execCmd('underline');
     }
 
-    function toggleHeadingLine() {
-        if (selectedEl && selectedEl.classList.contains('block_heading')) {
-            selectedEl.classList.toggle('no-line');
-        } else if (selectedEl && !selectedEl.classList.contains('block_image')) {
-            execCmd('underline');
+    function setDevice(type) {
+        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+        deselectAll();
+        if (type === 'mobile') {
+            frame.classList.add('mobile');
+            document.getElementById('btn-mobile').classList.add('active');
+            frame.style.width = '390px'; 
+            const scale = wrapper.offsetWidth / 390;
+            frame.style.transform = `scale(${scale})`;
+        } else {
+            frame.classList.remove('mobile');
+            document.getElementById('btn-desktop').classList.add('active');
+            frame.style.width = '100%';
+            frame.style.transform = 'scale(1)';
         }
+        setTimeout(updateFrameHeight, 50);
     }
 
     function toggleMoveMode() {
@@ -200,10 +281,7 @@
                     setTimeout(syncTrackPositions, 50);
                 }
             });
-        } else if (sortableInstance) {
-            sortableInstance.destroy();
-            track.innerHTML = "";
-        }
+        } else if (sortableInstance) { sortableInstance.destroy(); track.innerHTML = ""; }
     }
 
     function syncTrackPositions() {
@@ -233,29 +311,6 @@
         updateFrameHeight();
     }
 
-    function setDevice(type) {
-        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
-        deselectAll();
-        if (type === 'mobile') {
-            frame.classList.add('mobile');
-            document.getElementById('btn-mobile').classList.add('active');
-            frame.style.width = '390px'; 
-            if (frame.contentDocument && frame.contentDocument.body) {
-                if (!storedMobileWidth) storedMobileWidth = frame.contentDocument.body.offsetWidth + 'px';
-                frame.contentDocument.body.style.width = storedMobileWidth;
-            }
-            const scale = wrapper.offsetWidth / 390;
-            frame.style.transform = `scale(${scale})`;
-        } else {
-            frame.classList.remove('mobile');
-            document.getElementById('btn-desktop').classList.add('active');
-            if (frame.contentDocument && frame.contentDocument.body) frame.contentDocument.body.style.width = '100%';
-            frame.style.width = '100%';
-            frame.style.transform = 'scale(1)';
-        }
-        setTimeout(updateFrameHeight, 50);
-    }
-
     function updateFrameHeight() {
         if (frame.contentDocument) {
             frame.style.height = '0px'; 
@@ -265,7 +320,16 @@
         }
     }
 
-    function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbar.style.display = 'none'; }
+    function deselectAll() { 
+        if (selectedEl) {
+            selectedEl.classList.remove('selected-item');
+            const h = selectedEl.querySelector('.resize-handle');
+            if(h) h.remove();
+        }
+        selectedEl = null; 
+        toolbar.style.display = 'none'; 
+    }
+    
     function deleteElement() {
         if (selectedEl) {
             const toRemove = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
