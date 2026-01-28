@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.4.7 Restored & Working</title>
+    <title>Snoozing Builder | v2.4.3 Toolbar Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -94,99 +94,13 @@
             innerDoc.addEventListener('mousedown', (e) => {
                 if (document.getElementById('moveModeCheckbox').checked) return;
                 const el = e.target.closest('.editable');
-                if (el) { 
-                    e.stopPropagation(); 
-                    selectElement(el); 
-                } else { 
-                    deselectAll(); 
-                }
+                if (el) { e.stopPropagation(); selectElement(el); } else { deselectAll(); }
             });
             
             innerDoc.addEventListener('scroll', syncTrackPositions);
             wrapper.addEventListener('scroll', syncTrackPositions);
             setTimeout(() => setDevice('mobile'), 200);
         };
-    }
-
-    function selectElement(el) {
-        if (selectedEl) selectedEl.classList.remove('selected-item');
-        selectedEl = el;
-        selectedEl.classList.add('selected-item');
-        
-        // Hide immediately so it doesn't jump
-        toolbar.style.display = 'none';
-
-        // DELAYED SHOW: Wait for keyboard shift
-        setTimeout(() => {
-            updateToolbarPos();
-        }, 400);
-    }
-
-    function updateToolbarPos() {
-        if (!selectedEl || document.getElementById('moveModeCheckbox').checked) { toolbar.style.display = 'none'; return; }
-        const rect = selectedEl.getBoundingClientRect();
-        const frameRect = frame.getBoundingClientRect();
-        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-        toolbar.style.display = 'flex';
-        const leftPos = frameRect.left + (rect.left * scale) + (rect.width * scale / 2) - (toolbar.offsetWidth / 2);
-        let topPos = frameRect.top + (rect.top * scale) - 65;
-        toolbar.style.left = `${leftPos}px`;
-        toolbar.style.top = `${topPos}px`;
-    }
-
-    // Standard Toolbar Functions
-    function execCmd(cmd) {
-        if (!selectedEl) return;
-        frame.contentWindow.focus();
-        frame.contentDocument.execCommand(cmd, false, null);
-    }
-
-    function setAlign(pos) {
-        if (!selectedEl) return;
-        const target = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
-        target.style.textAlign = pos;
-        target.style.display = 'block';
-        updateToolbarPos();
-    }
-
-    function toggleHeadingLine() {
-        if (selectedEl && selectedEl.classList.contains('block_heading')) {
-            selectedEl.classList.toggle('no-line');
-        } else {
-            execCmd('underline');
-        }
-    }
-
-    function setDevice(type) {
-        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
-        deselectAll();
-        
-        if (type === 'mobile') {
-            frame.classList.add('mobile');
-            document.getElementById('btn-mobile').classList.add('active');
-            frame.style.width = '390px'; 
-            
-            if (frame.contentDocument && frame.contentDocument.body) {
-                if (!storedMobileWidth) {
-                    storedMobileWidth = frame.contentDocument.body.offsetWidth + 'px';
-                }
-                frame.contentDocument.body.style.width = storedMobileWidth;
-            }
-
-            const scale = wrapper.offsetWidth / 390;
-            frame.style.transform = `scale(${scale})`;
-        } else {
-            frame.classList.remove('mobile');
-            document.getElementById('btn-desktop').classList.add('active');
-            
-            if (frame.contentDocument && frame.contentDocument.body) {
-                frame.contentDocument.body.style.width = '100%';
-            }
-            
-            frame.style.width = '100%';
-            frame.style.transform = 'scale(1)';
-        }
-        setTimeout(updateFrameHeight, 50);
     }
 
     function toggleMoveMode() {
@@ -241,6 +155,82 @@
         updateFrameHeight();
     }
 
+    function selectElement(el) {
+        if (selectedEl) selectedEl.classList.remove('selected-item');
+        selectedEl = el;
+        selectedEl.classList.add('selected-item');
+        updateToolbarPos();
+    }
+
+    function updateToolbarPos() {
+        if (!selectedEl || document.getElementById('moveModeCheckbox').checked) { toolbar.style.display = 'none'; return; }
+        const rect = selectedEl.getBoundingClientRect();
+        const frameRect = frame.getBoundingClientRect();
+        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
+        toolbar.style.display = 'flex';
+        const leftPos = frameRect.left + (rect.left * scale) + (rect.width * scale / 2) - (toolbar.offsetWidth / 2);
+        let topPos = frameRect.top + (rect.top * scale) - 65;
+        toolbar.style.left = `${leftPos}px`;
+        toolbar.style.top = `${topPos}px`;
+    }
+
+    // Fixed Toolbar Functions
+    function execCmd(cmd) {
+        if (!selectedEl) return;
+        frame.contentWindow.focus();
+        frame.contentDocument.execCommand(cmd, false, null);
+    }
+
+    function setAlign(pos) {
+        if (!selectedEl) return;
+        // Apply alignment to wrapper if it's a heading, otherwise the element itself
+        const target = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
+        target.style.textAlign = pos;
+        target.style.display = 'block';
+        updateToolbarPos();
+    }
+
+    function toggleHeadingLine() {
+        if (selectedEl && selectedEl.classList.contains('block_heading')) {
+            // Toggles the border-bottom defined in styles.css
+            selectedEl.classList.toggle('no-line');
+        } else {
+            execCmd('underline');
+        }
+    }
+
+    function setDevice(type) {
+        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+        deselectAll();
+        
+        if (type === 'mobile') {
+            frame.classList.add('mobile');
+            document.getElementById('btn-mobile').classList.add('active');
+            frame.style.width = '390px'; 
+            
+            if (frame.contentDocument && frame.contentDocument.body) {
+                if (!storedMobileWidth) {
+                    storedMobileWidth = frame.contentDocument.body.offsetWidth + 'px';
+                }
+                frame.contentDocument.body.style.width = storedMobileWidth;
+            }
+
+            const scale = wrapper.offsetWidth / 390;
+            frame.style.transform = `scale(${scale})`;
+        } else {
+            frame.classList.remove('mobile');
+            document.getElementById('btn-desktop').classList.add('active');
+            
+            if (frame.contentDocument && frame.contentDocument.body) {
+                frame.contentDocument.body.style.width = '100%';
+            }
+            
+            frame.style.width = '100%';
+            frame.style.transform = 'scale(1)';
+        }
+        setTimeout(updateFrameHeight, 50);
+    }
+
     function updateFrameHeight() {
         if (frame.contentDocument) {
             frame.style.height = '0px'; 
@@ -266,12 +256,7 @@
         if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
     }
 
-    function deselectAll() { 
-        if (selectedEl) selectedEl.classList.remove('selected-item'); 
-        selectedEl = null; 
-        toolbar.style.display = 'none'; 
-    }
-    
+    function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbar.style.display = 'none'; }
     function deleteElement() {
         if (selectedEl) {
             const toRemove = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
