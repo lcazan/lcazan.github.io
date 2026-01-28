@@ -1,150 +1,201 @@
-/* --- Brand Variables & Global Reset --- */
-:root {
-    --brand-cream: #FAF6F3;
-    --brand-pink: #ebd5c9;    
-    --icon-brown: #877267; 
-    --text-dark: #151515;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Snoozing Builder | v2.3.9 Scale Fix</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
+        body { margin: 0; display: flex; height: 100vh; width: 100vw; font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; }
+        #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 100; }
+        .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
+        .insert-btn:hover { background: var(--brand-pink); color: #000; }
+        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; }
+        #device-bar { height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #000; flex-shrink: 0; }
+        .device-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; transition: 0.2s; }
+        .device-btn.active { color: var(--brand-pink); }
+        #frame-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; overflow-x: hidden; overflow-y: auto; background: #333; position: relative; }
+        #preview-frame { width: 100%; border: none; background: white; transition: transform 0.2s ease-out; transform-origin: top center; height: auto; min-height: 0; }
+        #preview-frame.mobile { width: 390px; }
+        #floating-toolbar { position: absolute; display: none; background: #111; border-radius: 4px; padding: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 2000; gap: 5px; align-items: center; border: 1px solid #444; }
+        .float-btn { background: transparent; border: none; color: white; padding: 5px 10px; cursor: pointer; border-radius: 2px; }
+        .float-btn:hover { background: var(--brand-pink); color: #000; }
+        .sep { color: #444; margin: 0 4px; }
+    </style>
+</head>
+<body>
 
-body { 
-    font-family: 'Source Sans Pro', sans-serif; 
-    margin: 0; 
-    color: var(--text-dark); 
-    background-color: #fff; 
-    display: flex; 
-    flex-direction: column; 
-    overflow-x: hidden; 
-}
+<div id="sidebar">
+    <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i>Section</button>
+    <button class="insert-btn" onclick="block_heading"><i class="fa-solid fa-font"></i>Heading</button>
+    <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i>Text</button>
+</div>
 
-/* --- Core Layout Containers --- */
-.content-container {
-    /* Sets the width to the full visible area of the body */
-    width: 100%;
-    margin: 0;
-    padding: 20px;
-    background-color: #ffffff;
-    min-height: 0; 
-    display: block;
-    box-sizing: border-box; /* Ensures padding doesn't cause horizontal scrolling */
-}
+<div id="preview-container">
+    <div id="device-bar">
+        <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
+        <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
+    </div>
+    <div id="frame-wrapper">
+        <div id="floating-toolbar" onmousedown="event.preventDefault()">
+            <button class="float-btn" title="Bold" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
+            <button class="float-btn" id="float-underline" title="Toggle Line" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>
+            <span class="sep">|</span>
+            <button class="float-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
+            <button class="float-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
+            <button class="float-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
+            <span class="sep">|</span>
+            <button class="float-btn" onclick="deleteElement()" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>
+        </div>
+        <iframe id="preview-frame"></iframe>
+    </div>
+</div>
 
-/* Helper for centering inline-block headings in editor */
-.heading-wrapper {
-    width: 100%;
-    display: block;
-    clear: both;
-    margin-bottom: 15px;
-    box-sizing: border-box;
-    text-align: inherit; 
-}
+<script>
+    const frame = document.getElementById('preview-frame');
+    const toolbar = document.getElementById('floating-toolbar');
+    const wrapper = document.getElementById('frame-wrapper');
+    let selectedEl = null;
 
-/* --- Header & Hamburger Menu --- */
-header { 
-    display: flex; align-items: center; justify-content: center; padding: 15px 10px; 
-    background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); 
-    position: sticky; top: 0; z-index: 8000; border-bottom: 1px solid rgba(0,0,0,0.05); min-height: 60px;
-}
+    async function init() {
+        const resp = await fetch('template.html');
+        let html = await resp.text();
+        const cssLink = '<link rel="stylesheet" href="styles.css">';
+        html = html.replace('</head>', cssLink + '</head>');
+        frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
+        
+        frame.onload = () => {
+            const innerDoc = frame.contentDocument;
+            const style = innerDoc.createElement('style');
+            style.innerHTML = `
+                .editable { cursor: text; outline: none !important; position: relative; }
+                .selected-item { outline: 2px solid #877267 !important; outline-offset: 4px; }
+            `;
+            innerDoc.head.appendChild(style);
+            
+            innerDoc.addEventListener('mousedown', (e) => {
+                const el = e.target.closest('.editable');
+                if (el) { e.stopPropagation(); selectElement(el); } 
+                else { deselectAll(); }
+            });
 
-.logo { 
-    font-family: 'Cinzel', serif; font-size: 1.25rem; text-transform: uppercase; 
-    letter-spacing: 1px; border: 1px solid var(--text-dark); padding: 8px 20px; 
-    display: inline-block; white-space: nowrap; user-select: none; 
-}
+            innerDoc.addEventListener('focusin', (e) => {
+                const el = e.target.closest('.editable');
+                if (el) setTimeout(() => selectElement(el), 200);
+            });
+            
+            innerDoc.addEventListener('scroll', updateToolbarPos);
+            wrapper.addEventListener('scroll', updateToolbarPos);
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', updateToolbarPos);
+                window.visualViewport.addEventListener('scroll', updateToolbarPos);
+            }
+            setTimeout(() => setDevice('mobile'), 200);
+        };
+    }
 
-.header-menu-icon { position: absolute; top: 50%; left: 20px; transform: translateY(-50%); z-index: 8001; padding: 5px; cursor: pointer; }
-.menu-lines div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0.2s; }
+    function selectElement(el) {
+        if (selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
+        selectedEl = el;
+        selectedEl.classList.add('selected-item');
+        updateToolbarPos();
+        setTimeout(updateToolbarPos, 100);
+        const uBtn = document.getElementById('float-underline');
+        if (uBtn) uBtn.style.display = el.classList.contains('block_heading') ? 'inline-block' : 'none';
+    }
 
-.active .line1 { transform: rotate(-45deg) translate(-4.5px, 5px); }
-.active .line2 { opacity: 0; }
-.active .line3 { transform: rotate(45deg) translate(-4.5px, -5.5px); }
+    function updateToolbarPos() {
+        if (!selectedEl) return;
+        const rect = selectedEl.getBoundingClientRect();
+        const frameRect = frame.getBoundingClientRect();
+        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
+        toolbar.style.display = 'flex';
+        const leftPos = frameRect.left + (rect.left * scale) + (rect.width * scale / 2) - (toolbar.offsetWidth / 2);
+        let topPos = frameRect.top + (rect.top * scale) - 65;
+        if (topPos < 50) topPos = frameRect.top + 10; 
+        toolbar.style.left = `${leftPos}px`;
+        toolbar.style.top = `${topPos}px`;
+    }
 
-/* --- Sidebar Navigation --- */
-nav#nav-sidebar { 
-    position: fixed; top: 0; left: -340px; width: 320px; height: 100%; 
-    background: var(--brand-cream); transition: left 0.2s ease-in-out; z-index: 9000; 
-    box-shadow: 4px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto; 
-}
-nav#nav-sidebar.open { left: 0; }
+    function execCmd(cmd) {
+        frame.contentWindow.focus();
+        frame.contentDocument.execCommand(cmd, false, null);
+    }
 
-.sidebar-close-icon { position: absolute; top: 25px; left: 20px; padding: 5px; display: none; z-index: 9001; cursor: pointer; }
-nav#nav-sidebar.open .sidebar-close-icon { display: block; }
+    function setAlign(pos) {
+        if (!selectedEl) return;
+        if (selectedEl.classList.contains('block_heading')) {
+            selectedEl.parentElement.style.textAlign = pos;
+        } else {
+            selectedEl.style.display = 'block';
+            selectedEl.style.textAlign = pos;
+        }
+        updateToolbarPos();
+    }
 
-.nav-content { padding-top: 100px; padding-bottom: 50px; }
+    function toggleHeadingLine() {
+        if (selectedEl && selectedEl.classList.contains('block_heading')) {
+            selectedEl.classList.toggle('no-line');
+        }
+    }
 
-nav#nav-sidebar a { 
-    display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); 
-    font-weight: 400; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; 
-}
+    function setDevice(type) {
+        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+        deselectAll();
+        if (type === 'mobile') {
+            frame.classList.add('mobile');
+            document.getElementById('btn-mobile').classList.add('active');
+            frame.style.transform = `scale(${wrapper.offsetWidth / 390})`;
+        } else {
+            frame.classList.remove('mobile');
+            document.getElementById('btn-desktop').classList.add('active');
+            frame.style.transform = 'scale(1)';
+            frame.style.width = '100%';
+        }
+        updateFrameHeight();
+    }
 
-.dropdown-btn { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-.dropdown-btn i { transition: transform 0.3s ease; }
-.dropdown-btn.active i { transform: rotate(180deg); }
+    function updateFrameHeight() {
+        if (frame.contentDocument) {
+            // Temporarily set height to 0 to force a recalculation of scrollHeight
+            frame.style.height = '0px';
+            const rawHeight = frame.contentDocument.documentElement.scrollHeight;
+            const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
+            
+            // Fix: Multiple the raw content height by the current scale factor
+            frame.style.height = (rawHeight * scale) + 'px';
+        }
+    }
 
-.sub-nav { display: none; background: var(--brand-cream); }
-.sub-nav.show { display: block; }
+    function insertElement(type) {
+        const root = frame.contentDocument.getElementById('editor-root');
+        const newEl = frame.contentDocument.createElement('div');
+        newEl.className = `editable ${type}`;
+        newEl.contentEditable = "true";
+        newEl.innerText = type === 'section_heading' ? "SECTION TITLE" : type === 'block_heading' ? "HEADING TITLE" : "Enter text here...";
+        
+        if (type === 'block_heading') {
+            const wrap = frame.contentDocument.createElement('div'); 
+            wrap.className = "heading-wrapper";
+            wrap.style.textAlign = "center"; 
+            wrap.appendChild(newEl); 
+            root.appendChild(wrap);
+        } else { 
+            root.appendChild(newEl); 
+        }
+        updateFrameHeight();
+    }
 
-/* Indentation Fix */
-nav#nav-sidebar .sub-nav a { font-size: 1rem; padding: 10px 30px 10px 60px; text-transform: none; }
-
-#navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.3); z-index: 8500; }
-
-/* --- Content Block Styles --- */
-.section_heading { 
-    font-family: 'Source Sans Pro', sans-serif; 
-    font-size: 14px; 
-    font-weight: 600; 
-    text-transform: none; 
-    letter-spacing: 2px; 
-    color: var(--icon-brown); 
-    margin: 40px 0 20px; 
-    display: block; 
-    line-height: 1.4; 
-    width: 100%;
-    /* Ensure text wraps to new lines */
-    white-space: normal;
-    word-wrap: break-word;
-}
-
-.block_heading { 
-    font-family: 'Cinzel', serif; 
-    font-size: 1.6rem; 
-    font-weight: 400; 
-    text-transform: none; 
-    color: var(--text-dark); 
-    border-bottom: 1px solid var(--brand-pink); 
-    padding-bottom: 8px; 
-    margin-bottom: 10px; 
-    display: inline-block; 
-    transition: border-color 0.2s ease; 
-    line-height: 1.3;
-    /* Ensure text wraps to new lines */
-    white-space: normal;
-    word-wrap: break-word;
-}
-
-.no-line { border-bottom: 1px solid transparent !important; }
-
-.block_text { 
-    font-family: 'Source Sans Pro', sans-serif; 
-    font-size: 1.05rem; 
-    color: #333333; 
-    line-height: 1.8; 
-    margin: 10px 0 30px; 
-    display: block; 
-    text-align: left; 
-    width: 100%;
-    /* Ensure text wraps to new lines */
-    white-space: normal;
-    word-wrap: break-word;
-}
-
-.block_text a { color: var(--icon-brown); text-decoration: none; border-bottom: 1px dotted var(--icon-brown); }
-
-/* --- Footer --- */
-footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; margin-top: auto; }
-.social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
-.social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; }
-.copyright-text { font-weight: 600; display: block; margin-bottom: 15px; font-size: 0.85rem; }
-.disclaimer { font-size: 0.75rem; color: #666; max-width: 850px; margin: 0 auto; line-height: 1.7; text-align: center; }
-
-@media (max-width: 767px) { .content-container { padding: 20px 15px; } .block_heading { font-size: 1.4rem; } header { padding: 10px; } }
+    function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbar.style.display = 'none'; }
+    
+    function deleteElement() {
+        if (selectedEl) {
+            const toRemove = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
+            toRemove.remove(); deselectAll(); updateFrameHeight();
+        }
+    }
+    window.onresize = () => { if (frame.classList.contains('mobile')) setDevice('mobile'); };
+    window.onload = init;
+</script>
+</body>
+</html>
