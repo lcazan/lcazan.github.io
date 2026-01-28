@@ -7,7 +7,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Source+Sans+Pro:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    </head>
+</head>
 <body>
 
 <header>
@@ -57,8 +57,11 @@
     function toggleNav(e) {
         if(e) e.stopPropagation();
         const nav = document.getElementById('nav-sidebar');
+        const hamburger = document.getElementById('headerHamburger');
+        
         const isOpen = nav.classList.toggle('open');
-        document.getElementById('headerHamburger').style.visibility = isOpen ? 'hidden' : 'visible';
+        hamburger.classList.toggle('active');
+        
         document.getElementById('navOverlay').style.display = isOpen ? 'block' : 'none';
         document.body.style.overflow = isOpen ? 'hidden' : 'auto';
     }
