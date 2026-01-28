@@ -62,7 +62,6 @@ header {
     display: inline-block; 
     white-space: nowrap;
     user-select: none; 
-    -webkit-user-select: none; 
 }
 
 .header-menu-icon { 
@@ -73,7 +72,6 @@ header {
     z-index: 8001; 
     padding: 5px; 
     cursor: pointer; 
-    -webkit-tap-highlight-color: transparent; 
 }
 
 .menu-lines div { 
@@ -84,12 +82,13 @@ header {
     transition: 0.2s; 
 }
 
+/* Hamburger to X Animation */
 .active .line1 { transform: rotate(-45deg) translate(-4.5px, 5px); }
 .active .line2 { opacity: 0; }
 .active .line3 { transform: rotate(45deg) translate(-4.5px, -5.5px); }
 
-/* --- Sidebar Navigation --- */
-nav#sidebar { 
+/* --- Sidebar Navigation (Updated ID) --- */
+nav#nav-sidebar { 
     position: fixed; 
     top: 0; 
     left: -340px; 
@@ -102,10 +101,9 @@ nav#sidebar {
     display: flex; 
     flex-direction: column; 
     overflow-y: auto; 
-    -webkit-overflow-scrolling: touch;
 }
 
-nav#sidebar.open { left: 0; }
+nav#nav-sidebar.open { left: 0; }
 
 .sidebar-close-icon { 
     position: absolute; 
@@ -114,13 +112,14 @@ nav#sidebar.open { left: 0; }
     padding: 5px; 
     display: none; 
     z-index: 9001; 
+    cursor: pointer;
 }
 
-nav#sidebar.open .sidebar-close-icon { display: block; }
+nav#nav-sidebar.open .sidebar-close-icon { display: block; }
 
 .nav-content { padding-top: 100px; padding-bottom: 50px; }
 
-nav#sidebar a { 
+nav#nav-sidebar a { 
     display: block; 
     padding: 15px 30px; 
     text-decoration: none; 
@@ -130,7 +129,6 @@ nav#sidebar a {
     text-transform: uppercase; 
     letter-spacing: 1px; 
     white-space: nowrap; 
-    -webkit-tap-highlight-color: transparent; 
 }
 
 .dropdown-btn { 
@@ -220,26 +218,13 @@ footer {
     gap: 30px; 
 }
 
-.social-icons a { 
-    color: var(--text-dark); 
-    font-size: 1.4rem; 
-    text-decoration: none; 
-}
+.social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; }
 
-.copyright-text { 
-    font-weight: 600; 
-    display: block; 
-    margin-bottom: 15px; 
-    font-size: 0.85rem; 
-}
+.copyright-text { font-weight: 600; display: block; margin-bottom: 15px; font-size: 0.85rem; }
 
 .disclaimer { 
-    font-size: 0.75rem; 
-    color: #666; 
-    max-width: 850px; 
-    margin: 0 auto; 
-    line-height: 1.7; 
-    text-align: center; 
+    font-size: 0.75rem; color: #666; max-width: 850px; 
+    margin: 0 auto; line-height: 1.7; text-align: center; 
 }
 
 /* --- Mobile Adjustments --- */
