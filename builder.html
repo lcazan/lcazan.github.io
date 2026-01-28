@@ -2,54 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v3.2 Fixed Layout</title>
+    <title>Snoozing Builder | v3.3 Full Feature Restore</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         body { margin: 0; display: flex; height: 100vh; width: 100vw; font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; }
         
-        /* Adjusted sidebar for better scrolling and visibility */
-        #sidebar { 
-            width: 90px; 
-            height: 100vh; 
-            background: var(--panel-bg); 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            padding: 15px 0; 
-            border-right: 2px solid #000; 
-            flex-shrink: 0; 
-            z-index: 100;
-            overflow-y: auto; /* Allows scrolling if buttons don't fit */
-        }
-
-        .insert-btn { 
-            width: 65px; 
-            height: 60px; 
-            background: #444; 
-            border: 1px solid #666; 
-            color: #fff; 
-            margin-bottom: 10px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-size: 9px; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            gap: 4px; 
-            flex-shrink: 0;
-        }
+        #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 100; overflow-y: auto; }
+        .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 12px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; flex-shrink: 0; }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
         
-        /* Action buttons color-coded for clarity */
-        .insert-btn.action { background: #555; border-color: #777; height: 50px; }
+        .insert-btn.action { background: #555; border-color: #888; height: 50px; margin-bottom: 8px; }
         .insert-btn.action:hover { background: #00ca72; color: white; }
 
-        .move-toggle { color: white; font-size: 10px; text-align: center; margin: 10px 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; border-top: 1px solid #444; padding-top: 10px; width: 100%; }
+        .move-toggle { color: white; font-size: 10px; text-align: center; margin-top: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; border-top: 1px solid #444; padding-top: 15px; width: 100%; }
         .move-toggle input { width: 22px; height: 22px; cursor: pointer; }
 
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; }
@@ -80,10 +47,10 @@
         <div>MOVE</div>
     </label>
 
-    <hr style="width: 60%; border: 0; border-top: 1px solid #444; margin: 10px 0;">
-
-    <button class="insert-btn action" onclick="openJSON()"><i class="fa-solid fa-folder-open"></i>Open</button>
-    <button class="insert-btn action" onclick="saveJSON()"><i class="fa-solid fa-floppy-disk"></i>Save</button>
+    <div style="margin-top: auto; padding-bottom: 20px; display: flex; flex-direction: column; align-items: center; width: 100%;">
+        <button class="insert-btn action" onclick="openJSON()"><i class="fa-solid fa-folder-open"></i>Open</button>
+        <button class="insert-btn action" onclick="saveJSON()"><i class="fa-solid fa-floppy-disk"></i>Save</button>
+    </div>
 </div>
 
 <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
@@ -97,6 +64,8 @@
     <div id="frame-wrapper">
         <div id="floating-toolbar" onmousedown="event.preventDefault()">
             <button class="float-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
+            <button class="float-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
+            <button class="float-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
             <button class="float-btn" onclick="deleteElement()" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>
         </div>
         <iframe id="preview-frame"></iframe>
@@ -116,53 +85,87 @@
         frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
         
         frame.onload = () => {
-            frame.contentDocument.addEventListener('mousedown', (e) => {
+            const innerDoc = frame.contentDocument;
+            innerDoc.addEventListener('mousedown', (e) => {
                 const el = e.target.closest('.editable');
                 if (el) { e.stopPropagation(); selectElement(el); } else { deselectAll(); }
             });
             
-            // Forced Mobile View on Start
-            setTimeout(() => { 
-                setDevice('mobile'); 
-            }, 400);
+            innerDoc.addEventListener('scroll', updateToolbarPos);
+            wrapper.addEventListener('scroll', updateToolbarPos);
+
+            setTimeout(() => { setDevice('mobile'); }, 400);
         };
     }
 
-    // --- JSON SAVE/LOAD ---
-    function saveJSON() {
-        const root = frame.contentDocument.getElementById('editor-root');
-        const elements = Array.from(root.children).map(child => ({
-            type: child.className.replace('editable ', '').trim(),
-            content: child.innerHTML
-        }));
-        const blob = new Blob([JSON.stringify(elements, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'snoozing-layout.json';
-        a.click();
+    // --- TOOLBAR POSITIONING ---
+    function selectElement(el) {
+        if (selectedEl) selectedEl.classList.remove('selected-item');
+        selectedEl = el;
+        selectedEl.classList.add('selected-item');
+        updateToolbarPos();
     }
 
-    function openJSON() { document.getElementById('json-opener').click(); }
-    
-    function handleJSONOpen(input) {
+    function updateToolbarPos() {
+        if (!selectedEl) return;
+        const rect = selectedEl.getBoundingClientRect();
+        const frameRect = frame.getBoundingClientRect();
+        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
+        
+        toolbar.style.display = 'flex';
+        toolbar.style.top = (frameRect.top + (rect.top * scale) - 50) + 'px';
+        toolbar.style.left = (frameRect.left + (rect.left * scale)) + 'px';
+    }
+
+    function deselectAll() { 
+        if (selectedEl) selectedEl.classList.remove('selected-item');
+        selectedEl = null; 
+        toolbar.style.display = 'none'; 
+    }
+
+    // --- ACTIONS ---
+    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+    function handleImageUpload(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
-            reader.onload = (e) => {
-                const data = JSON.parse(e.target.result);
-                const root = frame.contentDocument.getElementById('editor-root');
-                root.innerHTML = "";
-                data.forEach(item => {
-                    const el = frame.contentDocument.createElement('div');
-                    el.className = `editable ${item.type}`;
-                    el.innerHTML = item.content;
-                    el.contentEditable = "true";
-                    root.appendChild(el);
-                });
-                updateFrameHeight();
-            };
-            reader.readAsText(input.files[0]);
+            reader.onload = (e) => insertElement('block_image', e.target.result);
+            reader.readAsDataURL(input.files[0]);
+            input.value = '';
         }
     }
+
+    function insertElement(type, data = null) {
+        const root = frame.contentDocument.getElementById('editor-root');
+        const newEl = frame.contentDocument.createElement('div');
+        newEl.className = `editable ${type}`;
+        
+        if (type === 'block_image') {
+            newEl.contentEditable = "false";
+            const img = frame.contentDocument.createElement('img');
+            img.src = data;
+            newEl.appendChild(img);
+        } else if (type === 'block_button') {
+            newEl.contentEditable = "true";
+            newEl.innerText = "FIND OUT MORE";
+        } else {
+            newEl.contentEditable = "true";
+            newEl.innerText = "New Block";
+        }
+
+        if (type === 'block_heading') {
+            const wrap = frame.contentDocument.createElement('div');
+            wrap.className = "heading-wrapper";
+            wrap.appendChild(newEl);
+            root.appendChild(wrap);
+        } else {
+            root.appendChild(newEl);
+        }
+        updateFrameHeight();
+    }
+
+    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
+    function setAlign(val) { if(selectedEl) selectedEl.style.textAlign = val; }
+    function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); updateFrameHeight(); } }
 
     function setDevice(type) {
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
@@ -188,25 +191,39 @@
         }
     }
 
-    function insertElement(type, data = null) {
+    // --- JSON ENGINE ---
+    function saveJSON() {
         const root = frame.contentDocument.getElementById('editor-root');
-        const newEl = frame.contentDocument.createElement('div');
-        newEl.className = `editable ${type}`;
-        newEl.contentEditable = "true";
-        newEl.innerText = type === 'block_button' ? "FIND OUT MORE" : "New Content";
-        root.appendChild(newEl);
-        updateFrameHeight();
+        const elements = Array.from(root.children).map(child => ({
+            type: child.className.includes('heading-wrapper') ? 'block_heading' : child.className.replace('editable ', '').trim(),
+            content: child.innerHTML
+        }));
+        const blob = new Blob([JSON.stringify(elements, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'layout.json';
+        a.click();
     }
 
-    function selectElement(el) {
-        if (selectedEl) selectedEl.classList.remove('selected-item');
-        selectedEl = el;
-        selectedEl.classList.add('selected-item');
-    }
-
-    function deselectAll() { 
-        if (selectedEl) selectedEl.classList.remove('selected-item');
-        selectedEl = null; 
+    function openJSON() { document.getElementById('json-opener').click(); }
+    function handleJSONOpen(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = JSON.parse(e.target.result);
+                const root = frame.contentDocument.getElementById('editor-root');
+                root.innerHTML = "";
+                data.forEach(item => {
+                    const el = frame.contentDocument.createElement('div');
+                    el.className = `editable ${item.type}`;
+                    el.innerHTML = item.content;
+                    el.contentEditable = item.type !== 'block_image';
+                    root.appendChild(el);
+                });
+                updateFrameHeight();
+            };
+            reader.readAsText(input.files[0]);
+        }
     }
 
     window.onload = init;
