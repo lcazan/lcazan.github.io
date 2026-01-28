@@ -23,8 +23,7 @@ body {
     margin: 0;
     padding: 20px;
     background-color: #ffffff;
-    /* Changed from min-height: 200px to flex-grow to keep footer at bottom */
-    flex-grow: 1; 
+    flex-grow: 1; /* Keeps footer at the bottom */
     display: block;
     box-sizing: border-box;
 }
@@ -79,7 +78,6 @@ header {
 
 /* --- Footer --- */
 footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; margin-top: auto; }
-/* Fixed social icons display */
 .social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
 .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; }
 .copyright-text { font-weight: 600; display: block; margin-bottom: 15px; font-size: 0.85rem; }
