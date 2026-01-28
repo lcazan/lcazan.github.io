@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.7 Responsive Pairing</title>
+    <title>Snoozing Builder | v2.7 Stable + Storage</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -12,6 +12,10 @@
         #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 100; }
         .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
+        
+        /* Storage Buttons */
+        .storage-btn { width: 65px; height: 40px; background: #333; border: 1px solid #555; color: #ccc; margin-top: 10px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: bold; }
+        .storage-btn:hover { background: #555; color: #fff; }
 
         .move-toggle { color: white; font-size: 10px; text-align: center; margin-top: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .move-toggle input { width: 22px; height: 22px; cursor: pointer; }
@@ -19,7 +23,6 @@
         #drag-track { width: 0; background: #222; overflow: hidden; transition: width 0.3s ease; position: relative; border-right: 1px solid #000; flex-shrink: 0; }
         #drag-track.active { width: 55px; }
         .drag-handle-item { width: 55px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 24px; cursor: grab; background: #222; position: absolute; border-bottom: 1px solid #333; box-sizing: border-box; }
-        .drag-handle-item:hover { color: var(--brand-pink); background: #2a2a2a; }
 
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; }
         #device-bar { height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #000; flex-shrink: 0; }
@@ -41,12 +44,18 @@
     <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i>Section</button>
     <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i>Heading</button>
     <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i>Text</button>
+    <button class="insert-btn" onclick="insertElement('block_button')"><i class="fa-solid fa-square"></i>Button</button>
     <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i>Image</button>
     
     <label class="move-toggle">
         <input type="checkbox" id="moveModeCheckbox" onchange="toggleMoveMode()">
         <div>MOVE</div>
     </label>
+
+    <div style="margin-top: auto; padding-bottom: 20px; display: flex; flex-direction: column; align-items: center;">
+        <button class="storage-btn" onclick="saveToLocal()"><i class="fa-solid fa-save"></i> SAVE</button>
+        <button class="storage-btn" onclick="loadFromLocal()"><i class="fa-solid fa-folder-open"></i> OPEN</button>
+    </div>
 </div>
 
 <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
@@ -83,7 +92,6 @@
     let selectedEl = null;
     let isResizing = false;
     let sortableInstance = null;
-    let storedMobileWidth = null;
 
     async function init() {
         const resp = await fetch('template.html');
@@ -93,51 +101,74 @@
         
         frame.onload = () => {
             const innerDoc = frame.contentDocument;
-            
-            // Re-apply Iframe Event Listeners
             innerDoc.addEventListener('mousedown', (e) => {
                 if (document.getElementById('moveModeCheckbox').checked || isResizing) return;
                 const el = e.target.closest('.editable');
                 if (el) { e.stopPropagation(); selectElement(el); } else { deselectAll(); }
             });
-
-            innerDoc.addEventListener('touchmove', (e) => { if(isResizing) e.preventDefault(); }, {passive: false});
-            innerDoc.addEventListener('scroll', syncTrackPositions);
-            wrapper.addEventListener('scroll', syncTrackPositions);
+            innerDoc.addEventListener('scroll', updateToolbarPos);
+            wrapper.addEventListener('scroll', updateToolbarPos);
             setTimeout(() => setDevice('mobile'), 200);
         };
     }
 
-    // --- Image Handling ---
-    function triggerImageUpload() { document.getElementById('image-upload').click(); }
-    function handleImageUpload(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => insertElement('block_image', e.target.result);
-            reader.readAsDataURL(input.files[0]);
-            input.value = '';
-        }
-    }
-    function triggerReplace() { document.getElementById('image-replace').click(); }
-    function handleImageReplace(input) {
-        if (input.files && input.files[0] && selectedEl) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = selectedEl.querySelector('img');
-                if (img) img.src = e.target.result;
-                updateFrameHeight();
-                updateToolbarPos();
-            };
-            reader.readAsDataURL(input.files[0]);
-            input.value = '';
+    // --- Storage Functions ---
+    function saveToLocal() {
+        const root = frame.contentDocument.getElementById('editor-root');
+        if (root) {
+            localStorage.setItem('snoozing_builder_save', root.innerHTML);
+            alert("Draft Saved Locally.");
         }
     }
 
-    // --- Content Insertion & Pairing ---
+    function loadFromLocal() {
+        const savedData = localStorage.getItem('snoozing_builder_save');
+        const root = frame.contentDocument.getElementById('editor-root');
+        if (savedData && root) {
+            deselectAll();
+            root.innerHTML = savedData;
+            updateFrameHeight();
+            alert("Draft Restored.");
+        } else {
+            alert("No saved draft found.");
+        }
+    }
+
+    function selectElement(el) {
+        if (selectedEl) {
+            selectedEl.classList.remove('selected-item');
+            const h = selectedEl.querySelector('.resize-handle');
+            if(h) h.remove();
+        }
+        selectedEl = el;
+        selectedEl.classList.add('selected-item');
+
+        const isImg = el.classList.contains('block_image');
+        const isBtn = el.classList.contains('block_button');
+        document.getElementById('tool-replace').style.display = isImg ? 'block' : 'none';
+        document.getElementById('tool-bold').style.display = (isImg || isBtn) ? 'none' : 'block';
+        document.getElementById('tool-underline').style.display = (isImg || isBtn) ? 'none' : 'block';
+
+        if (isImg) addResizeHandle(el);
+        updateToolbarPos();
+    }
+
+    function updateToolbarPos() {
+        if (!selectedEl || document.getElementById('moveModeCheckbox').checked) { toolbar.style.display = 'none'; return; }
+        const rect = selectedEl.getBoundingClientRect();
+        const frameRect = frame.getBoundingClientRect();
+        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
+        
+        toolbar.style.display = 'flex';
+        const leftPos = frameRect.left + (rect.left * scale) + (rect.width * scale / 2) - (toolbar.offsetWidth / 2);
+        let topPos = frameRect.top + (rect.top * scale) - 65;
+        
+        toolbar.style.left = `${leftPos}px`;
+        toolbar.style.top = `${topPos}px`;
+    }
+
     function insertElement(type, data = null) {
         const root = frame.contentDocument.getElementById('editor-root');
-        
-        // If image is selected and we add text, wrap them in a media-group
         if (selectedEl && selectedEl.classList.contains('block_image') && type.includes('block_') && type !== 'block_image') {
             createMediaGroup(selectedEl, type);
             return;
@@ -151,6 +182,9 @@
             const img = frame.contentDocument.createElement('img');
             img.src = data;
             newEl.appendChild(img);
+        } else if (type === 'block_button') {
+            newEl.contentEditable = "true";
+            newEl.innerText = "FIND OUT MORE";
         } else {
             newEl.contentEditable = "true";
             newEl.innerText = "New Block";
@@ -160,6 +194,11 @@
             const wrap = frame.contentDocument.createElement('div'); 
             wrap.className = "heading-wrapper";
             wrap.appendChild(newEl); 
+            root.appendChild(wrap);
+        } else if (type === 'block_button') {
+            const wrap = frame.contentDocument.createElement('div');
+            wrap.className = "block_button_wrap";
+            wrap.appendChild(newEl);
             root.appendChild(wrap);
         } else { root.appendChild(newEl); }
 
@@ -171,114 +210,72 @@
         const innerDoc = frame.contentDocument;
         const container = innerDoc.createElement('div');
         container.className = 'media-group';
-        
         const textEl = innerDoc.createElement('div');
         textEl.className = `editable ${textType}`;
         textEl.contentEditable = "true";
-        textEl.innerText = "New paired text...";
+        textEl.innerText = textType === 'block_button' ? "FIND OUT MORE" : "Paired text";
 
         existingImg.parentNode.insertBefore(container, existingImg);
         container.appendChild(existingImg);
-        container.appendChild(textEl);
+        
+        if (textType === 'block_button') {
+            const bWrap = innerDoc.createElement('div');
+            bWrap.className = 'block_button_wrap';
+            bWrap.style.width = 'auto';
+            bWrap.appendChild(textEl);
+            container.appendChild(bWrap);
+        } else { container.appendChild(textEl); }
         
         deselectAll();
         updateFrameHeight();
     }
 
-    // --- Selection & Toolbar ---
-    function selectElement(el) {
-        if (selectedEl) {
-            selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if(h) h.remove();
-        }
-        selectedEl = el;
-        selectedEl.classList.add('selected-item');
-
-        const isImg = el.classList.contains('block_image');
-        document.getElementById('tool-replace').style.display = isImg ? 'block' : 'none';
-        document.getElementById('tool-bold').style.display = isImg ? 'none' : 'block';
-        document.getElementById('tool-underline').style.display = isImg ? 'none' : 'block';
-
-        if (isImg) addResizeHandle(el);
-        updateToolbarPos();
-    }
-
     function addResizeHandle(el) {
         const handle = frame.contentDocument.createElement('div');
         handle.className = 'resize-handle';
-        
         const startResize = (e) => {
-            e.preventDefault(); e.stopPropagation();
-            isResizing = true;
-            toolbar.style.display = 'none';
-            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            e.preventDefault(); isResizing = true;
+            const startX = e.clientX;
             const startWidth = el.offsetWidth;
-
-            const onMove = (mE) => {
-                const currentX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
-                const newWidth = startWidth + (currentX - startX);
-                if (newWidth > 40) el.style.width = newWidth + 'px';
-            };
-            
+            const onMove = (mE) => { el.style.width = (startWidth + (mE.clientX - startX)) + 'px'; };
             const onUp = () => {
                 isResizing = false;
                 frame.contentDocument.removeEventListener('mousemove', onMove);
                 frame.contentDocument.removeEventListener('mouseup', onUp);
-                frame.contentDocument.removeEventListener('touchmove', onMove);
-                frame.contentDocument.removeEventListener('touchend', onUp);
-                updateToolbarPos();
-                updateFrameHeight();
+                updateToolbarPos(); updateFrameHeight();
             };
-
             frame.contentDocument.addEventListener('mousemove', onMove);
             frame.contentDocument.addEventListener('mouseup', onUp);
-            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
-            frame.contentDocument.addEventListener('touchend', onUp);
         };
-
         handle.addEventListener('mousedown', startResize);
-        handle.addEventListener('touchstart', startResize, {passive: false});
         el.appendChild(handle);
-    }
-
-    function updateToolbarPos() {
-        if (!selectedEl || document.getElementById('moveModeCheckbox').checked) { toolbar.style.display = 'none'; return; }
-        const rect = selectedEl.getBoundingClientRect();
-        const frameRect = frame.getBoundingClientRect();
-        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-        toolbar.style.display = 'flex';
-        const leftPos = frameRect.left + (rect.left * scale) + (rect.width * scale / 2) - (toolbar.offsetWidth / 2);
-        let topPos = frameRect.top + (rect.top * scale) - 65;
-        toolbar.style.left = `${leftPos}px`;
-        toolbar.style.top = `${topPos}px`;
     }
 
     function setAlign(pos) {
         if (!selectedEl) return;
-        const target = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
+        let target = selectedEl;
+        if (selectedEl.classList.contains('block_heading')) target = selectedEl.parentElement;
+        if (selectedEl.classList.contains('block_button')) target = selectedEl.parentElement;
         target.style.textAlign = pos;
         if (selectedEl.classList.contains('block_image')) {
              selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
              selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
-             selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none';
              selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
         }
         updateToolbarPos();
     }
 
     function execCmd(cmd) {
-        if (!selectedEl || selectedEl.classList.contains('block_image')) return;
+        if (!selectedEl) return;
         frame.contentWindow.focus();
         frame.contentDocument.execCommand(cmd, false, null);
     }
 
     function toggleHeadingLine() {
         if (selectedEl && selectedEl.classList.contains('block_heading')) selectedEl.classList.toggle('no-line');
-        else if (selectedEl && !selectedEl.classList.contains('block_image')) execCmd('underline');
+        else if (selectedEl) execCmd('underline');
     }
 
-    // --- Device Preview ---
     function setDevice(type) {
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         deselectAll();
@@ -286,8 +283,7 @@
             frame.classList.add('mobile');
             document.getElementById('btn-mobile').classList.add('active');
             frame.style.width = '390px'; 
-            const scale = wrapper.offsetWidth / 390;
-            frame.style.transform = `scale(${scale})`;
+            frame.style.transform = `scale(${wrapper.offsetWidth / 390})`;
         } else {
             frame.classList.remove('mobile');
             document.getElementById('btn-desktop').classList.add('active');
@@ -297,20 +293,13 @@
         setTimeout(updateFrameHeight, 50);
     }
 
-    // --- Move Mode (Sortable) ---
     function toggleMoveMode() {
         const active = document.getElementById('moveModeCheckbox').checked;
         track.classList.toggle('active', active);
         deselectAll();
         if (active) {
             syncTrackPositions();
-            sortableInstance = new Sortable(track, {
-                animation: 200,
-                onEnd: (evt) => {
-                    moveIframeElement(evt.oldIndex, evt.newIndex);
-                    setTimeout(syncTrackPositions, 50);
-                }
-            });
+            sortableInstance = new Sortable(track, { animation: 200, onEnd: (evt) => moveIframeElement(evt.oldIndex, evt.newIndex) });
         } else if (sortableInstance) { sortableInstance.destroy(); track.innerHTML = ""; }
     }
 
@@ -318,16 +307,13 @@
         if (!document.getElementById('moveModeCheckbox').checked) return;
         track.innerHTML = "";
         const root = frame.contentDocument.getElementById('editor-root');
-        if (!root) return;
         const blocks = Array.from(root.children);
         const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
         blocks.forEach((block) => {
             const rect = block.getBoundingClientRect();
             const handle = document.createElement('div');
-            handle.className = 'drag-handle-item';
-            handle.innerHTML = '⠿';
-            handle.style.top = (rect.top * scale) + "px";
-            handle.style.height = (rect.height * scale) + "px";
+            handle.className = 'drag-handle-item'; handle.innerHTML = '⠿';
+            handle.style.top = (rect.top * scale) + "px"; handle.style.height = (rect.height * scale) + "px";
             track.appendChild(handle);
         });
     }
@@ -338,33 +324,47 @@
         const target = blocks[oldIdx];
         if (newIdx >= blocks.length - 1) root.appendChild(target);
         else root.insertBefore(target, blocks[newIdx + (newIdx > oldIdx ? 1 : 0)]);
-        updateFrameHeight();
+        updateFrameHeight(); syncTrackPositions();
     }
 
     function updateFrameHeight() {
         if (frame.contentDocument) {
             frame.style.height = '0px'; 
-            const rawHeight = frame.contentDocument.documentElement.scrollHeight;
             const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-            frame.style.height = (rawHeight * scale) + 'px';
+            frame.style.height = (frame.contentDocument.documentElement.scrollHeight * scale) + 'px';
         }
     }
 
     function deselectAll() { 
         if (selectedEl) {
             selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if(h) h.remove();
+            const h = selectedEl.querySelector('.resize-handle'); if(h) h.remove();
         }
-        selectedEl = null; 
-        toolbar.style.display = 'none'; 
+        selectedEl = null; toolbar.style.display = 'none'; 
     }
     
     function deleteElement() {
         if (selectedEl) {
-            const toRemove = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
+            const toRemove = (selectedEl.classList.contains('block_heading') || selectedEl.classList.contains('block_button')) ? selectedEl.parentElement : selectedEl;
             toRemove.remove(); deselectAll(); updateFrameHeight();
             if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
+        }
+    }
+
+    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+    function handleImageUpload(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => insertElement('block_image', e.target.result);
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    function triggerReplace() { document.getElementById('image-replace').click(); }
+    function handleImageReplace(input) {
+        if (input.files && input.files[0] && selectedEl) {
+            const reader = new FileReader();
+            reader.onload = (e) => { selectedEl.querySelector('img').src = e.target.result; updateFrameHeight(); };
+            reader.readAsDataURL(input.files[0]);
         }
     }
 
