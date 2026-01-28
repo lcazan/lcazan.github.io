@@ -225,6 +225,7 @@ footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee
     }
 }
 /* --- Button Block Styles --- */
+/* --- Refined Button Block Styles (Match: Find Out More) --- */
 .block_button_wrap {
     width: 100%;
     margin: 20px 0;
@@ -234,27 +235,26 @@ footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee
 
 .block_button {
     display: inline-block;
-    padding: 12px 30px;
+    padding: 14px 34px; /* Slightly more padding for the "find out more" look */
     background-color: #ffffff;
-    border: 1px solid #151515; /* Thin black border */
-    border-radius: 4px; /* Slightly rounded corners */
+    border: 1px solid #151515;
+    border-radius: 2px; /* Very slight rounding to match GoDaddy/Starfield style */
     color: #151515;
     text-decoration: none;
     
-    /* Font Styling: Same as section_heading but bold/smaller */
+    /* Font Styling: Source Sans Pro Bold, Small, Uppercase */
     font-family: 'Source Sans Pro', sans-serif;
-    font-size: 11px; 
+    font-size: 13px; /* Smaller than heading but legible */
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 0.12em; /* Added tracking for the premium feel */
     
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
 }
 
 .block_button:hover {
-    background-color: #f8f8f8;
+    background-color: #fcfcfc;
     border-color: var(--icon-brown);
+    color: var(--icon-brown);
 }
-
-
