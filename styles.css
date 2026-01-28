@@ -42,17 +42,12 @@ body {
 @media (min-width: 500px) {
     .media-group {
         flex-direction: row; /* Horizontal */
-        align-items: center; /* Vertically centers text relative to image height */
+        align-items: flex-start;
         text-align: left;
     }
     
     .media-group .block_image {
         flex-shrink: 0;
-    }
-
-    .media-group .editable {
-        margin-top: 0;
-        margin-bottom: 0;
     }
 }
 
@@ -78,6 +73,42 @@ header {
     letter-spacing: 1px; border: 1px solid var(--text-dark); padding: 8px 20px; 
     display: inline-block; white-space: nowrap; user-select: none; 
 }
+
+.header-menu-icon { position: absolute; top: 50%; left: 20px; transform: translateY(-50%); z-index: 8001; padding: 5px; cursor: pointer; }
+.menu-lines div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0.2s; }
+
+.active .line1 { transform: rotate(-45deg) translate(-4.5px, 5px); }
+.active .line2 { opacity: 0; }
+.active .line3 { transform: rotate(45deg) translate(-4.5px, -5.5px); }
+
+/* --- Sidebar Navigation --- */
+nav#nav-sidebar { 
+    position: fixed; top: 0; left: -340px; width: 320px; height: 100%; 
+    background: var(--brand-cream); transition: left 0.2s ease-in-out; z-index: 9000; 
+    box-shadow: 4px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto; 
+}
+nav#nav-sidebar.open { left: 0; }
+
+.sidebar-close-icon { position: absolute; top: 25px; left: 20px; padding: 5px; display: none; z-index: 9001; cursor: pointer; }
+nav#nav-sidebar.open .sidebar-close-icon { display: block; }
+
+.nav-content { padding-top: 100px; padding-bottom: 50px; }
+
+nav#nav-sidebar a { 
+    display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); 
+    font-weight: 400; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; 
+}
+
+.dropdown-btn { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.dropdown-btn i { transition: transform 0.3s ease; }
+.dropdown-btn.active i { transform: rotate(180deg); }
+
+.sub-nav { display: none; background: var(--brand-cream); }
+.sub-nav.show { display: block; }
+
+nav#nav-sidebar .sub-nav a { font-size: 1rem; padding: 10px 30px 10px 60px; text-transform: none; }
+
+#navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.3); z-index: 8500; }
 
 /* --- Content Block Styles --- */
 .section_heading { 
@@ -138,73 +169,7 @@ header {
     display: block;
 }
 
-/* --- Button Block (Match: Find Out More) --- */
-.block_button_wrap {
-    width: 100%;
-    margin: 20px 0;
-    display: block;
-    clear: both;
-}
-
-.block_button {
-    display: inline-block;
-    padding: 14px 34px;
-    background-color: #ffffff;
-    border: 1px solid #151515;
-    border-radius: 2px;
-    color: #151515;
-    text-decoration: none;
-    
-    /* Typography from provided reference */
-    font-family: 'Source Sans Pro', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    
-    cursor: pointer;
-    transition: all 0.3s ease;
-    line-height: normal;
-    text-align: center;
-}
-
-.block_button:hover {
-    border-color: var(--icon-brown);
-    color: var(--icon-brown);
-}
-
-/* --- Internal Editor Toolbar --- */
-/* This now lives inside the iframe to stay anchored to elements */
-#internal-toolbar {
-    position: absolute;
-    display: none;
-    background: #111;
-    border-radius: 4px;
-    padding: 6px;
-    z-index: 9999;
-    gap: 5px;
-    border: 1px solid #444;
-    align-items: center;
-    flex-direction: row;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    pointer-events: auto;
-}
-
-#internal-toolbar button {
-    background: transparent;
-    border: none;
-    color: white;
-    padding: 5px 10px;
-    cursor: pointer;
-    border-radius: 2px;
-}
-
-#internal-toolbar button:hover {
-    background: var(--brand-pink);
-    color: #000;
-}
-
-/* --- Resize Handle --- */
+/* --- Editor Specific Styles (Resize Handle) --- */
 .resize-handle { 
     width: 12px; 
     height: 12px; 
@@ -228,6 +193,8 @@ header {
     left: -14px;
 }
 
+.block_text a { color: var(--icon-brown); text-decoration: none; border-bottom: 1px dotted var(--icon-brown); }
+
 /* --- Footer --- */
 footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; margin-top: auto; }
 .social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
@@ -239,4 +206,55 @@ footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee
     .content-container { padding: 20px 15px; } 
     .block_heading { font-size: 1.4rem; } 
     header { padding: 10px; } 
+}
+/* Landscape/Desktop: Side-by-side */
+@media (min-width: 500px) {
+    .media-group {
+        flex-direction: row; /* Horizontal layout */
+        align-items: center; /* Vertically centers text relative to image height */
+        text-align: left;
+    }
+    
+    .media-group .block_image {
+        flex-shrink: 0;
+    }
+
+    .media-group .editable {
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+}
+/* --- Button Block Styles --- */
+/* --- Refined Button Block Styles (Match: Find Out More) --- */
+.block_button_wrap {
+    width: 100%;
+    margin: 20px 0;
+    display: block;
+    clear: both;
+}
+
+.block_button {
+    display: inline-block;
+    padding: 14px 34px; /* Slightly more padding for the "find out more" look */
+    background-color: #ffffff;
+    border: 1px solid #151515;
+    border-radius: 2px; /* Very slight rounding to match GoDaddy/Starfield style */
+    color: #151515;
+    text-decoration: none;
+    
+    /* Font Styling: Source Sans Pro Bold, Small, Uppercase */
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 13px; /* Smaller than heading but legible */
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em; /* Added tracking for the premium feel */
+    
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.block_button:hover {
+    background-color: #fcfcfc;
+    border-color: var(--icon-brown);
+    color: var(--icon-brown);
 }
