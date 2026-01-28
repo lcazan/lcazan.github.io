@@ -2,358 +2,171 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v3.0 Internal Toolbar</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template Editor v2.1</title>
+    <link rel="stylesheet" href="styles.css">
     <style>
-        :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
-        body { margin: 0; display: flex; height: 100vh; width: 100vw; font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; }
-        
-        #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 100; }
-        .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
-        .insert-btn:hover { background: var(--brand-pink); color: #000; }
+        /* Integrating your specific font and menu requirements */
+        :root {
+            --menu-font-size: 1.2rem; /* Bigger menu fonts */
+        }
 
-        .move-toggle { color: white; font-size: 10px; text-align: center; margin-top: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .move-toggle input { width: 22px; height: 22px; cursor: pointer; }
+        body { font-family: sans-serif; margin: 0; display: flex; }
 
-        #drag-track { width: 0; background: #222; overflow: hidden; transition: width 0.3s ease; position: relative; border-right: 1px solid #000; flex-shrink: 0; }
-        #drag-track.active { width: 55px; }
-        .drag-handle-item { width: 55px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 24px; cursor: grab; background: #222; position: absolute; border-bottom: 1px solid #333; box-sizing: border-box; }
+        /* Sidebar & Hamburger Logic */
+        #sidebar-menu {
+            width: 250px;
+            background: #333;
+            color: white;
+            height: 100vh;
+            padding: 20px;
+            font-size: var(--menu-font-size);
+        }
+
+        .hamburger {
+            display: block; /* Always visible */
+            cursor: pointer;
+            padding: 10px;
+            background: none;
+            border: none;
+        }
+
+        .hamburger .line {
+            width: 30px;
+            height: 3px;
+            background-color: black;
+            margin: 5px 0;
+            display: block;
+        }
+
+        /* Editor UI */
+        .main-layout { flex-grow: 1; display: flex; flex-direction: column; }
         
-        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; }
-        #device-bar { height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #000; flex-shrink: 0; }
-        .device-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; transition: 0.2s; }
-        .device-btn.active { color: var(--brand-pink); }
-        
-        #frame-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; overflow-x: hidden; overflow-y: auto; background: #333; position: relative; }
-        #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; height: auto; min-height: 0; }
-        #preview-frame.mobile { width: 390px; }
+        .editor-controls {
+            padding: 15px;
+            background: #eee;
+            border-bottom: 2px solid #ccc;
+            display: flex;
+            gap: 10px;
+        }
+
+        #content-container {
+            padding: 20px;
+            min-height: 400px;
+            background: #fff;
+        }
+
+        .added-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            background: #fafafa;
+        }
+
+        /* Locked Sections Styling */
+        .locked-section {
+            background: #f0f0f0;
+            padding: 20px;
+            border-top: 2px solid #222;
+            color: #666;
+        }
     </style>
 </head>
 <body>
 
-<div id="sidebar">
-    <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i>Section</button>
-    <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i>Heading</button>
-    <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i>Text</button>
-    <button class="insert-btn" onclick="insertElement('block_button')"><i class="fa-solid fa-square"></i>Button</button>
-    <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i>Image</button>
-    
-    <label class="move-toggle">
-        <input type="checkbox" id="moveModeCheckbox" onchange="toggleMoveMode()">
-        <div>MOVE</div>
-    </label>
-</div>
+    <nav id="sidebar-menu">
+        <button class="hamburger">
+            <span class="line"></span>
+            <span class="line"></span>
+            <span class="line"></span>
+        </button>
+        <ul>
+            <li>Dashboard</li>
+            <li>Projects</li>
+            <li>Settings</li>
+        </ul>
+    </nav>
 
-<input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
-<input type="file" id="image-replace" style="display:none" accept="image/*" onchange="handleImageReplace(this)">
+    <div class="main-layout">
+        <div class="editor-controls">
+            <button onclick="addItem()" style="background: #888; color: white;">+ Add Item</button>
+            <button onclick="saveContent()" class="btn-save">Save Project</button>
+            <button onclick="openContent()" class="btn-open">Open Saved File</button>
+        </div>
 
-<div id="drag-track"></div>
+        <div id="content-container">
+            <div class="added-item">Initial editable block. Add more to test saving!</div>
+        </div>
 
-<div id="preview-container">
-    <div id="device-bar">
-        <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
-        <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
+        <section id="services-section" class="locked-section">
+            <h3>Our Services</h3>
+            <p>This section is locked and cannot be modified via the editor.</p>
+        </section>
+
+        <footer id="main-footer" class="locked-section">
+            <p>© 2026 Template System | Version 2.1 | Temp: 22°C</p>
+        </footer>
     </div>
-    <div id="frame-wrapper">
-        <iframe id="preview-frame"></iframe>
-    </div>
-</div>
 
-<script>
-    const frame = document.getElementById('preview-frame');
-    const wrapper = document.getElementById('frame-wrapper');
-    const track = document.getElementById('drag-track');
-    let selectedEl = null;
-    let isResizing = false;
-    let sortableInstance = null;
+    <script>
+        // ADD ITEM: Utility to add "tags" to the container
+        function addItem() {
+            const container = document.getElementById('content-container');
+            const newItem = document.createElement('div');
+            newItem.className = 'added-item';
+            newItem.contentEditable = "true";
+            newItem.innerHTML = "New Tagged Item (Click to edit text)";
+            container.appendChild(newItem);
+        }
 
-    async function init() {
-        const resp = await fetch('template.html');
-        let html = await resp.text();
-        html = html.replace('</head>', '<link rel="stylesheet" href="styles.css"></head>');
-        
-        // Inject Root and Toolbar into iframe
-        const toolbarHtml = `
-            <div id="internal-toolbar" contenteditable="false">
-                <button id="tool-bold" onclick="parent.execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
-                <button id="tool-replace" onclick="parent.triggerReplace()" style="display:none;"><i class="fa-solid fa-sync"></i> Replace</button>
-                <button id="tool-underline" onclick="parent.toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>
-                <span style="color:#444">|</span>
-                <button onclick="parent.setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
-                <button onclick="parent.setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
-                <button onclick="parent.setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
-                <span style="color:#444">|</span>
-                <button onclick="parent.deleteElement()" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>
-            </div>`;
+        // SAVE FEATURE: Tags each item and saves to LocalStorage
+        function saveContent() {
+            const container = document.getElementById('content-container');
+            const items = [];
 
-        html = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, 
-            `<div class="content-container" id="editor-root">$1${toolbarHtml}</div>`);
-        
-        frame.srcdoc = html;
-        
-        frame.onload = () => {
-            const innerDoc = frame.contentDocument;
-            innerDoc.addEventListener('mousedown', (e) => {
-                if (document.getElementById('moveModeCheckbox').checked || isResizing) return;
-                const el = e.target.closest('.editable');
-                if (el) { e.stopPropagation(); selectElement(el); } else { deselectAll(); }
+            container.querySelectorAll('.added-item').forEach((item, index) => {
+                items.push({
+                    html: item.innerHTML,
+                    className: item.className
+                });
             });
 
-            innerDoc.addEventListener('scroll', updateToolbarPos);
-            wrapper.addEventListener('scroll', updateToolbarPos);
-            setTimeout(() => setDevice('mobile'), 200);
-        };
-    }
-
-    function selectElement(el) {
-        if (selectedEl) {
-            selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if(h) h.remove();
-        }
-        selectedEl = el;
-        selectedEl.classList.add('selected-item');
-
-        const innerDoc = frame.contentDocument;
-        const isImg = el.classList.contains('block_image');
-        const isBtn = el.classList.contains('block_button');
-
-        innerDoc.getElementById('tool-replace').style.display = isImg ? 'block' : 'none';
-        innerDoc.getElementById('tool-bold').style.display = (isImg || isBtn) ? 'none' : 'block';
-        innerDoc.getElementById('tool-underline').style.display = (isImg || isBtn) ? 'none' : 'block';
-
-        if (isImg) addResizeHandle(el);
-        updateToolbarPos();
-    }
-
-    function updateToolbarPos() {
-        const innerDoc = frame.contentDocument;
-        const toolbar = innerDoc.getElementById('internal-toolbar');
-        if (!selectedEl || !toolbar) return;
-
-        const rect = selectedEl.getBoundingClientRect();
-        toolbar.style.display = 'flex';
-        
-        // Horizontal centering
-        let left = rect.left + (rect.width / 2) - (toolbar.offsetWidth / 2);
-        // Vertical placement (above the element)
-        let top = rect.top - toolbar.offsetHeight - 15;
-
-        // Keep inside bounds
-        left = Math.max(10, Math.min(left, innerDoc.documentElement.clientWidth - toolbar.offsetWidth - 10));
-        top = Math.max(10, top);
-
-        toolbar.style.left = `${left + innerDoc.defaultView.scrollX}px`;
-        toolbar.style.top = `${top + innerDoc.defaultView.scrollY}px`;
-    }
-
-    function insertElement(type, data = null) {
-        const root = frame.contentDocument.getElementById('editor-root');
-        if (selectedEl && selectedEl.classList.contains('block_image') && type.includes('block_') && type !== 'block_image') {
-            createMediaGroup(selectedEl, type);
-            return;
+            localStorage.setItem('savedContentData', JSON.stringify(items));
+            alert('Content saved to browser memory!');
         }
 
-        const newEl = frame.contentDocument.createElement('div');
-        newEl.className = `editable ${type}`;
-        
-        if (type === 'block_image') {
-            newEl.contentEditable = "false";
-            const img = frame.contentDocument.createElement('img');
-            img.src = data;
-            newEl.appendChild(img);
-        } else if (type === 'block_button') {
-            newEl.contentEditable = "true";
-            newEl.innerText = "FIND OUT MORE";
-        } else {
-            newEl.contentEditable = "true";
-            newEl.innerText = "New Block";
+        // OPEN FEATURE: Rebuilds the container from saved data
+        function openContent() {
+            const savedData = localStorage.getItem('savedContentData');
+            
+            if (!savedData) {
+                alert('No saved data found.');
+                return;
+            }
+
+            const items = JSON.parse(savedData);
+            const container = document.getElementById('content-container');
+
+            // Clear ONLY the editable container
+            container.innerHTML = '';
+
+            items.forEach(data => {
+                const newItem = document.createElement('div');
+                newItem.className = data.className;
+                newItem.innerHTML = data.html;
+                newItem.contentEditable = "true"; // Keep it editable
+                container.appendChild(newItem);
+            });
+
+            alert('Project loaded successfully.');
         }
 
-        if (type === 'block_heading') {
-            const wrap = frame.contentDocument.createElement('div'); wrap.className = "heading-wrapper";
-            wrap.appendChild(newEl); root.appendChild(wrap);
-        } else if (type === 'block_button') {
-            const wrap = frame.contentDocument.createElement('div'); wrap.className = "block_button_wrap";
-            wrap.appendChild(newEl); root.appendChild(wrap);
-        } else { root.appendChild(newEl); }
-
-        updateFrameHeight();
-        if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
-    }
-
-    function createMediaGroup(existingImg, textType) {
-        const innerDoc = frame.contentDocument;
-        const container = innerDoc.createElement('div');
-        container.className = 'media-group';
-        const textEl = innerDoc.createElement('div');
-        textEl.className = `editable ${textType}`;
-        textEl.contentEditable = "true";
-        textEl.innerText = textType === 'block_button' ? "FIND OUT MORE" : "Side Content";
-
-        existingImg.parentNode.insertBefore(container, existingImg);
-        container.appendChild(existingImg);
-        
-        if (textType === 'block_button') {
-            const bWrap = innerDoc.createElement('div');
-            bWrap.className = 'block_button_wrap';
-            bWrap.style.width = 'auto';
-            bWrap.appendChild(textEl);
-            container.appendChild(bWrap);
-        } else { container.appendChild(textEl); }
-        
-        deselectAll();
-        updateFrameHeight();
-    }
-
-    function setAlign(pos) {
-        if (!selectedEl) return;
-        let target = selectedEl;
-        if (selectedEl.classList.contains('block_heading')) target = selectedEl.parentElement;
-        if (selectedEl.classList.contains('block_button')) target = selectedEl.parentElement;
-
-        target.style.textAlign = pos;
-        if (selectedEl.classList.contains('block_image')) {
-             selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
-             selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
-             selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
-        }
-        setTimeout(updateToolbarPos, 10);
-    }
-
-    function execCmd(cmd) {
-        if (!selectedEl) return;
-        frame.contentWindow.focus();
-        frame.contentDocument.execCommand(cmd, false, null);
-    }
-
-    function toggleHeadingLine() {
-        if (selectedEl && selectedEl.classList.contains('block_heading')) selectedEl.classList.toggle('no-line');
-        else if (selectedEl) execCmd('underline');
-    }
-
-    function addResizeHandle(el) {
-        const handle = frame.contentDocument.createElement('div');
-        handle.className = 'resize-handle';
-        const startResize = (e) => {
-            e.preventDefault(); isResizing = true;
-            const startX = e.clientX || e.touches[0].clientX;
-            const startW = el.offsetWidth;
-            const onMove = (mE) => {
-                const curX = mE.clientX || mE.touches[0].clientX;
-                el.style.width = (startW + (curX - startX)) + 'px';
-            };
-            const onUp = () => {
-                isResizing = false;
-                frame.contentDocument.removeEventListener('mousemove', onMove);
-                frame.contentDocument.removeEventListener('mouseup', onUp);
-                updateToolbarPos(); updateFrameHeight();
-            };
-            frame.contentDocument.addEventListener('mousemove', onMove);
-            frame.contentDocument.addEventListener('mouseup', onUp);
-        };
-        handle.addEventListener('mousedown', startResize);
-        el.appendChild(handle);
-    }
-
-    function triggerReplace() { document.getElementById('image-replace').click(); }
-    function handleImageReplace(input) {
-        if (input.files && input.files[0] && selectedEl) {
-            const reader = new FileReader();
-            reader.onload = (e) => { selectedEl.querySelector('img').src = e.target.result; updateFrameHeight(); };
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    function triggerImageUpload() { document.getElementById('image-upload').click(); }
-    function handleImageUpload(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => insertElement('block_image', e.target.result);
-            reader.readAsDataURL(input.files[0]);
-        }
-    }
-
-    function setDevice(type) {
-        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
-        deselectAll();
-        if (type === 'mobile') {
-            frame.classList.add('mobile');
-            document.getElementById('btn-mobile').classList.add('active');
-            frame.style.width = '390px'; 
-            frame.style.transform = `scale(${wrapper.offsetWidth / 390})`;
-        } else {
-            frame.classList.remove('mobile');
-            document.getElementById('btn-desktop').classList.add('active');
-            frame.style.width = '100%';
-            frame.style.transform = 'scale(1)';
-        }
-        setTimeout(updateFrameHeight, 50);
-    }
-
-    function toggleMoveMode() {
-        const active = document.getElementById('moveModeCheckbox').checked;
-        track.classList.toggle('active', active);
-        deselectAll();
-        if (active) {
-            syncTrackPositions();
-            sortableInstance = new Sortable(track, { animation: 200, onEnd: (e) => moveIframeElement(e.oldIndex, e.newIndex) });
-        } else if (sortableInstance) { sortableInstance.destroy(); track.innerHTML = ""; }
-    }
-
-    function syncTrackPositions() {
-        if (!document.getElementById('moveModeCheckbox').checked) return;
-        track.innerHTML = "";
-        const blocks = Array.from(frame.contentDocument.getElementById('editor-root').children).filter(el => el.id !== 'internal-toolbar');
-        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-        blocks.forEach((block) => {
-            const rect = block.getBoundingClientRect();
-            const handle = document.createElement('div');
-            handle.className = 'drag-handle-item'; handle.innerHTML = '⠿';
-            handle.style.top = (rect.top * scale) + "px"; handle.style.height = (rect.height * scale) + "px";
-            track.appendChild(handle);
+        // INSTANT HAMBURGER: Logic for open/close without delay
+        const nav = document.getElementById('sidebar-menu');
+        document.querySelector('.hamburger').addEventListener('click', () => {
+            // Instant toggle logic
+            nav.style.display = (nav.style.display === 'none') ? 'block' : 'none';
         });
-    }
-
-    function moveIframeElement(oldIdx, newIdx) {
-        const root = frame.contentDocument.getElementById('editor-root');
-        const blocks = Array.from(root.children).filter(el => el.id !== 'internal-toolbar');
-        const target = blocks[oldIdx];
-        if (newIdx >= blocks.length - 1) root.insertBefore(target, root.querySelector('#internal-toolbar'));
-        else root.insertBefore(target, blocks[newIdx + (newIdx > oldIdx ? 1 : 0)]);
-        updateFrameHeight(); syncTrackPositions();
-    }
-
-    function updateFrameHeight() {
-        if (frame.contentDocument) {
-            frame.style.height = '0px'; 
-            const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-            frame.style.height = (frame.contentDocument.documentElement.scrollHeight * scale) + 'px';
-        }
-    }
-
-    function deselectAll() { 
-        if (selectedEl) {
-            selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle'); if(h) h.remove();
-        }
-        selectedEl = null; 
-        if (frame.contentDocument && frame.contentDocument.getElementById('internal-toolbar')) {
-            frame.contentDocument.getElementById('internal-toolbar').style.display = 'none';
-        }
-    }
-    
-    function deleteElement() {
-        if (selectedEl) {
-            const toRemove = (selectedEl.classList.contains('block_heading') || selectedEl.classList.contains('block_button')) ? selectedEl.parentElement : selectedEl;
-            toRemove.remove(); deselectAll(); updateFrameHeight();
-            if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
-        }
-    }
-
-    window.onresize = () => { if (frame.classList.contains('mobile')) setDevice('mobile'); };
-    window.onload = init;
-</script>
+    </script>
 </body>
 </html>
