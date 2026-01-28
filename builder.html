@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.6.0 Handle Track</title>
+    <title>Snoozing Builder | v2.6.1 Final Layout</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -14,26 +14,27 @@
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
         
         .move-toggle { color: white; font-size: 10px; text-align: center; margin-top: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .move-toggle input { width: 20px; height: 20px; cursor: pointer; }
+        .move-toggle input { width: 22px; height: 22px; cursor: pointer; }
 
-        /* The New Drag Track column */
-        #drag-track { width: 0; background: #222; overflow: hidden; transition: width 0.3s ease; position: relative; border-right: 1px solid #000; }
-        #drag-track.active { width: 50px; }
-        .drag-handle-item { width: 50px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 20px; cursor: grab; background: #222; position: absolute; border-bottom: 1px solid #333; box-sizing: border-box; }
+        /* Drag Track column on the editor side */
+        #drag-track { width: 0; background: #222; overflow: hidden; transition: width 0.3s ease; position: relative; border-right: 1px solid #000; flex-shrink: 0; }
+        #drag-track.active { width: 55px; }
+        .drag-handle-item { width: 55px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 22px; cursor: grab; background: #222; position: absolute; border-bottom: 1px solid #333; box-sizing: border-box; transition: background 0.2s; }
         .drag-handle-item:hover { color: var(--brand-pink); background: #2a2a2a; }
 
-        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; }
-        #device-bar { height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #000; }
-        .device-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; }
+        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; overflow: hidden; }
+        #device-bar { height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #000; flex-shrink: 0; }
+        .device-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; transition: 0.2s; }
         .device-btn.active { color: var(--brand-pink); }
         
         #frame-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; overflow-x: hidden; overflow-y: auto; background: #333; position: relative; }
-        #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; height: 100%; }
+        #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; height: 100%; transition: width 0.3s ease, transform 0.3s ease; }
         #preview-frame.mobile { width: 390px; }
         
-        #floating-toolbar { position: absolute; display: none; background: #111; border-radius: 4px; padding: 6px; z-index: 2000; gap: 5px; border: 1px solid #444; }
+        #floating-toolbar { position: absolute; display: none; background: #111; border-radius: 4px; padding: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 2000; gap: 5px; align-items: center; border: 1px solid #444; }
         .float-btn { background: transparent; border: none; color: white; padding: 5px 10px; cursor: pointer; border-radius: 2px; }
         .float-btn:hover { background: var(--brand-pink); color: #000; }
+        .sep { color: #444; margin: 0 4px; }
     </style>
 </head>
 <body>
@@ -58,13 +59,13 @@
     </div>
     <div id="frame-wrapper">
         <div id="floating-toolbar" onmousedown="event.preventDefault()">
-            <button class="float-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
-            <button class="float-btn" id="float-underline" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>
-            <span style="color:#444">|</span>
+            <button class="float-btn" title="Bold" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
+            <button class="float-btn" id="float-underline" title="Toggle Line" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>
+            <span class="sep">|</span>
             <button class="float-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
             <button class="float-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
             <button class="float-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
-            <span style="color:#444">|</span>
+            <span class="sep">|</span>
             <button class="float-btn" onclick="deleteElement()" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>
         </div>
         <iframe id="preview-frame"></iframe>
@@ -88,7 +89,10 @@
         frame.onload = () => {
             const innerDoc = frame.contentDocument;
             const style = innerDoc.createElement('style');
-            style.innerHTML = `.editable { cursor: text; outline: none !important; } .selected-item { outline: 2px solid #877267 !important; outline-offset: 4px; }`;
+            style.innerHTML = `
+                .editable { cursor: text; outline: none !important; position: relative; }
+                .selected-item { outline: 2px solid #877267 !important; outline-offset: 4px; }
+            `;
             innerDoc.head.appendChild(style);
             
             innerDoc.addEventListener('mousedown', (e) => {
@@ -114,16 +118,21 @@
         track.classList.toggle('active', active);
         deselectAll();
         
+        const innerDoc = frame.contentDocument;
+        const editables = innerDoc.querySelectorAll('.editable');
+
         if (active) {
+            editables.forEach(el => el.contentEditable = "false");
             syncTrackPositions();
             sortableInstance = new Sortable(track, {
                 animation: 200,
                 onEnd: (evt) => {
                     moveIframeElement(evt.oldIndex, evt.newIndex);
-                    setTimeout(syncTrackPositions, 50);
+                    setTimeout(syncTrackPositions, 100);
                 }
             });
         } else {
+            editables.forEach(el => el.contentEditable = "true");
             if (sortableInstance) sortableInstance.destroy();
             track.innerHTML = "";
         }
@@ -135,9 +144,8 @@
         const root = frame.contentDocument.getElementById('editor-root');
         const blocks = Array.from(root.children);
         const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-        const frameRect = frame.getBoundingClientRect();
 
-        blocks.forEach((block, index) => {
+        blocks.forEach((block) => {
             const rect = block.getBoundingClientRect();
             const handle = document.createElement('div');
             handle.className = 'drag-handle-item';
@@ -152,7 +160,7 @@
         const root = frame.contentDocument.getElementById('editor-root');
         const blocks = Array.from(root.children);
         const target = blocks[oldIdx];
-        if (newIdx >= blocks.length) {
+        if (newIdx >= blocks.length - 1) {
             root.appendChild(target);
         } else {
             root.insertBefore(target, blocks[newIdx + (newIdx > oldIdx ? 1 : 0)]);
@@ -165,6 +173,8 @@
         selectedEl = el;
         selectedEl.classList.add('selected-item');
         updateToolbarPos();
+        const uBtn = document.getElementById('float-underline');
+        if (uBtn) uBtn.style.display = el.classList.contains('block_heading') ? 'inline-block' : 'none';
     }
 
     function updateToolbarPos() {
@@ -175,6 +185,7 @@
         toolbar.style.display = 'flex';
         const leftPos = frameRect.left + (rect.left * scale) + (rect.width * scale / 2) - (toolbar.offsetWidth / 2);
         let topPos = frameRect.top + (rect.top * scale) - 65;
+        if (topPos < 50) topPos = frameRect.top + 10; 
         toolbar.style.left = `${leftPos}px`;
         toolbar.style.top = `${topPos}px`;
     }
@@ -191,13 +202,20 @@
         frame.contentDocument.execCommand(cmd, false, null);
     }
 
+    function toggleHeadingLine() {
+        if (selectedEl && selectedEl.classList.contains('block_heading')) {
+            selectedEl.classList.toggle('no-line');
+        }
+    }
+
     function setDevice(type) {
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         deselectAll();
         if (type === 'mobile') {
             frame.classList.add('mobile');
             document.getElementById('btn-mobile').classList.add('active');
-            frame.style.transform = `scale(${wrapper.offsetWidth / 390})`;
+            const scale = wrapper.offsetWidth / 390;
+            frame.style.transform = `scale(${scale})`;
         } else {
             frame.classList.remove('mobile');
             document.getElementById('btn-desktop').classList.add('active');
@@ -208,10 +226,11 @@
     }
 
     function updateFrameHeight() {
-        if (frame.classList.contains('mobile') && frame.contentDocument) {
-            frame.style.height = frame.contentDocument.documentElement.scrollHeight + 'px';
-        } else {
+        if (frame.contentDocument) {
             frame.style.height = "100%";
+            if (frame.classList.contains('mobile')) {
+                frame.style.height = frame.contentDocument.documentElement.scrollHeight + 'px';
+            }
         }
     }
 
@@ -220,7 +239,7 @@
         const newEl = frame.contentDocument.createElement('div');
         newEl.className = `editable ${type}`;
         newEl.contentEditable = "true";
-        newEl.innerText = "New Content";
+        newEl.innerText = type === 'section_heading' ? "SECTION TITLE" : type === 'block_heading' ? "HEADING TITLE" : "Enter text here...";
         if (type === 'block_heading') {
             const wrap = frame.contentDocument.createElement('div'); 
             wrap.className = "heading-wrapper";
@@ -241,6 +260,7 @@
         }
     }
 
+    window.onresize = () => { if (frame.classList.contains('mobile')) setDevice('mobile'); };
     window.onload = init;
 </script>
 </body>
