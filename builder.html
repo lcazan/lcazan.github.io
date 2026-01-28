@@ -2,63 +2,22 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.3.1 Stable</title>
+    <title>Snoozing Builder | v2.3.3 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root {
-            --admin-bg: #1e1e1e;
-            --panel-bg: #2d2d2d;
-            --brand-pink: #ebd5c9;
-        }
-
-        body { 
-            margin: 0; display: flex; height: 100vh; width: 100vw;
-            font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; 
-        }
-
-        #sidebar { 
-            width: 90px; height: 100vh; background: var(--panel-bg); 
-            display: flex; flex-direction: column; align-items: center;
-            padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 100;
-        }
-
-        .insert-btn { 
-            width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; 
-            margin-bottom: 15px; border-radius: 8px; cursor: pointer;
-            font-size: 9px; font-weight: bold; text-transform: uppercase;
-            display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px;
-        }
+        :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
+        body { margin: 0; display: flex; height: 100vh; width: 100vw; font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; }
+        #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 100; }
+        .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
-
-        #preview-container { 
-            flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh;
-        }
-        
-        #device-bar {
-            height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #000; flex-shrink: 0;
-        }
-
+        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; }
+        #device-bar { height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #000; flex-shrink: 0; }
         .device-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; transition: 0.2s; }
         .device-btn.active { color: var(--brand-pink); }
-        
-        #frame-wrapper {
-            flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
-            overflow-x: hidden; overflow-y: auto; background: #333; position: relative;
-        }
-
-        #preview-frame { 
-            width: 100%; border: none; background: white; 
-            transition: transform 0.2s ease-out; transform-origin: top center;
-            height: 100%;
-        }
-
+        #frame-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; overflow-x: hidden; overflow-y: auto; background: #333; position: relative; }
+        #preview-frame { width: 100%; border: none; background: white; transition: transform 0.2s ease-out; transform-origin: top center; height: 100%; }
         #preview-frame.mobile { width: 390px; height: auto; min-height: 0; }
-
-        #floating-toolbar {
-            position: absolute; display: none; background: #111; border-radius: 4px;
-            padding: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 2000; gap: 5px; align-items: center;
-            border: 1px solid #444;
-        }
+        #floating-toolbar { position: absolute; display: none; background: #111; border-radius: 4px; padding: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 2000; gap: 5px; align-items: center; border: 1px solid #444; }
         .float-btn { background: transparent; border: none; color: white; padding: 5px 10px; cursor: pointer; border-radius: 2px; }
         .float-btn:hover { background: var(--brand-pink); color: #000; }
         .sep { color: #444; margin: 0 4px; }
@@ -77,7 +36,6 @@
         <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
         <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
     </div>
-
     <div id="frame-wrapper">
         <div id="floating-toolbar">
             <button class="float-btn" title="Bold" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
@@ -104,48 +62,62 @@
         let html = await resp.text();
         const cssLink = '<link rel="stylesheet" href="styles.css">';
         html = html.replace('</head>', cssLink + '</head>');
-        frame.srcdoc = html.replace('<div class="content-container">', '<div class="content-container" id="editor-root">');
+        frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
         
         frame.onload = () => {
             const innerDoc = frame.contentDocument;
             const style = innerDoc.createElement('style');
-            // This internal style handles editor behavior while respecting your external style.css
             style.innerHTML = `
                 .editable { cursor: text; outline: none; position: relative; display: block; width: 100%; }
                 .block_heading.editable { display: inline-block; width: auto; }
-                .heading-wrapper { width: 100%; display: block; clear: both; margin-bottom: 10px; }
                 .selected-item { outline: 2px solid #877267 !important; outline-offset: 4px; }
-                body { overflow-x: hidden; margin: 0; padding: 0; }
             `;
             innerDoc.head.appendChild(style);
             
-            // Use mousedown to capture selection before blur events
             innerDoc.addEventListener('mousedown', (e) => {
                 const el = e.target.closest('.editable');
-                if (el) {
-                    e.stopPropagation();
-                    selectElement(el);
-                } else {
-                    deselectAll();
-                }
+                if (el) { e.stopPropagation(); selectElement(el); } 
+                else { deselectAll(); }
             });
             
             innerDoc.addEventListener('scroll', updateToolbarPos);
             wrapper.addEventListener('scroll', updateToolbarPos);
-
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', () => { if (selectedEl) updateToolbarPos(); });
+            }
             setTimeout(() => setDevice('mobile'), 200);
         };
     }
 
+    function selectElement(el) {
+        if (selectedEl === el) { updateToolbarPos(); return; }
+        if (selectedEl) selectedEl.classList.remove('selected-item');
+        selectedEl = el;
+        selectedEl.classList.add('selected-item');
+        setTimeout(updateToolbarPos, 150);
+        document.getElementById('float-underline').style.display = el.classList.contains('block_heading') ? 'inline-block' : 'none';
+    }
+
+    function updateToolbarPos() {
+        if (!selectedEl) return;
+        const rect = selectedEl.getBoundingClientRect();
+        const frameRect = frame.getBoundingClientRect();
+        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
+        toolbar.style.display = 'flex';
+        const leftPos = frameRect.left + (rect.left * scale) + (rect.width * scale / 2) - (toolbar.offsetWidth / 2);
+        let topPos = frameRect.top + (rect.top * scale) - 65;
+        if (topPos < 50) topPos = frameRect.top + 10; 
+        toolbar.style.left = `${leftPos}px`;
+        toolbar.style.top = `${topPos}px`;
+    }
+
     function setDevice(type) {
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
-        deselectAll(); 
-
+        deselectAll();
         if (type === 'mobile') {
             frame.classList.add('mobile');
             document.getElementById('btn-mobile').classList.add('active');
-            const scale = wrapper.offsetWidth / 390;
-            frame.style.transform = `scale(${scale})`;
+            frame.style.transform = `scale(${wrapper.offsetWidth / 390})`;
             updateFrameHeight();
         } else {
             frame.classList.remove('mobile');
@@ -162,93 +134,37 @@
         }
     }
 
+    function setAlign(pos) {
+        if (!selectedEl) return;
+        if (selectedEl.classList.contains('block_heading')) { selectedEl.parentElement.style.textAlign = pos; } 
+        else { selectedEl.style.textAlign = pos; }
+        updateToolbarPos();
+    }
+
     function insertElement(type) {
         const root = frame.contentDocument.getElementById('editor-root');
         const newEl = frame.contentDocument.createElement('div');
         newEl.className = `editable ${type}`;
         newEl.contentEditable = "true";
         newEl.innerText = type === 'section_heading' ? "SECTION TITLE" : type === 'block_heading' ? "HEADING TITLE" : "Enter text here...";
-
         if (type === 'block_heading') {
-            const wrap = frame.contentDocument.createElement('div');
-            wrap.className = "heading-wrapper";
-            wrap.style.textAlign = "center";
-            wrap.appendChild(newEl);
-            root.appendChild(wrap);
-        } else {
-            root.appendChild(newEl);
-        }
-        
+            const wrap = frame.contentDocument.createElement('div'); wrap.className = "heading-wrapper";
+            wrap.style.textAlign = "center"; wrap.appendChild(newEl); root.appendChild(wrap);
+        } else { root.appendChild(newEl); }
         updateFrameHeight();
     }
 
-    function selectElement(el) {
-        if (selectedEl === el) return;
-        if (selectedEl) selectedEl.classList.remove('selected-item');
-        
-        selectedEl = el;
-        selectedEl.classList.add('selected-item');
-        
-        // Timeout ensures the element is rendered/focused before calculating position
-        setTimeout(updateToolbarPos, 20);
-        
-        document.getElementById('float-underline').style.display = 
-            el.classList.contains('block_heading') ? 'inline-block' : 'none';
-    }
-
-    function updateToolbarPos() {
-        if (!selectedEl) return;
-        const rect = selectedEl.getBoundingClientRect();
-        const frameRect = frame.getBoundingClientRect();
-        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-        
-        toolbar.style.display = 'flex';
-        const leftPos = frameRect.left + (rect.left * scale) + (rect.width * scale / 2) - (toolbar.offsetWidth / 2);
-        const topPos = frameRect.top + (rect.top * scale) - 65;
-
-        toolbar.style.left = `${leftPos}px`;
-        toolbar.style.top = `${topPos}px`;
-    }
-
-    function setAlign(pos) {
-        if (!selectedEl) return;
-        if (selectedEl.classList.contains('block_heading')) {
-            selectedEl.parentElement.style.textAlign = pos;
-        } else {
-            selectedEl.style.textAlign = pos;
-        }
-        updateToolbarPos();
-    }
-
-    function toggleHeadingLine() {
-        if (selectedEl && selectedEl.classList.contains('block_heading')) {
-            selectedEl.classList.toggle('no-line');
-        }
-    }
-
-    function deselectAll() {
-        if (selectedEl) selectedEl.classList.remove('selected-item');
-        selectedEl = null;
-        toolbar.style.display = 'none';
-    }
-
-    function execCmd(cmd) {
-        frame.contentDocument.execCommand(cmd, false, null);
-        frame.contentWindow.focus();
-    }
-
+    function toggleHeadingLine() { if (selectedEl && selectedEl.classList.contains('block_heading')) selectedEl.classList.toggle('no-line'); }
+    function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbar.style.display = 'none'; }
+    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); frame.contentWindow.focus(); }
     function deleteElement() {
         if (selectedEl) {
             const toRemove = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
-            toRemove.remove();
-            deselectAll();
-            updateFrameHeight();
+            toRemove.remove(); deselectAll(); updateFrameHeight();
         }
     }
-
     window.onresize = () => { if (frame.classList.contains('mobile')) setDevice('mobile'); };
     window.onload = init;
 </script>
-
 </body>
 </html>
