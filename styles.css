@@ -19,17 +19,15 @@ body {
 
 /* --- Core Layout Containers --- */
 .content-container {
-    /* Set to full body width as requested */
     width: 100%;
     margin: 0;
     padding: 20px;
     background-color: #ffffff;
-    min-height: 0; 
+    min-height: 200px; 
     display: block;
     box-sizing: border-box;
 }
 
-/* Helper for alignment logic: ensures internal elements follow parent alignment */
 .heading-wrapper {
     width: 100%;
     display: block;
@@ -55,126 +53,37 @@ header {
 .header-menu-icon { position: absolute; top: 50%; left: 20px; transform: translateY(-50%); z-index: 8001; padding: 5px; cursor: pointer; }
 .menu-lines div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0.2s; }
 
-.active .line1 { transform: rotate(-45deg) translate(-4.5px, 5px); }
-.active .line2 { opacity: 0; }
-.active .line3 { transform: rotate(45deg) translate(-4.5px, -5.5px); }
-
 /* --- Sidebar Navigation --- */
 nav#nav-sidebar { 
     position: fixed; top: 0; left: -340px; width: 320px; height: 100%; 
     background: var(--brand-cream); transition: left 0.2s ease-in-out; z-index: 9000; 
-    box-shadow: 4px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto; 
 }
 nav#nav-sidebar.open { left: 0; }
-
-.sidebar-close-icon { position: absolute; top: 25px; left: 20px; padding: 5px; display: none; z-index: 9001; cursor: pointer; }
-nav#nav-sidebar.open .sidebar-close-icon { display: block; }
-
-.nav-content { padding-top: 100px; padding-bottom: 50px; }
-
-nav#nav-sidebar a { 
-    display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); 
-    font-weight: 400; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; 
-}
-
-.dropdown-btn { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-.dropdown-btn i { transition: transform 0.3s ease; }
-.dropdown-btn.active i { transform: rotate(180deg); }
-
-.sub-nav { display: none; background: var(--brand-cream); }
-.sub-nav.show { display: block; }
-
-nav#nav-sidebar .sub-nav a { font-size: 1rem; padding: 10px 30px 10px 60px; text-transform: none; }
-
-#navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.3); z-index: 8500; }
 
 /* --- Content Block Styles --- */
 .section_heading { 
     font-family: 'Source Sans Pro', sans-serif; 
-    font-size: 14px; 
-    font-weight: 600; 
-    text-transform: none; 
-    letter-spacing: 2px; 
-    color: var(--icon-brown); 
-    margin: 40px 0 20px; 
-    display: block; 
-    line-height: 1.4; 
-    width: 100%;
-    /* Fix for text wrapping */
-    white-space: normal;
-    word-wrap: break-word;
+    font-size: 14px; font-weight: 600; color: var(--icon-brown); 
+    margin: 40px 0 20px; display: block; width: 100%;
+    white-space: normal; word-wrap: break-word;
 }
 
 .block_heading { 
     font-family: 'Cinzel', serif; 
-    font-size: 1.6rem; 
-    font-weight: 400; 
-    text-transform: none; 
-    color: var(--text-dark); 
+    font-size: 1.6rem; color: var(--text-dark); 
     border-bottom: 1px solid var(--brand-pink); 
-    padding-bottom: 8px; 
-    margin-bottom: 10px; 
-    display: inline-block; 
-    transition: border-color 0.2s ease; 
-    line-height: 1.3;
-    /* Fix for text wrapping */
-    white-space: normal;
-    word-wrap: break-word;
+    padding-bottom: 8px; margin-bottom: 10px; 
+    display: inline-block; white-space: normal; word-wrap: break-word;
 }
-
-.no-line { border-bottom: 1px solid transparent !important; }
 
 .block_text { 
     font-family: 'Source Sans Pro', sans-serif; 
-    font-size: 1.05rem; 
-    color: #333333; 
-    line-height: 1.8; 
-    margin: 10px 0 30px; 
-    display: block; 
-    text-align: left; 
-    width: 100%;
-    /* Fix for text wrapping */
-    white-space: normal;
-    word-wrap: break-word;
+    font-size: 1.05rem; color: #333333; line-height: 1.8; 
+    margin: 10px 0 30px; display: block; width: 100%;
+    white-space: normal; word-wrap: break-word;
 }
-
-.block_text a { color: var(--icon-brown); text-decoration: none; border-bottom: 1px dotted var(--icon-brown); }
 
 /* --- Footer --- */
 footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; margin-top: auto; }
-.social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
-.social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; }
 .copyright-text { font-weight: 600; display: block; margin-bottom: 15px; font-size: 0.85rem; }
 .disclaimer { font-size: 0.75rem; color: #666; max-width: 850px; margin: 0 auto; line-height: 1.7; text-align: center; }
-
-/* --- Move Mode Styling --- */
-/* Applied to the editor-root when 'Move' checkbox is checked */
-.move-mode-active .editable {
-    border: 1px dashed #877267 !important;
-    margin-top: 15px !important;
-    margin-bottom: 15px !important;
-    padding: 15px !important;
-    position: relative !important;
-    cursor: grab !important;
-}
-
-/* The 6-dots drag icon in the upper left corner */
-.move-mode-active .editable::before {
-    content: '⠿';
-    position: absolute;
-    top: -12px;
-    left: 5px;
-    background: #877267;
-    color: white;
-    font-size: 14px;
-    padding: 0 6px;
-    border-radius: 3px;
-    z-index: 10;
-}
-
-/* Adjust heading-wrapper to maintain dashed box appearance */
-.move-mode-active .heading-wrapper {
-    padding: 5px 0;
-}
-
-@media (max-width: 767px) { .content-container { padding: 20px 15px; } .block_heading { font-size: 1.4rem; } header { padding: 10px; } }
