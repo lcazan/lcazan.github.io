@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.9 Button Support</title>
+    <title>Snoozing Builder | v3.0 Internal Toolbar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -19,8 +19,7 @@
         #drag-track { width: 0; background: #222; overflow: hidden; transition: width 0.3s ease; position: relative; border-right: 1px solid #000; flex-shrink: 0; }
         #drag-track.active { width: 55px; }
         .drag-handle-item { width: 55px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 24px; cursor: grab; background: #222; position: absolute; border-bottom: 1px solid #333; box-sizing: border-box; }
-        .drag-handle-item:hover { color: var(--brand-pink); background: #2a2a2a; }
-
+        
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; }
         #device-bar { height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #000; flex-shrink: 0; }
         .device-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; transition: 0.2s; }
@@ -29,10 +28,6 @@
         #frame-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; overflow-x: hidden; overflow-y: auto; background: #333; position: relative; }
         #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; height: auto; min-height: 0; }
         #preview-frame.mobile { width: 390px; }
-        
-        #floating-toolbar { position: absolute; display: none; background: #111; border-radius: 4px; padding: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 2000; gap: 5px; border: 1px solid #444; align-items: center; }
-        .float-btn { background: transparent; border: none; color: white; padding: 5px 10px; cursor: pointer; border-radius: 2px; }
-        .float-btn:hover { background: var(--brand-pink); color: #000; }
     </style>
 </head>
 <body>
@@ -61,24 +56,12 @@
         <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
     </div>
     <div id="frame-wrapper">
-        <div id="floating-toolbar" onmousedown="event.preventDefault()">
-            <button class="float-btn" id="tool-bold" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
-            <button class="float-btn" id="tool-replace" onclick="triggerReplace()" style="display:none;"><i class="fa-solid fa-sync"></i> Replace</button>
-            <button class="float-btn" id="tool-underline" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>
-            <span style="color:#444">|</span>
-            <button class="float-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
-            <button class="float-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
-            <button class="float-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
-            <span style="color:#444">|</span>
-            <button class="float-btn" onclick="deleteElement()" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>
-        </div>
         <iframe id="preview-frame"></iframe>
     </div>
 </div>
 
 <script>
     const frame = document.getElementById('preview-frame');
-    const toolbar = document.getElementById('floating-toolbar');
     const wrapper = document.getElementById('frame-wrapper');
     const track = document.getElementById('drag-track');
     let selectedEl = null;
@@ -89,7 +72,25 @@
         const resp = await fetch('template.html');
         let html = await resp.text();
         html = html.replace('</head>', '<link rel="stylesheet" href="styles.css"></head>');
-        frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
+        
+        // Inject Root and Toolbar into iframe
+        const toolbarHtml = `
+            <div id="internal-toolbar" contenteditable="false">
+                <button id="tool-bold" onclick="parent.execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
+                <button id="tool-replace" onclick="parent.triggerReplace()" style="display:none;"><i class="fa-solid fa-sync"></i> Replace</button>
+                <button id="tool-underline" onclick="parent.toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>
+                <span style="color:#444">|</span>
+                <button onclick="parent.setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
+                <button onclick="parent.setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
+                <button onclick="parent.setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
+                <span style="color:#444">|</span>
+                <button onclick="parent.deleteElement()" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>
+            </div>`;
+
+        html = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, 
+            `<div class="content-container" id="editor-root">$1${toolbarHtml}</div>`);
+        
+        frame.srcdoc = html;
         
         frame.onload = () => {
             const innerDoc = frame.contentDocument;
@@ -99,41 +100,56 @@
                 if (el) { e.stopPropagation(); selectElement(el); } else { deselectAll(); }
             });
 
-            innerDoc.addEventListener('touchmove', (e) => { if(isResizing) e.preventDefault(); }, {passive: false});
-            innerDoc.addEventListener('scroll', syncTrackPositions);
-            wrapper.addEventListener('scroll', syncTrackPositions);
+            innerDoc.addEventListener('scroll', updateToolbarPos);
+            wrapper.addEventListener('scroll', updateToolbarPos);
             setTimeout(() => setDevice('mobile'), 200);
         };
     }
 
-    function triggerImageUpload() { document.getElementById('image-upload').click(); }
-    function handleImageUpload(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => insertElement('block_image', e.target.result);
-            reader.readAsDataURL(input.files[0]);
-            input.value = '';
+    function selectElement(el) {
+        if (selectedEl) {
+            selectedEl.classList.remove('selected-item');
+            const h = selectedEl.querySelector('.resize-handle');
+            if(h) h.remove();
         }
+        selectedEl = el;
+        selectedEl.classList.add('selected-item');
+
+        const innerDoc = frame.contentDocument;
+        const isImg = el.classList.contains('block_image');
+        const isBtn = el.classList.contains('block_button');
+
+        innerDoc.getElementById('tool-replace').style.display = isImg ? 'block' : 'none';
+        innerDoc.getElementById('tool-bold').style.display = (isImg || isBtn) ? 'none' : 'block';
+        innerDoc.getElementById('tool-underline').style.display = (isImg || isBtn) ? 'none' : 'block';
+
+        if (isImg) addResizeHandle(el);
+        updateToolbarPos();
     }
 
-    function triggerReplace() { document.getElementById('image-replace').click(); }
-    function handleImageReplace(input) {
-        if (input.files && input.files[0] && selectedEl) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = selectedEl.querySelector('img');
-                if (img) img.src = e.target.result;
-                updateFrameHeight();
-                updateToolbarPos();
-            };
-            reader.readAsDataURL(input.files[0]);
-            input.value = '';
-        }
+    function updateToolbarPos() {
+        const innerDoc = frame.contentDocument;
+        const toolbar = innerDoc.getElementById('internal-toolbar');
+        if (!selectedEl || !toolbar) return;
+
+        const rect = selectedEl.getBoundingClientRect();
+        toolbar.style.display = 'flex';
+        
+        // Horizontal centering
+        let left = rect.left + (rect.width / 2) - (toolbar.offsetWidth / 2);
+        // Vertical placement (above the element)
+        let top = rect.top - toolbar.offsetHeight - 15;
+
+        // Keep inside bounds
+        left = Math.max(10, Math.min(left, innerDoc.documentElement.clientWidth - toolbar.offsetWidth - 10));
+        top = Math.max(10, top);
+
+        toolbar.style.left = `${left + innerDoc.defaultView.scrollX}px`;
+        toolbar.style.top = `${top + innerDoc.defaultView.scrollY}px`;
     }
 
     function insertElement(type, data = null) {
         const root = frame.contentDocument.getElementById('editor-root');
-        
         if (selectedEl && selectedEl.classList.contains('block_image') && type.includes('block_') && type !== 'block_image') {
             createMediaGroup(selectedEl, type);
             return;
@@ -149,25 +165,19 @@
             newEl.appendChild(img);
         } else if (type === 'block_button') {
             newEl.contentEditable = "true";
-            newEl.innerText = "CLICK HERE";
+            newEl.innerText = "FIND OUT MORE";
         } else {
             newEl.contentEditable = "true";
             newEl.innerText = "New Block";
         }
 
         if (type === 'block_heading') {
-            const wrap = frame.contentDocument.createElement('div'); 
-            wrap.className = "heading-wrapper";
-            wrap.appendChild(newEl); 
-            root.appendChild(wrap);
+            const wrap = frame.contentDocument.createElement('div'); wrap.className = "heading-wrapper";
+            wrap.appendChild(newEl); root.appendChild(wrap);
         } else if (type === 'block_button') {
-            const wrap = frame.contentDocument.createElement('div');
-            wrap.className = "block_button_wrap";
-            wrap.appendChild(newEl);
-            root.appendChild(wrap);
-        } else { 
-            root.appendChild(newEl); 
-        }
+            const wrap = frame.contentDocument.createElement('div'); wrap.className = "block_button_wrap";
+            wrap.appendChild(newEl); root.appendChild(wrap);
+        } else { root.appendChild(newEl); }
 
         updateFrameHeight();
         if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
@@ -177,126 +187,92 @@
         const innerDoc = frame.contentDocument;
         const container = innerDoc.createElement('div');
         container.className = 'media-group';
-        
         const textEl = innerDoc.createElement('div');
         textEl.className = `editable ${textType}`;
         textEl.contentEditable = "true";
-        textEl.innerText = textType === 'block_button' ? "CLICK HERE" : "Side Content";
+        textEl.innerText = textType === 'block_button' ? "FIND OUT MORE" : "Side Content";
 
         existingImg.parentNode.insertBefore(container, existingImg);
         container.appendChild(existingImg);
         
-        // If it's a button, it still needs its wrapper even inside a media-group
         if (textType === 'block_button') {
             const bWrap = innerDoc.createElement('div');
             bWrap.className = 'block_button_wrap';
-            bWrap.style.width = 'auto'; // Let it float inside flex
+            bWrap.style.width = 'auto';
             bWrap.appendChild(textEl);
             container.appendChild(bWrap);
-        } else {
-            container.appendChild(textEl);
-        }
+        } else { container.appendChild(textEl); }
         
         deselectAll();
         updateFrameHeight();
     }
 
-    function selectElement(el) {
-        if (selectedEl) {
-            selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if(h) h.remove();
-        }
-        selectedEl = el;
-        selectedEl.classList.add('selected-item');
-
-        const isImg = el.classList.contains('block_image');
-        document.getElementById('tool-replace').style.display = isImg ? 'block' : 'none';
-        document.getElementById('tool-bold').style.display = (isImg || el.classList.contains('block_button')) ? 'none' : 'block';
-        document.getElementById('tool-underline').style.display = (isImg || el.classList.contains('block_button')) ? 'none' : 'block';
-
-        if (isImg) addResizeHandle(el);
-        updateToolbarPos();
-    }
-
-    function addResizeHandle(el) {
-        const handle = frame.contentDocument.createElement('div');
-        handle.className = 'resize-handle';
-        
-        const startResize = (e) => {
-            e.preventDefault(); e.stopPropagation();
-            isResizing = true;
-            toolbar.style.display = 'none';
-            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const startWidth = el.offsetWidth;
-
-            const onMove = (mE) => {
-                const currentX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
-                const newWidth = startWidth + (currentX - startX);
-                if (newWidth > 40) el.style.width = newWidth + 'px';
-            };
-            
-            const onUp = () => {
-                isResizing = false;
-                frame.contentDocument.removeEventListener('mousemove', onMove);
-                frame.contentDocument.removeEventListener('mouseup', onUp);
-                frame.contentDocument.removeEventListener('touchmove', onMove);
-                frame.contentDocument.removeEventListener('touchend', onUp);
-                updateToolbarPos();
-                updateFrameHeight();
-            };
-
-            frame.contentDocument.addEventListener('mousemove', onMove);
-            frame.contentDocument.addEventListener('mouseup', onUp);
-            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
-            frame.contentDocument.addEventListener('touchend', onUp);
-        };
-
-        handle.addEventListener('mousedown', startResize);
-        handle.addEventListener('touchstart', startResize, {passive: false});
-        el.appendChild(handle);
-    }
-
-    function updateToolbarPos() {
-        if (!selectedEl || document.getElementById('moveModeCheckbox').checked) { toolbar.style.display = 'none'; return; }
-        const rect = selectedEl.getBoundingClientRect();
-        const frameRect = frame.getBoundingClientRect();
-        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-        toolbar.style.display = 'flex';
-        const leftPos = frameRect.left + (rect.left * scale) + (rect.width * scale / 2) - (toolbar.offsetWidth / 2);
-        let topPos = frameRect.top + (rect.top * scale) - 65;
-        toolbar.style.left = `${leftPos}px`;
-        toolbar.style.top = `${topPos}px`;
-    }
-
     function setAlign(pos) {
         if (!selectedEl) return;
-        
-        // Target correctly for headers, buttons, and images
         let target = selectedEl;
         if (selectedEl.classList.contains('block_heading')) target = selectedEl.parentElement;
         if (selectedEl.classList.contains('block_button')) target = selectedEl.parentElement;
 
         target.style.textAlign = pos;
-
         if (selectedEl.classList.contains('block_image')) {
              selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
              selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
-             selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none';
              selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
         }
-        updateToolbarPos();
+        setTimeout(updateToolbarPos, 10);
     }
 
     function execCmd(cmd) {
-        if (!selectedEl || selectedEl.classList.contains('block_image')) return;
+        if (!selectedEl) return;
         frame.contentWindow.focus();
         frame.contentDocument.execCommand(cmd, false, null);
     }
 
     function toggleHeadingLine() {
         if (selectedEl && selectedEl.classList.contains('block_heading')) selectedEl.classList.toggle('no-line');
-        else if (selectedEl && !selectedEl.classList.contains('block_image')) execCmd('underline');
+        else if (selectedEl) execCmd('underline');
+    }
+
+    function addResizeHandle(el) {
+        const handle = frame.contentDocument.createElement('div');
+        handle.className = 'resize-handle';
+        const startResize = (e) => {
+            e.preventDefault(); isResizing = true;
+            const startX = e.clientX || e.touches[0].clientX;
+            const startW = el.offsetWidth;
+            const onMove = (mE) => {
+                const curX = mE.clientX || mE.touches[0].clientX;
+                el.style.width = (startW + (curX - startX)) + 'px';
+            };
+            const onUp = () => {
+                isResizing = false;
+                frame.contentDocument.removeEventListener('mousemove', onMove);
+                frame.contentDocument.removeEventListener('mouseup', onUp);
+                updateToolbarPos(); updateFrameHeight();
+            };
+            frame.contentDocument.addEventListener('mousemove', onMove);
+            frame.contentDocument.addEventListener('mouseup', onUp);
+        };
+        handle.addEventListener('mousedown', startResize);
+        el.appendChild(handle);
+    }
+
+    function triggerReplace() { document.getElementById('image-replace').click(); }
+    function handleImageReplace(input) {
+        if (input.files && input.files[0] && selectedEl) {
+            const reader = new FileReader();
+            reader.onload = (e) => { selectedEl.querySelector('img').src = e.target.result; updateFrameHeight(); };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+    function handleImageUpload(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => insertElement('block_image', e.target.result);
+            reader.readAsDataURL(input.files[0]);
+        }
     }
 
     function setDevice(type) {
@@ -306,8 +282,7 @@
             frame.classList.add('mobile');
             document.getElementById('btn-mobile').classList.add('active');
             frame.style.width = '390px'; 
-            const scale = wrapper.offsetWidth / 390;
-            frame.style.transform = `scale(${scale})`;
+            frame.style.transform = `scale(${wrapper.offsetWidth / 390})`;
         } else {
             frame.classList.remove('mobile');
             document.getElementById('btn-desktop').classList.add('active');
@@ -323,65 +298,55 @@
         deselectAll();
         if (active) {
             syncTrackPositions();
-            sortableInstance = new Sortable(track, {
-                animation: 200,
-                onEnd: (evt) => {
-                    moveIframeElement(evt.oldIndex, evt.newIndex);
-                    setTimeout(syncTrackPositions, 50);
-                }
-            });
+            sortableInstance = new Sortable(track, { animation: 200, onEnd: (e) => moveIframeElement(e.oldIndex, e.newIndex) });
         } else if (sortableInstance) { sortableInstance.destroy(); track.innerHTML = ""; }
     }
 
     function syncTrackPositions() {
         if (!document.getElementById('moveModeCheckbox').checked) return;
         track.innerHTML = "";
-        const root = frame.contentDocument.getElementById('editor-root');
-        if (!root) return;
-        const blocks = Array.from(root.children);
+        const blocks = Array.from(frame.contentDocument.getElementById('editor-root').children).filter(el => el.id !== 'internal-toolbar');
         const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
         blocks.forEach((block) => {
             const rect = block.getBoundingClientRect();
             const handle = document.createElement('div');
-            handle.className = 'drag-handle-item';
-            handle.innerHTML = '⠿';
-            handle.style.top = (rect.top * scale) + "px";
-            handle.style.height = (rect.height * scale) + "px";
+            handle.className = 'drag-handle-item'; handle.innerHTML = '⠿';
+            handle.style.top = (rect.top * scale) + "px"; handle.style.height = (rect.height * scale) + "px";
             track.appendChild(handle);
         });
     }
 
     function moveIframeElement(oldIdx, newIdx) {
         const root = frame.contentDocument.getElementById('editor-root');
-        const blocks = Array.from(root.children);
+        const blocks = Array.from(root.children).filter(el => el.id !== 'internal-toolbar');
         const target = blocks[oldIdx];
-        if (newIdx >= blocks.length - 1) root.appendChild(target);
+        if (newIdx >= blocks.length - 1) root.insertBefore(target, root.querySelector('#internal-toolbar'));
         else root.insertBefore(target, blocks[newIdx + (newIdx > oldIdx ? 1 : 0)]);
-        updateFrameHeight();
+        updateFrameHeight(); syncTrackPositions();
     }
 
     function updateFrameHeight() {
         if (frame.contentDocument) {
             frame.style.height = '0px'; 
-            const rawHeight = frame.contentDocument.documentElement.scrollHeight;
             const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-            frame.style.height = (rawHeight * scale) + 'px';
+            frame.style.height = (frame.contentDocument.documentElement.scrollHeight * scale) + 'px';
         }
     }
 
     function deselectAll() { 
         if (selectedEl) {
             selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if(h) h.remove();
+            const h = selectedEl.querySelector('.resize-handle'); if(h) h.remove();
         }
         selectedEl = null; 
-        toolbar.style.display = 'none'; 
+        if (frame.contentDocument && frame.contentDocument.getElementById('internal-toolbar')) {
+            frame.contentDocument.getElementById('internal-toolbar').style.display = 'none';
+        }
     }
     
     function deleteElement() {
         if (selectedEl) {
-            const toRemove = selectedEl.classList.contains('block_heading') || selectedEl.classList.contains('block_button') ? selectedEl.parentElement : selectedEl;
+            const toRemove = (selectedEl.classList.contains('block_heading') || selectedEl.classList.contains('block_button')) ? selectedEl.parentElement : selectedEl;
             toRemove.remove(); deselectAll(); updateFrameHeight();
             if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
         }
