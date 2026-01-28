@@ -148,7 +148,7 @@ nav#nav-sidebar a {
 nav#nav-sidebar .sub-nav a { 
     font-size: 1rem; 
     padding: 10px 30px 10px 60px; /* Top, Right, Bottom, Left (Indented) */
-    text-transform: uppercase; 
+    /*text-transform: uppercase; */
 }
 
 #navOverlay { 
