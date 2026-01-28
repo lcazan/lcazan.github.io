@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.3.8 Height Fix</title>
+    <title>Snoozing Builder | v2.3.9 Scale Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -27,7 +27,7 @@
 
 <div id="sidebar">
     <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i>Section</button>
-    <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i>Heading</button>
+    <button class="insert-btn" onclick="block_heading"><i class="fa-solid fa-font"></i>Heading</button>
     <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i>Text</button>
 </div>
 
@@ -159,7 +159,11 @@
         if (frame.contentDocument) {
             // Temporarily set height to 0 to force a recalculation of scrollHeight
             frame.style.height = '0px';
-            frame.style.height = frame.contentDocument.documentElement.scrollHeight + 'px';
+            const rawHeight = frame.contentDocument.documentElement.scrollHeight;
+            const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
+            
+            // Fix: Multiple the raw content height by the current scale factor
+            frame.style.height = (rawHeight * scale) + 'px';
         }
     }
 
