@@ -149,10 +149,3 @@ footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee
 .disclaimer { font-size: 0.75rem; color: #666; max-width: 850px; margin: 0 auto; line-height: 1.7; text-align: center; }
 
 @media (max-width: 767px) { .content-container { padding: 20px 15px; } .block_heading { font-size: 1.4rem; } header { padding: 10px; } }
-/* --- Reorder Mode Support (Builder Only) --- */
-#drag-track { width: 0; background: #222; overflow: hidden; transition: width 0.3s ease; position: relative; border-right: 1px solid #000; flex-shrink: 0; }
-#drag-track.active { width: 55px; }
-.drag-handle-item { width: 55px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 24px; cursor: grab; background: #222; position: absolute; border-bottom: 1px solid #333; box-sizing: border-box; }
-.drag-handle-item:hover { color: #ebd5c9; background: #2a2a2a; }
-.move-toggle { color: white; font-size: 10px; text-align: center; margin-top: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-.move-toggle input { width: 22px; height: 22px; cursor: pointer; }
