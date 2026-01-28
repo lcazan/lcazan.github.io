@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.4.4 Delayed Toolbar</title>
+    <title>Snoozing Builder | v2.4.5 Viewport Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -78,7 +78,6 @@
     let selectedEl = null;
     let sortableInstance = null;
     let storedMobileWidth = null;
-    let toolbarTimer = null;
 
     async function init() {
         const resp = await fetch('template.html');
@@ -161,14 +160,18 @@
         selectedEl = el;
         selectedEl.classList.add('selected-item');
         
-        // CLEAR TIMER & HIDE: Prevents flickering or multiple toolbars
-        clearTimeout(toolbarTimer);
-        toolbar.style.display = 'none';
-
-        // DELAYED SHOW: Wait 400ms for keyboard/cursor focus
-        toolbarTimer = setTimeout(() => {
+        const vv = window.visualViewport;
+        if (vv) {
+            const updateOnResize = () => {
+                updateToolbarPos();
+                vv.removeEventListener('resize', updateOnResize);
+            };
+            vv.addEventListener('resize', updateOnResize);
+            // Fallback for cases where keyboard is already up
+            setTimeout(updateToolbarPos, 350);
+        } else {
             updateToolbarPos();
-        }, 400);
+        }
     }
 
     function updateToolbarPos() {
@@ -199,7 +202,7 @@
 
     function toggleHeadingLine() {
         if (selectedEl && selectedEl.classList.contains('block_heading')) {
-            selectedEl.classList.toggle('no-line'); // Uses CSS from styles.css
+            selectedEl.classList.toggle('no-line');
         } else {
             execCmd('underline');
         }
@@ -262,13 +265,7 @@
         if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
     }
 
-    function deselectAll() { 
-        clearTimeout(toolbarTimer);
-        if (selectedEl) selectedEl.classList.remove('selected-item'); 
-        selectedEl = null; 
-        toolbar.style.display = 'none'; 
-    }
-
+    function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbar.style.display = 'none'; }
     function deleteElement() {
         if (selectedEl) {
             const toRemove = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
