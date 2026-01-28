@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.4.1 Scale Fix</title>
+    <title>Snoozing Builder | v2.4.2 Width Lock</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -13,11 +13,9 @@
         .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
 
-        /* MOVE Mode Checkbox UI */
         .move-toggle { color: white; font-size: 10px; text-align: center; margin-top: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .move-toggle input { width: 22px; height: 22px; cursor: pointer; }
 
-        /* The Drag Track - Height synced to content container */
         #drag-track { width: 0; background: #222; overflow: hidden; transition: width 0.3s ease; position: relative; border-right: 1px solid #000; flex-shrink: 0; }
         #drag-track.active { width: 55px; }
         .drag-handle-item { width: 55px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 24px; cursor: grab; background: #222; position: absolute; border-bottom: 1px solid #333; box-sizing: border-box; }
@@ -79,6 +77,7 @@
     const track = document.getElementById('drag-track');
     let selectedEl = null;
     let sortableInstance = null;
+    let storedMobileWidth = null;
 
     async function init() {
         const resp = await fetch('template.html');
@@ -180,15 +179,31 @@
     function setDevice(type) {
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         deselectAll();
+        
         if (type === 'mobile') {
             frame.classList.add('mobile');
             document.getElementById('btn-mobile').classList.add('active');
-            frame.style.width = '390px'; // Explicitly set mobile width
+            frame.style.width = '390px'; 
+            
+            // Capture and lock width
+            if (frame.contentDocument && frame.contentDocument.body) {
+                if (!storedMobileWidth) {
+                    storedMobileWidth = frame.contentDocument.body.offsetWidth + 'px';
+                }
+                frame.contentDocument.body.style.width = storedMobileWidth;
+            }
+
             const scale = wrapper.offsetWidth / 390;
             frame.style.transform = `scale(${scale})`;
         } else {
             frame.classList.remove('mobile');
             document.getElementById('btn-desktop').classList.add('active');
+            
+            // Release width lock
+            if (frame.contentDocument && frame.contentDocument.body) {
+                frame.contentDocument.body.style.width = '100%';
+            }
+            
             frame.style.width = '100%';
             frame.style.transform = 'scale(1)';
         }
@@ -200,8 +215,6 @@
             frame.style.height = '0px'; 
             const rawHeight = frame.contentDocument.documentElement.scrollHeight;
             const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-            
-            // Multiply height by scale so container knows physical space required
             frame.style.height = (rawHeight * scale) + 'px';
         }
     }
@@ -211,7 +224,7 @@
         const newEl = frame.contentDocument.createElement('div');
         newEl.className = `editable ${type}`;
         newEl.contentEditable = "true";
-        newEl.innerText = type === 'section_heading' ? "SECTION TITLE" : type === 'block_heading' ? "HEADING TITLE" : "Enter text here...";
+        newEl.innerText = "New Block";
         if (type === 'block_heading') {
             const wrap = frame.contentDocument.createElement('div'); 
             wrap.className = "heading-wrapper";
