@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.4.3 Toolbar Fix</title>
+    <title>Snoozing Builder | v2.5 Image Support</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -41,6 +41,8 @@
     <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i>Section</button>
     <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i>Heading</button>
     <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i>Text</button>
+    <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i>Image</button>
+    <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
     
     <label class="move-toggle">
         <input type="checkbox" id="moveModeCheckbox" onchange="toggleMoveMode()">
@@ -88,7 +90,7 @@
         frame.onload = () => {
             const innerDoc = frame.contentDocument;
             const style = innerDoc.createElement('style');
-            style.innerHTML = `.editable { cursor: text; outline: none !important; } .selected-item { outline: 2px solid #877267 !important; outline-offset: 4px; }`;
+            style.innerHTML = `.editable { cursor: pointer; outline: none !important; } .selected-item { outline: 2px solid #877267 !important; outline-offset: 4px; } .block_image img { max-width: 100%; display: block; pointer-events: none; }`;
             innerDoc.head.appendChild(style);
             
             innerDoc.addEventListener('mousedown', (e) => {
@@ -103,56 +105,42 @@
         };
     }
 
-    function toggleMoveMode() {
-        const active = document.getElementById('moveModeCheckbox').checked;
-        track.classList.toggle('active', active);
-        deselectAll();
-        
-        if (active) {
-            syncTrackPositions();
-            sortableInstance = new Sortable(track, {
-                animation: 200,
-                onEnd: (evt) => {
-                    moveIframeElement(evt.oldIndex, evt.newIndex);
-                    setTimeout(syncTrackPositions, 50);
-                }
-            });
-        } else {
-            if (sortableInstance) sortableInstance.destroy();
-            track.innerHTML = "";
+    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+
+    function handleImageUpload(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => insertElement('block_image', e.target.result);
+            reader.readAsDataURL(input.files[0]);
+            input.value = '';
         }
     }
 
-    function syncTrackPositions() {
-        if (!document.getElementById('moveModeCheckbox').checked) return;
-        track.innerHTML = "";
+    function insertElement(type, data = null) {
         const root = frame.contentDocument.getElementById('editor-root');
-        if (!root) return;
-
-        const blocks = Array.from(root.children);
-        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-
-        blocks.forEach((block) => {
-            const rect = block.getBoundingClientRect();
-            const handle = document.createElement('div');
-            handle.className = 'drag-handle-item';
-            handle.innerHTML = '⠿';
-            handle.style.top = (rect.top * scale) + "px";
-            handle.style.height = (rect.height * scale) + "px";
-            track.appendChild(handle);
-        });
-    }
-
-    function moveIframeElement(oldIdx, newIdx) {
-        const root = frame.contentDocument.getElementById('editor-root');
-        const blocks = Array.from(root.children);
-        const target = blocks[oldIdx];
-        if (newIdx >= blocks.length - 1) {
-            root.appendChild(target);
+        const newEl = frame.contentDocument.createElement('div');
+        newEl.className = `editable ${type}`;
+        
+        if (type === 'block_image') {
+            newEl.contentEditable = "false";
+            const img = frame.contentDocument.createElement('img');
+            img.src = data;
+            newEl.appendChild(img);
         } else {
-            root.insertBefore(target, blocks[newIdx + (newIdx > oldIdx ? 1 : 0)]);
+            newEl.contentEditable = "true";
+            newEl.innerText = "New Block";
+        }
+
+        if (type === 'block_heading') {
+            const wrap = frame.contentDocument.createElement('div'); 
+            wrap.className = "heading-wrapper";
+            wrap.appendChild(newEl); 
+            root.appendChild(wrap);
+        } else { 
+            root.appendChild(newEl); 
         }
         updateFrameHeight();
+        if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
     }
 
     function selectElement(el) {
@@ -174,57 +162,94 @@
         toolbar.style.top = `${topPos}px`;
     }
 
-    // Fixed Toolbar Functions
     function execCmd(cmd) {
-        if (!selectedEl) return;
+        if (!selectedEl || selectedEl.classList.contains('block_image')) return;
         frame.contentWindow.focus();
         frame.contentDocument.execCommand(cmd, false, null);
     }
 
     function setAlign(pos) {
         if (!selectedEl) return;
-        // Apply alignment to wrapper if it's a heading, otherwise the element itself
         const target = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
         target.style.textAlign = pos;
-        target.style.display = 'block';
+        target.style.display = (selectedEl.classList.contains('block_image')) ? 'flex' : 'block';
+        if (selectedEl.classList.contains('block_image')) {
+            target.style.justifyContent = pos === 'left' ? 'flex-start' : (pos === 'right' ? 'flex-end' : 'center');
+        }
         updateToolbarPos();
     }
 
     function toggleHeadingLine() {
         if (selectedEl && selectedEl.classList.contains('block_heading')) {
-            // Toggles the border-bottom defined in styles.css
             selectedEl.classList.toggle('no-line');
-        } else {
+        } else if (selectedEl && !selectedEl.classList.contains('block_image')) {
             execCmd('underline');
         }
+    }
+
+    function toggleMoveMode() {
+        const active = document.getElementById('moveModeCheckbox').checked;
+        track.classList.toggle('active', active);
+        deselectAll();
+        if (active) {
+            syncTrackPositions();
+            sortableInstance = new Sortable(track, {
+                animation: 200,
+                onEnd: (evt) => {
+                    moveIframeElement(evt.oldIndex, evt.newIndex);
+                    setTimeout(syncTrackPositions, 50);
+                }
+            });
+        } else if (sortableInstance) {
+            sortableInstance.destroy();
+            track.innerHTML = "";
+        }
+    }
+
+    function syncTrackPositions() {
+        if (!document.getElementById('moveModeCheckbox').checked) return;
+        track.innerHTML = "";
+        const root = frame.contentDocument.getElementById('editor-root');
+        if (!root) return;
+        const blocks = Array.from(root.children);
+        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
+        blocks.forEach((block) => {
+            const rect = block.getBoundingClientRect();
+            const handle = document.createElement('div');
+            handle.className = 'drag-handle-item';
+            handle.innerHTML = '⠿';
+            handle.style.top = (rect.top * scale) + "px";
+            handle.style.height = (rect.height * scale) + "px";
+            track.appendChild(handle);
+        });
+    }
+
+    function moveIframeElement(oldIdx, newIdx) {
+        const root = frame.contentDocument.getElementById('editor-root');
+        const blocks = Array.from(root.children);
+        const target = blocks[oldIdx];
+        if (newIdx >= blocks.length - 1) root.appendChild(target);
+        else root.insertBefore(target, blocks[newIdx + (newIdx > oldIdx ? 1 : 0)]);
+        updateFrameHeight();
     }
 
     function setDevice(type) {
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         deselectAll();
-        
         if (type === 'mobile') {
             frame.classList.add('mobile');
             document.getElementById('btn-mobile').classList.add('active');
             frame.style.width = '390px'; 
-            
             if (frame.contentDocument && frame.contentDocument.body) {
-                if (!storedMobileWidth) {
-                    storedMobileWidth = frame.contentDocument.body.offsetWidth + 'px';
-                }
+                if (!storedMobileWidth) storedMobileWidth = frame.contentDocument.body.offsetWidth + 'px';
                 frame.contentDocument.body.style.width = storedMobileWidth;
             }
-
             const scale = wrapper.offsetWidth / 390;
             frame.style.transform = `scale(${scale})`;
         } else {
             frame.classList.remove('mobile');
             document.getElementById('btn-desktop').classList.add('active');
-            
-            if (frame.contentDocument && frame.contentDocument.body) {
-                frame.contentDocument.body.style.width = '100%';
-            }
-            
+            if (frame.contentDocument && frame.contentDocument.body) frame.contentDocument.body.style.width = '100%';
             frame.style.width = '100%';
             frame.style.transform = 'scale(1)';
         }
@@ -238,22 +263,6 @@
             const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
             frame.style.height = (rawHeight * scale) + 'px';
         }
-    }
-
-    function insertElement(type) {
-        const root = frame.contentDocument.getElementById('editor-root');
-        const newEl = frame.contentDocument.createElement('div');
-        newEl.className = `editable ${type}`;
-        newEl.contentEditable = "true";
-        newEl.innerText = "New Block";
-        if (type === 'block_heading') {
-            const wrap = frame.contentDocument.createElement('div'); 
-            wrap.className = "heading-wrapper";
-            wrap.appendChild(newEl); 
-            root.appendChild(wrap);
-        } else { root.appendChild(newEl); }
-        updateFrameHeight();
-        if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
     }
 
     function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbar.style.display = 'none'; }
