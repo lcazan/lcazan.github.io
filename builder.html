@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.4.0 Drag & Drop</title>
+    <title>Snoozing Builder | v2.5.0 Move Mode</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -11,6 +11,11 @@
         #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 100; }
         .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
+        
+        /* Move Checkbox Styling */
+        .move-toggle { color: white; font-size: 10px; text-align: center; margin-top: 10px; cursor: pointer; }
+        .move-toggle input { cursor: pointer; }
+
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; }
         #device-bar { height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #000; flex-shrink: 0; }
         .device-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; transition: 0.2s; }
@@ -30,6 +35,11 @@
     <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i>Section</button>
     <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i>Heading</button>
     <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i>Text</button>
+    
+    <label class="move-toggle">
+        <input type="checkbox" id="moveModeCheckbox" onchange="toggleMoveMode()">
+        <div>MOVE</div>
+    </label>
 </div>
 
 <div id="preview-container">
@@ -39,8 +49,6 @@
     </div>
     <div id="frame-wrapper">
         <div id="floating-toolbar" onmousedown="event.preventDefault()">
-            <div class="float-btn drag-handle" style="cursor: grab; color: #888;"><i class="fa-solid fa-grip-vertical"></i></div>
-            <span class="sep">|</span>
             <button class="float-btn" title="Bold" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
             <button class="float-btn" id="float-underline" title="Toggle Line" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>
             <span class="sep">|</span>
@@ -74,64 +82,71 @@
             style.innerHTML = `
                 .editable { cursor: text; outline: none !important; position: relative; }
                 .selected-item { outline: 2px solid #877267 !important; outline-offset: 4px; }
-                .sortable-ghost { opacity: 0.3; background: #ebd5c9; }
+                .sortable-ghost { opacity: 0; }
+                .sortable-drag { background: #FAF6F3 !important; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
             `;
             innerDoc.head.appendChild(style);
             
             innerDoc.addEventListener('mousedown', (e) => {
+                if (document.getElementById('moveModeCheckbox').checked) return;
                 const el = e.target.closest('.editable');
                 if (el) { e.stopPropagation(); selectElement(el); } 
                 else { deselectAll(); }
             });
 
             innerDoc.addEventListener('focusin', (e) => {
+                if (document.getElementById('moveModeCheckbox').checked) return;
                 const el = e.target.closest('.editable');
                 if (el) setTimeout(() => selectElement(el), 200);
             });
             
-            // Initialize Sortable on the content container
-            const editorRoot = innerDoc.getElementById('editor-root');
-            sortableInstance = new Sortable(editorRoot, {
-                animation: 150,
-                ghostClass: 'sortable-ghost',
-                handle: '.drag-handle', // This won't work directly inside iframe from parent, so we simulate below
-                onEnd: () => { updateToolbarPos(); updateFrameHeight(); }
-            });
-
             innerDoc.addEventListener('scroll', updateToolbarPos);
             wrapper.addEventListener('scroll', updateToolbarPos);
             setTimeout(() => setDevice('mobile'), 200);
         };
     }
 
-    // Logic to bridge the Drag Handle in the parent toolbar to the element in the iframe
-    const handle = document.querySelector('.drag-handle');
-    handle.addEventListener('mousedown', (e) => {
-        if (!selectedEl) return;
-        const targetToMove = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
-        
-        // Manual trigger for SortableJS inside the iframe
-        const evt = new MouseEvent('mousedown', {
-            bubbles: true,
-            cancelable: true,
-            view: frame.contentWindow,
-            clientX: e.clientX,
-            clientY: e.clientY
-        });
-        targetToMove.dispatchEvent(evt);
-    });
+    function toggleMoveMode() {
+        const isMoveMode = document.getElementById('moveModeCheckbox').checked;
+        const innerDoc = frame.contentDocument;
+        const root = innerDoc.getElementById('editor-root');
+        const editables = innerDoc.querySelectorAll('.editable');
+
+        if (isMoveMode) {
+            deselectAll();
+            root.classList.add('move-mode-active');
+            editables.forEach(el => el.contentEditable = "false");
+            
+            // Init Sortable
+            sortableInstance = new Sortable(root, {
+                animation: 200,
+                ghostClass: 'sortable-ghost',
+                dragClass: 'sortable-drag',
+                forceFallback: true,
+                onEnd: () => { updateFrameHeight(); }
+            });
+        } else {
+            root.classList.remove('move-mode-active');
+            editables.forEach(el => el.contentEditable = "true");
+            if (sortableInstance) {
+                sortableInstance.destroy();
+                sortableInstance = null;
+            }
+        }
+    }
 
     function selectElement(el) {
         if (selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
         selectedEl.classList.add('selected-item');
         updateToolbarPos();
-        const uBtn = document.getElementById('float-underline');
-        if (uBtn) uBtn.style.display = el.classList.contains('block_heading') ? 'inline-block' : 'none';
     }
 
     function updateToolbarPos() {
-        if (!selectedEl) return;
+        if (!selectedEl || document.getElementById('moveModeCheckbox').checked) {
+            toolbar.style.display = 'none';
+            return;
+        }
         const rect = selectedEl.getBoundingClientRect();
         const frameRect = frame.getBoundingClientRect();
         const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
@@ -185,6 +200,7 @@
     }
 
     function insertElement(type) {
+        if (document.getElementById('moveModeCheckbox').checked) return;
         const root = frame.contentDocument.getElementById('editor-root');
         const newEl = frame.contentDocument.createElement('div');
         newEl.className = `editable ${type}`;
@@ -193,7 +209,6 @@
         if (type === 'block_heading') {
             const wrap = frame.contentDocument.createElement('div'); 
             wrap.className = "heading-wrapper";
-            wrap.style.textAlign = "center"; 
             wrap.appendChild(newEl); 
             root.appendChild(wrap);
         } else { root.appendChild(newEl); }
