@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | Mobile Default</title>
+    <title>Snoozing Builder | v2.3.1 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
@@ -16,7 +16,6 @@
             font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; 
         }
 
-        /* SIDEBAR - Fixed */
         #sidebar { 
             width: 90px; height: 100vh; background: var(--panel-bg); 
             display: flex; flex-direction: column; align-items: center;
@@ -31,7 +30,6 @@
         }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
 
-        /* PREVIEW CONTAINER */
         #preview-container { 
             flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh;
         }
@@ -43,7 +41,6 @@
         .device-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; transition: 0.2s; }
         .device-btn.active { color: var(--brand-pink); }
         
-        /* SCROLLABLE WRAPPER */
         #frame-wrapper {
             flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
             overflow-x: hidden; overflow-y: auto; background: #333; position: relative;
@@ -52,13 +49,11 @@
         #preview-frame { 
             width: 100%; border: none; background: white; 
             transition: transform 0.2s ease-out; transform-origin: top center;
-            /* Start with standard height, mobile logic will override */
             height: 100%;
         }
 
         #preview-frame.mobile { width: 390px; height: auto; min-height: 0; }
 
-        /* TOOLBAR */
         #floating-toolbar {
             position: absolute; display: none; background: #111; border-radius: 4px;
             padding: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 2000; gap: 5px; align-items: center;
@@ -114,25 +109,31 @@
         frame.onload = () => {
             const innerDoc = frame.contentDocument;
             const style = innerDoc.createElement('style');
+            // This internal style handles editor behavior while respecting your external style.css
             style.innerHTML = `
-                .editable { cursor: text; outline: none; position: relative; }
+                .editable { cursor: text; outline: none; position: relative; display: block; width: 100%; }
+                .block_heading.editable { display: inline-block; width: auto; }
                 .heading-wrapper { width: 100%; display: block; clear: both; margin-bottom: 10px; }
                 .selected-item { outline: 2px solid #877267 !important; outline-offset: 4px; }
-                .no-line { border-bottom: 1px solid transparent !important; }
-                body { overflow-x: hidden; } /* Prevent horizontal scroll inside iframe */
+                body { overflow-x: hidden; margin: 0; padding: 0; }
             `;
             innerDoc.head.appendChild(style);
             
-            innerDoc.addEventListener('click', (e) => {
+            // Use mousedown to capture selection before blur events
+            innerDoc.addEventListener('mousedown', (e) => {
                 const el = e.target.closest('.editable');
-                if (el) selectElement(el); else deselectAll();
+                if (el) {
+                    e.stopPropagation();
+                    selectElement(el);
+                } else {
+                    deselectAll();
+                }
             });
             
             innerDoc.addEventListener('scroll', updateToolbarPos);
             wrapper.addEventListener('scroll', updateToolbarPos);
 
-            // Set Mobile as default on load
-            setTimeout(() => setDevice('mobile'), 150);
+            setTimeout(() => setDevice('mobile'), 200);
         };
     }
 
@@ -145,7 +146,6 @@
             document.getElementById('btn-mobile').classList.add('active');
             const scale = wrapper.offsetWidth / 390;
             frame.style.transform = `scale(${scale})`;
-            // Sync height to internal content
             updateFrameHeight();
         } else {
             frame.classList.remove('mobile');
@@ -158,8 +158,7 @@
 
     function updateFrameHeight() {
         if (frame.classList.contains('mobile') && frame.contentDocument) {
-            // Force the frame height to match the internal body scroll height
-            frame.style.height = frame.contentDocument.body.scrollHeight + 'px';
+            frame.style.height = frame.contentDocument.documentElement.scrollHeight + 'px';
         }
     }
 
@@ -180,17 +179,21 @@
             root.appendChild(newEl);
         }
         
-        // Passive Add: Only update height, do not auto-focus or show toolbar
         updateFrameHeight();
     }
 
     function selectElement(el) {
+        if (selectedEl === el) return;
         if (selectedEl) selectedEl.classList.remove('selected-item');
+        
         selectedEl = el;
         selectedEl.classList.add('selected-item');
-        selectedEl.focus();
-        updateToolbarPos();
-        document.getElementById('float-underline').style.display = el.classList.contains('block_heading') ? 'inline-block' : 'none';
+        
+        // Timeout ensures the element is rendered/focused before calculating position
+        setTimeout(updateToolbarPos, 20);
+        
+        document.getElementById('float-underline').style.display = 
+            el.classList.contains('block_heading') ? 'inline-block' : 'none';
     }
 
     function updateToolbarPos() {
@@ -201,7 +204,7 @@
         
         toolbar.style.display = 'flex';
         const leftPos = frameRect.left + (rect.left * scale) + (rect.width * scale / 2) - (toolbar.offsetWidth / 2);
-        const topPos = frameRect.top + (rect.top * scale) - 60;
+        const topPos = frameRect.top + (rect.top * scale) - 65;
 
         toolbar.style.left = `${leftPos}px`;
         toolbar.style.top = `${topPos}px`;
@@ -213,7 +216,6 @@
             selectedEl.parentElement.style.textAlign = pos;
         } else {
             selectedEl.style.textAlign = pos;
-            selectedEl.style.display = 'block';
         }
         updateToolbarPos();
     }
