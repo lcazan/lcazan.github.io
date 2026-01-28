@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v3.0 JSON Save & Open</title>
+    <title>Snoozing Builder | v3.1 Fixed Actions & Mobile Start</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -13,7 +13,7 @@
         .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 12px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
         
-        /* Specific style for Save/Open actions */
+        /* Style for Save/Open buttons */
         .insert-btn.action { background: #555; border-color: #888; height: 50px; margin-bottom: 8px; }
         .insert-btn.action:hover { background: #00ca72; color: white; }
 
@@ -99,10 +99,7 @@
         let html = await resp.text();
         html = html.replace('</head>', '<link rel="stylesheet" href="styles.css"></head>');
         frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
-        setupFrameLoad();
-    }
-
-    function setupFrameLoad() {
+        
         frame.onload = () => {
             const innerDoc = frame.contentDocument;
             innerDoc.addEventListener('mousedown', (e) => {
@@ -112,20 +109,22 @@
             });
             innerDoc.addEventListener('scroll', syncTrackPositions);
             wrapper.addEventListener('scroll', syncTrackPositions);
-            setTimeout(() => { setDevice('mobile'); updateFrameHeight(); }, 200);
+            
+            // AUTOMATIC MOBILE SELECTION
+            setTimeout(() => { 
+                setDevice('mobile'); 
+                updateFrameHeight(); 
+            }, 300);
         };
     }
 
-    // --- JSON Logic ---
+    // --- JSON Actions ---
     function saveJSON() {
         deselectAll();
         const root = frame.contentDocument.getElementById('editor-root');
-        if (!root) return;
-
         const elements = Array.from(root.children).map(child => {
             const isHeadingWrap = child.classList.contains('heading-wrapper');
             const target = isHeadingWrap ? child.firstChild : child;
-            
             return {
                 type: target.className.replace('editable ', '').replace('selected-item', '').trim(),
                 content: target.innerHTML,
@@ -133,23 +132,21 @@
                 innerStyle: target.getAttribute('style') || ""
             };
         });
-
         const blob = new Blob([JSON.stringify(elements, null, 2)], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'snoozing-page-save.json';
+        a.download = 'builder-layout.json';
         a.click();
     }
 
     function openJSON() { document.getElementById('json-opener').click(); }
-
     function handleJSONOpen(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const data = JSON.parse(e.target.result);
                 const root = frame.contentDocument.getElementById('editor-root');
-                root.innerHTML = ""; // Clear editor before loading
+                root.innerHTML = "";
                 data.forEach(item => rebuildElement(item, root));
                 updateFrameHeight();
             };
@@ -177,7 +174,7 @@
         }
     }
 
-    // --- standard tools ---
+    // --- Core Logic ---
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
     function handleImageUpload(input) {
         if (input.files && input.files[0]) {
@@ -194,10 +191,8 @@
             createMediaGroup(selectedEl, type);
             return;
         }
-
         const newEl = frame.contentDocument.createElement('div');
         newEl.className = `editable ${type}`;
-        
         if (type === 'block_image') {
             newEl.contentEditable = "false";
             const img = frame.contentDocument.createElement('img');
@@ -210,18 +205,15 @@
             newEl.contentEditable = "true";
             newEl.innerText = "New Block";
         }
-
         if (type === 'block_heading') {
             const wrap = frame.contentDocument.createElement('div'); 
             wrap.className = "heading-wrapper";
             wrap.appendChild(newEl); 
             root.appendChild(wrap);
         } else { root.appendChild(newEl); }
-
         updateFrameHeight();
     }
 
-    // (All other helper functions like setDevice, deleteElement, etc. remain here...)
     function setDevice(type) {
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         deselectAll();
@@ -248,14 +240,14 @@
     }
 
     function selectElement(el) {
-        if (selectedEl) { selectedEl.classList.remove('selected-item'); }
+        if (selectedEl) selectedEl.classList.remove('selected-item');
         selectedEl = el;
         selectedEl.classList.add('selected-item');
         updateToolbarPos();
     }
 
     function deselectAll() { 
-        if (selectedEl) { selectedEl.classList.remove('selected-item'); }
+        if (selectedEl) selectedEl.classList.remove('selected-item');
         selectedEl = null; toolbar.style.display = 'none'; 
     }
 
