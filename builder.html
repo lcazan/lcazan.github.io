@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.7 Responsive Pairing</title>
+    <title>Snoozing Builder | v2.9 JSON State</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -10,10 +10,11 @@
         body { margin: 0; display: flex; height: 100vh; width: 100vw; font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; }
         
         #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 100; }
-        .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
+        .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 12px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
+        .insert-btn.action { background: #555; border-color: #888; height: 50px; }
 
-        .move-toggle { color: white; font-size: 10px; text-align: center; margin-top: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .move-toggle { color: white; font-size: 10px; text-align: center; margin-top: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; border-top: 1px solid #444; padding-top: 15px; width: 100%; }
         .move-toggle input { width: 22px; height: 22px; cursor: pointer; }
 
         #drag-track { width: 0; background: #222; overflow: hidden; transition: width 0.3s ease; position: relative; border-right: 1px solid #000; flex-shrink: 0; }
@@ -41,16 +42,23 @@
     <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i>Section</button>
     <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i>Heading</button>
     <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i>Text</button>
+    <button class="insert-btn" onclick="insertElement('block_button')"><i class="fa-solid fa-square"></i>Button</button>
     <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i>Image</button>
     
     <label class="move-toggle">
         <input type="checkbox" id="moveModeCheckbox" onchange="toggleMoveMode()">
         <div>MOVE</div>
     </label>
+
+    <div style="margin-top: auto; padding-bottom: 20px; display: flex; flex-direction: column; gap: 10px;">
+        <button class="insert-btn action" onclick="openJSON()"><i class="fa-solid fa-folder-open"></i>Open</button>
+        <button class="insert-btn action" onclick="saveJSON()"><i class="fa-solid fa-floppy-disk"></i>Save</button>
+    </div>
 </div>
 
 <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
 <input type="file" id="image-replace" style="display:none" accept="image/*" onchange="handleImageReplace(this)">
+<input type="file" id="json-opener" style="display:none" accept=".json" onchange="handleJSONOpen(this)">
 
 <div id="drag-track"></div>
 
@@ -83,7 +91,6 @@
     let selectedEl = null;
     let isResizing = false;
     let sortableInstance = null;
-    let storedMobileWidth = null;
 
     async function init() {
         const resp = await fetch('template.html');
@@ -93,22 +100,77 @@
         
         frame.onload = () => {
             const innerDoc = frame.contentDocument;
-            
-            // Re-apply Iframe Event Listeners
             innerDoc.addEventListener('mousedown', (e) => {
                 if (document.getElementById('moveModeCheckbox').checked || isResizing) return;
                 const el = e.target.closest('.editable');
                 if (el) { e.stopPropagation(); selectElement(el); } else { deselectAll(); }
             });
-
-            innerDoc.addEventListener('touchmove', (e) => { if(isResizing) e.preventDefault(); }, {passive: false});
             innerDoc.addEventListener('scroll', syncTrackPositions);
             wrapper.addEventListener('scroll', syncTrackPositions);
-            setTimeout(() => setDevice('mobile'), 200);
+            setTimeout(() => { setDevice('mobile'); updateFrameHeight(); }, 200);
         };
     }
 
-    // --- Image Handling ---
+    // --- JSON Save & Open ---
+    function saveJSON() {
+        deselectAll();
+        const root = frame.contentDocument.getElementById('editor-root');
+        const elements = Array.from(root.children).map(child => {
+            // Check if it's a wrapper (heading or button)
+            const isHeadingWrap = child.classList.contains('heading-wrapper');
+            const target = isHeadingWrap ? child.firstChild : child;
+            
+            return {
+                type: target.className.replace('editable ', '').replace('selected-item', '').trim(),
+                content: target.innerHTML,
+                style: child.getAttribute('style') || "",
+                innerStyle: target.getAttribute('style') || ""
+            };
+        });
+
+        const blob = new Blob([JSON.stringify(elements, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'builder-state.json';
+        a.click();
+    }
+
+    function openJSON() { document.getElementById('json-opener').click(); }
+    function handleJSONOpen(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = JSON.parse(e.target.result);
+                const root = frame.contentDocument.getElementById('editor-root');
+                root.innerHTML = "";
+                data.forEach(item => rebuildElement(item, root));
+                updateFrameHeight();
+            };
+            reader.readAsText(input.files[0]);
+            input.value = '';
+        }
+    }
+
+    function rebuildElement(item, root) {
+        const newEl = frame.contentDocument.createElement('div');
+        newEl.className = `editable ${item.type}`;
+        newEl.innerHTML = item.content;
+        if (item.innerStyle) newEl.setAttribute('style', item.innerStyle);
+        if (item.type !== 'block_image') newEl.contentEditable = "true";
+
+        if (item.type === 'block_heading') {
+            const wrap = frame.contentDocument.createElement('div');
+            wrap.className = "heading-wrapper";
+            if (item.style) wrap.setAttribute('style', item.style);
+            wrap.appendChild(newEl);
+            root.appendChild(wrap);
+        } else {
+            if (item.style) newEl.setAttribute('style', item.style);
+            root.appendChild(newEl);
+        }
+    }
+
+    // --- Actions ---
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
     function handleImageUpload(input) {
         if (input.files && input.files[0]) {
@@ -118,26 +180,10 @@
             input.value = '';
         }
     }
-    function triggerReplace() { document.getElementById('image-replace').click(); }
-    function handleImageReplace(input) {
-        if (input.files && input.files[0] && selectedEl) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = selectedEl.querySelector('img');
-                if (img) img.src = e.target.result;
-                updateFrameHeight();
-                updateToolbarPos();
-            };
-            reader.readAsDataURL(input.files[0]);
-            input.value = '';
-        }
-    }
 
-    // --- Content Insertion & Pairing ---
     function insertElement(type, data = null) {
         const root = frame.contentDocument.getElementById('editor-root');
         
-        // If image is selected and we add text, wrap them in a media-group
         if (selectedEl && selectedEl.classList.contains('block_image') && type.includes('block_') && type !== 'block_image') {
             createMediaGroup(selectedEl, type);
             return;
@@ -151,6 +197,9 @@
             const img = frame.contentDocument.createElement('img');
             img.src = data;
             newEl.appendChild(img);
+        } else if (type === 'block_button') {
+            newEl.contentEditable = "true";
+            newEl.innerText = "FIND OUT MORE";
         } else {
             newEl.contentEditable = "true";
             newEl.innerText = "New Block";
@@ -170,12 +219,12 @@
     function createMediaGroup(existingImg, textType) {
         const innerDoc = frame.contentDocument;
         const container = innerDoc.createElement('div');
-        container.className = 'media-group';
+        container.className = 'media-group editable';
         
         const textEl = innerDoc.createElement('div');
         textEl.className = `editable ${textType}`;
         textEl.contentEditable = "true";
-        textEl.innerText = "New paired text...";
+        textEl.innerText = textType === 'block_button' ? "FIND OUT MORE" : "New paired text...";
 
         existingImg.parentNode.insertBefore(container, existingImg);
         container.appendChild(existingImg);
@@ -185,7 +234,7 @@
         updateFrameHeight();
     }
 
-    // --- Selection & Toolbar ---
+    // --- Standard UI Functions ---
     function selectElement(el) {
         if (selectedEl) {
             selectedEl.classList.remove('selected-item');
@@ -194,12 +243,10 @@
         }
         selectedEl = el;
         selectedEl.classList.add('selected-item');
-
         const isImg = el.classList.contains('block_image');
         document.getElementById('tool-replace').style.display = isImg ? 'block' : 'none';
         document.getElementById('tool-bold').style.display = isImg ? 'none' : 'block';
         document.getElementById('tool-underline').style.display = isImg ? 'none' : 'block';
-
         if (isImg) addResizeHandle(el);
         updateToolbarPos();
     }
@@ -207,38 +254,22 @@
     function addResizeHandle(el) {
         const handle = frame.contentDocument.createElement('div');
         handle.className = 'resize-handle';
-        
         const startResize = (e) => {
             e.preventDefault(); e.stopPropagation();
             isResizing = true;
-            toolbar.style.display = 'none';
-            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const startX = e.clientX;
             const startWidth = el.offsetWidth;
-
-            const onMove = (mE) => {
-                const currentX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
-                const newWidth = startWidth + (currentX - startX);
-                if (newWidth > 40) el.style.width = newWidth + 'px';
-            };
-            
+            const onMove = (mE) => { el.style.width = (startWidth + (mE.clientX - startX)) + 'px'; };
             const onUp = () => {
                 isResizing = false;
                 frame.contentDocument.removeEventListener('mousemove', onMove);
                 frame.contentDocument.removeEventListener('mouseup', onUp);
-                frame.contentDocument.removeEventListener('touchmove', onMove);
-                frame.contentDocument.removeEventListener('touchend', onUp);
-                updateToolbarPos();
-                updateFrameHeight();
+                updateToolbarPos(); updateFrameHeight();
             };
-
             frame.contentDocument.addEventListener('mousemove', onMove);
             frame.contentDocument.addEventListener('mouseup', onUp);
-            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
-            frame.contentDocument.addEventListener('touchend', onUp);
         };
-
         handle.addEventListener('mousedown', startResize);
-        handle.addEventListener('touchstart', startResize, {passive: false});
         el.appendChild(handle);
     }
 
@@ -261,7 +292,6 @@
         if (selectedEl.classList.contains('block_image')) {
              selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
              selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
-             selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none';
              selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
         }
         updateToolbarPos();
@@ -278,7 +308,6 @@
         else if (selectedEl && !selectedEl.classList.contains('block_image')) execCmd('underline');
     }
 
-    // --- Device Preview ---
     function setDevice(type) {
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         deselectAll();
@@ -286,8 +315,7 @@
             frame.classList.add('mobile');
             document.getElementById('btn-mobile').classList.add('active');
             frame.style.width = '390px'; 
-            const scale = wrapper.offsetWidth / 390;
-            frame.style.transform = `scale(${scale})`;
+            frame.style.transform = `scale(${wrapper.offsetWidth / 390})`;
         } else {
             frame.classList.remove('mobile');
             document.getElementById('btn-desktop').classList.add('active');
@@ -297,20 +325,13 @@
         setTimeout(updateFrameHeight, 50);
     }
 
-    // --- Move Mode (Sortable) ---
     function toggleMoveMode() {
         const active = document.getElementById('moveModeCheckbox').checked;
         track.classList.toggle('active', active);
         deselectAll();
         if (active) {
             syncTrackPositions();
-            sortableInstance = new Sortable(track, {
-                animation: 200,
-                onEnd: (evt) => {
-                    moveIframeElement(evt.oldIndex, evt.newIndex);
-                    setTimeout(syncTrackPositions, 50);
-                }
-            });
+            sortableInstance = new Sortable(track, { animation: 200, onEnd: (evt) => moveIframeElement(evt.oldIndex, evt.newIndex) });
         } else if (sortableInstance) { sortableInstance.destroy(); track.innerHTML = ""; }
     }
 
@@ -318,16 +339,13 @@
         if (!document.getElementById('moveModeCheckbox').checked) return;
         track.innerHTML = "";
         const root = frame.contentDocument.getElementById('editor-root');
-        if (!root) return;
         const blocks = Array.from(root.children);
         const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
         blocks.forEach((block) => {
             const rect = block.getBoundingClientRect();
             const handle = document.createElement('div');
-            handle.className = 'drag-handle-item';
-            handle.innerHTML = '⠿';
-            handle.style.top = (rect.top * scale) + "px";
-            handle.style.height = (rect.height * scale) + "px";
+            handle.className = 'drag-handle-item'; handle.innerHTML = '⠿';
+            handle.style.top = (rect.top * scale) + "px"; handle.style.height = (rect.height * scale) + "px";
             track.appendChild(handle);
         });
     }
@@ -344,20 +362,17 @@
     function updateFrameHeight() {
         if (frame.contentDocument) {
             frame.style.height = '0px'; 
-            const rawHeight = frame.contentDocument.documentElement.scrollHeight;
             const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-            frame.style.height = (rawHeight * scale) + 'px';
+            frame.style.height = (frame.contentDocument.documentElement.scrollHeight * scale) + 'px';
         }
     }
 
     function deselectAll() { 
         if (selectedEl) {
             selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if(h) h.remove();
+            const h = selectedEl.querySelector('.resize-handle'); if(h) h.remove();
         }
-        selectedEl = null; 
-        toolbar.style.display = 'none'; 
+        selectedEl = null; toolbar.style.display = 'none'; 
     }
     
     function deleteElement() {
