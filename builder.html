@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.7 Responsive Pairing</title>
+    <title>Snoozing Builder | v2.8 Vertical Centering</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -83,7 +83,6 @@
     let selectedEl = null;
     let isResizing = false;
     let sortableInstance = null;
-    let storedMobileWidth = null;
 
     async function init() {
         const resp = await fetch('template.html');
@@ -93,8 +92,6 @@
         
         frame.onload = () => {
             const innerDoc = frame.contentDocument;
-            
-            // Re-apply Iframe Event Listeners
             innerDoc.addEventListener('mousedown', (e) => {
                 if (document.getElementById('moveModeCheckbox').checked || isResizing) return;
                 const el = e.target.closest('.editable');
@@ -108,7 +105,6 @@
         };
     }
 
-    // --- Image Handling ---
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
     function handleImageUpload(input) {
         if (input.files && input.files[0]) {
@@ -118,6 +114,7 @@
             input.value = '';
         }
     }
+
     function triggerReplace() { document.getElementById('image-replace').click(); }
     function handleImageReplace(input) {
         if (input.files && input.files[0] && selectedEl) {
@@ -133,11 +130,9 @@
         }
     }
 
-    // --- Content Insertion & Pairing ---
     function insertElement(type, data = null) {
         const root = frame.contentDocument.getElementById('editor-root');
         
-        // If image is selected and we add text, wrap them in a media-group
         if (selectedEl && selectedEl.classList.contains('block_image') && type.includes('block_') && type !== 'block_image') {
             createMediaGroup(selectedEl, type);
             return;
@@ -175,7 +170,7 @@
         const textEl = innerDoc.createElement('div');
         textEl.className = `editable ${textType}`;
         textEl.contentEditable = "true";
-        textEl.innerText = "New paired text...";
+        textEl.innerText = "Centered Side Text Content";
 
         existingImg.parentNode.insertBefore(container, existingImg);
         container.appendChild(existingImg);
@@ -185,7 +180,6 @@
         updateFrameHeight();
     }
 
-    // --- Selection & Toolbar ---
     function selectElement(el) {
         if (selectedEl) {
             selectedEl.classList.remove('selected-item');
@@ -278,7 +272,6 @@
         else if (selectedEl && !selectedEl.classList.contains('block_image')) execCmd('underline');
     }
 
-    // --- Device Preview ---
     function setDevice(type) {
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         deselectAll();
@@ -297,7 +290,6 @@
         setTimeout(updateFrameHeight, 50);
     }
 
-    // --- Move Mode (Sortable) ---
     function toggleMoveMode() {
         const active = document.getElementById('moveModeCheckbox').checked;
         track.classList.toggle('active', active);
