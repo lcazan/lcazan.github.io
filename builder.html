@@ -116,7 +116,6 @@
         deselectAll();
         const root = frame.contentDocument.getElementById('editor-root');
         const elements = Array.from(root.children).map(child => {
-            // Check if it's a wrapper (heading or button)
             const isHeadingWrap = child.classList.contains('heading-wrapper');
             const target = isHeadingWrap ? child.firstChild : child;
             
@@ -183,7 +182,6 @@
 
     function insertElement(type, data = null) {
         const root = frame.contentDocument.getElementById('editor-root');
-        
         if (selectedEl && selectedEl.classList.contains('block_image') && type.includes('block_') && type !== 'block_image') {
             createMediaGroup(selectedEl, type);
             return;
@@ -220,7 +218,6 @@
         const innerDoc = frame.contentDocument;
         const container = innerDoc.createElement('div');
         container.className = 'media-group editable';
-        
         const textEl = innerDoc.createElement('div');
         textEl.className = `editable ${textType}`;
         textEl.contentEditable = "true";
@@ -229,12 +226,10 @@
         existingImg.parentNode.insertBefore(container, existingImg);
         container.appendChild(existingImg);
         container.appendChild(textEl);
-        
         deselectAll();
         updateFrameHeight();
     }
 
-    // --- Standard UI Functions ---
     function selectElement(el) {
         if (selectedEl) {
             selectedEl.classList.remove('selected-item');
