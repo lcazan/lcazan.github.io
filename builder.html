@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v2.4.2 Width Lock</title>
+    <title>Snoozing Builder | v2.4.3 Toolbar Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -174,7 +174,30 @@
         toolbar.style.top = `${topPos}px`;
     }
 
-    function execCmd(cmd) { frame.contentWindow.focus(); frame.contentDocument.execCommand(cmd, false, null); }
+    // Fixed Toolbar Functions
+    function execCmd(cmd) {
+        if (!selectedEl) return;
+        frame.contentWindow.focus();
+        frame.contentDocument.execCommand(cmd, false, null);
+    }
+
+    function setAlign(pos) {
+        if (!selectedEl) return;
+        // Apply alignment to wrapper if it's a heading, otherwise the element itself
+        const target = selectedEl.classList.contains('block_heading') ? selectedEl.parentElement : selectedEl;
+        target.style.textAlign = pos;
+        target.style.display = 'block';
+        updateToolbarPos();
+    }
+
+    function toggleHeadingLine() {
+        if (selectedEl && selectedEl.classList.contains('block_heading')) {
+            // Toggles the border-bottom defined in styles.css
+            selectedEl.classList.toggle('no-line');
+        } else {
+            execCmd('underline');
+        }
+    }
 
     function setDevice(type) {
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
@@ -185,7 +208,6 @@
             document.getElementById('btn-mobile').classList.add('active');
             frame.style.width = '390px'; 
             
-            // Capture and lock width
             if (frame.contentDocument && frame.contentDocument.body) {
                 if (!storedMobileWidth) {
                     storedMobileWidth = frame.contentDocument.body.offsetWidth + 'px';
@@ -199,7 +221,6 @@
             frame.classList.remove('mobile');
             document.getElementById('btn-desktop').classList.add('active');
             
-            // Release width lock
             if (frame.contentDocument && frame.contentDocument.body) {
                 frame.contentDocument.body.style.width = '100%';
             }
