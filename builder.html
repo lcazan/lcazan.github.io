@@ -3,19 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Snoozing Builder | v3.35 Scaled Simulation</title>
+    <title>Snoozing Builder | v3.36 Proportional Scaling</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         
-        /* Strict UI Lock */
         body { 
             margin: 0; display: flex; height: 100vh; width: 100vw; 
             font-family: 'Source Sans Pro', sans-serif; background: #111; 
             overflow: hidden; position: fixed;
         }
         
-        /* Sidebar */
         #sidebar { 
             width: 90px; height: 100vh; background: var(--panel-bg); 
             display: flex; flex-direction: column; align-items: center; 
@@ -28,13 +26,11 @@
             flex-direction: column; justify-content: center; align-items: center; gap: 5px; 
         }
 
-        /* Editor Container */
         #preview-container { 
             flex-grow: 1; display: flex; flex-direction: column; 
             background: #333; height: 100vh; overflow: hidden; 
         }
         
-        /* Top Navigation */
         #header-area { 
             background: #222; border-bottom: 1px solid #000; 
             flex-shrink: 0; z-index: 500; height: 50px; position: relative; 
@@ -44,7 +40,6 @@
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 25px; top: 12px; color: #fff; font-size: 16px; font-weight: 800; }
 
-        /* Toolbar */
         #sticky-toolbar { 
             height: 85px; background: #1a1a1a; display: none; 
             align-items: center; justify-content: center; gap: 18px; padding: 0 25px; 
@@ -55,7 +50,6 @@
             display: flex; align-items: center; justify-content: center; 
         }
 
-        /* Iframe Stage */
         #frame-wrapper { 
             flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
             background: #333; overflow: hidden; position: relative;
@@ -68,7 +62,7 @@
             transition: transform 0.2s ease;
         }
         #preview-frame.mobile { 
-            width: 412px; /* Pixel 8 Pro width */
+            width: 412px; /* Simulation Width */
             box-shadow: 0 0 50px rgba(0,0,0,0.5); 
         }
     </style>
@@ -88,7 +82,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.35</div>
+            <div class="version-status">v3.36</div>
         </div>
         <div id="sticky-toolbar"></div>
     </div>
@@ -108,9 +102,9 @@
     let selectedEl = null;
 
     async function init() {
-        // Capture exact visible screen height minus header
+        // Capture initial viewport height minus UI headers
         const vvHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-        lockedHeight = vvHeight - 70; // 50px header + 20px top padding
+        lockedHeight = vvHeight - 70; // Header(50) + Padding(20)
 
         const resp = await fetch('template.html');
         let html = await resp.text();
@@ -135,7 +129,6 @@
                 const el = e.target.closest('.editable');
                 if (el) selectElement(el); else deselectAll();
             });
-            // Force Mobile at startup
             setDevice('mobile');
         };
     }
@@ -149,12 +142,12 @@
             btnDesktop.classList.remove('active');
             frame.classList.add('mobile');
             
-            // Calculate scale to fit the 412px simulator into current screen width
+            // MATH: Proportional Scaling
             const availableW = wrapper.offsetWidth - 40;
             const scaleFactor = Math.min(availableW / 412, 1);
             
             frame.style.width = '412px';
-            // Adjust internal height so the scaled result matches screen height
+            // Increase internal height so it shrinks down to exactly 'lockedHeight'
             frame.style.height = (lockedHeight / scaleFactor) + 'px';
             frame.style.transform = `scale(${scaleFactor})`;
         } else {
