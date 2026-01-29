@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.5.4 Stable</title>
+    <title>Snoozing Builder | v3.5.6 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         
+        /* THE LOCK: Using fixed position and script-calculated height to ignore keyboard squish */
         body { 
-            margin: 0; display: flex; height: 100vh; width: 100vw; 
+            margin: 0; display: flex; width: 100vw; 
             font-family: 'Source Sans Pro', sans-serif; background: #111; 
-            overflow: hidden; position: fixed; touch-action: none;
+            overflow: hidden; position: fixed; top: 0; left: 0;
         }
         
         #sidebar { 
-            width: 90px; height: 100vh; background: var(--panel-bg); 
+            width: 90px; height: 100%; background: var(--panel-bg); 
             display: flex; flex-direction: column; align-items: center; 
             padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; 
         }
@@ -26,7 +27,7 @@
             flex-direction: column; justify-content: center; align-items: center; gap: 5px; 
         }
 
-        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100vh; overflow: hidden; }
+        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100%; overflow: hidden; }
         #header-area { background: #222; border-bottom: 1px solid #000; flex-shrink: 0; z-index: 500; height: 50px; position: relative; }
         #device-bar { height: 100%; display: flex; align-items: center; justify-content: center; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 26px; margin: 0 15px; }
@@ -72,7 +73,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.5.4</div>
+            <div class="version-status">v3.5.6</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -90,11 +91,14 @@
     const toolbarContent = document.getElementById('toolbar-content');
     const wrapper = document.getElementById('frame-wrapper');
     
-    let initialWidth = window.innerWidth;
     let selectedEl = null;
     let currentMode = 'mobile';
     let isResizing = false;
     let rotationTimeout;
+    
+    // Freeze UI height to current window height on load
+    const fixedHeight = window.innerHeight;
+    document.body.style.height = fixedHeight + 'px';
 
     async function init() {
         const resp = await fetch('template.html');
@@ -107,17 +111,13 @@
                 #editor-root { flex: 1 0 auto; width: 100%; }
                 body { padding-bottom: 60px !important; }
                 footer { flex-shrink: 0; margin-top: auto; }
-                
-                /* BRACKET RESIZE HANDLE */
                 .resize-handle { 
                     width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; 
                     cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center;
-                    color: var(--brand-pink); font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px;
+                    color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px;
                     pointer-events: auto !important;
                 }
-                /* Use Brackets [ ] visual style */
                 .resize-handle::before { content: "\\f337"; } 
-
                 .editable img { pointer-events: none; width: 100%; display: block; }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
@@ -133,12 +133,22 @@
             setDevice('mobile');
         };
 
+        // VIEWPORT RECALCULATION (Rotation & Keyboard)
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', () => {
                 clearTimeout(rotationTimeout);
                 rotationTimeout = setTimeout(() => {
+                    // Update scale based on new wrapper width
                     setDevice(currentMode);
-                }, 200);
+                    
+                    // KEYBOARD PINNING: If viewport height drops significantly
+                    if (window.visualViewport.height < (fixedHeight - 150)) {
+                        if (selectedEl) {
+                            // Scroll to 'end' to pin the item at the bottom of visible space
+                            selectedEl.scrollIntoView({ block: "end", behavior: "smooth" });
+                        }
+                    }
+                }, 300); 
             });
         }
     }
@@ -172,13 +182,7 @@
         }
         selectedEl = el;
         selectedEl.classList.add('selected-item');
-        
-        // Dynamic Inject: Only show brackets when selected
-        if (el.classList.contains('block_image')) {
-            const existing = el.querySelector('.resize-handle');
-            if(!existing) addResizeHandle(el);
-        }
-        
+        if (el.classList.contains('block_image')) addResizeHandle(el);
         renderToolbar();
     }
 
