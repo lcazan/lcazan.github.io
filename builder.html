@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.5.9 Stable</title>
+    <title>Snoozing Builder | v3.6.0 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -16,17 +16,20 @@
         
         body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
         
+        /* SIDEBAR: Buttons reduced to 50% height (32px), margins 5px */
         #sidebar { 
-            width: 90px; height: 100%; background: var(--panel-bg); 
+            width: 75px; height: 100%; background: var(--panel-bg); 
             display: flex; flex-direction: column; align-items: center; 
-            padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; 
+            padding: 15px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; 
         }
         .insert-btn { 
-            width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; 
-            margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; 
-            font-weight: bold; text-transform: uppercase; display: flex; 
-            flex-direction: column; justify-content: center; align-items: center; gap: 5px; 
+            width: 60px; height: 32px; background: #444; border: 1px solid #666; color: #fff; 
+            margin: 0 5px 10px 5px; border-radius: 4px; cursor: pointer; 
+            font-size: 14px; display: flex; justify-content: center; align-items: center; 
+            padding: 0; /* Reduced padding */
         }
+        /* Hide text labels in small buttons to keep icons clear */
+        .insert-btn span { display: none; }
 
         #preview-container { 
             flex-grow: 1; display: flex; flex-direction: column; 
@@ -39,13 +42,14 @@
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 25px; top: 12px; color: #fff; font-size: 16px; font-weight: 800; }
 
+        /* TOOLBAR: Reduced to 75% height (64px) */
         #sticky-toolbar { 
-            height: 85px; background: #1a1a1a; display: flex; 
-            align-items: center; justify-content: center; gap: 18px; 
-            padding: 0 25px; border-bottom: 1px solid #000; flex-shrink: 0;
+            height: 64px; background: #1a1a1a; display: flex; 
+            align-items: center; justify-content: center; gap: 12px; 
+            padding: 0 15px; border-bottom: 1px solid #000; flex-shrink: 0;
         }
         
-        #toolbar-content { display: flex; gap: 18px; visibility: hidden; align-items: center; height: 100%; }
+        #toolbar-content { display: flex; gap: 12px; visibility: hidden; align-items: center; height: 100%; }
 
         #frame-wrapper { 
             flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
@@ -54,10 +58,11 @@
         
         #preview-frame { border: none; background: white; transform-origin: top center; }
 
+        /* Tool Icons: Reduced to 75% size (~27px) */
         .tool-btn { 
             background: #444; border: 1px solid #666; color: white; 
-            padding: 8px 12px; border-radius: 6px; cursor: pointer;
-            font-size: 36px; min-width: 60px; height: 60px;
+            padding: 5px; border-radius: 6px; cursor: pointer;
+            font-size: 27px; min-width: 45px; height: 45px;
             display: flex; align-items: center; justify-content: center;
         }
         .tool-btn.active { background: var(--brand-pink); color: #000; }
@@ -66,11 +71,11 @@
 <body>
 
 <div id="sidebar">
-    <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i>Section</button>
-    <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i>Heading</button>
-    <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i>Text</button>
-    <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i>Image</button>
-    <button class="insert-btn" style="margin-top:auto" onclick="saveJSON()"><i class="fa-solid fa-floppy-disk"></i>Save</button>
+    <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i></button>
+    <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i></button>
+    <button class="insert-btn" style="margin-top:auto" onclick="saveJSON()"><i class="fa-solid fa-floppy-disk"></i></button>
 </div>
 
 <div id="preview-container">
@@ -78,7 +83,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.5.9</div>
+            <div class="version-status">v3.6.0</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -111,18 +116,12 @@
             <style>
                 html, body { height: auto; min-height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
                 #editor-root { flex: 1 0 auto; width: 100%; display: flex; flex-direction: column; }
-                
-                /* BLOCK LAYOUT: Forces vertical stacking without overriding typography */
                 .editable { display: block !important; width: 100%; clear: both; box-sizing: border-box; position: relative; }
                 .selected-item { outline: 3px solid #ebd5c9 !important; }
-                
                 body { padding-bottom: 60px !important; }
                 footer { flex-shrink: 0; margin-top: auto; }
-                
-                /* Headings: Clean inheritance from styles.css */
                 .block_heading { border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
                 .no-line { border-bottom: none !important; }
-                
                 .resize-handle { 
                     width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; 
                     cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center;
@@ -184,29 +183,18 @@
 
     function selectElement(el) {
         const doc = frame.contentDocument;
-        // NUCLEAR DESELECT: Ensure all brackets are killed before a new selection
         doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
-
-        if(selectedEl && selectedEl !== el) {
-            selectedEl.classList.remove('selected-item');
-        }
-        
+        if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
         selectedEl.classList.add('selected-item');
-        
-        if (el.classList.contains('block_image')) {
-            addResizeHandle(el);
-        }
+        if (el.classList.contains('block_image')) addResizeHandle(el);
         renderToolbar();
     }
 
     function deselectAll() {
         const doc = frame.contentDocument;
         doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
-        
-        if (selectedEl) {
-            selectedEl.classList.remove('selected-item');
-        }
+        if (selectedEl) selectedEl.classList.remove('selected-item');
         selectedEl = null;
         toolbarContent.style.visibility = 'hidden';
     }
@@ -304,11 +292,7 @@
             el.contentEditable = "false"; el.style.width = "200px"; el.style.position = "relative";
         } else { el.innerText = "New Block"; el.contentEditable = "true"; }
         root.appendChild(el);
-        
-        setTimeout(() => { 
-            selectElement(el); 
-            if (type !== 'block_image') el.focus({ preventScroll: true }); 
-        }, 150);
+        setTimeout(() => { selectElement(el); if (type !== 'block_image') el.focus({ preventScroll: true }); }, 150);
     }
 
     function saveJSON() {
