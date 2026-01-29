@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.5.6 Stable</title>
+    <title>Snoozing Builder | v3.5.7 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         
-        /* THE LOCK: Using fixed position and script-calculated height to ignore keyboard squish */
-        body { 
-            margin: 0; display: flex; width: 100vw; 
-            font-family: 'Source Sans Pro', sans-serif; background: #111; 
-            overflow: hidden; position: fixed; top: 0; left: 0;
+        /* STRICT LOCKING: Preventing the browser from scrolling the body at all */
+        html, body { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; position: fixed; top: 0; left: 0; 
+            background: #111; touch-action: none;
         }
+        
+        body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
         
         #sidebar { 
             width: 90px; height: 100%; background: var(--panel-bg); 
@@ -27,7 +29,11 @@
             flex-direction: column; justify-content: center; align-items: center; gap: 5px; 
         }
 
-        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100%; overflow: hidden; }
+        #preview-container { 
+            flex-grow: 1; display: flex; flex-direction: column; 
+            background: #333; height: 100%; overflow: hidden; position: relative;
+        }
+
         #header-area { background: #222; border-bottom: 1px solid #000; flex-shrink: 0; z-index: 500; height: 50px; position: relative; }
         #device-bar { height: 100%; display: flex; align-items: center; justify-content: center; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 26px; margin: 0 15px; }
@@ -68,12 +74,12 @@
     <button class="insert-btn" style="margin-top:auto" onclick="saveJSON()"><i class="fa-solid fa-floppy-disk"></i>Save</button>
 </div>
 
-<div id="preview-container">
+<div id="preview-container" id="main-ui">
     <div id="header-area">
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.5.6</div>
+            <div class="version-status">v3.5.7</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -90,15 +96,12 @@
     const frame = document.getElementById('preview-frame');
     const toolbarContent = document.getElementById('toolbar-content');
     const wrapper = document.getElementById('frame-wrapper');
+    const previewContainer = document.getElementById('preview-container');
     
     let selectedEl = null;
     let currentMode = 'mobile';
     let isResizing = false;
     let rotationTimeout;
-    
-    // Freeze UI height to current window height on load
-    const fixedHeight = window.innerHeight;
-    document.body.style.height = fixedHeight + 'px';
 
     async function init() {
         const resp = await fetch('template.html');
@@ -133,20 +136,19 @@
             setDevice('mobile');
         };
 
-        // VIEWPORT RECALCULATION (Rotation & Keyboard)
+        // VIEWPORT RECALCULATION (Strict Visual Locking)
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', () => {
+                // Manually shrink the preview container to fit the available space
+                // This prevents the keyboard from pushing the whole body up
+                const viewportHeight = window.visualViewport.height;
+                document.body.style.height = viewportHeight + 'px';
+                
                 clearTimeout(rotationTimeout);
                 rotationTimeout = setTimeout(() => {
-                    // Update scale based on new wrapper width
                     setDevice(currentMode);
-                    
-                    // KEYBOARD PINNING: If viewport height drops significantly
-                    if (window.visualViewport.height < (fixedHeight - 150)) {
-                        if (selectedEl) {
-                            // Scroll to 'end' to pin the item at the bottom of visible space
-                            selectedEl.scrollIntoView({ block: "end", behavior: "smooth" });
-                        }
+                    if (selectedEl && viewportHeight < (window.innerHeight - 150)) {
+                        selectedEl.scrollIntoView({ block: "end", behavior: "smooth" });
                     }
                 }, 300); 
             });
