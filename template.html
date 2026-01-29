@@ -8,6 +8,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Source+Sans+Pro:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
+    
+    <style>
+        /* Essential for v3.39 Footer-Push Logic */
+        html, body { 
+            height: 100%; margin: 0; padding: 0;
+            display: flex; flex-direction: column; 
+            overflow-x: hidden;
+        }
+
+        /* This container grows to fill empty space, pushing the footer down */
+        .content-container {
+            flex: 1 0 auto; 
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        footer {
+            flex-shrink: 0;
+            margin-top: auto;
+        }
+    </style>
 </head>
 <body>
 
@@ -21,15 +42,21 @@
 <div id="navOverlay" onclick="toggleNav(event)" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.2); z-index:8500;"></div>
 
 <nav id="nav-sidebar">
-    <div class="sidebar-close-icon menu-lines active" onclick="toggleNav(event)" style="position: absolute; top: 25px; left: 20px; cursor: pointer;">
+    <div class="sidebar-close-icon menu-lines active" onclick="toggleNav(event)">
         <div class="line1"></div><div class="line2"></div><div class="line3"></div>
     </div>
-    
-    <div class="nav-content" style="padding-top: 100px;">
+    <div class="nav-content">
         <a href="https://mysnoozingbaby.com/">Home</a>
-        <a href="https://mysnoozingbaby.com/snoo-rental">SNOO Rental</a>
+        <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">Snoo Smart Sleeper <i class="fa-solid fa-caret-down"></i></a>
+        <div class="sub-nav">
+            <a href="https://mysnoozingbaby.com/snoo-rental">SNOO Rental</a>
+            <a href="https://mysnoozingbaby.com/snoo-cleaning-and-repairs">SNOO Cleaning/Repair</a>
+        </div>
+        <a href="https://mysnoozingbaby.com/baby-gear-rentals">Baby Gear Rentals</a>
+        <a href="https://mysnoozingbaby.com/toddler-party-rentals">Toddler Party Rentals</a>
         <a href="https://mysnoozingbaby.com/about-us">About Us</a>
         <a href="https://mysnoozingbaby.com/contact-us">Contact Us</a>
+        <a href="https://mysnoozingbaby.com/faqs">FAQs</a>
     </div>
 </nav>
 
@@ -53,14 +80,17 @@
         if(e) e.stopPropagation();
         const nav = document.getElementById('nav-sidebar');
         const hamburger = document.getElementById('headerHamburger');
-        const overlay = document.getElementById('navOverlay');
         
         const isOpen = nav.classList.toggle('open');
         hamburger.classList.toggle('active');
         
-        overlay.style.display = isOpen ? 'block' : 'none';
-        // Prevent background scrolling when menu is open
+        document.getElementById('navOverlay').style.display = isOpen ? 'block' : 'none';
         document.body.style.overflow = isOpen ? 'hidden' : 'auto';
+    }
+
+    function toggleDropdown(btn) {
+        btn.classList.toggle('active');
+        btn.nextElementSibling.classList.toggle('show');
     }
 </script>
 
