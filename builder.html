@@ -2,16 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v3.23 Fixed Header</title>
+    <title>Snoozing Builder | v3.24 Auto-Select Text</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         
-        /* Force body to stay exactly the size of the window */
         body { 
             margin: 0; display: flex; height: 100vh; width: 100vw; 
             font-family: 'Source Sans Pro', sans-serif; background: #111; 
-            overflow: hidden; position: fixed; /* Prevents status bar sliding */
+            overflow: hidden; position: fixed;
         }
         
         #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; }
@@ -20,7 +19,7 @@
         #preview-container { 
             flex-grow: 1; display: flex; flex-direction: column; 
             background: #333; position: relative; height: 100vh; 
-            overflow: hidden; /* Header will stay inside this hidden box */
+            overflow: hidden;
         }
         
         #header-area { 
@@ -47,7 +46,7 @@
         #frame-wrapper { 
             flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
             overflow-x: hidden; overflow-y: auto; background: #333; position: relative;
-            overscroll-behavior-y: none; /* Blocks "Pull to Refresh" and status bar hiding */
+            overscroll-behavior-y: none;
             -webkit-overflow-scrolling: touch;
         }
         #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; }
@@ -69,7 +68,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.23</div>
+            <div class="version-status">v3.24</div>
         </div>
         <div id="sticky-toolbar"></div>
     </div>
@@ -106,7 +105,6 @@
                 }
                 .resize-handle::before { content: "\\f338"; }
                 .editable img { pointer-events: none; width: 100%; display: block; }
-                /* Huge buffer so you can always scroll the active item to the top */
                 #editor-root { padding-bottom: 80vh !important; }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
@@ -132,11 +130,8 @@
     }
 
     function handleViewportChanges() {
-        // This is the "Magic" part. Even if the browser tries to shift the whole body up
-        // because of the keyboard, we force the header to stay at the visual top.
         const vv = window.visualViewport;
         header.style.transform = `translateY(${vv.offsetTop}px)`;
-        
         if (selectedEl && frame.contentDocument.activeElement?.isContentEditable) {
             handleKeyboardCollision();
         }
@@ -148,8 +143,6 @@
             const vv = window.visualViewport;
             const rect = selectedEl.getBoundingClientRect();
             const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-            
-            // Where the keyboard starts
             const keyboardTop = vv.height; 
             const elementBottom = rect.bottom * scale;
 
@@ -280,16 +273,34 @@
         const root = frame.contentDocument.getElementById('editor-root');
         const el = frame.contentDocument.createElement('div');
         el.className = `editable ${type}`;
+        
+        const isText = type !== 'block_image';
+
         if(type === 'block_image') { 
             el.innerHTML = `<img src="${data}">`; 
             el.contentEditable = "false"; el.style.width = "200px"; el.style.position = "relative";
-        } else { el.innerText = "New Block"; el.contentEditable = "true"; }
+        } else { 
+            el.innerText = "New Block"; 
+            el.contentEditable = "true"; 
+        }
+        
         root.appendChild(el);
         updateFrameHeight();
+        
         setTimeout(() => {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             selectElement(el);
-        }, 100);
+
+            // Auto-select text logic
+            if (isText) {
+                el.focus();
+                const selection = frame.contentWindow.getSelection();
+                const range = frame.contentDocument.createRange();
+                range.selectNodeContents(el);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        }, 150);
     }
 
     function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); updateFrameHeight(); } }
