@@ -3,18 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.39 Full</title>
+    <title>Snoozing Builder | v3.39 Full Restore</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
-        body { margin: 0; display: flex; height: 100vh; width: 100vw; font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; position: fixed; touch-action: none; }
+        :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         
-        /* Sidebar Navigation */
+        body { 
+            margin: 0; display: flex; height: 100vh; width: 100vw; 
+            font-family: 'Source Sans Pro', sans-serif; background: #111; 
+            overflow: hidden; position: fixed; touch-action: none;
+        }
+        
         #sidebar { 
             width: 90px; height: 100vh; background: var(--panel-bg); 
             display: flex; flex-direction: column; align-items: center; 
             padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; 
         }
+
         .insert-btn { 
             width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; 
             margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; 
@@ -23,12 +28,37 @@
         }
 
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100vh; overflow: hidden; }
-        #header-area { background: #222; border-bottom: 1px solid #000; height: 50px; flex-shrink: 0; position: relative; display: flex; align-items: center; justify-content: center; }
-        .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 24px; margin: 0 15px; }
-        .device-btn.active { color: var(--brand-pink); }
         
-        #frame-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; background: #333; overflow: hidden; position: relative; }
-        #preview-frame { border: none; background: white; transform-origin: top center; transition: transform 0.2s ease; }
+        #header-area { 
+            background: #222; border-bottom: 1px solid #000; flex-shrink: 0; 
+            z-index: 500; height: 50px; position: relative; 
+        }
+
+        #device-bar { height: 100%; display: flex; align-items: center; justify-content: center; }
+        .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 26px; margin: 0 15px; }
+        .device-btn.active { color: var(--brand-pink); }
+        .version-status { position: absolute; right: 25px; top: 12px; color: #fff; font-size: 16px; font-weight: 800; }
+
+        #sticky-toolbar { 
+            height: 85px; background: #1a1a1a; display: none; 
+            align-items: center; justify-content: center; gap: 18px; padding: 0 25px; 
+        }
+        
+        .tool-btn { 
+            background: #333; border: 1px solid #444; color: white; 
+            padding: 10px 15px; border-radius: 6px; cursor: pointer; 
+        }
+
+        #frame-wrapper { 
+            flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
+            background: #333; overflow: hidden; position: relative;
+        }
+        
+        #preview-frame { 
+            border: none; background: white; 
+            transform-origin: top center;
+            width: 100%; /* Startup state */
+        }
     </style>
 </head>
 <body>
@@ -43,11 +73,15 @@
 
 <div id="preview-container">
     <div id="header-area">
-        <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
-        <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
+        <div id="device-bar">
+            <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
+            <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
+            <div class="version-status">v3.39</div>
+        </div>
+        <div id="sticky-toolbar"></div>
     </div>
     <div id="frame-wrapper">
-        <iframe id="preview-frame"></iframe>
+        <iframe id="preview-frame" scrolling="yes"></iframe>
     </div>
 </div>
 
@@ -55,9 +89,12 @@
 
 <script>
     const frame = document.getElementById('preview-frame');
+    const stickyToolbar = document.getElementById('sticky-toolbar');
     const wrapper = document.getElementById('frame-wrapper');
+    
     let lockedHeight = 0;
     let initialWidth = window.innerWidth;
+    let selectedEl = null;
     let currentMode = 'mobile';
 
     async function init() {
@@ -65,21 +102,24 @@
         const resp = await fetch('template.html');
         let html = await resp.text();
         
-        // Inject Editor styles into the template iframe
-        html = html.replace('</head>', `<style>.selected-item { border: 1px dashed #877267 !important; background: rgba(235, 213, 201, 0.15); } .editable { cursor: pointer; transition: 0.2s; }</style></head>`);
+        // Inject Editor styles
+        html = html.replace('</head>', `
+            <style>
+                .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; }
+                .editable { cursor: pointer; }
+                #editor-root { padding-bottom: 60vh !important; min-height: 101%; }
+            </style></head>`);
         
-        // Identify the content-container for the editor
         frame.srcdoc = html.replace('<div class="content-container">', '<div class="content-container" id="editor-root">');
         
         frame.onload = () => {
             frame.contentDocument.addEventListener('mousedown', (e) => {
                 const el = e.target.closest('.editable');
-                if (el) selectElement(el);
+                if (el) selectElement(el); else deselectAll();
             });
             setDevice('mobile');
         };
 
-        // Rotation/Resize listener
         window.visualViewport.addEventListener('resize', () => {
             if (window.innerWidth !== initialWidth) {
                 initialWidth = window.innerWidth;
@@ -89,64 +129,93 @@
         });
     }
 
-    function updateLockedHeight() { 
-        // Use window.innerHeight to avoid the keyboard visual viewport shrink
-        lockedHeight = window.innerHeight - 50; 
+    function updateLockedHeight() {
+        lockedHeight = window.innerHeight - 50;
     }
 
     function setDevice(type) {
         currentMode = type;
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop').classList.add('active');
-
+        
         if (type === 'mobile') {
-            const availableW = wrapper.offsetWidth;
-            const scaleFactor = availableW / 412; // Scale based on Pixel 8 Pro width
+            const physicalWidth = wrapper.offsetWidth;
+            const scaleFactor = physicalWidth / 412;
             frame.style.width = '412px';
             frame.style.height = (lockedHeight / scaleFactor) + 'px';
             frame.style.transform = `scale(${scaleFactor})`;
         } else {
-            frame.style.width = '100%'; 
-            frame.style.height = '100%'; 
+            frame.style.width = '100%';
+            frame.style.height = '100%';
             frame.style.transform = 'none';
         }
     }
 
-    function insertElement(type, data = "New Block") {
+    function selectElement(el) {
+        if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
+        selectedEl = el;
+        selectedEl.classList.add('selected-item');
+        renderToolbar();
+    }
+
+    function deselectAll() {
+        if (selectedEl) selectedEl.classList.remove('selected-item');
+        selectedEl = null;
+        stickyToolbar.style.display = 'none';
+    }
+
+    function renderToolbar() {
+        stickyToolbar.style.display = 'flex';
+        stickyToolbar.innerHTML = `
+            <button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
+            <button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
+            <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
+            <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
+            <button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>
+        `;
+    }
+
+    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
+    function setAlign(pos) { if(selectedEl) selectedEl.style.textAlign = pos; }
+    function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
+
+    function insertElement(type, data) {
         const doc = frame.contentDocument;
         const root = doc.getElementById('editor-root');
         const el = doc.createElement('div');
         el.className = `editable ${type}`;
         if(type === 'block_image') {
-            el.innerHTML = `<img src="${data}" style="width:100%; display:block;">`;
+            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`;
             el.contentEditable = "false";
         } else {
-            el.innerText = data;
+            el.innerText = "New Block";
             el.contentEditable = "true";
         }
         root.appendChild(el);
-    }
-
-    function selectElement(el) {
-        if(window.selectedEl) window.selectedEl.classList.remove('selected-item');
-        window.selectedEl = el;
-        el.classList.add('selected-item');
+        selectElement(el);
     }
 
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
     function handleImageUpload(i) {
         if(i.files[0]) {
             const r = new FileReader();
-            r.onload = e => insertElement('block_image', e.target.result);
+            r.onload = e => {
+                if(selectedEl && selectedEl.classList.contains('block_image')) {
+                    selectedEl.querySelector('img').src = e.target.result;
+                } else {
+                    insertElement('block_image', e.target.result);
+                }
+            };
             r.readAsDataURL(i.files[0]);
         }
     }
 
     function saveJSON() {
         const root = frame.contentDocument.getElementById('editor-root');
-        const data = Array.from(root.children).map(c => ({ 
-            type: c.className.replace('editable ','').replace('selected-item','').trim(), 
-            content: c.innerHTML 
+        const data = Array.from(root.children).map(c => ({
+            type: c.className.replace('editable ','').replace('selected-item','').trim(),
+            content: c.innerHTML,
+            style: c.getAttribute('style') || ""
         }));
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type:'application/json'}));
