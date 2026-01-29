@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Snoozing Builder | v3.27 Viewport Midpoint</title>
+    <title>Snoozing Builder | v3.28 Bottom-to-Midpoint</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -51,7 +51,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.27</div>
+            <div class="version-status">v3.28</div>
         </div>
         <div id="sticky-toolbar"></div>
     </div>
@@ -70,8 +70,6 @@
     
     let selectedEl = null;
     let isResizing = false;
-    
-    // Global variable to store the height of the visible area
     let currentViewportHeight = window.innerHeight;
 
     async function init() {
@@ -107,7 +105,6 @@
                 if (el) selectElement(el); else deselectAll();
             });
 
-            // Monitor Visual Viewport changes (Keyboard etc)
             if (window.visualViewport) {
                 window.visualViewport.addEventListener('resize', () => {
                     currentViewportHeight = window.visualViewport.height;
@@ -120,7 +117,7 @@
         };
     }
 
-    function selectElement(el) {
+    function selectElement(el, forceScroll = false) {
         if(selectedEl && selectedEl !== el) {
             selectedEl.classList.remove('selected-item');
             const h = selectedEl.querySelector('.resize-handle');
@@ -133,22 +130,20 @@
         }
         renderToolbar();
 
-        // LOGIC: Scroll to midpoint ONLY if item is in the lower half
         setTimeout(() => {
             const rect = el.getBoundingClientRect();
             const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
             
-            // Get item position relative to the physical screen
-            const itemTopOnScreen = rect.top * scale;
+            // Item's BOTTOM edge relative to the visual window
             const itemBottomOnScreen = rect.bottom * scale;
-            const itemMidpointOnScreen = (itemTopOnScreen + itemBottomOnScreen) / 2;
-
             const viewportMidpoint = currentViewportHeight / 2;
 
-            // If item midpoint is in the lower half of the VISUAL viewport
-            if (itemMidpointOnScreen > viewportMidpoint) {
-                const elCenterInParent = ((rect.top + (rect.height / 2)) * scale) + wrapper.scrollTop;
-                const targetScroll = elCenterInParent - viewportMidpoint;
+            // Scroll if bottom edge is below midpoint OR if we explicitly forced it (like on Insert)
+            if (itemBottomOnScreen > viewportMidpoint || forceScroll) {
+                // Calculate where the element's bottom is relative to the internal top of frame-wrapper
+                const elBottomInParent = (rect.bottom * scale) + wrapper.scrollTop;
+                // Target: The bottom edge of item matches the visual center of the screen
+                const targetScroll = elBottomInParent - viewportMidpoint;
                 
                 wrapper.scrollTo({
                     top: targetScroll,
@@ -279,7 +274,8 @@
         updateFrameHeight();
         
         setTimeout(() => {
-            selectElement(el); 
+            // NEW: Passing 'true' to force the bottom-to-midpoint scroll immediately
+            selectElement(el, true); 
             if (isText) {
                 el.focus();
                 const selection = frame.contentWindow.getSelection();
