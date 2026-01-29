@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.6.4 Stable</title>
+    <title>Snoozing Builder | v3.6.5 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -83,7 +83,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.6.4</div>
+            <div class="version-status">v3.6.5</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -118,7 +118,7 @@
                 #editor-root { flex: 1 0 auto; width: 100%; display: flex; flex-direction: column; }
                 .editable { display: block !important; width: 100%; clear: both; box-sizing: border-box; position: relative; }
                 .selected-item { outline: 3px solid #ebd5c9 !important; }
-                body { padding-bottom: 120px !important; } /* Extra padding for easier scrolling */
+                body { padding-bottom: 120px !important; }
                 .block_heading { border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
                 .no-line { border-bottom: none !important; }
                 .resize-handle { 
@@ -149,12 +149,11 @@
                 rotationTimeout = setTimeout(() => {
                     setDevice(currentMode);
                     
-                    // CUSTOM SCROLL WITH 20PX BUFFER
                     if (selectedEl && viewportHeight < (initialWindowHeight - 150)) {
                         const win = frame.contentWindow;
                         const rect = selectedEl.getBoundingClientRect();
-                        // Calculate target: top of element + its height - viewport height + 20px cushion
-                        const targetY = win.pageYOffset + rect.bottom - viewportHeight + 20;
+                        // Calculation: Bottom of element - viewport height - 20px gap
+                        const targetY = win.pageYOffset + rect.bottom - viewportHeight - 20;
                         win.scrollTo({ top: targetY, behavior: 'smooth' });
                     }
                 }, 300); 
