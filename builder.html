@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v3.21 Smart Viewport</title>
+    <title>Snoozing Builder | v3.22 Keyboard Avoidance</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -55,7 +55,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.21</div>
+            <div class="version-status">v3.22</div>
         </div>
         <div id="sticky-toolbar"></div>
     </div>
@@ -91,8 +91,7 @@
                 }
                 .resize-handle::before { content: "\\f338"; }
                 .editable img { pointer-events: none; width: 100%; display: block; }
-                /* Padding to allow scrolling past the last element when keyboard is up */
-                #editor-root { padding-bottom: 60vh !important; }
+                #editor-root { padding-bottom: 500px !important; }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
         
@@ -106,13 +105,9 @@
                 if (el) selectElement(el); else deselectAll();
             });
 
-            // Re-center when keyboard appears
+            // Logic for Keyboard Detection via Visual Viewport
             if (window.visualViewport) {
-                window.visualViewport.addEventListener('resize', () => {
-                    if (doc.activeElement && doc.activeElement.isContentEditable) {
-                        scrollToActiveElement();
-                    }
-                });
+                window.visualViewport.addEventListener('resize', handleKeyboardCollision);
             }
 
             doc.addEventListener('input', updateFrameHeight);
@@ -120,21 +115,35 @@
         };
     }
 
-    function scrollToActiveElement() {
-        if (!selectedEl) return;
-        // Small delay to let keyboard animation begin
+    function handleKeyboardCollision() {
+        if (!selectedEl || !window.visualViewport) return;
+
+        // Give the keyboard a moment to settle
         setTimeout(() => {
+            const vv = window.visualViewport;
+            const doc = frame.contentDocument;
+            
+            // If focus isn't on an editable element, don't auto-scroll
+            if (!doc.activeElement || !doc.activeElement.isContentEditable) return;
+
             const rect = selectedEl.getBoundingClientRect();
             const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
             
-            // Calculate distance from top of iframe scaled to parent units
-            const targetScroll = (rect.top * scale) + wrapper.scrollTop - 120;
+            // Vertical position of the keyboard's top edge relative to the wrapper
+            // VV.height is the visible area. Anything below VV.height is keyboard.
+            const keyboardTopEdge = vv.height; 
             
-            wrapper.scrollTo({
-                top: targetScroll,
-                behavior: 'smooth'
-            });
-        }, 150);
+            // Selected element's bottom edge relative to the viewport
+            const elementBottomVisible = rect.bottom * scale;
+
+            // IF element bottom is lower than the keyboard top edge
+            if (elementBottomVisible > (keyboardTopEdge - 20)) {
+                // Calculate how much we need to scroll to bring the bottom 
+                // of the element just above the keyboard (with 20px padding)
+                const overflow = elementBottomVisible - keyboardTopEdge + 40;
+                wrapper.scrollBy({ top: overflow, behavior: 'smooth' });
+            }
+        }, 300);
     }
 
     function selectElement(el) {
@@ -268,9 +277,9 @@
         updateFrameHeight();
         
         setTimeout(() => {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             selectElement(el);
-            scrollToActiveElement();
-        }, 150);
+        }, 100);
     }
 
     function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); updateFrameHeight(); } }
