@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v3.20 Viewport Master</title>
+    <title>Snoozing Builder | v3.21 Smart Viewport</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -19,7 +19,6 @@
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 25px; color: #fff; font-size: 16px; font-weight: 800; }
 
-        /* STICKY TOOLBAR - 50% LARGER */
         #sticky-toolbar { 
             height: 85px; background: #1a1a1a; display: none; 
             align-items: center; justify-content: center; gap: 18px; padding: 0 25px;
@@ -27,8 +26,7 @@
         .tool-btn { 
             background: #333; border: 1px solid #444; color: white; 
             padding: 15px 25px; cursor: pointer; border-radius: 8px; 
-            font-size: 24px; /* Scaled up icons */
-            min-width: 70px; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; min-width: 70px; display: flex; align-items: center; justify-content: center;
         }
         .tool-btn:hover { background: var(--brand-pink); color: #000; }
         .tool-btn.active { background: var(--brand-pink); color: #000; }
@@ -57,7 +55,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.20</div>
+            <div class="version-status">v3.21</div>
         </div>
         <div id="sticky-toolbar"></div>
     </div>
@@ -86,15 +84,15 @@
                 .block_heading { display: block; width: 100%; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
                 .no-line { border-bottom: none !important; }
                 .resize-handle { 
-                    width: 40px; height: 40px; position: absolute; right: -15px; bottom: -15px; 
+                    width: 44px; height: 44px; position: absolute; right: -15px; bottom: -15px; 
                     cursor: nwse-resize; z-index: 99999; display: flex; align-items: center; justify-content: center;
                     color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px;
                     pointer-events: auto !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
                 }
                 .resize-handle::before { content: "\\f338"; }
                 .editable img { pointer-events: none; width: 100%; display: block; }
-                body.resizing-active { overflow: hidden !important; touch-action: none !important; }
-                #editor-root { padding-bottom: 400px; } /* Buffer for keyboard */
+                /* Padding to allow scrolling past the last element when keyboard is up */
+                #editor-root { padding-bottom: 60vh !important; }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
         
@@ -107,30 +105,36 @@
                 const el = e.target.closest('.editable');
                 if (el) selectElement(el); else deselectAll();
             });
-            doc.addEventListener('focusin', handleKeyboardScroll);
+
+            // Re-center when keyboard appears
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', () => {
+                    if (doc.activeElement && doc.activeElement.isContentEditable) {
+                        scrollToActiveElement();
+                    }
+                });
+            }
+
             doc.addEventListener('input', updateFrameHeight);
             setDevice('mobile');
         };
-
-        // Handle Visual Viewport changes (Keyboard popup)
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', () => {
-                if (selectedEl && document.activeElement !== document.body) {
-                    handleKeyboardScroll();
-                }
-            });
-        }
     }
 
-    function handleKeyboardScroll() {
+    function scrollToActiveElement() {
         if (!selectedEl) return;
+        // Small delay to let keyboard animation begin
         setTimeout(() => {
             const rect = selectedEl.getBoundingClientRect();
             const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-            const absoluteTop = (rect.top * scale) + wrapper.scrollTop;
-            // Scroll so element is 100px from the top of the viewport
-            wrapper.scrollTo({ top: absoluteTop - 100, behavior: 'smooth' });
-        }, 300);
+            
+            // Calculate distance from top of iframe scaled to parent units
+            const targetScroll = (rect.top * scale) + wrapper.scrollTop - 120;
+            
+            wrapper.scrollTo({
+                top: targetScroll,
+                behavior: 'smooth'
+            });
+        }, 150);
     }
 
     function selectElement(el) {
@@ -263,11 +267,10 @@
         root.appendChild(el);
         updateFrameHeight();
         
-        // v3.20 Center the new item
         setTimeout(() => {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             selectElement(el);
-        }, 100);
+            scrollToActiveElement();
+        }, 150);
     }
 
     function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); updateFrameHeight(); } }
