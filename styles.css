@@ -12,8 +12,7 @@ body {
     color: var(--text-dark); 
     background-color: #fff; 
     display: flex;             /* REQUIRED for Footer-Push */
-    flex-direction: column;    /* REQUIRED for Footer-Push */
-    min-height: 100vh;         /* REQUIRED for Footer-Push */
+    flex-direction: column;    /* REQUIRED for Footer-Push */         /* REQUIRED for Footer-Push */
     overflow-x: hidden; 
 }
 
