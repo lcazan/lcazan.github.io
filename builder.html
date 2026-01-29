@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.4.8 Stable</title>
+    <title>Snoozing Builder | v3.4.9 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -66,7 +66,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.4.8</div>
+            <div class="version-status">v3.4.9</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -161,7 +161,13 @@
         }
         selectedEl = el;
         selectedEl.classList.add('selected-item');
-        if (el.classList.contains('block_image')) addResizeHandle(el);
+        
+        // Only show resize handle when image is selected
+        if (el.classList.contains('block_image')) {
+            const existingHandle = el.querySelector('.resize-handle');
+            if (!existingHandle) addResizeHandle(el);
+        }
+        
         renderToolbar();
     }
 
