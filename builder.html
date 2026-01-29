@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Snoozing Builder | v3.33 Internal Scroll</title>
+    <title>Snoozing Builder | v3.34 Full Width</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -33,7 +33,8 @@
         }
         
         #preview-frame { border: none; background: white; width: 100%; height: 100%; }
-        #preview-frame.mobile { width: 412px; box-shadow: 0 0 40px rgba(0,0,0,0.8); }
+        /* v3.34: REMOVED fixed 412px width */
+        #preview-frame.mobile { width: 100%; box-shadow: none; }
     </style>
 </head>
 <body>
@@ -51,7 +52,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.33</div>
+            <div class="version-status">v3.34</div>
         </div>
         <div id="sticky-toolbar"></div>
     </div>
@@ -65,14 +66,13 @@
 <script>
     const frame = document.getElementById('preview-frame');
     const stickyToolbar = document.getElementById('sticky-toolbar');
-    const wrapper = document.getElementById('frame-wrapper');
     
     let lockedHeight = 0;
     let selectedEl = null;
 
     async function init() {
         const vvHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-        lockedHeight = vvHeight - 50; // Capture startup height minus header
+        lockedHeight = vvHeight - 50; 
 
         const resp = await fetch('template.html');
         let html = await resp.text();
@@ -86,7 +86,6 @@
                 }
                 .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; }
                 .editable img { width: 100%; display: block; pointer-events: none; }
-                /* Padding so footer can be scrolled up away from bottom edge */
                 #editor-root { padding-bottom: 50vh !important; }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
@@ -109,13 +108,11 @@
         if (type === 'mobile') {
             frame.classList.add('mobile');
             frame.style.height = lockedHeight + 'px';
-            frame.style.width = '412px';
-            frame.style.transform = 'none';
+            frame.style.width = '100%'; // Expanded to full width
         } else {
             frame.classList.remove('mobile');
             frame.style.width = '100%';
             frame.style.height = '100%';
-            frame.style.transform = 'none';
         }
     }
 
@@ -124,11 +121,7 @@
         selectedEl = el;
         selectedEl.classList.add('selected-item');
         renderToolbar();
-
-        setTimeout(() => {
-            // Internal scroll only
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }, 100);
+        setTimeout(() => { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
     }
 
     function insertElement(type, data) {
@@ -136,15 +129,10 @@
         const root = doc.getElementById('editor-root');
         const el = doc.createElement('div');
         el.className = `editable ${type}`;
-        
         if(type === 'block_image') { 
             el.innerHTML = `<img src="${data}">`; 
             el.contentEditable = "false"; el.style.width = "250px"; el.style.margin = "0 auto";
-        } else { 
-            el.innerText = "New Block"; 
-            el.contentEditable = "true"; 
-        }
-        
+        } else { el.innerText = "New Block"; el.contentEditable = "true"; }
         root.appendChild(el);
         setTimeout(() => { selectElement(el); if (type !== 'block_image') el.focus(); }, 150);
     }
