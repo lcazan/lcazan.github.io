@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v3.25 Half-Screen Logic</title>
+    <title>Snoozing Builder | v3.26 Absolute Centering</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -16,38 +16,20 @@
         #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; }
         .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
 
-        #preview-container { 
-            flex-grow: 1; display: flex; flex-direction: column; 
-            background: #333; position: relative; height: 100vh; 
-            overflow: hidden;
-        }
-        
-        #header-area { 
-            background: #222; border-bottom: 1px solid #000; 
-            flex-shrink: 0; z-index: 500; 
-            width: 100%; position: relative;
-        }
-        
+        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; overflow: hidden; }
+        #header-area { background: #222; border-bottom: 1px solid #000; flex-shrink: 0; z-index: 500; width: 100%; position: relative; }
         #device-bar { height: 50px; display: flex; align-items: center; justify-content: center; position: relative; border-bottom: 1px solid #111; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 26px; margin: 0 15px; }
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 25px; color: #fff; font-size: 16px; font-weight: 800; }
 
-        #sticky-toolbar { 
-            height: 85px; background: #1a1a1a; display: none; 
-            align-items: center; justify-content: center; gap: 18px; padding: 0 25px;
-        }
-        .tool-btn { 
-            background: #333; border: 1px solid #444; color: white; 
-            padding: 15px 25px; cursor: pointer; border-radius: 8px; 
-            font-size: 24px; min-width: 70px; display: flex; align-items: center; justify-content: center;
-        }
+        #sticky-toolbar { height: 85px; background: #1a1a1a; display: none; align-items: center; justify-content: center; gap: 18px; padding: 0 25px; }
+        .tool-btn { background: #333; border: 1px solid #444; color: white; padding: 15px 25px; cursor: pointer; border-radius: 8px; font-size: 24px; min-width: 70px; display: flex; align-items: center; justify-content: center; }
 
         #frame-wrapper { 
             flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
             overflow-x: hidden; overflow-y: auto; background: #333; position: relative;
-            overscroll-behavior-y: none;
-            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: none; -webkit-overflow-scrolling: touch;
         }
         #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; }
         #preview-frame.mobile { width: 390px; }
@@ -68,7 +50,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.25</div>
+            <div class="version-status">v3.26</div>
         </div>
         <div id="sticky-toolbar"></div>
     </div>
@@ -105,7 +87,7 @@
                 }
                 .resize-handle::before { content: "\\f338"; }
                 .editable img { pointer-events: none; width: 100%; display: block; }
-                #editor-root { padding-bottom: 80vh !important; }
+                #editor-root { padding-bottom: 100vh !important; }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
         
@@ -119,45 +101,16 @@
                 if (el) selectElement(el); else deselectAll();
             });
 
+            // Keep header locked to visual top for mobile status bar shifts
             if (window.visualViewport) {
-                window.visualViewport.addEventListener('resize', handleViewportChanges);
+                window.visualViewport.addEventListener('scroll', () => {
+                    header.style.transform = `translateY(${window.visualViewport.offsetTop}px)`;
+                });
             }
 
             doc.addEventListener('input', updateFrameHeight);
             setDevice('mobile');
         };
-    }
-
-    function handleViewportChanges() {
-        const vv = window.visualViewport;
-        // Keep header fixed to visual top
-        header.style.transform = `translateY(${vv.offsetTop}px)`;
-        
-        if (selectedEl && frame.contentDocument.activeElement?.isContentEditable) {
-            handleHalfScreenScroll();
-        }
-    }
-
-    function handleHalfScreenScroll() {
-        if (!selectedEl) return;
-        
-        // Give the UI a tiny beat to recognize the keyboard
-        setTimeout(() => {
-            const rect = selectedEl.getBoundingClientRect();
-            const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-            
-            // Item's bottom edge relative to the screen height
-            const itemBottomVisible = rect.bottom * scale;
-            const screenHeight = window.innerHeight;
-            const screenMidPoint = screenHeight / 2;
-
-            // IF the item's bottom is in the bottom half of the screen
-            if (itemBottomVisible > screenMidPoint) {
-                // Calculate the difference needed to bring that bottom edge to the midpoint
-                const overflow = itemBottomVisible - screenMidPoint;
-                wrapper.scrollBy({ top: overflow, behavior: 'smooth' });
-            }
-        }, 300);
     }
 
     function selectElement(el) {
@@ -172,6 +125,22 @@
             addResizeHandle(el);
         }
         renderToolbar();
+
+        // THE CORE FIX: Center vertically on screen immediately upon selection
+        setTimeout(() => {
+            const rect = el.getBoundingClientRect();
+            const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
+            
+            // Calculate where the element's center is relative to the top of the wrapper
+            const elCenterInParent = ((rect.top + (rect.height / 2)) * scale) + wrapper.scrollTop;
+            // Calculate the target scroll: Center of element minus half of the visible window
+            const targetScroll = elCenterInParent - (wrapper.offsetHeight / 2);
+            
+            wrapper.scrollTo({
+                top: targetScroll,
+                behavior: 'smooth'
+            });
+        }, 50); 
     }
 
     function deselectAll() {
@@ -295,10 +264,7 @@
         updateFrameHeight();
         
         setTimeout(() => {
-            // New blocks center normally
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            selectElement(el);
-
+            selectElement(el); // This now triggers the centering logic
             if (isText) {
                 el.focus();
                 const selection = frame.contentWindow.getSelection();
