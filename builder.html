@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.38 Stable</title>
+    <title>Snoozing Builder | v3.39 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -19,13 +19,26 @@
             display: flex; flex-direction: column; align-items: center; 
             padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; 
         }
+        .insert-btn { 
+            width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; 
+            margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; 
+            font-weight: bold; text-transform: uppercase; display: flex; 
+            flex-direction: column; justify-content: center; align-items: center; gap: 5px; 
+        }
 
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100vh; overflow: hidden; }
         #header-area { background: #222; border-bottom: 1px solid #000; flex-shrink: 0; z-index: 500; height: 50px; position: relative; }
-        
+        #device-bar { height: 100%; display: flex; align-items: center; justify-content: center; }
+        .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 26px; margin: 0 15px; }
+        .device-btn.active { color: var(--brand-pink); }
+        .version-status { position: absolute; right: 25px; top: 12px; color: #fff; font-size: 16px; font-weight: 800; }
+
+        #sticky-toolbar { height: 85px; background: #1a1a1a; display: none; align-items: center; justify-content: center; gap: 18px; padding: 0 25px; }
+
         #frame-wrapper { 
             flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
             background: #333; overflow: hidden; position: relative;
+            touch-action: none;
         }
         
         #preview-frame { 
@@ -33,12 +46,6 @@
             transform-origin: top center;
             width: 100%;
         }
-
-        /* Sidebar and toolbar buttons same as previous v3.38 */
-        .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
-        #device-bar { height: 100%; display: flex; align-items: center; justify-content: center; }
-        .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 26px; margin: 0 15px; }
-        .device-btn.active { color: var(--brand-pink); }
     </style>
 </head>
 <body>
@@ -55,11 +62,13 @@
     <div id="header-area">
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
-            <button class="device-btn active" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
+            <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
+            <div class="version-status">v3.39</div>
         </div>
+        <div id="sticky-toolbar"></div>
     </div>
     <div id="frame-wrapper">
-        <iframe id="preview-frame"></iframe>
+        <iframe id="preview-frame" scrolling="yes"></iframe>
     </div>
 </div>
 
@@ -67,53 +76,85 @@
 
 <script>
     const frame = document.getElementById('preview-frame');
+    const stickyToolbar = document.getElementById('sticky-toolbar');
     const wrapper = document.getElementById('frame-wrapper');
+    
+    let lockedHeight = 0;
+    let initialWidth = window.innerWidth;
+    let selectedEl = null;
     let currentMode = 'mobile';
 
     async function init() {
+        updateLockedHeight();
+
         const resp = await fetch('template.html');
         let html = await resp.text();
-        
-        // Injecting core structural styles into the iframe
         html = html.replace('</head>', `
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <style>
                 html, body { 
-                    height: 100%; margin: 0; padding: 0; 
+                    height: 100%; margin: 0; padding: 0;
                     display: flex; flex-direction: column;
-                    overflow-x: hidden; overflow-y: auto !important;
+                    overflow-x: hidden; overflow-y: auto !important; 
+                    -webkit-overflow-scrolling: touch; 
                 }
-                .content-container { flex: 1 0 auto; }
-                footer { flex-shrink: 0; }
                 .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; }
+                
+                #editor-root { 
+                    flex: 1 0 auto;
+                    display: block;
+                    width: 100%;
+                }
+                
+                footer {
+                    flex-shrink: 0;
+                    margin-top: auto;
+                }
+
                 .editable img { width: 100%; display: block; }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
         
-        frame.srcdoc = html.replace('<div class="content-container">', '<div class="content-container" id="editor-root">');
+        frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
         
         frame.onload = () => {
             frame.contentDocument.addEventListener('mousedown', (e) => {
                 const el = e.target.closest('.editable');
-                if (el) selectElement(el);
+                if (el) selectElement(el); else deselectAll();
             });
-            setDevice('mobile'); 
+            setDevice('mobile');
         };
 
-        window.addEventListener('resize', () => setDevice(currentMode));
+        window.visualViewport.addEventListener('resize', () => {
+            if (window.innerWidth !== initialWidth) {
+                initialWidth = window.innerWidth;
+                updateLockedHeight();
+                if(currentMode === 'mobile') setDevice('mobile');
+            }
+        });
+    }
+
+    function updateLockedHeight() {
+        // Correctly target the available wrapper height for the fixed iframe viewport
+        lockedHeight = wrapper.offsetHeight;
     }
 
     function setDevice(type) {
         currentMode = type;
-        const availableHeight = wrapper.offsetHeight;
-        const availableWidth = wrapper.offsetWidth;
+        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop');
+        btn.classList.add('active');
+        
+        const physicalViewHeight = wrapper.offsetHeight;
+        const physicalViewWidth = wrapper.offsetWidth;
 
         if (type === 'mobile') {
-            const targetWidth = 412; 
-            const scaleFactor = availableWidth / targetWidth;
+            const targetWidth = 412;
+            const scaleFactor = physicalViewWidth / targetWidth;
             
             frame.style.width = targetWidth + 'px';
-            // FIXED: Force internal height to sync with visible editor height
-            frame.style.height = (availableHeight / scaleFactor) + 'px';
+            // Scale logic ensures the internal 100% matches visible viewport height exactly
+            frame.style.height = (physicalViewHeight / scaleFactor) + 'px';
             frame.style.transform = `scale(${scaleFactor})`;
         } else {
             frame.style.width = '100%';
@@ -122,21 +163,69 @@
         }
     }
 
+    function selectElement(el) {
+        if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
+        selectedEl = el;
+        selectedEl.classList.add('selected-item');
+        renderToolbar();
+        setTimeout(() => { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
+    }
+
     function insertElement(type, data) {
         const doc = frame.contentDocument;
         const root = doc.getElementById('editor-root');
         const el = doc.createElement('div');
         el.className = `editable ${type}`;
-        if(type === 'block_image') {
-            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`;
-            el.contentEditable = "false";
-        } else {
-            el.innerText = "New Content Block";
-            el.contentEditable = "true";
-        }
+        if(type === 'block_image') { 
+            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
+            el.contentEditable = "false"; el.style.width = "100%";
+        } else { el.innerText = "New Block"; el.contentEditable = "true"; }
         root.appendChild(el);
-        // Ensure the editor scrolls to keep the new block in the visible window
-        el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        setTimeout(() => { selectElement(el); if (type !== 'block_image') el.focus(); }, 150);
+    }
+
+    function deselectAll() {
+        if (selectedEl) selectedEl.classList.remove('selected-item');
+        selectedEl = null;
+        stickyToolbar.style.display = 'none';
+    }
+
+    function renderToolbar() {
+        if (!selectedEl) return;
+        stickyToolbar.style.display = 'flex';
+        stickyToolbar.innerHTML = `
+            <button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
+            <button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
+            <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
+            <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
+            <button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>
+        `;
+    }
+
+    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
+    function setAlign(pos) { if(selectedEl) selectedEl.style.textAlign = pos; }
+    function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
+    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+    function handleImageUpload(i) { 
+        if(i.files[0]) { 
+            const r = new FileReader(); 
+            r.onload = e => {
+                if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result;
+                else insertElement('block_image', e.target.result);
+            };
+            r.readAsDataURL(i.files[0]); 
+        } 
+    }
+
+    function saveJSON() {
+        const root = frame.contentDocument.getElementById('editor-root');
+        const data = Array.from(root.children).map(c => ({ 
+            type: c.className.replace('editable ','').replace('selected-item','').trim(), 
+            content: c.innerHTML, style: c.getAttribute('style')||"" 
+        }));
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type:'application/json'}));
+        a.download = 'layout.json'; a.click();
     }
 
     window.onload = init;
