@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.4.1 Stable</title>
+    <title>Snoozing Builder | v3.4.2 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -38,7 +38,8 @@
         #frame-wrapper { 
             flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
             background: #333; overflow: hidden; position: relative;
-            touch-action: none;
+            /* Added touch-action to allow internal scrolling */
+            touch-action: pan-y; 
         }
         
         #preview-frame { 
@@ -63,7 +64,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.4.1</div>
+            <div class="version-status">v3.4.2</div>
         </div>
         <div id="sticky-toolbar"></div>
     </div>
@@ -89,18 +90,21 @@
         html = html.replace('</head>', `
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <style>
+                /* Force internal scrolling context */
                 html, body { 
                     height: 100%; margin: 0; padding: 0;
                     display: flex; flex-direction: column;
-                    overflow-x: hidden; overflow-y: auto !important; 
+                    overflow-x: hidden; 
+                    overflow-y: auto !important; 
                     -webkit-overflow-scrolling: touch; 
                 }
                 .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; }
                 
                 #editor-root { 
                     flex: 1 0 auto; 
-                    display: block;
                     width: 100%;
+                    /* Ensure there is always room to scroll past the last element */
+                    padding-bottom: 100px; 
                 }
                 
                 footer {
@@ -136,21 +140,14 @@
         const btn = document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop');
         btn.classList.add('active');
 
-        // Capture available space dimensions (The Wrapper)
         const wrapperW = wrapper.offsetWidth;
         const wrapperH = wrapper.offsetHeight;
         
         if (type === 'mobile') {
-            // Obtain the scale factor
             const scaleFactor = wrapperW / 412;
-            
-            // Set iframe element dimensions
             frame.style.width = '412px';
-            // Inverse Scale the height: Make it large enough so that after scaling 
-            // down/up, it fits the wrapper height exactly.
+            // Calculation remains correct to align 100% height with physical view
             frame.style.height = (wrapperH / scaleFactor) + 'px';
-            
-            // Apply visual scaling
             frame.style.transform = `scale(${scaleFactor})`;
         } else {
             frame.style.width = '100%';
@@ -159,6 +156,7 @@
         }
     }
 
+    // Functionality logic remains unchanged as per baseline instructions
     function selectElement(el) {
         if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
