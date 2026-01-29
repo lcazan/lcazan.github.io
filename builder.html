@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.40 Stable</title>
+    <title>Snoozing Builder | v3.4.1 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -63,7 +63,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.40</div>
+            <div class="version-status">v3.4.1</div>
         </div>
         <div id="sticky-toolbar"></div>
     </div>
@@ -86,8 +86,6 @@
     async function init() {
         const resp = await fetch('template.html');
         let html = await resp.text();
-        
-        // v3.40 Injection: Fixes footer by making body 100% height and flex
         html = html.replace('</head>', `
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <style>
@@ -100,8 +98,8 @@
                 .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; }
                 
                 #editor-root { 
-                    flex: 1 0 auto;
-                    display: block; 
+                    flex: 1 0 auto; 
+                    display: block;
                     width: 100%;
                 }
                 
@@ -137,17 +135,22 @@
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         const btn = document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop');
         btn.classList.add('active');
-        
-        const physicalViewHeight = wrapper.offsetHeight;
-        const physicalViewWidth = wrapper.offsetWidth;
 
+        // Capture available space dimensions (The Wrapper)
+        const wrapperW = wrapper.offsetWidth;
+        const wrapperH = wrapper.offsetHeight;
+        
         if (type === 'mobile') {
-            const targetWidth = 412;
-            const scaleFactor = physicalViewWidth / targetWidth;
+            // Obtain the scale factor
+            const scaleFactor = wrapperW / 412;
             
-            frame.style.width = targetWidth + 'px';
-            // FIXED v3.40: The iframe height is set so the internal body (100%) matches the visible editor area.
-            frame.style.height = (physicalViewHeight / scaleFactor) + 'px';
+            // Set iframe element dimensions
+            frame.style.width = '412px';
+            // Inverse Scale the height: Make it large enough so that after scaling 
+            // down/up, it fits the wrapper height exactly.
+            frame.style.height = (wrapperH / scaleFactor) + 'px';
+            
+            // Apply visual scaling
             frame.style.transform = `scale(${scaleFactor})`;
         } else {
             frame.style.width = '100%';
