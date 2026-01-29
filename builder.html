@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.4.4 Stable</title>
+    <title>Snoozing Builder | v3.4.5 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -33,7 +33,24 @@
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 25px; top: 12px; color: #fff; font-size: 16px; font-weight: 800; }
 
-        #sticky-toolbar { height: 85px; background: #1a1a1a; display: none; align-items: center; justify-content: center; gap: 18px; padding: 0 25px; }
+        /* FIXED: Toolbar container is now always flex and occupies space */
+        #sticky-toolbar { 
+            height: 85px; 
+            background: #1a1a1a; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 18px; 
+            padding: 0 25px;
+            border-bottom: 1px solid #000;
+        }
+        
+        /* Hide buttons by default but keep container height */
+        #toolbar-content { 
+            display: flex; 
+            gap: 18px; 
+            visibility: hidden; 
+        }
 
         #frame-wrapper { 
             flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
@@ -43,8 +60,9 @@
         #preview-frame { 
             border: none; background: white; 
             transform-origin: top center;
-            /* width: 100%; removed to let JS handle it */
         }
+
+        .tool-btn { background: #444; border: 1px solid #666; color: white; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -62,9 +80,11 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.4.4</div>
+            <div class="version-status">v3.4.5</div>
         </div>
-        <div id="sticky-toolbar"></div>
+    </div>
+    <div id="sticky-toolbar">
+        <div id="toolbar-content"></div>
     </div>
     <div id="frame-wrapper">
         <iframe id="preview-frame" scrolling="yes"></iframe>
@@ -75,21 +95,18 @@
 
 <script>
     const frame = document.getElementById('preview-frame');
-    const stickyToolbar = document.getElementById('sticky-toolbar');
+    const toolbarContent = document.getElementById('toolbar-content');
     const wrapper = document.getElementById('frame-wrapper');
     
+    let initialViewportHeight = window.innerHeight; // The baseline for 1.0 scale
     let initialWidth = window.innerWidth;
     let selectedEl = null;
     let currentMode = 'mobile';
-    
-    // Target Height for a standard mobile viewport (e.g., Pixel 8 Pro is ~915px)
-    const TARGET_MOBILE_HEIGHT = 800; 
 
     async function init() {
         const resp = await fetch('template.html');
         let html = await resp.text();
         html = html.replace('</head>', `
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <style>
                 html, body { 
                     height: 100%; margin: 0; padding: 0;
@@ -127,19 +144,16 @@
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop').classList.add('active');
 
-        const wrapperW = wrapper.offsetWidth;
         const wrapperH = wrapper.offsetHeight;
         
         if (type === 'mobile') {
-            // NEW LOGIC: Calculate scale based on HEIGHT
-            const scaleFactor = wrapperH / TARGET_MOBILE_HEIGHT;
+            // SCALE FACTOR = Physical space available / Entire viewport height at start
+            const scaleFactor = wrapperH / initialViewportHeight;
             
-            // To maintain a 412px wide logic inside:
             frame.style.width = '412px';
-            // We set the iframe's internal height to our target height
-            frame.style.height = TARGET_MOBILE_HEIGHT + 'px';
-            
-            // Scale the whole thing to fit the wrapper's height
+            // We set the iframe height to the initial viewport height
+            // so that after scaling, it fits the wrapper height exactly.
+            frame.style.height = initialViewportHeight + 'px';
             frame.style.transform = `scale(${scaleFactor})`;
         } else {
             frame.style.width = '100%';
@@ -148,7 +162,6 @@
         }
     }
 
-    // --- BASELINE FUNCTIONS ---
     function selectElement(el) {
         if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
@@ -157,29 +170,16 @@
         setTimeout(() => { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 100);
     }
 
-    function insertElement(type, data) {
-        const doc = frame.contentDocument;
-        const root = doc.getElementById('editor-root');
-        const el = doc.createElement('div');
-        el.className = `editable ${type}`;
-        if(type === 'block_image') { 
-            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
-            el.contentEditable = "false"; el.style.width = "100%";
-        } else { el.innerText = "New Block"; el.contentEditable = "true"; }
-        root.appendChild(el);
-        setTimeout(() => { selectElement(el); if (type !== 'block_image') el.focus(); }, 150);
-    }
-
     function deselectAll() {
         if (selectedEl) selectedEl.classList.remove('selected-item');
         selectedEl = null;
-        stickyToolbar.style.display = 'none';
+        toolbarContent.style.visibility = 'hidden';
     }
 
     function renderToolbar() {
         if (!selectedEl) return;
-        stickyToolbar.style.display = 'flex';
-        stickyToolbar.innerHTML = `
+        toolbarContent.style.visibility = 'visible';
+        toolbarContent.innerHTML = `
             <button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
             <button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
             <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
@@ -188,6 +188,7 @@
         `;
     }
 
+    // Logic utilities
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function setAlign(pos) { if(selectedEl) selectedEl.style.textAlign = pos; }
     function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
@@ -201,6 +202,19 @@
             };
             r.readAsDataURL(i.files[0]); 
         } 
+    }
+
+    function insertElement(type, data) {
+        const doc = frame.contentDocument;
+        const root = doc.getElementById('editor-root');
+        const el = doc.createElement('div');
+        el.className = `editable ${type}`;
+        if(type === 'block_image') { 
+            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
+            el.contentEditable = "false"; el.style.width = "100%";
+        } else { el.innerText = "New Block"; el.contentEditable = "true"; }
+        root.appendChild(el);
+        setTimeout(() => { selectElement(el); if (type !== 'block_image') el.focus(); }, 150);
     }
 
     function saveJSON() {
