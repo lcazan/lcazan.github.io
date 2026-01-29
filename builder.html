@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.4.6 Stable</title>
+    <title>Snoozing Builder | v3.4.7 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -78,7 +78,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.4.6</div>
+            <div class="version-status">v3.4.7</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -106,14 +106,21 @@
         html = html.replace('</head>', `
             <style>
                 html, body { 
-                    height: 100%; margin: 0; padding: 0;
+                    height: auto; 
+                    min-height: 100%; 
+                    margin: 0; padding: 0;
                     display: flex; flex-direction: column;
                     overflow-x: hidden; overflow-y: auto !important; 
                     -webkit-overflow-scrolling: touch; 
                 }
                 .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; }
                 #editor-root { flex: 1 0 auto; width: 100%; }
-                footer { flex-shrink: 0; margin-top: auto; }
+                footer { 
+                    flex-shrink: 0; 
+                    margin-top: auto; 
+                    /* SAFETY BUFFER: Prevents content from touching the mathematical edge */
+                    padding-bottom: 80px !important; 
+                }
                 .editable img { width: 100%; display: block; }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
@@ -145,11 +152,9 @@
         const wrapperH = wrapper.offsetHeight;
         
         if (type === 'mobile') {
-            // SCALE FACTOR = Physical Width / Target Mobile Width
             const scaleFactor = wrapperW / 412;
-            
             frame.style.width = '412px';
-            // Counter-scaling height to ensure the iframe fills the wrapper perfectly
+            // Scale logic: Physical wrapper height divided by scale factor
             frame.style.height = (wrapperH / scaleFactor) + 'px';
             frame.style.transform = `scale(${scaleFactor})`;
         } else {
@@ -159,7 +164,6 @@
         }
     }
 
-    // Baseline functionality maintained
     function selectElement(el) {
         if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
