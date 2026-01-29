@@ -2,34 +2,35 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v3.4 Fixed UI</title>
+    <title>Snoozing Builder | v3.5 Restored Logic</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         body { margin: 0; display: flex; height: 100vh; width: 100vw; font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; }
         
-        /* SIDEBAR WITH STICKY BOTTOM BUTTONS */
-        #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; border-right: 2px solid #000; z-index: 100; }
-        .sidebar-scroll { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 20px 0; }
-        .sidebar-actions { background: #222; padding: 15px 0; display: flex; flex-direction: column; align-items: center; gap: 10px; border-top: 1px solid #000; }
-
+        /* SIDEBAR - All buttons in one container as requested */
+        #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 100; overflow-y: auto; }
         .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; flex-shrink: 0; }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
-        
-        .insert-btn.action { background: #555; height: 50px; border-color: #888; margin-bottom: 0; }
+
+        /* Style for Action buttons to distinguish them slightly */
+        .insert-btn.action { background: #333; border-color: #555; color: #00ca72; }
         .insert-btn.action:hover { background: #00ca72; color: white; }
 
-        /* PREVIEW AREA */
+        .move-toggle { color: white; font-size: 10px; text-align: center; margin-top: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; margin-bottom: 20px; }
+        .move-toggle input { width: 22px; height: 22px; cursor: pointer; }
+
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; }
-        #device-bar { height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; z-index: 10; }
-        .device-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; }
+        #device-bar { height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #000; flex-shrink: 0; }
+        .device-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; transition: 0.2s; }
         .device-btn.active { color: var(--brand-pink); }
         
-        #frame-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; overflow-y: auto; background: #333; padding-top: 20px; }
-        #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; height: auto; }
+        #frame-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; overflow-x: hidden; overflow-y: auto; background: #333; position: relative; }
+        #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; height: auto; min-height: 0; }
         #preview-frame.mobile { width: 390px; }
-
-        /* THE LARGE FIXED TOOLBAR */
+        
+        /* FIXED LARGE TOOLBAR (75% Width for Mobile Usability) */
         #floating-toolbar { 
             position: absolute; 
             bottom: 30px; 
@@ -38,15 +39,15 @@
             width: 75%; 
             max-width: 500px;
             height: 60px;
+            display: none; 
             background: #111; 
             border-radius: 12px; 
-            display: none; /* Shown on selection */
-            justify-content: space-around;
-            align-items: center;
+            padding: 0 10px; 
             box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
             z-index: 5000; 
             border: 1px solid #444; 
-            padding: 0 15px;
+            align-items: center; 
+            justify-content: space-around;
         }
         .float-btn { background: #222; border: 1px solid #444; color: white; width: 45px; height: 45px; border-radius: 8px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
         .float-btn:hover { background: var(--brand-pink); color: #000; }
@@ -55,18 +56,19 @@
 <body>
 
 <div id="sidebar">
-    <div class="sidebar-scroll">
-        <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i>Section</button>
-        <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i>Heading</button>
-        <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i>Text</button>
-        <button class="insert-btn" onclick="insertElement('block_button')"><i class="fa-solid fa-square"></i>Button</button>
-        <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i>Image</button>
-    </div>
+    <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i>Section</button>
+    <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i>Heading</button>
+    <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i>Text</button>
+    <button class="insert-btn" onclick="insertElement('block_button')"><i class="fa-solid fa-square"></i>Button</button>
+    <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i>Image</button>
     
-    <div class="sidebar-actions">
-        <button class="insert-btn action" onclick="openJSON()"><i class="fa-solid fa-folder-open"></i>Open</button>
-        <button class="insert-btn action" onclick="saveJSON()"><i class="fa-solid fa-floppy-disk"></i>Save</button>
-    </div>
+    <label class="move-toggle">
+        <input type="checkbox" id="moveModeCheckbox" onchange="toggleMoveMode()">
+        <div>MOVE</div>
+    </label>
+
+    <button class="insert-btn action" onclick="openJSON()"><i class="fa-solid fa-folder-open"></i>Open</button>
+    <button class="insert-btn action" onclick="saveJSON()"><i class="fa-solid fa-floppy-disk"></i>Save</button>
 </div>
 
 <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
@@ -77,17 +79,15 @@
         <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
         <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
     </div>
-
     <div id="frame-wrapper">
+        <div id="floating-toolbar" onmousedown="event.preventDefault()">
+            <button class="float-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
+            <button class="float-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
+            <button class="float-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
+            <button class="float-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
+            <button class="float-btn" onclick="deleteElement()" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>
+        </div>
         <iframe id="preview-frame"></iframe>
-    </div>
-
-    <div id="floating-toolbar">
-        <button class="float-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
-        <button class="float-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
-        <button class="float-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
-        <button class="float-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
-        <button class="float-btn" onclick="deleteElement()" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>
     </div>
 </div>
 
@@ -109,67 +109,64 @@
             innerDoc.addEventListener('mousedown', (e) => {
                 if (isResizing) return;
                 const el = e.target.closest('.editable');
-                if (el) { e.stopPropagation(); selectElement(el); } 
-                else { deselectAll(); }
+                if (el) { e.stopPropagation(); selectElement(el); } else { deselectAll(); }
             });
             
-            // Setup mobile resize observers for the frame
-            setTimeout(() => { setDevice('mobile'); }, 500);
+            // Restoring v2.7 touch prevent for scrolling during resize
+            innerDoc.addEventListener('touchmove', (e) => { if(isResizing) e.preventDefault(); }, {passive: false});
+            setTimeout(() => { setDevice('mobile'); }, 400);
         };
     }
 
     function selectElement(el) {
-        deselectAll();
+        if (selectedEl) {
+            selectedEl.classList.remove('selected-item');
+            const h = selectedEl.querySelector('.resize-handle');
+            if(h) h.remove();
+        }
         selectedEl = el;
         selectedEl.classList.add('selected-item');
         toolbar.style.display = 'flex';
 
-        if (el.classList.contains('block_image')) {
-            const handle = document.createElement('div');
-            handle.className = 'resize-handle';
-            el.appendChild(handle);
-            setupResize(handle, el);
-        }
+        if (el.classList.contains('block_image')) addResizeHandle(el);
     }
 
-    function deselectAll() {
-        if (selectedEl) {
-            selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if (h) h.remove();
-        }
-        selectedEl = null;
-        toolbar.style.display = 'none';
-    }
-
-    // --- RESIZE LOGIC ---
-    function setupResize(handle, el) {
-        handle.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
+    function addResizeHandle(el) {
+        const handle = frame.contentDocument.createElement('div');
+        handle.className = 'resize-handle';
+        
+        const startResize = (e) => {
+            e.preventDefault(); e.stopPropagation();
             isResizing = true;
-            const startX = e.clientX;
+            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             const startWidth = el.offsetWidth;
 
-            const onMouseMove = (moveE) => {
-                const delta = moveE.clientX - startX;
-                el.style.width = (startWidth + delta) + 'px';
+            const onMove = (mE) => {
+                const currentX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
+                el.style.width = (startWidth + (currentX - startX)) + 'px';
             };
-
-            const onMouseUp = () => {
+            
+            const onUp = () => {
                 isResizing = false;
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
+                frame.contentDocument.removeEventListener('mousemove', onMove);
+                frame.contentDocument.removeEventListener('mouseup', onUp);
+                frame.contentDocument.removeEventListener('touchmove', onMove);
+                frame.contentDocument.removeEventListener('touchend', onUp);
+                updateFrameHeight();
             };
 
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
-        });
+            frame.contentDocument.addEventListener('mousemove', onMove);
+            frame.contentDocument.addEventListener('mouseup', onUp);
+            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
+            frame.contentDocument.addEventListener('touchend', onUp);
+        };
+
+        handle.addEventListener('mousedown', startResize);
+        handle.addEventListener('touchstart', startResize, {passive: false});
+        el.appendChild(handle);
     }
 
-    // --- BUTTON & IMAGE TOOLS ---
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
-    
     function handleImageUpload(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
@@ -197,6 +194,16 @@
 
         root.appendChild(newEl);
         updateFrameHeight();
+    }
+
+    function deselectAll() { 
+        if (selectedEl) {
+            selectedEl.classList.remove('selected-item');
+            const h = selectedEl.querySelector('.resize-handle');
+            if(h) h.remove();
+        }
+        selectedEl = null; 
+        toolbar.style.display = 'none'; 
     }
 
     function setDevice(type) {
@@ -227,7 +234,6 @@
     function setAlign(val) { if(selectedEl) selectedEl.style.textAlign = val; }
     function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); updateFrameHeight(); } }
 
-    // --- JSON ENGINE ---
     function saveJSON() {
         const root = frame.contentDocument.getElementById('editor-root');
         const elements = Array.from(root.children).map(child => ({
