@@ -2,52 +2,45 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v3.5 Restored Logic</title>
+    <title>Snoozing Builder | v3.8 Restored Logic</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         body { margin: 0; display: flex; height: 100vh; width: 100vw; font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; }
         
-        /* SIDEBAR - All buttons in one container as requested */
+        /* SIDEBAR - All buttons in one div as requested */
         #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 100; overflow-y: auto; }
         .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; flex-shrink: 0; }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
 
-        /* Style for Action buttons to distinguish them slightly */
         .insert-btn.action { background: #333; border-color: #555; color: #00ca72; }
         .insert-btn.action:hover { background: #00ca72; color: white; }
 
         .move-toggle { color: white; font-size: 10px; text-align: center; margin-top: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; margin-bottom: 20px; }
         .move-toggle input { width: 22px; height: 22px; cursor: pointer; }
 
+        /* PREVIEW AREA */
+        #drag-track { width: 0; background: #222; overflow: hidden; transition: width 0.3s ease; position: relative; border-right: 1px solid #000; flex-shrink: 0; }
+        #drag-track.active { width: 55px; }
+        .drag-handle-item { width: 55px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 24px; cursor: grab; background: #222; position: absolute; border-bottom: 1px solid #333; box-sizing: border-box; }
+
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; }
         #device-bar { height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #000; flex-shrink: 0; }
-        .device-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; transition: 0.2s; }
+        .device-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; }
         .device-btn.active { color: var(--brand-pink); }
         
         #frame-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; overflow-x: hidden; overflow-y: auto; background: #333; position: relative; }
         #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; height: auto; min-height: 0; }
         #preview-frame.mobile { width: 390px; }
         
-        /* FIXED LARGE TOOLBAR (75% Width for Mobile Usability) */
+        /* LARGE FIXED TOOLBAR */
         #floating-toolbar { 
-            position: absolute; 
-            bottom: 30px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            width: 75%; 
-            max-width: 500px;
-            height: 60px;
-            display: none; 
-            background: #111; 
-            border-radius: 12px; 
-            padding: 0 10px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
-            z-index: 5000; 
-            border: 1px solid #444; 
-            align-items: center; 
-            justify-content: space-around;
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); 
+            width: 75%; max-width: 500px; height: 60px; display: none; 
+            background: #111; border-radius: 12px; padding: 0 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 5000; 
+            border: 1px solid #444; align-items: center; justify-content: space-around;
         }
         .float-btn { background: #222; border: 1px solid #444; color: white; width: 45px; height: 45px; border-radius: 8px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
         .float-btn:hover { background: var(--brand-pink); color: #000; }
@@ -59,7 +52,6 @@
     <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i>Section</button>
     <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i>Heading</button>
     <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i>Text</button>
-    <button class="insert-btn" onclick="insertElement('block_button')"><i class="fa-solid fa-square"></i>Button</button>
     <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i>Image</button>
     
     <label class="move-toggle">
@@ -73,6 +65,8 @@
 
 <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
 <input type="file" id="json-opener" style="display:none" accept=".json" onchange="handleJSONOpen(this)">
+
+<div id="drag-track"></div>
 
 <div id="preview-container">
     <div id="device-bar">
@@ -95,39 +89,40 @@
     const frame = document.getElementById('preview-frame');
     const toolbar = document.getElementById('floating-toolbar');
     const wrapper = document.getElementById('frame-wrapper');
+    const track = document.getElementById('drag-track');
     let selectedEl = null;
     let isResizing = false;
+    let sortableInstance = null;
 
     async function init() {
         const resp = await fetch('template.html');
         let html = await resp.text();
         html = html.replace('</head>', '<link rel="stylesheet" href="styles.css"></head>');
-        frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root"></div>');
+        
+        // RESTORED v2.7 LOGIC: The $1 keeps your footer content/classes alive
+        frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
         
         frame.onload = () => {
             const innerDoc = frame.contentDocument;
             innerDoc.addEventListener('mousedown', (e) => {
-                if (isResizing) return;
+                if (isResizing || document.getElementById('moveModeCheckbox').checked) return;
                 const el = e.target.closest('.editable');
                 if (el) { e.stopPropagation(); selectElement(el); } else { deselectAll(); }
             });
             
-            // Restoring v2.7 touch prevent for scrolling during resize
+            // v2.7 touch logic to prevent scroll during resize
             innerDoc.addEventListener('touchmove', (e) => { if(isResizing) e.preventDefault(); }, {passive: false});
+            innerDoc.addEventListener('scroll', syncTrackPositions);
+            wrapper.addEventListener('scroll', syncTrackPositions);
             setTimeout(() => { setDevice('mobile'); }, 400);
         };
     }
 
     function selectElement(el) {
-        if (selectedEl) {
-            selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if(h) h.remove();
-        }
+        deselectAll();
         selectedEl = el;
         selectedEl.classList.add('selected-item');
         toolbar.style.display = 'flex';
-
         if (el.classList.contains('block_image')) addResizeHandle(el);
     }
 
@@ -180,20 +175,16 @@
         const root = frame.contentDocument.getElementById('editor-root');
         const newEl = frame.contentDocument.createElement('div');
         newEl.className = `editable ${type}`;
-        
         if (type === 'block_image') {
             newEl.innerHTML = `<img src="${data}" style="width:100%">`;
             newEl.contentEditable = "false";
-        } else if (type === 'block_button') {
-            newEl.innerText = "FIND OUT MORE";
-            newEl.contentEditable = "true";
         } else {
-            newEl.innerText = "New Block Content";
+            newEl.innerText = "New Content";
             newEl.contentEditable = "true";
         }
-
         root.appendChild(newEl);
         updateFrameHeight();
+        if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
     }
 
     function deselectAll() { 
@@ -228,6 +219,43 @@
             const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
             frame.style.height = (frame.contentDocument.documentElement.scrollHeight * scale) + 'px';
         }
+    }
+
+    function toggleMoveMode() {
+        const active = document.getElementById('moveModeCheckbox').checked;
+        track.classList.toggle('active', active);
+        deselectAll();
+        if (active) {
+            syncTrackPositions();
+            sortableInstance = new Sortable(track, {
+                animation: 200,
+                onEnd: (evt) => {
+                    const root = frame.contentDocument.getElementById('editor-root');
+                    const blocks = Array.from(root.children);
+                    const target = blocks[evt.oldIndex];
+                    if (evt.newIndex >= blocks.length - 1) root.appendChild(target);
+                    else root.insertBefore(target, blocks[evt.newIndex + (evt.newIndex > evt.oldIndex ? 1 : 0)]);
+                    setTimeout(syncTrackPositions, 50);
+                }
+            });
+        } else if (sortableInstance) { sortableInstance.destroy(); track.innerHTML = ""; }
+    }
+
+    function syncTrackPositions() {
+        if (!document.getElementById('moveModeCheckbox').checked) return;
+        track.innerHTML = "";
+        const root = frame.contentDocument.getElementById('editor-root');
+        const blocks = Array.from(root.children);
+        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
+        blocks.forEach((block) => {
+            const rect = block.getBoundingClientRect();
+            const handle = document.createElement('div');
+            handle.className = 'drag-handle-item';
+            handle.innerHTML = '⠿';
+            handle.style.top = (rect.top * scale) + "px";
+            handle.style.height = (rect.height * scale) + "px";
+            track.appendChild(handle);
+        });
     }
 
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
