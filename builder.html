@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Snoozing Builder | v3.29 Scroll Stability</title>
+    <title>Snoozing Builder | v3.30 Fixed Viewport</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         
-        /* STRICT LOCK: Ensures the UI never moves, only the iframe inside scrolls */
+        /* Force the editor to stay exactly the size of the glass */
         html, body { 
             margin: 0; padding: 0; width: 100vw; height: 100vh; 
             overflow: hidden; position: fixed; background: #111;
@@ -17,7 +17,7 @@
         body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
         
         #sidebar { 
-            width: 90px; height: 100vh; background: var(--panel-bg); 
+            width: 90px; height: 100%; background: var(--panel-bg); 
             display: flex; flex-direction: column; align-items: center; 
             padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; 
         }
@@ -28,24 +28,28 @@
             background: #333; position: relative; overflow: hidden; 
         }
         
-        #header-area { background: #222; border-bottom: 1px solid #000; flex-shrink: 0; z-index: 500; }
+        #header-area { background: #222; border-bottom: 1px solid #000; flex-shrink: 0; z-index: 500; width: 100%; }
         #device-bar { height: 50px; display: flex; align-items: center; justify-content: center; position: relative; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 26px; margin: 0 15px; }
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 25px; color: #fff; font-size: 16px; font-weight: 800; }
 
         #sticky-toolbar { height: 85px; background: #1a1a1a; display: none; align-items: center; justify-content: center; gap: 18px; padding: 0 25px; }
-        .tool-btn { background: #333; border: 1px solid #444; color: white; padding: 15px 25px; cursor: pointer; border-radius: 8px; font-size: 24px; min-width: 70px; display: flex; align-items: center; justify-content: center; }
 
+        /* The Frame Wrapper is now a rigid box that holds the iframe */
         #frame-wrapper { 
-            flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
-            overflow-x: hidden; overflow-y: auto; background: #333; position: relative;
-            -webkit-overflow-scrolling: touch;
+            flex-grow: 1; display: flex; justify-content: center; align-items: center; 
+            background: #333; overflow: hidden; position: relative;
         }
         
-        /* Use a fixed container size inside the wrapper to prevent iframe from pushing parent boundaries */
-        #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; }
-        #preview-frame.mobile { width: 390px; }
+        /* The Iframe is now fixed size. We scroll INSIDE it, not the page. */
+        #preview-frame { 
+            width: 100%; height: 100%; border: none; background: white; 
+        }
+        #preview-frame.mobile { 
+            width: 390px; height: 844px; /* Fixed iPhone-style height */
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
     </style>
 </head>
 <body>
@@ -63,12 +67,12 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.29</div>
+            <div class="version-status">v3.30</div>
         </div>
         <div id="sticky-toolbar"></div>
     </div>
     <div id="frame-wrapper">
-        <iframe id="preview-frame" scrolling="no"></iframe>
+        <iframe id="preview-frame" name="preview-frame"></iframe>
     </div>
 </div>
 
@@ -78,11 +82,7 @@
     const frame = document.getElementById('preview-frame');
     const stickyToolbar = document.getElementById('sticky-toolbar');
     const wrapper = document.getElementById('frame-wrapper');
-    const header = document.getElementById('header-area');
-    
     let selectedEl = null;
-    let isResizing = false;
-    let currentViewportHeight = window.innerHeight;
 
     async function init() {
         const resp = await fetch('template.html');
@@ -90,12 +90,12 @@
         html = html.replace('</head>', `
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <style>
+                html, body { height: 100%; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
                 .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; }
                 .block_heading { display: block; width: 100%; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
                 .no-line { border-bottom: none !important; }
                 .editable img { width: 100%; display: block; }
-                /* Padding to allow scrolling the very last item to the midpoint */
-                #editor-root { padding-bottom: 60vh !important; min-height: 100vh; }
+                #editor-root { padding-bottom: 50vh !important; min-height: 101%; }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
         
@@ -107,42 +107,20 @@
                 const el = e.target.closest('.editable');
                 if (el) selectElement(el); else deselectAll();
             });
-
-            if (window.visualViewport) {
-                window.visualViewport.addEventListener('resize', () => {
-                    currentViewportHeight = window.visualViewport.height;
-                });
-            }
-
-            doc.addEventListener('input', updateFrameHeight);
             setDevice('mobile');
         };
     }
 
-    function selectElement(el, forceScroll = false) {
+    function selectElement(el) {
         if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
         selectedEl.classList.add('selected-item');
         renderToolbar();
 
+        // Standard centering logic that works within the fixed iframe scroll
         setTimeout(() => {
-            const rect = el.getBoundingClientRect();
-            // Important: Use the scale factor of the iframe transform
-            const scale = frame.getBoundingClientRect().width / frame.offsetWidth;
-            
-            // Get the visual position relative to the viewport
-            const itemBottomOnScreen = rect.bottom * scale + frame.getBoundingClientRect().top;
-            const viewportMidpoint = currentViewportHeight / 2;
-
-            if (itemBottomOnScreen > viewportMidpoint || forceScroll) {
-                // Determine how far below the midpoint the bottom edge is
-                const distanceBelowMid = itemBottomOnScreen - viewportMidpoint;
-                wrapper.scrollBy({
-                    top: distanceBelowMid,
-                    behavior: 'smooth'
-                });
-            }
-        }, 100); 
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
     }
 
     function deselectAll() {
@@ -154,16 +132,11 @@
     function renderToolbar() {
         if (!selectedEl) return;
         stickyToolbar.style.display = 'flex';
-        const isImg = selectedEl.classList.contains('block_image');
-        const isHeading = selectedEl.classList.contains('block_heading');
-        const lineHidden = selectedEl.classList.contains('no-line');
-
         let html = '';
-        if (isImg) {
+        if (selectedEl.classList.contains('block_image')) {
             html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`;
         } else {
             html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
-            if (isHeading) html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>`;
         }
         html += `
             <button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
@@ -180,27 +153,18 @@
         frame.classList.toggle('mobile', type === 'mobile');
         
         if (type === 'mobile') {
-            const scale = wrapper.offsetWidth / 390;
-            frame.style.width = '390px';
+            const containerHeight = wrapper.offsetHeight;
+            const scale = (containerHeight * 0.9) / 844; // Fit iPhone height to screen
             frame.style.transform = `scale(${scale})`;
         } else {
-            frame.style.width = '100%';
             frame.style.transform = 'none';
         }
-        setTimeout(updateFrameHeight, 200);
-    }
-
-    function updateFrameHeight() {
-        if (!frame.contentDocument) return;
-        // Reset height to calculate true scrollHeight
-        frame.style.height = 'auto';
-        const newHeight = frame.contentDocument.documentElement.scrollHeight;
-        frame.style.height = newHeight + 'px';
     }
 
     function insertElement(type, data) {
-        const root = frame.contentDocument.getElementById('editor-root');
-        const el = frame.contentDocument.createElement('div');
+        const doc = frame.contentDocument;
+        const root = doc.getElementById('editor-root');
+        const el = doc.createElement('div');
         el.className = `editable ${type}`;
         
         if(type === 'block_image') { 
@@ -212,22 +176,22 @@
         }
         
         root.appendChild(el);
-        updateFrameHeight();
         
         setTimeout(() => {
-            selectElement(el, true); 
+            selectElement(el); 
             if (type !== 'block_image') {
                 el.focus();
                 const sel = frame.contentWindow.getSelection();
-                const range = frame.contentDocument.createRange();
+                const range = doc.createRange();
                 range.selectNodeContents(el);
                 sel.removeAllRanges();
                 sel.addRange(range);
             }
-        }, 200);
+        }, 150);
     }
 
-    function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); updateFrameHeight(); } }
+    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
+    function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
     function handleImageUpload(i) { 
         if(i.files[0]) { 
