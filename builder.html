@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.4.5 Stable</title>
+    <title>Snoozing Builder | v3.4.6 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -33,7 +33,6 @@
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 25px; top: 12px; color: #fff; font-size: 16px; font-weight: 800; }
 
-        /* FIXED: Toolbar container is now always flex and occupies space */
         #sticky-toolbar { 
             height: 85px; 
             background: #1a1a1a; 
@@ -45,7 +44,6 @@
             border-bottom: 1px solid #000;
         }
         
-        /* Hide buttons by default but keep container height */
         #toolbar-content { 
             display: flex; 
             gap: 18px; 
@@ -80,7 +78,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.4.5</div>
+            <div class="version-status">v3.4.6</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -98,7 +96,6 @@
     const toolbarContent = document.getElementById('toolbar-content');
     const wrapper = document.getElementById('frame-wrapper');
     
-    let initialViewportHeight = window.innerHeight; // The baseline for 1.0 scale
     let initialWidth = window.innerWidth;
     let selectedEl = null;
     let currentMode = 'mobile';
@@ -144,16 +141,16 @@
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop').classList.add('active');
 
+        const wrapperW = wrapper.offsetWidth;
         const wrapperH = wrapper.offsetHeight;
         
         if (type === 'mobile') {
-            // SCALE FACTOR = Physical space available / Entire viewport height at start
-            const scaleFactor = wrapperH / initialViewportHeight;
+            // SCALE FACTOR = Physical Width / Target Mobile Width
+            const scaleFactor = wrapperW / 412;
             
             frame.style.width = '412px';
-            // We set the iframe height to the initial viewport height
-            // so that after scaling, it fits the wrapper height exactly.
-            frame.style.height = initialViewportHeight + 'px';
+            // Counter-scaling height to ensure the iframe fills the wrapper perfectly
+            frame.style.height = (wrapperH / scaleFactor) + 'px';
             frame.style.transform = `scale(${scaleFactor})`;
         } else {
             frame.style.width = '100%';
@@ -162,6 +159,7 @@
         }
     }
 
+    // Baseline functionality maintained
     function selectElement(el) {
         if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
@@ -188,7 +186,6 @@
         `;
     }
 
-    // Logic utilities
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function setAlign(pos) { if(selectedEl) selectedEl.style.textAlign = pos; }
     function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
