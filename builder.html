@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.39 Stable Scale</title>
+    <title>Snoozing Builder | v3.39 Edge-to-Edge</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -49,8 +49,10 @@
         const resp = await fetch('template.html');
         let html = await resp.text();
         
-        // Inject Editor overrides into template
+        // Inject Editor overrides
         html = html.replace('</head>', `<style>.selected-item { outline: 3px solid #ebd5c9 !important; } .editable { cursor: pointer; }</style></head>`);
+        
+        // Target the empty content-container for editing
         frame.srcdoc = html.replace('<div class="content-container">', '<div class="content-container" id="editor-root">');
         
         frame.onload = () => {
@@ -76,9 +78,12 @@
 
     function setDevice(type) {
         currentMode = type;
+        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop').classList.add('active');
+
         if (type === 'mobile') {
-            const availableW = wrapper.offsetWidth;
-            const scaleFactor = availableW / 412;
+            const physicalWidth = wrapper.offsetWidth;
+            const scaleFactor = physicalWidth / 412;
             frame.style.width = '412px';
             frame.style.height = (lockedHeight / scaleFactor) + 'px';
             frame.style.transform = `scale(${scaleFactor})`;
@@ -95,7 +100,7 @@
         const el = doc.createElement('div');
         el.className = `editable ${type}`;
         el.contentEditable = "true";
-        el.innerText = "New Content Block";
+        el.innerText = "New Block";
         root.appendChild(el);
     }
 
@@ -109,4 +114,3 @@
 </script>
 </body>
 </html>
-
