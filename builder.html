@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.5.0 Stable</title>
+    <title>Snoozing Builder | v3.5.1 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -48,7 +48,6 @@
         
         #preview-frame { border: none; background: white; transform-origin: top center; }
         .tool-btn { background: #444; border: 1px solid #666; color: white; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
-        .tool-btn.active { background: var(--brand-pink); color: #000; }
     </style>
 </head>
 <body>
@@ -66,7 +65,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.5.0</div>
+            <div class="version-status">v3.5.1</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -100,8 +99,10 @@
                 .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; }
                 #editor-root { flex: 1 0 auto; width: 100%; }
                 
-                /* GLOBAL PADDING: Misplaces footer from the edge in all views */
-                footer { flex-shrink: 0; margin-top: auto; padding-bottom: 60px !important; }
+                /* THE FIX: Massive padding at the very bottom of the body to force empty space after the footer */
+                body { padding-bottom: 120px !important; }
+                
+                footer { flex-shrink: 0; margin-top: auto; }
                 
                 .block_heading { display: block; width: 100%; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
                 .no-line { border-bottom: none !important; }
@@ -128,7 +129,6 @@
             setDevice('mobile');
         };
 
-        // ROTATION RECALCULATION
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', () => {
                 clearTimeout(rotationTimeout);
@@ -145,7 +145,6 @@
         const btn = document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop');
         if(btn) btn.classList.add('active');
 
-        // Fresh dimensions capture
         const wrapperW = wrapper.offsetWidth;
         const wrapperH = wrapper.offsetHeight;
         
@@ -161,7 +160,6 @@
         }
     }
 
-    // Logic utilities maintained from v3.4.9
     function selectElement(el) {
         if(selectedEl && selectedEl !== el) {
             selectedEl.classList.remove('selected-item');
