@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Snoozing Builder | v3.36 Proportional Scaling</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Snoozing Builder | v3.38 Orientation Lock</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -11,7 +11,7 @@
         body { 
             margin: 0; display: flex; height: 100vh; width: 100vw; 
             font-family: 'Source Sans Pro', sans-serif; background: #111; 
-            overflow: hidden; position: fixed;
+            overflow: hidden; position: fixed; touch-action: none;
         }
         
         #sidebar { 
@@ -26,44 +26,25 @@
             flex-direction: column; justify-content: center; align-items: center; gap: 5px; 
         }
 
-        #preview-container { 
-            flex-grow: 1; display: flex; flex-direction: column; 
-            background: #333; height: 100vh; overflow: hidden; 
-        }
-        
-        #header-area { 
-            background: #222; border-bottom: 1px solid #000; 
-            flex-shrink: 0; z-index: 500; height: 50px; position: relative; 
-        }
+        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100vh; overflow: hidden; }
+        #header-area { background: #222; border-bottom: 1px solid #000; flex-shrink: 0; z-index: 500; height: 50px; position: relative; }
         #device-bar { height: 100%; display: flex; align-items: center; justify-content: center; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 26px; margin: 0 15px; }
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 25px; top: 12px; color: #fff; font-size: 16px; font-weight: 800; }
 
-        #sticky-toolbar { 
-            height: 85px; background: #1a1a1a; display: none; 
-            align-items: center; justify-content: center; gap: 18px; padding: 0 25px; 
-        }
-        .tool-btn { 
-            background: #333; border: 1px solid #444; color: white; padding: 15px 25px; 
-            cursor: pointer; border-radius: 8px; font-size: 24px; min-width: 70px; 
-            display: flex; align-items: center; justify-content: center; 
-        }
+        #sticky-toolbar { height: 85px; background: #1a1a1a; display: none; align-items: center; justify-content: center; gap: 18px; padding: 0 25px; }
 
         #frame-wrapper { 
             flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
             background: #333; overflow: hidden; position: relative;
-            padding-top: 20px;
+            touch-action: none; /* Prevents zoom gestures on the container */
         }
         
         #preview-frame { 
             border: none; background: white; 
             transform-origin: top center;
-            transition: transform 0.2s ease;
-        }
-        #preview-frame.mobile { 
-            width: 412px; /* Simulation Width */
-            box-shadow: 0 0 50px rgba(0,0,0,0.5); 
+            width: 100%;
         }
     </style>
 </head>
@@ -82,7 +63,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.36</div>
+            <div class="version-status">v3.38</div>
         </div>
         <div id="sticky-toolbar"></div>
     </div>
@@ -100,11 +81,10 @@
     
     let lockedHeight = 0;
     let selectedEl = null;
+    let currentMode = 'mobile';
 
     async function init() {
-        // Capture initial viewport height minus UI headers
-        const vvHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-        lockedHeight = vvHeight - 70; // Header(50) + Padding(20)
+        updateLockedHeight();
 
         const resp = await fetch('template.html');
         let html = await resp.text();
@@ -117,8 +97,8 @@
                     -webkit-overflow-scrolling: touch; 
                 }
                 .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; }
-                .editable img { width: 100%; display: block; pointer-events: none; }
                 #editor-root { padding-bottom: 60vh !important; min-height: 101%; }
+                .editable img { width: 100%; display: block; }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
         
@@ -131,29 +111,33 @@
             });
             setDevice('mobile');
         };
+
+        // ORIENTATION LISTENER
+        window.visualViewport.addEventListener('resize', () => {
+            updateLockedHeight();
+            if(currentMode === 'mobile') setDevice('mobile');
+        });
+    }
+
+    function updateLockedHeight() {
+        const vvHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        lockedHeight = vvHeight - 50;
     }
 
     function setDevice(type) {
-        const btnDesktop = document.getElementById('btn-desktop');
-        const btnMobile = document.getElementById('btn-mobile');
+        currentMode = type;
+        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop');
+        btn.classList.add('active');
         
         if (type === 'mobile') {
-            btnMobile.classList.add('active');
-            btnDesktop.classList.remove('active');
-            frame.classList.add('mobile');
-            
-            // MATH: Proportional Scaling
-            const availableW = wrapper.offsetWidth - 40;
-            const scaleFactor = Math.min(availableW / 412, 1);
+            const physicalWidth = wrapper.offsetWidth;
+            const scaleFactor = physicalWidth / 412;
             
             frame.style.width = '412px';
-            // Increase internal height so it shrinks down to exactly 'lockedHeight'
             frame.style.height = (lockedHeight / scaleFactor) + 'px';
             frame.style.transform = `scale(${scaleFactor})`;
         } else {
-            btnDesktop.classList.add('active');
-            btnMobile.classList.remove('active');
-            frame.classList.remove('mobile');
             frame.style.width = '100%';
             frame.style.height = '100%';
             frame.style.transform = 'none';
