@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v3.13 High Visibility</title>
+    <title>Snoozing Builder | v3.14 Stable Center</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
@@ -14,31 +14,28 @@
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
         .insert-btn.action { background: #333; border-color: #555; color: #00ca72; }
 
-        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; transition: height 0.3s ease-out; }
+        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; }
         
-        /* DEVICE BAR + VERSION STATUS */
         #device-bar { height: 55px; background: #222; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #000; flex-shrink: 0; position: relative; z-index: 10; }
-        .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 22px; transition: color 0.2s; }
+        .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 22px; }
         .device-btn.active { color: var(--brand-pink); }
-        .version-status { position: absolute; right: 25px; color: #fff; font-size: 16px; font-weight: 800; letter-spacing: 1px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        .version-status { position: absolute; right: 25px; color: #fff; font-size: 16px; font-weight: 800; }
         
-        #frame-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; overflow-x: hidden; overflow-y: auto; background: #333; position: relative; -webkit-overflow-scrolling: touch; }
+        #frame-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; overflow-x: hidden; overflow-y: auto; background: #333; position: relative; }
         #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; }
         #preview-frame.mobile { width: 390px; }
 
-        /* PROPORTIONAL TOOLBAR */
+        /* CENTERED TOOLBAR */
         #floating-toolbar { 
             position: absolute; display: none; background: #111; border-radius: 8px; padding: 10px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.6); z-index: 5000; gap: 10px; border: 1px solid #444; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6); z-index: 5000; gap: 8px; border: 1px solid #444; 
             align-items: center; justify-content: space-around;
         }
-        .float-btn { background: #222; border: 1px solid #444; color: white; padding: 12px; cursor: pointer; border-radius: 6px; flex-grow: 1; font-size: 18px; }
+        .float-btn { background: #222; border: 1px solid #444; color: white; padding: 12px; cursor: pointer; border-radius: 6px; flex-grow: 1; font-size: 16px; }
+        .float-btn:hover { background: var(--brand-pink); color: #000; }
         
         .move-toggle { color: white; font-size: 10px; text-align: center; margin-bottom: 20px; cursor: pointer; }
         .move-toggle input { width: 22px; height: 22px; display: block; margin: 0 auto 5px; }
-
-        #drag-track { width: 0; background: #222; transition: width 0.3s; border-right: 1px solid #000; flex-shrink: 0; position: relative; }
-        #drag-track.active { width: 55px; }
     </style>
 </head>
 <body>
@@ -53,17 +50,16 @@
     <button class="insert-btn action" onclick="saveJSON()"><i class="fa-solid fa-floppy-disk"></i>Save</button>
 </div>
 
-<div id="drag-track"></div>
-
 <div id="preview-container">
     <div id="device-bar">
         <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
         <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')" style="margin-left:30px"><i class="fa-solid fa-mobile-screen-button"></i></button>
-        <div class="version-status">v3.13</div>
+        <div class="version-status">v3.14</div>
     </div>
     <div id="frame-wrapper">
         <div id="floating-toolbar" onmousedown="event.preventDefault()">
             <button class="float-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
+            <button class="float-btn" onclick="execCmd('underline')"><i class="fa-solid fa-underline"></i></button>
             <button class="float-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
             <button class="float-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
             <button class="float-btn" onclick="deleteElement()" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>
@@ -86,7 +82,7 @@
     async function init() {
         const resp = await fetch('template.html');
         let html = await resp.text();
-        html = html.replace('</head>', '<link rel="stylesheet" href="styles.css"></head>');
+        html = html.replace('</head>', '<style>.block_heading { display: block; min-height: 1.2em; font-weight: inherit; text-decoration: inherit; }</style><link rel="stylesheet" href="styles.css"></head>');
         frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
         
         frame.onload = () => {
@@ -94,12 +90,10 @@
             doc.addEventListener('mousedown', (e) => {
                 if (isResizing) return;
                 const el = e.target.closest('.editable');
-                if (el) { selectElement(el); } else { deselectAll(); }
+                if (el) selectElement(el); else deselectAll();
             });
-            doc.addEventListener('touchmove', (e) => { if(isResizing) e.preventDefault(); }, {passive: false});
             doc.addEventListener('input', () => { updateFrameHeight(); updateToolbarPos(); });
             wrapper.addEventListener('scroll', updateToolbarPos);
-            setupKeyboardAvoidance();
             setDevice('mobile');
         };
     }
@@ -128,13 +122,11 @@
                 isResizing = false;
                 frame.contentDocument.removeEventListener('mousemove', onMove);
                 frame.contentDocument.removeEventListener('mouseup', onUp);
-                frame.contentDocument.removeEventListener('touchmove', onMove);
                 frame.contentDocument.removeEventListener('touchend', onUp);
                 updateFrameHeight();
             };
             frame.contentDocument.addEventListener('mousemove', onMove);
             frame.contentDocument.addEventListener('mouseup', onUp);
-            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
             frame.contentDocument.addEventListener('touchend', onUp);
         };
         handle.addEventListener('mousedown', startResize);
@@ -148,30 +140,18 @@
         const frameRect = frame.getBoundingClientRect();
         const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
 
+        // Proportional & Centered
         const previewWidth = frame.classList.contains('mobile') ? (390 * scale) : frameRect.width;
-        toolbar.style.width = (previewWidth * 0.8) + 'px';
+        toolbar.style.width = (previewWidth * 0.85) + 'px';
         toolbar.style.display = 'flex';
 
-        const left = frameRect.left + (rect.left * scale) + (rect.width * scale / 2) - (toolbar.offsetWidth / 2);
+        // Horizontally centered within the preview frame
+        const left = frameRect.left + (previewWidth / 2) - (toolbar.offsetWidth / 2);
+        // Vertical: top of item - toolbar height - 2px gap
         const top = (rect.top * scale) - toolbar.offsetHeight - 2;
 
-        toolbar.style.left = `${Math.max(10, left)}px`;
+        toolbar.style.left = `${left}px`;
         toolbar.style.top = `${top}px`;
-    }
-
-    function setupKeyboardAvoidance() {
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', () => {
-                const vh = window.visualViewport.height;
-                if (vh < window.innerHeight * 0.8) {
-                    container.style.height = `${vh}px`;
-                    if (selectedEl) setTimeout(() => {
-                        selectedEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        updateToolbarPos();
-                    }, 150);
-                } else { container.style.height = '100vh'; }
-            });
-        }
     }
 
     function setDevice(type) {
@@ -191,13 +171,23 @@
         frame.style.height = (frame.contentDocument.documentElement.scrollHeight * scale) + 'px';
     }
 
+    function setAlign(val) {
+        if (!selectedEl) return;
+        if (selectedEl.classList.contains('block_image')) {
+            // Image alignment via auto margins
+            if (val === 'center') { selectedEl.style.marginLeft = 'auto'; selectedEl.style.marginRight = 'auto'; selectedEl.style.display = 'block'; }
+            else if (val === 'left') { selectedEl.style.marginLeft = '0'; selectedEl.style.marginRight = 'auto'; selectedEl.style.display = 'block'; }
+        } else {
+            // Text alignment
+            selectedEl.style.textAlign = val;
+        }
+    }
+
+    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function deselectAll() { 
         if (selectedEl) { selectedEl.classList.remove('selected-item'); const h = selectedEl.querySelector('.resize-handle'); if(h) h.remove(); }
         selectedEl = null; toolbar.style.display = 'none'; 
     }
-
-    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
-    function setAlign(val) { if(selectedEl) selectedEl.style.textAlign = val; }
     function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); updateFrameHeight(); } }
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
     function handleImageUpload(i) { if(i.files[0]) { const r = new FileReader(); r.onload=e=>insertElement('block_image', e.target.result); r.readAsDataURL(i.files[0]); } }
@@ -206,8 +196,12 @@
         const root = frame.contentDocument.getElementById('editor-root');
         const el = frame.contentDocument.createElement('div');
         el.className = `editable ${type}`;
-        if(type === 'block_image') { el.innerHTML = `<img src="${data}" style="width:100%">`; el.contentEditable = "false"; }
-        else { el.innerText = "New Block"; el.contentEditable = "true"; }
+        if(type === 'block_image') { 
+            el.innerHTML = `<img src="${data}" style="width:100%; pointer-events:none;">`; 
+            el.contentEditable = "false";
+            el.style.width = "200px"; // Default size
+        }
+        else { el.innerText = "New Content"; el.contentEditable = "true"; }
         root.appendChild(el);
         updateFrameHeight();
     }
