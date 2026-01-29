@@ -2,16 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v3.17 Precision Tools</title>
+    <title>Snoozing Builder | v3.18 Legacy Restore</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         body { margin: 0; display: flex; height: 100vh; width: 100vw; font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; }
         
+        /* SIDEBAR */
         #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 100; }
         .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
 
+        /* HEADER AREA */
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; }
         #header-area { background: #222; border-bottom: 1px solid #000; flex-shrink: 0; z-index: 50; }
         
@@ -20,6 +22,7 @@
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 25px; color: #fff; font-size: 16px; font-weight: 800; }
 
+        /* STICKY TOOLBAR */
         #sticky-toolbar { 
             height: 60px; background: #1a1a1a; display: none; 
             align-items: center; justify-content: center; gap: 12px; padding: 0 20px;
@@ -28,6 +31,7 @@
         .tool-btn:hover { background: var(--brand-pink); color: #000; }
         .tool-btn.active { background: var(--brand-pink); color: #000; }
 
+        /* FRAME AREA */
         #frame-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; overflow-x: hidden; overflow-y: auto; background: #333; position: relative; }
         #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; }
         #preview-frame.mobile { width: 390px; }
@@ -48,7 +52,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.17</div>
+            <div class="version-status">v3.18</div>
         </div>
         <div id="sticky-toolbar"></div>
     </div>
@@ -72,10 +76,10 @@
         html = html.replace('</head>', `
             <style>
                 .selected-item { outline: 2px solid #ebd5c9 !important; position: relative; }
-                .block_heading { display: block; width: 100%; border-bottom: 0px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
-                .has-underline { border-bottom: 1px solid #000 !important; }
-                .resize-handle { width: 24px; height: 24px; background: #ebd5c9; position: absolute; right: -12px; bottom: -12px; cursor: nwse-resize; border-radius: 50%; z-index: 9999; border: 2px solid #000; }
-                .editable img { pointer-events: none; user-select: none; }
+                .block_heading { display: block; width: 100%; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
+                .no-line { border-bottom: none !important; }
+                .resize-handle { width: 20px; height: 20px; background: #ebd5c9; position: absolute; right: -10px; bottom: -10px; cursor: nwse-resize; border-radius: 50%; z-index: 1000; border: 2px solid #000; }
+                .editable img { pointer-events: none; width: 100%; display: block; }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
         
@@ -94,10 +98,11 @@
     }
 
     function selectElement(el) {
-        if(selectedEl) selectedEl.classList.remove('selected-item');
-        const oldHandle = frame.contentDocument.querySelector('.resize-handle');
-        if(oldHandle) oldHandle.remove();
-
+        if(selectedEl) {
+            selectedEl.classList.remove('selected-item');
+            const h = selectedEl.querySelector('.resize-handle');
+            if(h) h.remove();
+        }
         selectedEl = el;
         selectedEl.classList.add('selected-item');
         if (el.classList.contains('block_image')) addResizeHandle(el);
@@ -119,7 +124,7 @@
         stickyToolbar.style.display = 'flex';
         const isImg = selectedEl.classList.contains('block_image');
         const isHeading = selectedEl.classList.contains('block_heading');
-        const hasLine = selectedEl.classList.contains('has-underline');
+        const lineHidden = selectedEl.classList.contains('no-line');
 
         let html = '';
         if (isImg) {
@@ -127,7 +132,8 @@
         } else {
             html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
             if (isHeading) {
-                html += `<button class="tool-btn ${hasLine?'active':''}" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>`;
+                // Button is active when line is visible (no-line is NOT present)
+                html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>`;
             }
         }
 
@@ -142,29 +148,28 @@
 
     function toggleHeadingLine() {
         if (selectedEl && selectedEl.classList.contains('block_heading')) {
-            selectedEl.classList.toggle('has-underline');
-            renderToolbar(); // Update button state
+            selectedEl.classList.toggle('no-line');
+            renderToolbar();
         }
     }
 
+    // --- REVERTED v2.7 RESIZE LOGIC ---
     function addResizeHandle(el) {
         const handle = frame.contentDocument.createElement('div');
         handle.className = 'resize-handle';
         
-        const startR = (e) => {
+        const startResize = (e) => {
             e.preventDefault(); e.stopPropagation();
             isResizing = true;
             const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const startW = el.offsetWidth;
-            const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
+            const startWidth = el.offsetWidth;
 
-            const onMove = (m) => {
-                const cx = m.type.includes('touch') ? m.touches[0].clientX : m.clientX;
-                // Divide change by scale to account for visual stretching
-                const delta = (cx - startX) / scale;
-                el.style.width = (startW + delta) + 'px';
+            const onMove = (mE) => {
+                const currentX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
+                const newWidth = startWidth + (currentX - startX);
+                if (newWidth > 40) el.style.width = newWidth + 'px';
             };
-
+            
             const onUp = () => {
                 isResizing = false;
                 frame.contentDocument.removeEventListener('mousemove', onMove);
@@ -180,20 +185,21 @@
             frame.contentDocument.addEventListener('touchend', onUp);
         };
 
-        handle.addEventListener('mousedown', startR);
-        handle.addEventListener('touchstart', startR, {passive: false});
+        handle.addEventListener('mousedown', startResize);
+        handle.addEventListener('touchstart', startResize, {passive: false});
         el.appendChild(handle);
     }
 
-    function setAlign(val) {
+    // --- REVERTED v2.7 ALIGN LOGIC ---
+    function setAlign(pos) {
         if (!selectedEl) return;
         if (selectedEl.classList.contains('block_image')) {
-            selectedEl.style.display = 'block';
-            if (val === 'center') { selectedEl.style.marginLeft = 'auto'; selectedEl.style.marginRight = 'auto'; }
-            else if (val === 'left') { selectedEl.style.marginLeft = '0'; selectedEl.style.marginRight = 'auto'; }
-            else { selectedEl.style.marginLeft = 'auto'; selectedEl.style.marginRight = '0'; }
+             selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
+             selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
+             selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none';
+             selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
         } else {
-            selectedEl.style.textAlign = val;
+             selectedEl.style.textAlign = pos;
         }
     }
 
@@ -235,7 +241,7 @@
         const el = frame.contentDocument.createElement('div');
         el.className = `editable ${type}`;
         if(type === 'block_image') { 
-            el.innerHTML = `<img src="${data}" style="width:100%">`; 
+            el.innerHTML = `<img src="${data}">`; 
             el.contentEditable = "false"; el.style.width = "200px"; el.style.position = "relative";
         } else { el.innerText = "New Block"; el.contentEditable = "true"; }
         root.appendChild(el);
