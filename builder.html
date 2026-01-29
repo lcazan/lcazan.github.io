@@ -3,13 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.39 Edge-to-Edge</title>
+    <title>Snoozing Builder | v3.39 Complete</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
-        body { margin: 0; display: flex; height: 100vh; width: 100vw; font-family: sans-serif; background: #111; overflow: hidden; position: fixed; touch-action: none; }
-        #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; }
-        .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
+        body { margin: 0; display: flex; height: 100vh; width: 100vw; font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; position: fixed; touch-action: none; }
+        
+        /* Sidebar Restored */
+        #sidebar { 
+            width: 90px; height: 100vh; background: var(--panel-bg); 
+            display: flex; flex-direction: column; align-items: center; 
+            padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; 
+        }
+        .insert-btn { 
+            width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; 
+            margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; 
+            font-weight: bold; text-transform: uppercase; display: flex; 
+            flex-direction: column; justify-content: center; align-items: center; gap: 5px; 
+        }
+
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100vh; overflow: hidden; }
         #header-area { background: #222; border-bottom: 1px solid #000; height: 50px; flex-shrink: 0; position: relative; display: flex; align-items: center; justify-content: center; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 24px; margin: 0 15px; }
@@ -24,6 +36,7 @@
     <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i>Section</button>
     <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i>Heading</button>
     <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i>Text</button>
+    <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i>Image</button>
     <button class="insert-btn" style="margin-top:auto" onclick="saveJSON()"><i class="fa-solid fa-floppy-disk"></i>Save</button>
 </div>
 
@@ -37,6 +50,8 @@
     </div>
 </div>
 
+<input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
+
 <script>
     const frame = document.getElementById('preview-frame');
     const wrapper = document.getElementById('frame-wrapper');
@@ -49,10 +64,7 @@
         const resp = await fetch('template.html');
         let html = await resp.text();
         
-        // Inject Editor overrides
-        html = html.replace('</head>', `<style>.selected-item { outline: 3px solid #ebd5c9 !important; } .editable { cursor: pointer; }</style></head>`);
-        
-        // Target the empty content-container for editing
+        html = html.replace('</head>', `<style>.selected-item { border: 1px dashed #877267 !important; background: rgba(235, 213, 201, 0.15); } .editable { cursor: pointer; }</style></head>`);
         frame.srcdoc = html.replace('<div class="content-container">', '<div class="content-container" id="editor-root">');
         
         frame.onload = () => {
@@ -72,9 +84,7 @@
         });
     }
 
-    function updateLockedHeight() {
-        lockedHeight = window.innerHeight - 50; 
-    }
+    function updateLockedHeight() { lockedHeight = window.innerHeight - 50; }
 
     function setDevice(type) {
         currentMode = type;
@@ -82,25 +92,27 @@
         document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop').classList.add('active');
 
         if (type === 'mobile') {
-            const physicalWidth = wrapper.offsetWidth;
-            const scaleFactor = physicalWidth / 412;
+            const scaleFactor = wrapper.offsetWidth / 412;
             frame.style.width = '412px';
             frame.style.height = (lockedHeight / scaleFactor) + 'px';
             frame.style.transform = `scale(${scaleFactor})`;
         } else {
-            frame.style.width = '100%';
-            frame.style.height = '100%';
-            frame.style.transform = 'none';
+            frame.style.width = '100%'; frame.style.height = '100%'; frame.style.transform = 'none';
         }
     }
 
-    function insertElement(type) {
+    function insertElement(type, data = "New Block") {
         const doc = frame.contentDocument;
         const root = doc.getElementById('editor-root');
         const el = doc.createElement('div');
         el.className = `editable ${type}`;
-        el.contentEditable = "true";
-        el.innerText = "New Block";
+        if(type === 'block_image') {
+            el.innerHTML = `<img src="${data}" style="width:100%; display:block;">`;
+            el.contentEditable = "false";
+        } else {
+            el.innerText = data;
+            el.contentEditable = "true";
+        }
         root.appendChild(el);
     }
 
@@ -108,6 +120,23 @@
         if(window.selectedEl) window.selectedEl.classList.remove('selected-item');
         window.selectedEl = el;
         el.classList.add('selected-item');
+    }
+
+    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+    function handleImageUpload(i) {
+        if(i.files[0]) {
+            const r = new FileReader();
+            r.onload = e => insertElement('block_image', e.target.result);
+            r.readAsDataURL(i.files[0]);
+        }
+    }
+
+    function saveJSON() {
+        const root = frame.contentDocument.getElementById('editor-root');
+        const data = Array.from(root.children).map(c => ({ type: c.className, content: c.innerHTML }));
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type:'application/json'}));
+        a.download = 'layout.json'; a.click();
     }
 
     window.onload = init;
