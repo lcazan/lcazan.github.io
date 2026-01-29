@@ -2,56 +2,48 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v3.23 Fixed Header</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Snoozing Builder | v3.31 Pixel 8 Pro Optimized</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         
-        /* Force body to stay exactly the size of the window */
         body { 
             margin: 0; display: flex; height: 100vh; width: 100vw; 
             font-family: 'Source Sans Pro', sans-serif; background: #111; 
-            overflow: hidden; position: fixed; /* Prevents status bar sliding */
+            overflow: hidden; position: fixed;
         }
         
         #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; }
         .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
 
-        #preview-container { 
-            flex-grow: 1; display: flex; flex-direction: column; 
-            background: #333; position: relative; height: 100vh; 
-            overflow: hidden; /* Header will stay inside this hidden box */
-        }
-        
-        #header-area { 
-            background: #222; border-bottom: 1px solid #000; 
-            flex-shrink: 0; z-index: 500; 
-            width: 100%; position: relative;
-        }
-        
-        #device-bar { height: 50px; display: flex; align-items: center; justify-content: center; position: relative; border-bottom: 1px solid #111; }
+        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100vh; overflow: hidden; }
+        #header-area { background: #222; border-bottom: 1px solid #000; flex-shrink: 0; z-index: 500; width: 100%; position: relative; }
+        #device-bar { height: 50px; display: flex; align-items: center; justify-content: center; position: relative; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 26px; margin: 0 15px; }
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 25px; color: #fff; font-size: 16px; font-weight: 800; }
 
-        #sticky-toolbar { 
-            height: 85px; background: #1a1a1a; display: none; 
-            align-items: center; justify-content: center; gap: 18px; padding: 0 25px;
-        }
-        .tool-btn { 
-            background: #333; border: 1px solid #444; color: white; 
-            padding: 15px 25px; cursor: pointer; border-radius: 8px; 
-            font-size: 24px; min-width: 70px; display: flex; align-items: center; justify-content: center;
-        }
+        #sticky-toolbar { height: 85px; background: #1a1a1a; display: none; align-items: center; justify-content: center; gap: 18px; padding: 0 25px; }
+        .tool-btn { background: #333; border: 1px solid #444; color: white; padding: 15px 25px; cursor: pointer; border-radius: 8px; font-size: 24px; min-width: 70px; display: flex; align-items: center; justify-content: center; }
 
         #frame-wrapper { 
-            flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
-            overflow-x: hidden; overflow-y: auto; background: #333; position: relative;
-            overscroll-behavior-y: none; /* Blocks "Pull to Refresh" and status bar hiding */
-            -webkit-overflow-scrolling: touch;
+            flex-grow: 1; display: flex; justify-content: center; align-items: center; 
+            background: #333; overflow: hidden; position: relative;
         }
-        #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; }
-        #preview-frame.mobile { width: 390px; }
+        
+        #preview-frame { 
+            border: none; background: white; transform-origin: center center;
+            /* Default Desktop */
+            width: 100%; height: 100%;
+        }
+        
+        /* Pixel 8 Pro Dimensions */
+        #preview-frame.mobile { 
+            width: 412px; 
+            height: 890px; 
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+        }
     </style>
 </head>
 <body>
@@ -69,12 +61,12 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.23</div>
+            <div class="version-status">v3.31</div>
         </div>
         <div id="sticky-toolbar"></div>
     </div>
     <div id="frame-wrapper">
-        <iframe id="preview-frame"></iframe>
+        <iframe id="preview-frame" scrolling="yes"></iframe>
     </div>
 </div>
 
@@ -86,28 +78,25 @@
     const wrapper = document.getElementById('frame-wrapper');
     const header = document.getElementById('header-area');
     let selectedEl = null;
-    let isResizing = false;
 
     async function init() {
         const resp = await fetch('template.html');
         let html = await resp.text();
         html = html.replace('</head>', `
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <style>
-                .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; pointer-events: none; }
-                .selected-item * { pointer-events: auto; }
-                .block_heading { display: block; width: 100%; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
-                .no-line { border-bottom: none !important; }
-                .resize-handle { 
-                    width: 44px; height: 44px; position: absolute; right: -15px; bottom: -15px; 
-                    cursor: nwse-resize; z-index: 99999; display: flex; align-items: center; justify-content: center;
-                    color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px;
-                    pointer-events: auto !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+                /* Force scrolling inside the iframe body */
+                html, body { 
+                    height: 100%; 
+                    overflow-x: hidden; 
+                    overflow-y: auto !important; 
+                    -webkit-overflow-scrolling: touch; 
+                    margin: 0; padding: 0;
                 }
-                .resize-handle::before { content: "\\f338"; }
-                .editable img { pointer-events: none; width: 100%; display: block; }
-                /* Huge buffer so you can always scroll the active item to the top */
-                #editor-root { padding-bottom: 80vh !important; }
+                .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; }
+                .block_heading { display: block; width: 100%; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
+                .editable img { width: 100%; display: block; pointer-events: none; }
+                #editor-root { padding-bottom: 60vh !important; min-height: 101%; }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
         
@@ -116,70 +105,33 @@
         frame.onload = () => {
             const doc = frame.contentDocument;
             doc.addEventListener('mousedown', (e) => {
-                if (isResizing) return;
                 const el = e.target.closest('.editable');
                 if (el) selectElement(el); else deselectAll();
             });
 
             if (window.visualViewport) {
-                window.visualViewport.addEventListener('resize', handleViewportChanges);
-                window.visualViewport.addEventListener('scroll', handleViewportChanges);
+                window.visualViewport.addEventListener('scroll', () => {
+                    header.style.transform = `translateY(${window.visualViewport.offsetTop}px)`;
+                });
             }
-
-            doc.addEventListener('input', updateFrameHeight);
             setDevice('mobile');
         };
     }
 
-    function handleViewportChanges() {
-        // This is the "Magic" part. Even if the browser tries to shift the whole body up
-        // because of the keyboard, we force the header to stay at the visual top.
-        const vv = window.visualViewport;
-        header.style.transform = `translateY(${vv.offsetTop}px)`;
-        
-        if (selectedEl && frame.contentDocument.activeElement?.isContentEditable) {
-            handleKeyboardCollision();
-        }
-    }
-
-    function handleKeyboardCollision() {
-        if (!selectedEl || !window.visualViewport) return;
-        setTimeout(() => {
-            const vv = window.visualViewport;
-            const rect = selectedEl.getBoundingClientRect();
-            const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-            
-            // Where the keyboard starts
-            const keyboardTop = vv.height; 
-            const elementBottom = rect.bottom * scale;
-
-            if (elementBottom > (keyboardTop - 20)) {
-                const overflow = elementBottom - keyboardTop + 40;
-                wrapper.scrollBy({ top: overflow, behavior: 'smooth' });
-            }
-        }, 300);
-    }
-
     function selectElement(el) {
-        if(selectedEl && selectedEl !== el) {
-            selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if(h) h.remove();
-        }
+        if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
         selectedEl.classList.add('selected-item');
-        if (el.classList.contains('block_image') && !el.querySelector('.resize-handle')) {
-            addResizeHandle(el);
-        }
         renderToolbar();
+
+        // Scroll the element into view WITHIN the iframe
+        setTimeout(() => {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
     }
 
     function deselectAll() {
-        if (selectedEl) {
-            selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if(h) h.remove();
-        }
+        if (selectedEl) selectedEl.classList.remove('selected-item');
         selectedEl = null;
         stickyToolbar.style.display = 'none';
     }
@@ -187,20 +139,8 @@
     function renderToolbar() {
         if (!selectedEl) return;
         stickyToolbar.style.display = 'flex';
-        const isImg = selectedEl.classList.contains('block_image');
-        const isHeading = selectedEl.classList.contains('block_heading');
-        const lineHidden = selectedEl.classList.contains('no-line');
-
-        let html = '';
-        if (isImg) {
-            html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`;
-        } else {
-            html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
-            if (isHeading) {
-                html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>`;
-            }
-        }
-        html += `
+        let html = `
+            <button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
             <button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
             <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
             <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
@@ -209,90 +149,47 @@
         stickyToolbar.innerHTML = html;
     }
 
-    function toggleHeadingLine() {
-        if (selectedEl && selectedEl.classList.contains('block_heading')) {
-            selectedEl.classList.toggle('no-line');
-            renderToolbar();
-        }
-    }
-
-    function addResizeHandle(el) {
-        const handle = frame.contentDocument.createElement('div');
-        handle.className = 'resize-handle';
-        const startResize = (e) => {
-            e.preventDefault(); e.stopPropagation();
-            isResizing = true;
-            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const startWidth = el.offsetWidth;
-            const onMove = (mE) => {
-                const currentX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
-                const newWidth = startWidth + (currentX - startX);
-                if (newWidth > 40) el.style.width = newWidth + 'px';
-            };
-            const onUp = () => {
-                isResizing = false;
-                frame.contentDocument.removeEventListener('mousemove', onMove);
-                frame.contentDocument.removeEventListener('mouseup', onUp);
-                frame.contentDocument.removeEventListener('touchmove', onMove);
-                frame.contentDocument.removeEventListener('touchend', onUp);
-                updateFrameHeight();
-            };
-            frame.contentDocument.addEventListener('mousemove', onMove);
-            frame.contentDocument.addEventListener('mouseup', onUp);
-            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
-            frame.contentDocument.addEventListener('touchend', onUp);
-        };
-        handle.addEventListener('mousedown', startResize);
-        handle.addEventListener('touchstart', startResize, {passive: false});
-        el.appendChild(handle);
-    }
-
-    function setAlign(pos) {
-        if (!selectedEl) return;
-        if (selectedEl.classList.contains('block_image')) {
-             selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
-             selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
-             selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none';
-             selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
-        } else { selectedEl.style.textAlign = pos; }
-    }
-
-    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
-    
     function setDevice(type) {
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop').classList.add('active');
-        frame.classList.toggle('mobile', type === 'mobile');
-        const scale = type === 'mobile' ? (wrapper.offsetWidth / 390) : 1;
-        frame.style.width = type === 'mobile' ? '390px' : '100%';
-        frame.style.transform = `scale(${scale})`;
-        setTimeout(updateFrameHeight, 200);
-    }
-
-    function updateFrameHeight() {
-        if (!frame.contentDocument) return;
-        frame.style.height = '0px';
-        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-        frame.style.height = (frame.contentDocument.documentElement.scrollHeight * scale) + 'px';
+        
+        if (type === 'mobile') {
+            frame.classList.add('mobile');
+            // Scale to fit the current window height, with some breathing room
+            const scale = (wrapper.offsetHeight * 0.95) / 890;
+            frame.style.transform = `scale(${scale})`;
+        } else {
+            frame.classList.remove('mobile');
+            frame.style.transform = 'none';
+            frame.style.width = '100%';
+            frame.style.height = '100%';
+        }
     }
 
     function insertElement(type, data) {
-        const root = frame.contentDocument.getElementById('editor-root');
-        const el = frame.contentDocument.createElement('div');
+        const doc = frame.contentDocument;
+        const root = doc.getElementById('editor-root');
+        const el = doc.createElement('div');
         el.className = `editable ${type}`;
+        
         if(type === 'block_image') { 
             el.innerHTML = `<img src="${data}">`; 
-            el.contentEditable = "false"; el.style.width = "200px"; el.style.position = "relative";
-        } else { el.innerText = "New Block"; el.contentEditable = "true"; }
+            el.contentEditable = "false"; el.style.width = "250px"; el.style.margin = "0 auto";
+        } else { 
+            el.innerText = "New Block"; 
+            el.contentEditable = "true"; 
+        }
+        
         root.appendChild(el);
-        updateFrameHeight();
+        
         setTimeout(() => {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            selectElement(el);
-        }, 100);
+            selectElement(el); 
+            if (type !== 'block_image') el.focus();
+        }, 150);
     }
 
-    function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); updateFrameHeight(); } }
+    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
+    function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
     function handleImageUpload(i) { 
         if(i.files[0]) { 
