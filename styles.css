@@ -6,6 +6,9 @@
     --text-dark: #151515;
 }
 
+/* MODIFIED: The body is now a flex container with 100% height.
+   This allows the footer to stay at the bottom of the fixed iframe viewport.
+*/
 body { 
     font-family: 'Source Sans Pro', sans-serif; 
     margin: 0; 
@@ -13,8 +16,9 @@ body {
     background-color: #fff; 
     display: flex;             /* REQUIRED for Footer-Push */
     flex-direction: column;    /* REQUIRED for Footer-Push */
-    /* min-height removed to allow builder script to control iframe viewport size */
+    height: 100%;              /* Matches the fixed height of the iframe */
     overflow-x: hidden; 
+    overflow-y: auto;          /* Allows internal scrolling when content expands */
 }
 
 /* --- Core Layout Containers --- */
@@ -23,7 +27,7 @@ body {
     margin: 0;
     padding: 20px;
     background-color: #ffffff;
-    flex: 1 0 auto;           /* Grows to fill available viewport space, pushing footer down */
+    flex: 1 0 auto;           /* MODIFIED: Grows to push footer down to the bottom */
     display: block;
     box-sizing: border-box;
 }
@@ -63,7 +67,7 @@ header {
     background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); 
     position: sticky; top: 0; z-index: 8000; border-bottom: 1px solid rgba(0,0,0,0.05); 
     min-height: 60px;
-    flex-shrink: 0;           /* Prevents header from squishing */
+    flex-shrink: 0;           /* Prevents header from being compressed */
 }
 
 .logo { 
@@ -158,24 +162,18 @@ nav#nav-sidebar a {
 .editable:hover { background: rgba(235, 213, 201, 0.1); }
 .selected-item { border: 1px dashed var(--icon-brown) !important; background: rgba(235, 213, 201, 0.15); }
 
-.resize-handle { 
-    width: 12px; height: 12px; background: var(--icon-brown); 
-    position: absolute; right: -6px; bottom: -6px; cursor: nwse-resize; 
-    z-index: 1000; border: 1px solid white; border-radius: 2px;
-}
-
-/* --- Footer & Social Icons Fix --- */
+/* --- Footer & Social Icons --- */
 footer { 
     text-align: center; 
     padding: 60px 20px 40px; 
     border-top: 1px solid #eee; 
-    margin-top: auto;          /* Sticks to the bottom of the viewport content */
-    flex-shrink: 0;            /* Prevents footer from being squished */
+    margin-top: auto;          /* REQUIRED: Sticks to the bottom of the viewport content */
+    flex-shrink: 0;            /* Prevents the footer from being squashed */
 }
 
 .social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
 
-/* Force standard color on social links to prevent "Blue" browser defaults */
+/* Force standard color on social links */
 .social-icons a, 
 .social-icons a:visited,
 .social-icons i { 
