@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.6.0 Stable</title>
+    <title>Snoozing Builder | v3.6.1 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -16,7 +16,6 @@
         
         body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
         
-        /* SIDEBAR: Buttons reduced to 50% height (32px), margins 5px */
         #sidebar { 
             width: 75px; height: 100%; background: var(--panel-bg); 
             display: flex; flex-direction: column; align-items: center; 
@@ -26,10 +25,8 @@
             width: 60px; height: 32px; background: #444; border: 1px solid #666; color: #fff; 
             margin: 0 5px 10px 5px; border-radius: 4px; cursor: pointer; 
             font-size: 14px; display: flex; justify-content: center; align-items: center; 
-            padding: 0; /* Reduced padding */
+            padding: 0;
         }
-        /* Hide text labels in small buttons to keep icons clear */
-        .insert-btn span { display: none; }
 
         #preview-container { 
             flex-grow: 1; display: flex; flex-direction: column; 
@@ -42,30 +39,32 @@
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 25px; top: 12px; color: #fff; font-size: 16px; font-weight: 800; }
 
-        /* TOOLBAR: Reduced to 75% height (64px) */
+        /* TOOLBAR: Reduced height to 48px (75% of previous) */
         #sticky-toolbar { 
-            height: 64px; background: #1a1a1a; display: flex; 
-            align-items: center; justify-content: center; gap: 12px; 
-            padding: 0 15px; border-bottom: 1px solid #000; flex-shrink: 0;
+            height: 48px; background: #1a1a1a; display: flex; 
+            align-items: center; justify-content: center; 
+            border-bottom: 1px solid #000; flex-shrink: 0;
         }
         
-        #toolbar-content { display: flex; gap: 12px; visibility: hidden; align-items: center; height: 100%; }
+        #toolbar-content { display: flex; gap: 8px; visibility: hidden; align-items: center; height: 100%; }
+
+        /* TOOLBAR BUTTONS: 38px height with 5px top/bottom margins */
+        .tool-btn { 
+            background: #444; border: 1px solid #666; color: white; 
+            padding: 0; border-radius: 4px; cursor: pointer;
+            font-size: 20px; min-width: 40px; height: 38px;
+            margin: 5px 0; 
+            display: flex; align-items: center; justify-content: center;
+        }
+        .tool-btn.active { background: var(--brand-pink); color: #000; }
 
         #frame-wrapper { 
             flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
             background: #333; overflow: hidden; position: relative;
         }
         
-        #preview-frame { border: none; background: white; transform-origin: top center; }
-
-        /* Tool Icons: Reduced to 75% size (~27px) */
-        .tool-btn { 
-            background: #444; border: 1px solid #666; color: white; 
-            padding: 5px; border-radius: 6px; cursor: pointer;
-            font-size: 27px; min-width: 45px; height: 45px;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .tool-btn.active { background: var(--brand-pink); color: #000; }
+        /* Iframe now fills the space horizontally in both modes */
+        #preview-frame { border: none; background: white; width: 100%; height: 100%; transform-origin: top center; }
     </style>
 </head>
 <body>
@@ -83,7 +82,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.6.0</div>
+            <div class="version-status">v3.6.1</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -118,7 +117,7 @@
                 #editor-root { flex: 1 0 auto; width: 100%; display: flex; flex-direction: column; }
                 .editable { display: block !important; width: 100%; clear: both; box-sizing: border-box; position: relative; }
                 .selected-item { outline: 3px solid #ebd5c9 !important; }
-                body { padding-bottom: 60px !important; }
+                body { padding-bottom: 80px !important; }
                 footer { flex-shrink: 0; margin-top: auto; }
                 .block_heading { border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
                 .no-line { border-bottom: none !important; }
@@ -166,19 +165,10 @@
         const btn = document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop');
         if(btn) btn.classList.add('active');
 
-        const wrapperW = wrapper.offsetWidth;
-        const wrapperH = wrapper.offsetHeight;
-        
-        if (type === 'mobile') {
-            const scaleFactor = wrapperW / 412;
-            frame.style.width = '412px';
-            frame.style.height = (wrapperH / scaleFactor) + 'px';
-            frame.style.transform = `scale(${scaleFactor})`;
-        } else {
-            frame.style.width = '100%';
-            frame.style.height = '100%';
-            frame.style.transform = 'none';
-        }
+        // Both modes now fill 100% of the available width next to the sidebar
+        frame.style.width = '100%';
+        frame.style.height = '100%';
+        frame.style.transform = 'none'; // Scale factor is now 1 for both
     }
 
     function selectElement(el) {
