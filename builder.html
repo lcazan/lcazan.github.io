@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.6.1 Stable</title>
+    <title>Snoozing Builder | v3.6.3 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -39,7 +39,6 @@
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 25px; top: 12px; color: #fff; font-size: 16px; font-weight: 800; }
 
-        /* TOOLBAR: Reduced height to 48px (75% of previous) */
         #sticky-toolbar { 
             height: 48px; background: #1a1a1a; display: flex; 
             align-items: center; justify-content: center; 
@@ -48,7 +47,6 @@
         
         #toolbar-content { display: flex; gap: 8px; visibility: hidden; align-items: center; height: 100%; }
 
-        /* TOOLBAR BUTTONS: 38px height with 5px top/bottom margins */
         .tool-btn { 
             background: #444; border: 1px solid #666; color: white; 
             padding: 0; border-radius: 4px; cursor: pointer;
@@ -63,8 +61,11 @@
             background: #333; overflow: hidden; position: relative;
         }
         
-        /* Iframe now fills the space horizontally in both modes */
-        #preview-frame { border: none; background: white; width: 100%; height: 100%; transform-origin: top center; }
+        #preview-frame { 
+            border: none; background: white; 
+            transform-origin: top left; 
+            position: absolute; top: 0; left: 0;
+        }
     </style>
 </head>
 <body>
@@ -82,7 +83,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.6.1</div>
+            <div class="version-status">v3.6.3</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -118,17 +119,14 @@
                 .editable { display: block !important; width: 100%; clear: both; box-sizing: border-box; position: relative; }
                 .selected-item { outline: 3px solid #ebd5c9 !important; }
                 body { padding-bottom: 80px !important; }
-                footer { flex-shrink: 0; margin-top: auto; }
                 .block_heading { border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
                 .no-line { border-bottom: none !important; }
                 .resize-handle { 
                     width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; 
                     cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center;
                     color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px;
-                    pointer-events: auto !important;
                 }
                 .resize-handle::before { content: "\\f337"; } 
-                .editable img { pointer-events: none; width: 100%; display: block; }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
         
@@ -147,7 +145,6 @@
             window.visualViewport.addEventListener('resize', () => {
                 const viewportHeight = window.visualViewport.height;
                 document.body.style.height = viewportHeight + 'px';
-                
                 clearTimeout(rotationTimeout);
                 rotationTimeout = setTimeout(() => {
                     setDevice(currentMode);
@@ -165,10 +162,15 @@
         const btn = document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop');
         if(btn) btn.classList.add('active');
 
-        // Both modes now fill 100% of the available width next to the sidebar
-        frame.style.width = '100%';
-        frame.style.height = '100%';
-        frame.style.transform = 'none'; // Scale factor is now 1 for both
+        const wrapperW = wrapper.offsetWidth;
+        const wrapperH = wrapper.offsetHeight;
+        
+        const virtualWidth = (type === 'mobile') ? 412 : 1280;
+        const scaleFactor = wrapperW / virtualWidth;
+        
+        frame.style.width = virtualWidth + 'px';
+        frame.style.height = (wrapperH / scaleFactor) + 'px';
+        frame.style.transform = `scale(${scaleFactor})`;
     }
 
     function selectElement(el) {
@@ -195,7 +197,6 @@
         const isImg = selectedEl.classList.contains('block_image');
         const isHeading = selectedEl.classList.contains('block_heading');
         const lineHidden = selectedEl.classList.contains('no-line');
-
         let html = '';
         if (isImg) { html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`; }
         else {
@@ -211,12 +212,7 @@
         toolbarContent.innerHTML = html;
     }
 
-    function toggleHeadingLine() {
-        if (selectedEl && selectedEl.classList.contains('block_heading')) {
-            selectedEl.classList.toggle('no-line');
-            renderToolbar();
-        }
-    }
+    function toggleHeadingLine() { if (selectedEl && selectedEl.classList.contains('block_heading')) { selectedEl.classList.toggle('no-line'); renderToolbar(); } }
 
     function addResizeHandle(el) {
         const handle = frame.contentDocument.createElement('div');
