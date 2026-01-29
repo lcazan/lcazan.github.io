@@ -3,23 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Snoozing Builder | v3.28 Bottom-to-Midpoint</title>
+    <title>Snoozing Builder | v3.29 Scroll Stability</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         
-        body { 
-            margin: 0; display: flex; height: 100vh; width: 100vw; 
-            font-family: 'Source Sans Pro', sans-serif; background: #111; 
-            overflow: hidden; position: fixed; touch-action: pan-x pan-y;
+        /* STRICT LOCK: Ensures the UI never moves, only the iframe inside scrolls */
+        html, body { 
+            margin: 0; padding: 0; width: 100vw; height: 100vh; 
+            overflow: hidden; position: fixed; background: #111;
         }
         
-        #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; }
+        body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
+        
+        #sidebar { 
+            width: 90px; height: 100vh; background: var(--panel-bg); 
+            display: flex; flex-direction: column; align-items: center; 
+            padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; 
+        }
         .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; }
 
-        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; overflow: hidden; }
-        #header-area { background: #222; border-bottom: 1px solid #000; flex-shrink: 0; z-index: 500; width: 100%; position: relative; }
-        #device-bar { height: 50px; display: flex; align-items: center; justify-content: center; position: relative; border-bottom: 1px solid #111; }
+        #preview-container { 
+            flex-grow: 1; height: 100vh; display: flex; flex-direction: column; 
+            background: #333; position: relative; overflow: hidden; 
+        }
+        
+        #header-area { background: #222; border-bottom: 1px solid #000; flex-shrink: 0; z-index: 500; }
+        #device-bar { height: 50px; display: flex; align-items: center; justify-content: center; position: relative; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 26px; margin: 0 15px; }
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 25px; color: #fff; font-size: 16px; font-weight: 800; }
@@ -30,8 +40,10 @@
         #frame-wrapper { 
             flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
             overflow-x: hidden; overflow-y: auto; background: #333; position: relative;
-            overscroll-behavior-y: none; -webkit-overflow-scrolling: touch;
+            -webkit-overflow-scrolling: touch;
         }
+        
+        /* Use a fixed container size inside the wrapper to prevent iframe from pushing parent boundaries */
         #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; }
         #preview-frame.mobile { width: 390px; }
     </style>
@@ -51,12 +63,12 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.28</div>
+            <div class="version-status">v3.29</div>
         </div>
         <div id="sticky-toolbar"></div>
     </div>
     <div id="frame-wrapper">
-        <iframe id="preview-frame"></iframe>
+        <iframe id="preview-frame" scrolling="no"></iframe>
     </div>
 </div>
 
@@ -77,21 +89,13 @@
         let html = await resp.text();
         html = html.replace('</head>', `
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
             <style>
-                .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; pointer-events: none; }
-                .selected-item * { pointer-events: auto; }
+                .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; }
                 .block_heading { display: block; width: 100%; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
                 .no-line { border-bottom: none !important; }
-                .resize-handle { 
-                    width: 44px; height: 44px; position: absolute; right: -15px; bottom: -15px; 
-                    cursor: nwse-resize; z-index: 99999; display: flex; align-items: center; justify-content: center;
-                    color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px;
-                    pointer-events: auto !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
-                }
-                .resize-handle::before { content: "\\f338"; }
-                .editable img { pointer-events: none; width: 100%; display: block; }
-                #editor-root { padding-bottom: 100vh !important; }
+                .editable img { width: 100%; display: block; }
+                /* Padding to allow scrolling the very last item to the midpoint */
+                #editor-root { padding-bottom: 60vh !important; min-height: 100vh; }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
         
@@ -100,7 +104,6 @@
         frame.onload = () => {
             const doc = frame.contentDocument;
             doc.addEventListener('mousedown', (e) => {
-                if (isResizing) return;
                 const el = e.target.closest('.editable');
                 if (el) selectElement(el); else deselectAll();
             });
@@ -108,7 +111,6 @@
             if (window.visualViewport) {
                 window.visualViewport.addEventListener('resize', () => {
                     currentViewportHeight = window.visualViewport.height;
-                    header.style.transform = `translateY(${window.visualViewport.offsetTop}px)`;
                 });
             }
 
@@ -118,35 +120,25 @@
     }
 
     function selectElement(el, forceScroll = false) {
-        if(selectedEl && selectedEl !== el) {
-            selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if(h) h.remove();
-        }
+        if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
         selectedEl.classList.add('selected-item');
-        if (el.classList.contains('block_image') && !el.querySelector('.resize-handle')) {
-            addResizeHandle(el);
-        }
         renderToolbar();
 
         setTimeout(() => {
             const rect = el.getBoundingClientRect();
-            const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
+            // Important: Use the scale factor of the iframe transform
+            const scale = frame.getBoundingClientRect().width / frame.offsetWidth;
             
-            // Item's BOTTOM edge relative to the visual window
-            const itemBottomOnScreen = rect.bottom * scale;
+            // Get the visual position relative to the viewport
+            const itemBottomOnScreen = rect.bottom * scale + frame.getBoundingClientRect().top;
             const viewportMidpoint = currentViewportHeight / 2;
 
-            // Scroll if bottom edge is below midpoint OR if we explicitly forced it (like on Insert)
             if (itemBottomOnScreen > viewportMidpoint || forceScroll) {
-                // Calculate where the element's bottom is relative to the internal top of frame-wrapper
-                const elBottomInParent = (rect.bottom * scale) + wrapper.scrollTop;
-                // Target: The bottom edge of item matches the visual center of the screen
-                const targetScroll = elBottomInParent - viewportMidpoint;
-                
-                wrapper.scrollTo({
-                    top: targetScroll,
+                // Determine how far below the midpoint the bottom edge is
+                const distanceBelowMid = itemBottomOnScreen - viewportMidpoint;
+                wrapper.scrollBy({
+                    top: distanceBelowMid,
                     behavior: 'smooth'
                 });
             }
@@ -154,11 +146,7 @@
     }
 
     function deselectAll() {
-        if (selectedEl) {
-            selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if(h) h.remove();
-        }
+        if (selectedEl) selectedEl.classList.remove('selected-item');
         selectedEl = null;
         stickyToolbar.style.display = 'none';
     }
@@ -175,9 +163,7 @@
             html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`;
         } else {
             html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
-            if (isHeading) {
-                html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>`;
-            }
+            if (isHeading) html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>`;
         }
         html += `
             <button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
@@ -188,71 +174,28 @@
         stickyToolbar.innerHTML = html;
     }
 
-    function toggleHeadingLine() {
-        if (selectedEl && selectedEl.classList.contains('block_heading')) {
-            selectedEl.classList.toggle('no-line');
-            renderToolbar();
-        }
-    }
-
-    function addResizeHandle(el) {
-        const handle = frame.contentDocument.createElement('div');
-        handle.className = 'resize-handle';
-        const startResize = (e) => {
-            e.preventDefault(); e.stopPropagation();
-            isResizing = true;
-            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const startWidth = el.offsetWidth;
-            const onMove = (mE) => {
-                const currentX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
-                const newWidth = startWidth + (currentX - startX);
-                if (newWidth > 40) el.style.width = newWidth + 'px';
-            };
-            const onUp = () => {
-                isResizing = false;
-                frame.contentDocument.removeEventListener('mousemove', onMove);
-                frame.contentDocument.removeEventListener('mouseup', onUp);
-                frame.contentDocument.removeEventListener('touchmove', onMove);
-                frame.contentDocument.removeEventListener('touchend', onUp);
-                updateFrameHeight();
-            };
-            frame.contentDocument.addEventListener('mousemove', onMove);
-            frame.contentDocument.addEventListener('mouseup', onUp);
-            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
-            frame.contentDocument.addEventListener('touchend', onUp);
-        };
-        handle.addEventListener('mousedown', startResize);
-        handle.addEventListener('touchstart', startResize, {passive: false});
-        el.appendChild(handle);
-    }
-
-    function setAlign(pos) {
-        if (!selectedEl) return;
-        if (selectedEl.classList.contains('block_image')) {
-             selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
-             selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
-             selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none';
-             selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
-        } else { selectedEl.style.textAlign = pos; }
-    }
-
-    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
-    
     function setDevice(type) {
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop').classList.add('active');
         frame.classList.toggle('mobile', type === 'mobile');
-        const scale = type === 'mobile' ? (wrapper.offsetWidth / 390) : 1;
-        frame.style.width = type === 'mobile' ? '390px' : '100%';
-        frame.style.transform = `scale(${scale})`;
+        
+        if (type === 'mobile') {
+            const scale = wrapper.offsetWidth / 390;
+            frame.style.width = '390px';
+            frame.style.transform = `scale(${scale})`;
+        } else {
+            frame.style.width = '100%';
+            frame.style.transform = 'none';
+        }
         setTimeout(updateFrameHeight, 200);
     }
 
     function updateFrameHeight() {
         if (!frame.contentDocument) return;
-        frame.style.height = '0px';
-        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-        frame.style.height = (frame.contentDocument.documentElement.scrollHeight * scale) + 'px';
+        // Reset height to calculate true scrollHeight
+        frame.style.height = 'auto';
+        const newHeight = frame.contentDocument.documentElement.scrollHeight;
+        frame.style.height = newHeight + 'px';
     }
 
     function insertElement(type, data) {
@@ -260,11 +203,9 @@
         const el = frame.contentDocument.createElement('div');
         el.className = `editable ${type}`;
         
-        const isText = type !== 'block_image';
-
         if(type === 'block_image') { 
             el.innerHTML = `<img src="${data}">`; 
-            el.contentEditable = "false"; el.style.width = "200px"; el.style.position = "relative";
+            el.contentEditable = "false"; el.style.width = "200px"; el.style.margin = "0 auto";
         } else { 
             el.innerText = "New Block"; 
             el.contentEditable = "true"; 
@@ -274,17 +215,16 @@
         updateFrameHeight();
         
         setTimeout(() => {
-            // NEW: Passing 'true' to force the bottom-to-midpoint scroll immediately
             selectElement(el, true); 
-            if (isText) {
+            if (type !== 'block_image') {
                 el.focus();
-                const selection = frame.contentWindow.getSelection();
+                const sel = frame.contentWindow.getSelection();
                 const range = frame.contentDocument.createRange();
                 range.selectNodeContents(el);
-                selection.removeAllRanges();
-                selection.addRange(range);
+                sel.removeAllRanges();
+                sel.addRange(range);
             }
-        }, 150);
+        }, 200);
     }
 
     function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); updateFrameHeight(); } }
