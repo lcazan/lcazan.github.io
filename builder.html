@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v3.18 Legacy Restore</title>
+    <title>Snoozing Builder | v3.19.2 Icon Resize</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -52,7 +52,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.18</div>
+            <div class="version-status">v3.19.2</div>
         </div>
         <div id="sticky-toolbar"></div>
     </div>
@@ -74,12 +74,27 @@
         const resp = await fetch('template.html');
         let html = await resp.text();
         html = html.replace('</head>', `
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
             <style>
-                .selected-item { outline: 2px solid #ebd5c9 !important; position: relative; }
+                .selected-item { outline: 2px solid #ebd5c9 !important; position: relative; pointer-events: none; }
+                .selected-item * { pointer-events: auto; }
                 .block_heading { display: block; width: 100%; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
                 .no-line { border-bottom: none !important; }
-                .resize-handle { width: 20px; height: 20px; background: #ebd5c9; position: absolute; right: -10px; bottom: -10px; cursor: nwse-resize; border-radius: 50%; z-index: 1000; border: 2px solid #000; }
+                
+                /* Option B: Floating Icon Handle */
+                .resize-handle { 
+                    width: 32px; height: 32px; 
+                    position: absolute; right: -12px; bottom: -12px; 
+                    cursor: nwse-resize; z-index: 99999; 
+                    display: flex; align-items: center; justify-content: center;
+                    color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 22px;
+                    pointer-events: auto !important;
+                    text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
+                }
+                .resize-handle::before { content: "\\f338"; }
+
                 .editable img { pointer-events: none; width: 100%; display: block; }
+                body.resizing-active { overflow: hidden !important; touch-action: none !important; }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
         
@@ -92,20 +107,25 @@
                 const el = e.target.closest('.editable');
                 if (el) selectElement(el); else deselectAll();
             });
+            doc.addEventListener('touchmove', (e) => {
+                if (isResizing) e.preventDefault();
+            }, { passive: false });
             doc.addEventListener('input', updateFrameHeight);
             setDevice('mobile');
         };
     }
 
     function selectElement(el) {
-        if(selectedEl) {
+        if(selectedEl && selectedEl !== el) {
             selectedEl.classList.remove('selected-item');
             const h = selectedEl.querySelector('.resize-handle');
             if(h) h.remove();
         }
         selectedEl = el;
         selectedEl.classList.add('selected-item');
-        if (el.classList.contains('block_image')) addResizeHandle(el);
+        if (el.classList.contains('block_image') && !el.querySelector('.resize-handle')) {
+            addResizeHandle(el);
+        }
         renderToolbar();
     }
 
@@ -132,7 +152,6 @@
         } else {
             html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
             if (isHeading) {
-                // Button is active when line is visible (no-line is NOT present)
                 html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>`;
             }
         }
@@ -153,7 +172,6 @@
         }
     }
 
-    // --- REVERTED v2.7 RESIZE LOGIC ---
     function addResizeHandle(el) {
         const handle = frame.contentDocument.createElement('div');
         handle.className = 'resize-handle';
@@ -161,10 +179,13 @@
         const startResize = (e) => {
             e.preventDefault(); e.stopPropagation();
             isResizing = true;
+            frame.contentDocument.body.classList.add('resizing-active');
+            
             const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             const startWidth = el.offsetWidth;
 
             const onMove = (mE) => {
+                if (!isResizing) return;
                 const currentX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
                 const newWidth = startWidth + (currentX - startX);
                 if (newWidth > 40) el.style.width = newWidth + 'px';
@@ -172,6 +193,7 @@
             
             const onUp = () => {
                 isResizing = false;
+                frame.contentDocument.body.classList.remove('resizing-active');
                 frame.contentDocument.removeEventListener('mousemove', onMove);
                 frame.contentDocument.removeEventListener('mouseup', onUp);
                 frame.contentDocument.removeEventListener('touchmove', onMove);
@@ -190,7 +212,6 @@
         el.appendChild(handle);
     }
 
-    // --- REVERTED v2.7 ALIGN LOGIC ---
     function setAlign(pos) {
         if (!selectedEl) return;
         if (selectedEl.classList.contains('block_image')) {
