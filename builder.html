@@ -2,18 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v3.8 Restored Logic</title>
+    <title>Snoozing Builder | v3.10 Precision Tools</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         body { margin: 0; display: flex; height: 100vh; width: 100vw; font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; }
         
-        /* SIDEBAR - All buttons in one div as requested */
+        /* SIDEBAR */
         #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 100; overflow-y: auto; }
         .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; flex-shrink: 0; }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
-
         .insert-btn.action { background: #333; border-color: #555; color: #00ca72; }
         .insert-btn.action:hover { background: #00ca72; color: white; }
 
@@ -26,23 +25,27 @@
         .drag-handle-item { width: 55px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 24px; cursor: grab; background: #222; position: absolute; border-bottom: 1px solid #333; box-sizing: border-box; }
 
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; }
-        #device-bar { height: 45px; background: #222; display: flex; align-items: center; justify-content: center; gap: 20px; border-bottom: 1px solid #000; flex-shrink: 0; }
+        
+        /* DEVICE BAR + VERSION STATUS */
+        #device-bar { height: 45px; background: #222; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #000; flex-shrink: 0; position: relative; }
+        .device-group { display: flex; gap: 20px; }
         .device-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; }
         .device-btn.active { color: var(--brand-pink); }
+        .version-status { position: absolute; right: 20px; color: #666; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
         
         #frame-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; overflow-x: hidden; overflow-y: auto; background: #333; position: relative; }
         #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; height: auto; min-height: 0; }
         #preview-frame.mobile { width: 390px; }
         
-        /* LARGE FIXED TOOLBAR */
+        /* FLOATING TOOLBAR - Optimized for precision positioning */
         #floating-toolbar { 
-            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); 
-            width: 75%; max-width: 500px; height: 60px; display: none; 
-            background: #111; border-radius: 12px; padding: 0 15px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 5000; 
-            border: 1px solid #444; align-items: center; justify-content: space-around;
+            position: absolute; display: none; 
+            background: #111; border-radius: 4px; padding: 6px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 5000; 
+            gap: 5px; border: 1px solid #444; align-items: center;
+            pointer-events: auto;
         }
-        .float-btn { background: #222; border: 1px solid #444; color: white; width: 45px; height: 45px; border-radius: 8px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+        .float-btn { background: transparent; border: none; color: white; padding: 5px 10px; cursor: pointer; border-radius: 2px; }
         .float-btn:hover { background: var(--brand-pink); color: #000; }
     </style>
 </head>
@@ -70,15 +73,17 @@
 
 <div id="preview-container">
     <div id="device-bar">
-        <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
-        <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
+        <div class="device-group">
+            <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
+            <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
+        </div>
+        <div class="version-status">v3.10</div>
     </div>
     <div id="frame-wrapper">
         <div id="floating-toolbar" onmousedown="event.preventDefault()">
             <button class="float-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
             <button class="float-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
             <button class="float-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
-            <button class="float-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
             <button class="float-btn" onclick="deleteElement()" style="color:#ff6b6b;"><i class="fa-solid fa-trash"></i></button>
         </div>
         <iframe id="preview-frame"></iframe>
@@ -98,8 +103,6 @@
         const resp = await fetch('template.html');
         let html = await resp.text();
         html = html.replace('</head>', '<link rel="stylesheet" href="styles.css"></head>');
-        
-        // RESTORED v2.7 LOGIC: The $1 keeps your footer content/classes alive
         frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
         
         frame.onload = () => {
@@ -110,65 +113,39 @@
                 if (el) { e.stopPropagation(); selectElement(el); } else { deselectAll(); }
             });
             
-            // v2.7 touch logic to prevent scroll during resize
-            innerDoc.addEventListener('touchmove', (e) => { if(isResizing) e.preventDefault(); }, {passive: false});
-            innerDoc.addEventListener('scroll', syncTrackPositions);
-            wrapper.addEventListener('scroll', syncTrackPositions);
+            // Re-calculate toolbar position on scroll within frame or wrapper
+            innerDoc.addEventListener('scroll', updateToolbarPos);
+            wrapper.addEventListener('scroll', updateToolbarPos);
             setTimeout(() => { setDevice('mobile'); }, 400);
         };
     }
 
     function selectElement(el) {
-        deselectAll();
+        if (selectedEl) selectedEl.classList.remove('selected-item');
         selectedEl = el;
         selectedEl.classList.add('selected-item');
-        toolbar.style.display = 'flex';
-        if (el.classList.contains('block_image')) addResizeHandle(el);
+        updateToolbarPos();
     }
 
-    function addResizeHandle(el) {
-        const handle = frame.contentDocument.createElement('div');
-        handle.className = 'resize-handle';
+    function updateToolbarPos() {
+        if (!selectedEl) return;
         
-        const startResize = (e) => {
-            e.preventDefault(); e.stopPropagation();
-            isResizing = true;
-            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const startWidth = el.offsetWidth;
+        const rect = selectedEl.getBoundingClientRect();
+        const frameRect = frame.getBoundingClientRect();
+        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
 
-            const onMove = (mE) => {
-                const currentX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
-                el.style.width = (startWidth + (currentX - startX)) + 'px';
-            };
-            
-            const onUp = () => {
-                isResizing = false;
-                frame.contentDocument.removeEventListener('mousemove', onMove);
-                frame.contentDocument.removeEventListener('mouseup', onUp);
-                frame.contentDocument.removeEventListener('touchmove', onMove);
-                frame.contentDocument.removeEventListener('touchend', onUp);
-                updateFrameHeight();
-            };
+        toolbar.style.display = 'flex';
 
-            frame.contentDocument.addEventListener('mousemove', onMove);
-            frame.contentDocument.addEventListener('mouseup', onUp);
-            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
-            frame.contentDocument.addEventListener('touchend', onUp);
-        };
+        // Horizontal centering relative to the element
+        const centerX = frameRect.left + (rect.left * scale) + (rect.width * scale / 2);
+        const leftPos = centerX - (toolbar.offsetWidth / 2);
+        
+        // Vertical positioning: Element top - toolbar height - 2px gap
+        // We subtract the wrapper's offset to keep it absolute within the scrollable container
+        const topPos = (rect.top * scale) - toolbar.offsetHeight - 2;
 
-        handle.addEventListener('mousedown', startResize);
-        handle.addEventListener('touchstart', startResize, {passive: false});
-        el.appendChild(handle);
-    }
-
-    function triggerImageUpload() { document.getElementById('image-upload').click(); }
-    function handleImageUpload(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => insertElement('block_image', e.target.result);
-            reader.readAsDataURL(input.files[0]);
-            input.value = '';
-        }
+        toolbar.style.left = `${leftPos}px`;
+        toolbar.style.top = `${topPos}px`;
     }
 
     function insertElement(type, data = null) {
@@ -179,20 +156,15 @@
             newEl.innerHTML = `<img src="${data}" style="width:100%">`;
             newEl.contentEditable = "false";
         } else {
-            newEl.innerText = "New Content";
+            newEl.innerText = "New Block";
             newEl.contentEditable = "true";
         }
         root.appendChild(newEl);
         updateFrameHeight();
-        if (document.getElementById('moveModeCheckbox').checked) syncTrackPositions();
     }
 
     function deselectAll() { 
-        if (selectedEl) {
-            selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if(h) h.remove();
-        }
+        if (selectedEl) selectedEl.classList.remove('selected-item');
         selectedEl = null; 
         toolbar.style.display = 'none'; 
     }
@@ -210,7 +182,7 @@
             frame.style.width = '100%';
             frame.style.transform = 'scale(1)';
         }
-        setTimeout(updateFrameHeight, 100);
+        setTimeout(() => { updateFrameHeight(); updateToolbarPos(); }, 100);
     }
 
     function updateFrameHeight() {
@@ -221,41 +193,14 @@
         }
     }
 
-    function toggleMoveMode() {
-        const active = document.getElementById('moveModeCheckbox').checked;
-        track.classList.toggle('active', active);
-        deselectAll();
-        if (active) {
-            syncTrackPositions();
-            sortableInstance = new Sortable(track, {
-                animation: 200,
-                onEnd: (evt) => {
-                    const root = frame.contentDocument.getElementById('editor-root');
-                    const blocks = Array.from(root.children);
-                    const target = blocks[evt.oldIndex];
-                    if (evt.newIndex >= blocks.length - 1) root.appendChild(target);
-                    else root.insertBefore(target, blocks[evt.newIndex + (evt.newIndex > evt.oldIndex ? 1 : 0)]);
-                    setTimeout(syncTrackPositions, 50);
-                }
-            });
-        } else if (sortableInstance) { sortableInstance.destroy(); track.innerHTML = ""; }
-    }
-
-    function syncTrackPositions() {
-        if (!document.getElementById('moveModeCheckbox').checked) return;
-        track.innerHTML = "";
-        const root = frame.contentDocument.getElementById('editor-root');
-        const blocks = Array.from(root.children);
-        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-        blocks.forEach((block) => {
-            const rect = block.getBoundingClientRect();
-            const handle = document.createElement('div');
-            handle.className = 'drag-handle-item';
-            handle.innerHTML = '⠿';
-            handle.style.top = (rect.top * scale) + "px";
-            handle.style.height = (rect.height * scale) + "px";
-            track.appendChild(handle);
-        });
+    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+    function handleImageUpload(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => insertElement('block_image', e.target.result);
+            reader.readAsDataURL(input.files[0]);
+            input.value = '';
+        }
     }
 
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
@@ -270,8 +215,8 @@
             style: child.getAttribute('style') || ""
         }));
         const blob = new Blob([JSON.stringify(elements, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob); a.download = 'layout.json'; a.click();
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob); link.download = 'layout.json'; link.click();
     }
 
     function openJSON() { document.getElementById('json-opener').click(); }
@@ -294,6 +239,39 @@
             };
             reader.readAsText(input.files[0]);
         }
+    }
+
+    function toggleMoveMode() {
+        const active = document.getElementById('moveModeCheckbox').checked;
+        track.classList.toggle('active', active);
+        deselectAll();
+        if (active) {
+            syncTrackPositions();
+            sortableInstance = new Sortable(track, {
+                animation: 200,
+                onEnd: () => {
+                    // Manual re-sync after sort
+                    setTimeout(syncTrackPositions, 50);
+                }
+            });
+        } else if (sortableInstance) { sortableInstance.destroy(); track.innerHTML = ""; }
+    }
+
+    function syncTrackPositions() {
+        if (!document.getElementById('moveModeCheckbox').checked) return;
+        track.innerHTML = "";
+        const root = frame.contentDocument.getElementById('editor-root');
+        const blocks = Array.from(root.children);
+        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
+        blocks.forEach((block) => {
+            const rect = block.getBoundingClientRect();
+            const handle = document.createElement('div');
+            handle.className = 'drag-handle-item';
+            handle.innerHTML = '⠿';
+            handle.style.top = (rect.top * scale) + "px";
+            handle.style.height = (rect.height * scale) + "px";
+            track.appendChild(handle);
+        });
     }
 
     window.onload = init;
