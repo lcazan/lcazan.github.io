@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v3.26 Absolute Centering</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Snoozing Builder | v3.27 Viewport Midpoint</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -10,7 +11,7 @@
         body { 
             margin: 0; display: flex; height: 100vh; width: 100vw; 
             font-family: 'Source Sans Pro', sans-serif; background: #111; 
-            overflow: hidden; position: fixed;
+            overflow: hidden; position: fixed; touch-action: pan-x pan-y;
         }
         
         #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; }
@@ -50,7 +51,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.26</div>
+            <div class="version-status">v3.27</div>
         </div>
         <div id="sticky-toolbar"></div>
     </div>
@@ -66,13 +67,18 @@
     const stickyToolbar = document.getElementById('sticky-toolbar');
     const wrapper = document.getElementById('frame-wrapper');
     const header = document.getElementById('header-area');
+    
     let selectedEl = null;
     let isResizing = false;
+    
+    // Global variable to store the height of the visible area
+    let currentViewportHeight = window.innerHeight;
 
     async function init() {
         const resp = await fetch('template.html');
         let html = await resp.text();
         html = html.replace('</head>', `
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
             <style>
                 .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; pointer-events: none; }
@@ -101,9 +107,10 @@
                 if (el) selectElement(el); else deselectAll();
             });
 
-            // Keep header locked to visual top for mobile status bar shifts
+            // Monitor Visual Viewport changes (Keyboard etc)
             if (window.visualViewport) {
-                window.visualViewport.addEventListener('scroll', () => {
+                window.visualViewport.addEventListener('resize', () => {
+                    currentViewportHeight = window.visualViewport.height;
                     header.style.transform = `translateY(${window.visualViewport.offsetTop}px)`;
                 });
             }
@@ -126,21 +133,29 @@
         }
         renderToolbar();
 
-        // THE CORE FIX: Center vertically on screen immediately upon selection
+        // LOGIC: Scroll to midpoint ONLY if item is in the lower half
         setTimeout(() => {
             const rect = el.getBoundingClientRect();
             const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
             
-            // Calculate where the element's center is relative to the top of the wrapper
-            const elCenterInParent = ((rect.top + (rect.height / 2)) * scale) + wrapper.scrollTop;
-            // Calculate the target scroll: Center of element minus half of the visible window
-            const targetScroll = elCenterInParent - (wrapper.offsetHeight / 2);
-            
-            wrapper.scrollTo({
-                top: targetScroll,
-                behavior: 'smooth'
-            });
-        }, 50); 
+            // Get item position relative to the physical screen
+            const itemTopOnScreen = rect.top * scale;
+            const itemBottomOnScreen = rect.bottom * scale;
+            const itemMidpointOnScreen = (itemTopOnScreen + itemBottomOnScreen) / 2;
+
+            const viewportMidpoint = currentViewportHeight / 2;
+
+            // If item midpoint is in the lower half of the VISUAL viewport
+            if (itemMidpointOnScreen > viewportMidpoint) {
+                const elCenterInParent = ((rect.top + (rect.height / 2)) * scale) + wrapper.scrollTop;
+                const targetScroll = elCenterInParent - viewportMidpoint;
+                
+                wrapper.scrollTo({
+                    top: targetScroll,
+                    behavior: 'smooth'
+                });
+            }
+        }, 100); 
     }
 
     function deselectAll() {
@@ -264,7 +279,7 @@
         updateFrameHeight();
         
         setTimeout(() => {
-            selectElement(el); // This now triggers the centering logic
+            selectElement(el); 
             if (isText) {
                 el.focus();
                 const selection = frame.contentWindow.getSelection();
