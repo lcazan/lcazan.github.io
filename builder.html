@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.38 Stable Revert</title>
+    <title>Snoozing Builder | v3.38 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -93,11 +93,17 @@
             <style>
                 html, body { 
                     height: 100%; margin: 0; padding: 0;
+                    display: flex; flex-direction: column;
                     overflow-x: hidden; overflow-y: auto !important; 
                     -webkit-overflow-scrolling: touch; 
                 }
                 .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; }
-                #editor-root { padding-bottom: 60vh !important; min-height: 101%; }
+                #editor-root { 
+                    flex: 1 0 auto;
+                    padding-bottom: 60vh !important; 
+                    min-height: 101%; 
+                }
+                footer { flex-shrink: 0; margin-top: auto; }
                 .editable img { width: 100%; display: block; }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
@@ -119,8 +125,9 @@
     }
 
     function updateLockedHeight() {
+        // Correctly capture the available visual area height
         const vvHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-        lockedHeight = vvHeight - 50;
+        lockedHeight = vvHeight - 50; 
     }
 
     function setDevice(type) {
@@ -131,8 +138,9 @@
         
         if (type === 'mobile') {
             const physicalWidth = wrapper.offsetWidth;
-            const scaleFactor = physicalWidth / 412;
+            const scaleFactor = physicalWidth / 412; // Pixel 8 Pro logic
             
+            // Adjust the internal height so it matches the scaled external viewport
             frame.style.width = '412px';
             frame.style.height = (lockedHeight / scaleFactor) + 'px';
             frame.style.transform = `scale(${scaleFactor})`;
