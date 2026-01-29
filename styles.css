@@ -12,7 +12,8 @@ body {
     color: var(--text-dark); 
     background-color: #fff; 
     display: flex;             /* REQUIRED for Footer-Push */
-    flex-direction: column;    /* REQUIRED for Footer-Push */         /* REQUIRED for Footer-Push */
+    flex-direction: column;    /* REQUIRED for Footer-Push */
+    /* min-height removed to allow builder script to control iframe viewport size */
     overflow-x: hidden; 
 }
 
@@ -22,7 +23,7 @@ body {
     margin: 0;
     padding: 20px;
     background-color: #ffffff;
-    flex: 1 0 auto;           /* REQUIRED: Grows to push footer down */
+    flex: 1 0 auto;           /* Grows to fill available viewport space, pushing footer down */
     display: block;
     box-sizing: border-box;
 }
@@ -168,7 +169,7 @@ footer {
     text-align: center; 
     padding: 60px 20px 40px; 
     border-top: 1px solid #eee; 
-    margin-top: auto;          /* REQUIRED for Footer-Push */
+    margin-top: auto;          /* Sticks to the bottom of the viewport content */
     flex-shrink: 0;            /* Prevents footer from being squished */
 }
 
