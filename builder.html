@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.4.9 Stable</title>
+    <title>Snoozing Builder | v3.5.0 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -66,7 +66,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.4.9</div>
+            <div class="version-status">v3.5.0</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -88,6 +88,7 @@
     let selectedEl = null;
     let currentMode = 'mobile';
     let isResizing = false;
+    let rotationTimeout;
 
     async function init() {
         const resp = await fetch('template.html');
@@ -98,7 +99,9 @@
                 html, body { height: auto; min-height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
                 .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; }
                 #editor-root { flex: 1 0 auto; width: 100%; }
-                footer { flex-shrink: 0; margin-top: auto; padding-bottom: 80px !important; }
+                
+                /* GLOBAL PADDING: Misplaces footer from the edge in all views */
+                footer { flex-shrink: 0; margin-top: auto; padding-bottom: 60px !important; }
                 
                 .block_heading { display: block; width: 100%; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
                 .no-line { border-bottom: none !important; }
@@ -125,19 +128,24 @@
             setDevice('mobile');
         };
 
-        window.visualViewport.addEventListener('resize', () => {
-            if (window.innerWidth !== initialWidth) {
-                initialWidth = window.innerWidth;
-                setDevice(currentMode);
-            }
-        });
+        // ROTATION RECALCULATION
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', () => {
+                clearTimeout(rotationTimeout);
+                rotationTimeout = setTimeout(() => {
+                    setDevice(currentMode);
+                }, 200);
+            });
+        }
     }
 
     function setDevice(type) {
         currentMode = type;
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop').classList.add('active');
+        const btn = document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop');
+        if(btn) btn.classList.add('active');
 
+        // Fresh dimensions capture
         const wrapperW = wrapper.offsetWidth;
         const wrapperH = wrapper.offsetHeight;
         
@@ -153,6 +161,7 @@
         }
     }
 
+    // Logic utilities maintained from v3.4.9
     function selectElement(el) {
         if(selectedEl && selectedEl !== el) {
             selectedEl.classList.remove('selected-item');
@@ -161,13 +170,7 @@
         }
         selectedEl = el;
         selectedEl.classList.add('selected-item');
-        
-        // Only show resize handle when image is selected
-        if (el.classList.contains('block_image')) {
-            const existingHandle = el.querySelector('.resize-handle');
-            if (!existingHandle) addResizeHandle(el);
-        }
-        
+        if (el.classList.contains('block_image')) addResizeHandle(el);
         renderToolbar();
     }
 
@@ -184,21 +187,16 @@
     function renderToolbar() {
         if (!selectedEl) return;
         toolbarContent.style.visibility = 'visible';
-        
         const isImg = selectedEl.classList.contains('block_image');
         const isHeading = selectedEl.classList.contains('block_heading');
         const lineHidden = selectedEl.classList.contains('no-line');
 
         let html = '';
-        if (isImg) {
-            html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`;
-        } else {
+        if (isImg) { html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`; }
+        else {
             html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
-            if (isHeading) {
-                html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>`;
-            }
+            if (isHeading) { html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>`; }
         }
-        
         html += `
             <button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
             <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
@@ -258,7 +256,6 @@
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
-
     function handleImageUpload(i) { 
         if(i.files[0]) { 
             const r = new FileReader(); 
