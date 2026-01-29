@@ -38,13 +38,12 @@
         #frame-wrapper { 
             flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
             background: #333; overflow: hidden; position: relative;
-            touch-action: none;
         }
         
         #preview-frame { 
             border: none; background: white; 
             transform-origin: top center;
-            width: 100%;
+            width: 100%; height: 100%; /* Iframe element now fills the wrapper exactly */
         }
     </style>
 </head>
@@ -79,16 +78,15 @@
     const stickyToolbar = document.getElementById('sticky-toolbar');
     const wrapper = document.getElementById('frame-wrapper');
     
-    let lockedHeight = 0;
     let initialWidth = window.innerWidth;
     let selectedEl = null;
     let currentMode = 'mobile';
 
     async function init() {
-        updateLockedHeight();
-
         const resp = await fetch('template.html');
         let html = await resp.text();
+        
+        // Use the injected styles to handle the flex-push logic
         html = html.replace('</head>', `
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
             <style>
@@ -99,18 +97,8 @@
                     -webkit-overflow-scrolling: touch; 
                 }
                 .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; }
-                
-                #editor-root { 
-                    flex: 1 0 auto;
-                    display: block;
-                    width: 100%;
-                }
-                
-                footer {
-                    flex-shrink: 0;
-                    margin-top: auto;
-                }
-
+                #editor-root { flex: 1 0 auto; display: block; width: 100%; }
+                footer { flex-shrink: 0; margin-top: auto; }
                 .editable img { width: 100%; display: block; }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
@@ -125,25 +113,18 @@
             setDevice('mobile');
         };
 
-        window.visualViewport.addEventListener('resize', () => {
+        window.addEventListener('resize', () => {
             if (window.innerWidth !== initialWidth) {
                 initialWidth = window.innerWidth;
-                updateLockedHeight();
-                if(currentMode === 'mobile') setDevice('mobile');
+                setDevice(currentMode);
             }
         });
-    }
-
-    function updateLockedHeight() {
-        // Correctly target the available wrapper height for the fixed iframe viewport
-        lockedHeight = wrapper.offsetHeight;
     }
 
     function setDevice(type) {
         currentMode = type;
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
-        const btn = document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop');
-        btn.classList.add('active');
+        document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop').classList.add('active');
         
         const physicalViewHeight = wrapper.offsetHeight;
         const physicalViewWidth = wrapper.offsetWidth;
@@ -152,8 +133,9 @@
             const targetWidth = 412;
             const scaleFactor = physicalViewWidth / targetWidth;
             
+            // The physical element fills 100% of wrapper, 
+            // but we scale it so the internal document is 412px wide.
             frame.style.width = targetWidth + 'px';
-            // Scale logic ensures the internal 100% matches visible viewport height exactly
             frame.style.height = (physicalViewHeight / scaleFactor) + 'px';
             frame.style.transform = `scale(${scaleFactor})`;
         } else {
@@ -178,7 +160,7 @@
         el.className = `editable ${type}`;
         if(type === 'block_image') { 
             el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
-            el.contentEditable = "false"; el.style.width = "100%";
+            el.contentEditable = "false";
         } else { el.innerText = "New Block"; el.contentEditable = "true"; }
         root.appendChild(el);
         setTimeout(() => { selectElement(el); if (type !== 'block_image') el.focus(); }, 150);
