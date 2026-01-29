@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.5.8 Stable</title>
+    <title>Snoozing Builder | v3.5.9 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -78,7 +78,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.5.8</div>
+            <div class="version-status">v3.5.9</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -112,14 +112,15 @@
                 html, body { height: auto; min-height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
                 #editor-root { flex: 1 0 auto; width: 100%; display: flex; flex-direction: column; }
                 
-                /* BLOCK ENFORCEMENT: Ensuring headings stack vertically */
+                /* BLOCK LAYOUT: Forces vertical stacking without overriding typography */
                 .editable { display: block !important; width: 100%; clear: both; box-sizing: border-box; position: relative; }
                 .selected-item { outline: 3px solid #ebd5c9 !important; }
                 
                 body { padding-bottom: 60px !important; }
                 footer { flex-shrink: 0; margin-top: auto; }
                 
-                .block_heading { border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 15px; font-weight: bold; }
+                /* Headings: Clean inheritance from styles.css */
+                .block_heading { border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
                 .no-line { border-bottom: none !important; }
                 
                 .resize-handle { 
@@ -182,22 +183,29 @@
     }
 
     function selectElement(el) {
+        const doc = frame.contentDocument;
+        // NUCLEAR DESELECT: Ensure all brackets are killed before a new selection
+        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+
         if(selectedEl && selectedEl !== el) {
             selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if(h) h.remove();
         }
+        
         selectedEl = el;
         selectedEl.classList.add('selected-item');
-        if (el.classList.contains('block_image')) addResizeHandle(el);
+        
+        if (el.classList.contains('block_image')) {
+            addResizeHandle(el);
+        }
         renderToolbar();
     }
 
     function deselectAll() {
+        const doc = frame.contentDocument;
+        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        
         if (selectedEl) {
             selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if(h) h.remove();
         }
         selectedEl = null;
         toolbarContent.style.visibility = 'hidden';
@@ -297,7 +305,6 @@
         } else { el.innerText = "New Block"; el.contentEditable = "true"; }
         root.appendChild(el);
         
-        // Use preventScroll: true to stop the "bounce" when focusing
         setTimeout(() => { 
             selectElement(el); 
             if (type !== 'block_image') el.focus({ preventScroll: true }); 
