@@ -2,51 +2,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Snoozing Builder | v3.10 Precision Tools</title>
+    <title>Snoozing Builder | v3.11 Mobile Optimized</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         body { margin: 0; display: flex; height: 100vh; width: 100vw; font-family: 'Source Sans Pro', sans-serif; background: #111; overflow: hidden; }
         
-        /* SIDEBAR */
         #sidebar { width: 90px; height: 100vh; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 100; overflow-y: auto; }
         .insert-btn { width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; font-weight: bold; text-transform: uppercase; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; flex-shrink: 0; }
         .insert-btn:hover { background: var(--brand-pink); color: #000; }
         .insert-btn.action { background: #333; border-color: #555; color: #00ca72; }
-        .insert-btn.action:hover { background: #00ca72; color: white; }
 
-        .move-toggle { color: white; font-size: 10px; text-align: center; margin-top: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; margin-bottom: 20px; }
-        .move-toggle input { width: 22px; height: 22px; cursor: pointer; }
-
-        /* PREVIEW AREA */
-        #drag-track { width: 0; background: #222; overflow: hidden; transition: width 0.3s ease; position: relative; border-right: 1px solid #000; flex-shrink: 0; }
-        #drag-track.active { width: 55px; }
-        .drag-handle-item { width: 55px; display: flex; align-items: center; justify-content: center; color: #888; font-size: 24px; cursor: grab; background: #222; position: absolute; border-bottom: 1px solid #333; box-sizing: border-box; }
-
-        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; }
+        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; position: relative; height: 100vh; transition: height 0.3s ease-out; }
         
-        /* DEVICE BAR + VERSION STATUS */
-        #device-bar { height: 45px; background: #222; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #000; flex-shrink: 0; position: relative; }
-        .device-group { display: flex; gap: 20px; }
-        .device-btn { background: transparent; border: none; color: #888; cursor: pointer; font-size: 18px; }
-        .device-btn.active { color: var(--brand-pink); }
-        .version-status { position: absolute; right: 20px; color: #666; font-size: 11px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
+        #device-bar { height: 45px; background: #222; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #000; flex-shrink: 0; position: relative; z-index: 10; }
+        .version-status { position: absolute; right: 20px; color: #666; font-size: 11px; font-weight: bold; letter-spacing: 1px; }
         
-        #frame-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; overflow-x: hidden; overflow-y: auto; background: #333; position: relative; }
-        #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; height: auto; min-height: 0; }
+        #frame-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; overflow-x: hidden; overflow-y: auto; background: #333; position: relative; -webkit-overflow-scrolling: touch; }
+        #preview-frame { width: 100%; border: none; background: white; transform-origin: top center; }
         #preview-frame.mobile { width: 390px; }
-        
-        /* FLOATING TOOLBAR - Optimized for precision positioning */
+
         #floating-toolbar { 
-            position: absolute; display: none; 
-            background: #111; border-radius: 4px; padding: 6px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 5000; 
-            gap: 5px; border: 1px solid #444; align-items: center;
-            pointer-events: auto;
+            position: absolute; display: none; background: #111; border-radius: 4px; padding: 6px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 5000; gap: 5px; border: 1px solid #444; align-items: center;
         }
-        .float-btn { background: transparent; border: none; color: white; padding: 5px 10px; cursor: pointer; border-radius: 2px; }
-        .float-btn:hover { background: var(--brand-pink); color: #000; }
+        .float-btn { background: transparent; border: none; color: white; padding: 5px 10px; cursor: pointer; }
+        
+        .move-toggle { color: white; font-size: 10px; text-align: center; margin-bottom: 20px; cursor: pointer; }
+        .move-toggle input { width: 22px; height: 22px; display: block; margin: 0 auto 5px; }
+
+        #drag-track { width: 0; background: #222; transition: width 0.3s; border-right: 1px solid #000; flex-shrink: 0; position: relative; }
+        #drag-track.active { width: 55px; }
+        .drag-handle-item { width: 55px; position: absolute; display: flex; align-items: center; justify-content: center; color: #555; border-bottom: 1px solid #333; }
     </style>
 </head>
 <body>
@@ -56,28 +44,18 @@
     <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i>Heading</button>
     <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i>Text</button>
     <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i>Image</button>
-    
-    <label class="move-toggle">
-        <input type="checkbox" id="moveModeCheckbox" onchange="toggleMoveMode()">
-        <div>MOVE</div>
-    </label>
-
+    <label class="move-toggle"><input type="checkbox" id="moveModeCheckbox" onchange="toggleMoveMode()">MOVE</label>
     <button class="insert-btn action" onclick="openJSON()"><i class="fa-solid fa-folder-open"></i>Open</button>
     <button class="insert-btn action" onclick="saveJSON()"><i class="fa-solid fa-floppy-disk"></i>Save</button>
 </div>
-
-<input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
-<input type="file" id="json-opener" style="display:none" accept=".json" onchange="handleJSONOpen(this)">
 
 <div id="drag-track"></div>
 
 <div id="preview-container">
     <div id="device-bar">
-        <div class="device-group">
-            <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
-            <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-        </div>
-        <div class="version-status">v3.10</div>
+        <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
+        <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')" style="margin-left:20px"><i class="fa-solid fa-mobile-screen-button"></i></button>
+        <div class="version-status">v3.11</div>
     </div>
     <div id="frame-wrapper">
         <div id="floating-toolbar" onmousedown="event.preventDefault()">
@@ -90,14 +68,15 @@
     </div>
 </div>
 
+<input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
+<input type="file" id="json-opener" style="display:none" accept=".json" onchange="handleJSONOpen(this)">
+
 <script>
     const frame = document.getElementById('preview-frame');
     const toolbar = document.getElementById('floating-toolbar');
     const wrapper = document.getElementById('frame-wrapper');
-    const track = document.getElementById('drag-track');
+    const container = document.getElementById('preview-container');
     let selectedEl = null;
-    let isResizing = false;
-    let sortableInstance = null;
 
     async function init() {
         const resp = await fetch('template.html');
@@ -106,17 +85,15 @@
         frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
         
         frame.onload = () => {
-            const innerDoc = frame.contentDocument;
-            innerDoc.addEventListener('mousedown', (e) => {
-                if (isResizing || document.getElementById('moveModeCheckbox').checked) return;
+            const doc = frame.contentDocument;
+            doc.addEventListener('mousedown', (e) => {
                 const el = e.target.closest('.editable');
-                if (el) { e.stopPropagation(); selectElement(el); } else { deselectAll(); }
+                if (el) { selectElement(el); } else { deselectAll(); }
             });
-            
-            // Re-calculate toolbar position on scroll within frame or wrapper
-            innerDoc.addEventListener('scroll', updateToolbarPos);
+            doc.addEventListener('input', () => { updateFrameHeight(); updateToolbarPos(); });
             wrapper.addEventListener('scroll', updateToolbarPos);
-            setTimeout(() => { setDevice('mobile'); }, 400);
+            setupKeyboardAvoidance();
+            setDevice('mobile');
         };
     }
 
@@ -125,153 +102,107 @@
         selectedEl = el;
         selectedEl.classList.add('selected-item');
         updateToolbarPos();
+        
+        // Ensure element is visible if keyboard is likely to open
+        if (el.contentEditable === "true") {
+            setTimeout(() => el.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+        }
     }
 
     function updateToolbarPos() {
         if (!selectedEl) return;
-        
         const rect = selectedEl.getBoundingClientRect();
         const frameRect = frame.getBoundingClientRect();
         const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
 
         toolbar.style.display = 'flex';
+        const left = frameRect.left + (rect.left * scale) + (rect.width * scale / 2) - (toolbar.offsetWidth / 2);
+        const top = (rect.top * scale) - toolbar.offsetHeight - 2; // Exact 2px gap
 
-        // Horizontal centering relative to the element
-        const centerX = frameRect.left + (rect.left * scale) + (rect.width * scale / 2);
-        const leftPos = centerX - (toolbar.offsetWidth / 2);
-        
-        // Vertical positioning: Element top - toolbar height - 2px gap
-        // We subtract the wrapper's offset to keep it absolute within the scrollable container
-        const topPos = (rect.top * scale) - toolbar.offsetHeight - 2;
-
-        toolbar.style.left = `${leftPos}px`;
-        toolbar.style.top = `${topPos}px`;
+        toolbar.style.left = `${Math.max(10, left)}px`;
+        toolbar.style.top = `${top}px`;
     }
 
-    function insertElement(type, data = null) {
-        const root = frame.contentDocument.getElementById('editor-root');
-        const newEl = frame.contentDocument.createElement('div');
-        newEl.className = `editable ${type}`;
-        if (type === 'block_image') {
-            newEl.innerHTML = `<img src="${data}" style="width:100%">`;
-            newEl.contentEditable = "false";
-        } else {
-            newEl.innerText = "New Block";
-            newEl.contentEditable = "true";
+    function setupKeyboardAvoidance() {
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', () => {
+                const viewportHeight = window.visualViewport.height;
+                const windowHeight = window.innerHeight;
+                
+                if (viewportHeight < windowHeight * 0.8) {
+                    // Keyboard is likely open
+                    container.style.height = `${viewportHeight}px`;
+                    if (selectedEl) {
+                        setTimeout(() => {
+                            selectedEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            updateToolbarPos();
+                        }, 100);
+                    }
+                } else {
+                    container.style.height = '100vh';
+                }
+            });
         }
-        root.appendChild(newEl);
-        updateFrameHeight();
-    }
-
-    function deselectAll() { 
-        if (selectedEl) selectedEl.classList.remove('selected-item');
-        selectedEl = null; 
-        toolbar.style.display = 'none'; 
     }
 
     function setDevice(type) {
-        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
-        if (type === 'mobile') {
-            frame.classList.add('mobile');
-            document.getElementById('btn-mobile').classList.add('active');
-            frame.style.width = '390px'; 
-            frame.style.transform = `scale(${wrapper.offsetWidth / 390})`;
-        } else {
-            frame.classList.remove('mobile');
-            document.getElementById('btn-desktop').classList.add('active');
-            frame.style.width = '100%';
-            frame.style.transform = 'scale(1)';
-        }
-        setTimeout(() => { updateFrameHeight(); updateToolbarPos(); }, 100);
+        frame.classList.toggle('mobile', type === 'mobile');
+        frame.style.width = type === 'mobile' ? '390px' : '100%';
+        frame.style.transform = type === 'mobile' ? `scale(${wrapper.offsetWidth / 390})` : 'scale(1)';
+        setTimeout(() => { updateFrameHeight(); updateToolbarPos(); }, 200);
     }
 
     function updateFrameHeight() {
-        if (frame.contentDocument) {
-            frame.style.height = '0px'; 
-            const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-            frame.style.height = (frame.contentDocument.documentElement.scrollHeight * scale) + 'px';
-        }
+        if (!frame.contentDocument) return;
+        frame.style.height = '0px';
+        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
+        frame.style.height = (frame.contentDocument.documentElement.scrollHeight * scale) + 'px';
     }
 
-    function triggerImageUpload() { document.getElementById('image-upload').click(); }
-    function handleImageUpload(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => insertElement('block_image', e.target.result);
-            reader.readAsDataURL(input.files[0]);
-            input.value = '';
-        }
-    }
-
+    function deselectAll() { selectedEl?.classList.remove('selected-item'); selectedEl = null; toolbar.style.display = 'none'; }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function setAlign(val) { if(selectedEl) selectedEl.style.textAlign = val; }
     function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); updateFrameHeight(); } }
+    
+    // UI Triggers
+    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+    function handleImageUpload(i) { if(i.files[0]) { const r = new FileReader(); r.onload=e=>insertElement('block_image', e.target.result); r.readAsDataURL(i.files[0]); } }
+    
+    function insertElement(type, data) {
+        const root = frame.contentDocument.getElementById('editor-root');
+        const el = frame.contentDocument.createElement('div');
+        el.className = `editable ${type}`;
+        if(type === 'block_image') { el.innerHTML = `<img src="${data}" style="width:100%">`; el.contentEditable = "false"; }
+        else { el.innerText = "New Block"; el.contentEditable = "true"; }
+        root.appendChild(el);
+        updateFrameHeight();
+    }
 
     function saveJSON() {
         const root = frame.contentDocument.getElementById('editor-root');
-        const elements = Array.from(root.children).map(child => ({
-            type: child.className.replace('editable ', '').replace('selected-item', '').trim(),
-            content: child.innerHTML,
-            style: child.getAttribute('style') || ""
-        }));
-        const blob = new Blob([JSON.stringify(elements, null, 2)], { type: 'application/json' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob); link.download = 'layout.json'; link.click();
+        const data = Array.from(root.children).map(c => ({ type: c.className.replace('editable ','').trim(), content: c.innerHTML, style: c.getAttribute('style')||"" }));
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type:'application/json'}));
+        a.download = 'layout.json'; a.click();
     }
 
     function openJSON() { document.getElementById('json-opener').click(); }
     function handleJSONOpen(input) {
-        if (input.files && input.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const data = JSON.parse(e.target.result);
-                const root = frame.contentDocument.getElementById('editor-root');
-                root.innerHTML = "";
-                data.forEach(item => {
-                    const el = frame.contentDocument.createElement('div');
-                    el.className = `editable ${item.type}`;
-                    el.innerHTML = item.content;
-                    if(item.style) el.setAttribute('style', item.style);
-                    el.contentEditable = item.type !== 'block_image';
-                    root.appendChild(el);
-                });
-                updateFrameHeight();
-            };
-            reader.readAsText(input.files[0]);
-        }
-    }
-
-    function toggleMoveMode() {
-        const active = document.getElementById('moveModeCheckbox').checked;
-        track.classList.toggle('active', active);
-        deselectAll();
-        if (active) {
-            syncTrackPositions();
-            sortableInstance = new Sortable(track, {
-                animation: 200,
-                onEnd: () => {
-                    // Manual re-sync after sort
-                    setTimeout(syncTrackPositions, 50);
-                }
+        const reader = new FileReader();
+        reader.onload = e => {
+            const data = JSON.parse(e.target.result);
+            const root = frame.contentDocument.getElementById('editor-root');
+            root.innerHTML = "";
+            data.forEach(item => {
+                const el = frame.contentDocument.createElement('div');
+                el.className = `editable ${item.type}`; el.innerHTML = item.content;
+                if(item.style) el.setAttribute('style', item.style);
+                el.contentEditable = item.type !== 'block_image';
+                root.appendChild(el);
             });
-        } else if (sortableInstance) { sortableInstance.destroy(); track.innerHTML = ""; }
-    }
-
-    function syncTrackPositions() {
-        if (!document.getElementById('moveModeCheckbox').checked) return;
-        track.innerHTML = "";
-        const root = frame.contentDocument.getElementById('editor-root');
-        const blocks = Array.from(root.children);
-        const scale = frame.classList.contains('mobile') ? (wrapper.offsetWidth / 390) : 1;
-        blocks.forEach((block) => {
-            const rect = block.getBoundingClientRect();
-            const handle = document.createElement('div');
-            handle.className = 'drag-handle-item';
-            handle.innerHTML = '⠿';
-            handle.style.top = (rect.top * scale) + "px";
-            handle.style.height = (rect.height * scale) + "px";
-            track.appendChild(handle);
-        });
+            updateFrameHeight();
+        };
+        reader.readAsText(input.files[0]);
     }
 
     window.onload = init;
