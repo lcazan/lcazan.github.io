@@ -161,8 +161,25 @@ nav#nav-sidebar a {
     z-index: 1000; border: 1px solid white; border-radius: 2px;
 }
 
-/* --- Footer --- */
+/* --- Footer & Social Icons Fix --- */
 footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; margin-top: auto; }
+
+.social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
+
+/* Force standard color on social links to prevent "Blue" browser defaults */
+.social-icons a, 
+.social-icons a:visited,
+.social-icons i { 
+    color: var(--text-dark) !important; 
+    text-decoration: none !important; 
+    font-size: 1.4rem; 
+}
+
+.social-icons a:hover,
+.social-icons a:hover i {
+    color: var(--icon-brown) !important;
+}
+
 .disclaimer { font-size: 0.75rem; color: #666; max-width: 850px; margin: 0 auto; line-height: 1.7; }
 
 @media (max-width: 767px) { 
