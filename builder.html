@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.5.2 Stable</title>
+    <title>Snoozing Builder | v3.5.3 Stable</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -36,10 +36,10 @@
         #sticky-toolbar { 
             height: 85px; background: #1a1a1a; display: flex; 
             align-items: center; justify-content: center; gap: 18px; 
-            padding: 0 25px; border-bottom: 1px solid #000;
+            padding: 0 25px; border-bottom: 1px solid #000; flex-shrink: 0;
         }
         
-        #toolbar-content { display: flex; gap: 18px; visibility: hidden; }
+        #toolbar-content { display: flex; gap: 18px; visibility: hidden; align-items: center; height: 100%; }
 
         #frame-wrapper { 
             flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
@@ -47,7 +47,14 @@
         }
         
         #preview-frame { border: none; background: white; transform-origin: top center; }
-        .tool-btn { background: #444; border: 1px solid #666; color: white; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
+
+        /* UPDATED: Increased icon size by 50% (36px) while keeping container fixed */
+        .tool-btn { 
+            background: #444; border: 1px solid #666; color: white; 
+            padding: 8px 12px; border-radius: 6px; cursor: pointer;
+            font-size: 36px; min-width: 60px; height: 60px;
+            display: flex; align-items: center; justify-content: center;
+        }
         .tool-btn.active { background: var(--brand-pink); color: #000; }
     </style>
 </head>
@@ -66,7 +73,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.5.2</div>
+            <div class="version-status">v3.5.3</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -99,15 +106,10 @@
                 html, body { height: auto; min-height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
                 .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; }
                 #editor-root { flex: 1 0 auto; width: 100%; }
-                
-                /* UPDATED: 60px bottom padding below the footer */
                 body { padding-bottom: 60px !important; }
-                
                 footer { flex-shrink: 0; margin-top: auto; }
-                
                 .block_heading { display: block; width: 100%; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
                 .no-line { border-bottom: none !important; }
-                
                 .resize-handle { 
                     width: 44px; height: 44px; position: absolute; right: -5px; bottom: -5px; 
                     cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center;
