@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Snoozing Baby | Template</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel&family=Source+Sans+Pro:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Source+Sans+Pro:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -20,11 +21,15 @@
 <div id="navOverlay" onclick="toggleNav(event)" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.2); z-index:8500;"></div>
 
 <nav id="nav-sidebar">
-    <div class="nav-content" style="padding: 100px 30px;">
-        <a href="https://mysnoozingbaby.com/" style="display:block; padding:15px 0; text-decoration:none; color:#151515; text-transform:uppercase;">Home</a>
-        <a href="https://mysnoozingbaby.com/snoo-rental" style="display:block; padding:15px 0; text-decoration:none; color:#151515; text-transform:uppercase;">SNOO Rental</a>
-        <a href="https://mysnoozingbaby.com/about-us" style="display:block; padding:15px 0; text-decoration:none; color:#151515; text-transform:uppercase;">About Us</a>
-        <a href="https://mysnoozingbaby.com/contact-us" style="display:block; padding:15px 0; text-decoration:none; color:#151515; text-transform:uppercase;">Contact Us</a>
+    <div class="sidebar-close-icon menu-lines active" onclick="toggleNav(event)" style="position: absolute; top: 25px; left: 20px; cursor: pointer;">
+        <div class="line1"></div><div class="line2"></div><div class="line3"></div>
+    </div>
+    
+    <div class="nav-content" style="padding-top: 100px;">
+        <a href="https://mysnoozingbaby.com/">Home</a>
+        <a href="https://mysnoozingbaby.com/snoo-rental">SNOO Rental</a>
+        <a href="https://mysnoozingbaby.com/about-us">About Us</a>
+        <a href="https://mysnoozingbaby.com/contact-us">Contact Us</a>
     </div>
 </nav>
 
@@ -37,9 +42,9 @@
         <a href="#"><i class="fa-brands fa-instagram"></i></a>
         <a href="#"><i class="fa-brands fa-tiktok"></i></a>
     </div>
-    <span class="copyright-text">Copyright © 2022-2026 My Snoozing Baby</span>
+    <span class="copyright-text">Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.</span>
     <div class="disclaimer">
-        My Snoozing Baby, LLC is an independent service provider and is not affiliated with Happiest Baby, Inc.
+        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.
     </div>
 </footer>
 
@@ -47,8 +52,15 @@
     function toggleNav(e) {
         if(e) e.stopPropagation();
         const nav = document.getElementById('nav-sidebar');
+        const hamburger = document.getElementById('headerHamburger');
+        const overlay = document.getElementById('navOverlay');
+        
         const isOpen = nav.classList.toggle('open');
-        document.getElementById('navOverlay').style.display = isOpen ? 'block' : 'none';
+        hamburger.classList.toggle('active');
+        
+        overlay.style.display = isOpen ? 'block' : 'none';
+        // Prevent background scrolling when menu is open
+        document.body.style.overflow = isOpen ? 'hidden' : 'auto';
     }
 </script>
 
