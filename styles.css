@@ -1,93 +1,29 @@
-/* --- Brand Variables & Global Reset --- */
-:root {
-    --brand-cream: #FAF6F3;
-    --brand-pink: #ebd5c9;    
-    --icon-brown: #877267; 
-    --text-dark: #151515;
-}
-
-body { 
-    font-family: 'Source Sans Pro', sans-serif; 
-    margin: 0; 
-    color: var(--text-dark); 
-    background-color: #fff; 
-    display: flex;             
-    flex-direction: column;    
-    height: 100%;              
-    overflow-x: hidden; 
-    overflow-y: auto;          
-}
-
-.content-container {
-    width: 100%;
-    margin: 0;
-    padding: 20px;
-    background-color: #ffffff;
-    flex: 1 0 auto;           
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-}
-
-/* --- Content Block Styles --- */
-.section_heading { 
-    font-family: 'Source Sans Pro', sans-serif; 
-    font-size: 14px; 
-    font-weight: 600; 
-    letter-spacing: 2px; 
-    color: var(--icon-brown); 
-    margin: 40px 0 10px; 
-    display: block; 
-    width: 100%;
-    text-transform: uppercase;
-    text-align: left; /* Service heading aligned left */
-}
-
-.block_heading { 
-    font-family: 'Cinzel', serif; 
-    font-size: 1.6rem; 
-    border-bottom: 1px solid var(--brand-pink); 
-    padding-bottom: 8px; 
-    margin: 20px 0 10px; 
-    display: block; 
-    text-align: center; /* Heading centered by default */
-}
-
-.block_text { 
-    font-family: 'Source Sans Pro', sans-serif; 
-    font-size: 1.05rem; 
-    color: #333; 
-    line-height: 1.8; 
-    margin: 10px 0 30px; 
-    text-align: justify; /* Text justified by default */
-}
-
-.block_image img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
-
-/* --- "Find Out More" Button (Updated per document) --- */
-.block_button {
+/* --- "Find Out More" Button (Refined for Builder Compatibility) --- */
+.content-container .block_button {
     display: block;
     width: fit-content;
-    margin: 25px auto;         /* Centered by default */
+    margin: 30px auto !important; /* Forces centering in builder */
     font-family: 'Cinzel', serif;
     font-size: 14px;
     font-weight: 400;
-    letter-spacing: 2px;       /* Spacing per document style */
+    letter-spacing: 3px;
     text-transform: uppercase;
     text-decoration: none;
-    color: var(--text-dark);
+    color: #151515;
     background: transparent;
-    border: 1px solid var(--text-dark);
-    border-radius: 6px;        /* Slightly rounded corners as requested */
-    padding: 14px 42px;        /* Padding per document style */
+    border: 1px solid #151515;
+    
+    /* Slightly rounded corners per attached document */
+    border-radius: 6px !important; 
+    
+    padding: 16px 40px;
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
+    transition: all 0.3s ease;
     text-align: center;
 }
 
-.block_button:hover {
-    background-color: var(--brand-pink);
-    border-color: var(--brand-pink);
+.content-container .block_button:hover {
+    background-color: #ebd5c9; /* brand-pink */
+    border-color: #ebd5c9;
     color: #fff;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
