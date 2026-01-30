@@ -223,8 +223,8 @@ footer {
     border: 1.5px solid #151515; /* Thin, sharp black border */
     
     /* Shape & Sizing */
-    padding: 12px 35px;        /* Large hit area */
-    border-radius: 6px;        /* The rounded corner you noticed */
+    padding: 12px 15px;        /* Large hit area */
+    border-radius: 4px;        /* The rounded corner you noticed */
     
     /* Instant Interaction */
     transition: all 0.1s ease-in-out; 
