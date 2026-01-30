@@ -193,15 +193,7 @@ footer {
 }
 /* --- Luxury Pill Button --- */
 /* --- Centering Container --- */
-.block_button_container {
-    width: 100%;
-    display: flex;
-    justify-content: center; /* This is what centers the button */
-    padding: 30px 0;
-    clear: both;
-}
-/* --- Corrected Rectangular Button --- */
-/* --- Centering Container --- */
+/* --- Corrected Rectangular Luxury Button --- */
 .block_button_container {
     width: 100%;
     display: flex;
@@ -210,31 +202,31 @@ footer {
     clear: both;
 }
 
-/* --- Corrected Rectangular Luxury Button --- */
 .block_button {
     display: inline-block;
     font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 700;        /* Bold weight for sharpness */
+    font-weight: 700;
     font-size: 14px;
-    letter-spacing: 2px;     /* Corrected character spacing */
+    letter-spacing: 2px; /* Precise character spacing */
     text-transform: uppercase;
     text-decoration: none;
     
-    /* Dark, high-contrast text and border */
+    /* Default: White background, Dark text/border */
     color: var(--text-dark); /* #151515 */
     background: #ffffff;
     border: 1px solid var(--text-dark);
     
-    padding: 16px 40px;      /* Matches original button proportions */
-    border-radius: 4px;      /* Slight rounding, not a pill shape */
+    padding: 16px 40px;
+    border-radius: 4px; /* Subtle rounding, NOT a pill */
     
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease-in-out;
     text-align: center;
 }
 
+/* THE HOVER FLIP: Black background with White text */
 .block_button:hover {
-    background-color: var(--brand-pink); /* #ebd5c9 from site theme */
-    border-color: var(--brand-pink);
-    color: #ffffff;          /* Text turns white on hover */
+    background-color: var(--text-dark); /* Becomes Black */
+    border-color: var(--text-dark);
+    color: #ffffff;                    /* Text becomes White */
 }
