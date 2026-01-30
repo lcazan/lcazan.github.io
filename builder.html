@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.6.9 Stable</title>
+    <title>Snoozing Builder | v3.7.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -83,7 +83,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.6.9</div>
+            <div class="version-status">v3.7.0</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -118,7 +118,7 @@
                 #editor-root { flex: 1 0 auto; width: 100%; display: flex; flex-direction: column; }
                 .editable { display: block !important; width: 100%; clear: both; box-sizing: border-box; position: relative; }
                 .selected-item { outline: 3px solid #ebd5c9 !important; }
-                body { padding-bottom: 80px !important; }
+                body { padding-bottom: 250px !important; } /* Extended padding for the nudge space */
                 .block_heading { border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
                 .no-line { border-bottom: none !important; }
                 .resize-handle { 
@@ -148,8 +148,20 @@
                 clearTimeout(rotationTimeout);
                 rotationTimeout = setTimeout(() => {
                     setDevice(currentMode);
+                    
                     if (selectedEl && viewportHeight < (initialWindowHeight - 150)) {
-                        selectedEl.scrollIntoView({ block: "end", behavior: "smooth" });
+                        const win = frame.contentWindow;
+                        
+                        // Step 1: Native scroll to end of element
+                        selectedEl.scrollIntoView({ block: "end", behavior: "auto" });
+                        
+                        // Step 2: Nudge downward by 40px to create white space
+                        setTimeout(() => {
+                            win.scrollBy({
+                                top: 40, 
+                                behavior: 'smooth'
+                            });
+                        }, 50); 
                     }
                 }, 300); 
             });
