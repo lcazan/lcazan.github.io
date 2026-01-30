@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.7.6</title>
+    <title>Snoozing Builder | v3.7.7</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -76,7 +76,7 @@
     <button class="insert-btn" title="Main Heading" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i></button>
     <button class="insert-btn" title="Text Paragraph" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i></button>
     <button class="insert-btn" title="Image" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i></button>
-    <button class="insert-btn" title="Button" onclick="insertElement('block_button')"><i class="fa-solid fa-link"></i></button>
+    <button class="insert-btn" title="Insert Button" onclick="insertElement('block_button')"><i class="fa-solid fa-link"></i></button>
     
     <button class="insert-btn" style="margin-top:auto" onclick="saveJSON()"><i class="fa-solid fa-floppy-disk"></i></button>
 </div>
@@ -86,7 +86,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.7.6</div>
+            <div class="version-status">v3.7.7</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -106,24 +106,17 @@
     
     let selectedEl = null;
     let currentMode = 'mobile';
-    let isResizing = false;
-    let rotationTimeout;
     
-    const initialWindowHeight = window.innerHeight;
-
     async function init() {
         const resp = await fetch('template.html');
         let html = await resp.text();
         html = html.replace('</head>', `
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
             <style>
-                html, body { height: auto; min-height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
+                html, body { height: auto; min-height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto !important; }
                 #editor-root { flex: 1 0 auto; width: 100%; display: flex; flex-direction: column; }
-                .editable { display: block !important; width: 100%; clear: both; box-sizing: border-box; position: relative; min-height: 1.2em; }
+                .editable { position: relative; outline: none; transition: background 0.1s; }
                 .selected-item { outline: 3px solid #ebd5c9 !important; }
-                body { padding-bottom: 250px !important; }
-                .block_heading { border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
-                .no-line { border-bottom: none !important; }
                 
                 .editable:empty::before {
                     content: attr(data-placeholder);
@@ -135,13 +128,6 @@
                     display: block;
                     opacity: 0.7;
                 }
-
-                .resize-handle { 
-                    width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; 
-                    cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center;
-                    color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px;
-                }
-                .resize-handle::before { content: "\\f337"; } 
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
         
@@ -149,31 +135,11 @@
         
         frame.onload = () => {
             frame.contentDocument.addEventListener('mousedown', (e) => {
-                if (isResizing) return;
                 const el = e.target.closest('.editable');
                 if (el) selectElement(el); else deselectAll();
             });
             setDevice('mobile');
         };
-
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', () => {
-                const viewportHeight = window.visualViewport.height;
-                document.body.style.height = viewportHeight + 'px';
-                clearTimeout(rotationTimeout);
-                rotationTimeout = setTimeout(() => {
-                    setDevice(currentMode);
-                    
-                    if (selectedEl && viewportHeight < (initialWindowHeight - 150)) {
-                        const win = frame.contentWindow;
-                        selectedEl.scrollIntoView({ block: "end", behavior: "auto" });
-                        setTimeout(() => {
-                            win.scrollBy({ top: 40, behavior: 'smooth' });
-                        }, 50); 
-                    }
-                }, 300); 
-            });
-        }
     }
 
     function setDevice(type) {
@@ -193,18 +159,13 @@
     }
 
     function selectElement(el) {
-        const doc = frame.contentDocument;
-        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
         if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
         selectedEl.classList.add('selected-item');
-        if (el.classList.contains('block_image')) addResizeHandle(el);
         renderToolbar();
     }
 
     function deselectAll() {
-        const doc = frame.contentDocument;
-        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
         if (selectedEl) selectedEl.classList.remove('selected-item');
         selectedEl = null;
         toolbarContent.style.visibility = 'hidden';
@@ -213,76 +174,27 @@
     function renderToolbar() {
         if (!selectedEl) return;
         toolbarContent.style.visibility = 'visible';
-        const isImg = selectedEl.classList.contains('block_image');
-        const isHeading = selectedEl.classList.contains('block_heading');
-        const lineHidden = selectedEl.classList.contains('no-line');
-        let html = '';
-        if (isImg) { html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`; }
-        else {
-            html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
-            if (isHeading) { html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>`; }
-        }
-        html += `
+        toolbarContent.innerHTML = `
+            <button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>
             <button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
             <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
             <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
             <button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>
         `;
-        toolbarContent.innerHTML = html;
-    }
-
-    function toggleHeadingLine() { if (selectedEl && selectedEl.classList.contains('block_heading')) { selectedEl.classList.toggle('no-line'); renderToolbar(); } }
-
-    function addResizeHandle(el) {
-        const handle = frame.contentDocument.createElement('div');
-        handle.className = 'resize-handle';
-        const startResize = (e) => {
-            e.preventDefault(); e.stopPropagation();
-            isResizing = true;
-            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const startWidth = el.offsetWidth;
-            const onMove = (mE) => {
-                const currentX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
-                const newWidth = startWidth + (currentX - startX);
-                if (newWidth > 40) el.style.width = newWidth + 'px';
-            };
-            const onUp = () => {
-                isResizing = false;
-                frame.contentDocument.removeEventListener('mousemove', onMove);
-                frame.contentDocument.removeEventListener('mouseup', onUp);
-                frame.contentDocument.removeEventListener('touchmove', onMove);
-                frame.contentDocument.removeEventListener('touchend', onUp);
-            };
-            frame.contentDocument.addEventListener('mousemove', onMove);
-            frame.contentDocument.addEventListener('mouseup', onUp);
-            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
-            frame.contentDocument.addEventListener('touchend', onUp);
-        };
-        handle.addEventListener('mousedown', startResize);
-        handle.addEventListener('touchstart', startResize, {passive: false});
-        el.appendChild(handle);
     }
 
     function setAlign(pos) {
-        if (!selectedEl) return;
-        if (selectedEl.classList.contains('block_image')) {
-             selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
-             selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
-             selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none';
-             selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
-        } else { selectedEl.style.textAlign = pos; }
+        if (selectedEl) selectedEl.style.textAlign = pos;
     }
 
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
+
     function handleImageUpload(i) { 
         if(i.files[0]) { 
             const r = new FileReader(); 
-            r.onload = e => {
-                if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result;
-                else insertElement('block_image', e.target.result);
-            };
+            r.onload = e => insertElement('block_image', e.target.result);
             r.readAsDataURL(i.files[0]); 
         } 
     }
@@ -290,8 +202,7 @@
     function insertElement(type, data) {
         const doc = frame.contentDocument;
         const root = doc.getElementById('editor-root');
-        const el = doc.createElement('div');
-        el.className = `editable ${type}`;
+        let el;
         
         const placeholders = {
             'section_heading': 'New Section',
@@ -300,33 +211,37 @@
             'block_button': 'Find Out More'
         };
 
-        if(type === 'block_image') { 
+        if(type === 'block_button') {
+            // Create a direct <a> tag so it picks up the .block_button CSS perfectly
+            el = doc.createElement('a');
+            el.href = "#";
+            el.className = `editable block_button`;
+            el.innerText = placeholders[type];
+            el.setAttribute('onclick', 'return false;');
+        } else if(type === 'block_image') {
+            el = doc.createElement('div');
+            el.className = `editable ${type}`;
             el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
-            el.contentEditable = "false"; el.style.width = "200px"; el.style.position = "relative";
-        } else if(type === 'block_button') {
-            // Inserts a button that uses your existing styles.css .block_button class
-            el.innerHTML = `<a href="#" class="block_button" onclick="return false;">${placeholders[type]}</a>`;
-            el.contentEditable = "true";
-        } else { 
+            el.contentEditable = "false"; 
+        } else {
+            el = doc.createElement('div');
+            el.className = `editable ${type}`;
             el.innerText = ""; 
-            el.setAttribute('data-placeholder', placeholders[type] || 'Type here...');
-            el.contentEditable = "true"; 
+            el.setAttribute('data-placeholder', placeholders[type]);
         }
         
+        if (type !== 'block_image') el.contentEditable = "true";
         root.appendChild(el);
+        
         setTimeout(() => { 
             selectElement(el); 
-            if (type !== 'block_image') {
-                el.focus({ preventScroll: true });
-                // If it's a button, put cursor inside the link tag
-                if(type === 'block_button') {
-                    const range = doc.createRange();
-                    const sel = frame.contentWindow.getSelection();
-                    const btnLink = el.querySelector('.block_button');
-                    range.selectNodeContents(btnLink);
-                    sel.removeAllRanges();
-                    sel.addRange(range);
-                }
+            el.focus();
+            if(type === 'block_button') {
+                const range = doc.createRange();
+                const sel = frame.contentWindow.getSelection();
+                range.selectNodeContents(el);
+                sel.removeAllRanges();
+                sel.addRange(range);
             }
         }, 150);
     }
@@ -338,7 +253,7 @@
             content: c.innerHTML, style: c.getAttribute('style')||"" 
         }));
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type:'application/json'}));
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type:'application/json'}));
         a.download = 'layout.json'; a.click();
     }
 
