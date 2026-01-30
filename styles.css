@@ -192,35 +192,42 @@ footer {
     font-size: 16px !important;
 }
 /* --- Luxury Pill Button --- */
+/* --- Centering Container --- */
 .block_button_container {
     width: 100%;
     display: flex;
-    justify-content: center;
-    padding: 20px 0;
+    justify-content: center; /* This is what centers the button */
+    padding: 30px 0;
+    clear: both;
+}
+/* --- Corrected Rectangular Button --- */
+.block_button_container {
+    width: 100%;
+    display: flex;
+    justify-content: center; /* Centers the button horizontally */
+    padding: 40px 0;
     clear: both;
 }
 
 .block_button {
     display: inline-block;
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: 'Source Sans Pro', sans-serif; [span_3](start_span)/*[span_3](end_span) */
     font-weight: 700;
-    font-size: 13px;
+    font-size: 14px;
     letter-spacing: 2px;
     text-transform: uppercase;
     text-decoration: none;
-    color: #151515;
+    color: var(--text-dark); /* #151515 */
     background: #ffffff;
-    border: 1px solid #151515;
-    padding: 14px 35px;
-    border-radius: 25px; /* Pill Shape */
+    border: 1px solid var(--text-dark);
+    padding: 16px 35px;
+    border-radius: 4px; /* Slightly rounded rectangle, NOT a pill */
     cursor: pointer;
-    transition: all 0.3s ease;
-    text-align: center;
+    transition: all 0.3s ease-in-out;
 }
 
 .block_button:hover {
-    background-color: #ebd5c9; /* Brand Pink */
-    border-color: #ebd5c9;
-    color: white;
+    background-color: var(--brand-pink); [span_4](start_span)/* #ebd5c9 from site metadata[span_4](end_span) */
+    border-color: var(--brand-pink);
+    color: #ffffff;
 }
-
