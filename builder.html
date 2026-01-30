@@ -75,7 +75,6 @@
     <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i></button>
     <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i></button>
     <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i></button>
-    <button class="insert-btn" style="margin-top:auto" onclick="saveJSON()"><i class="fa-solid fa-floppy-disk"></i></button>
 </div>
 
 <div id="preview-container">
@@ -83,7 +82,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.7.2</div>
+            <div class="version-status">v3.7.2.5</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -104,9 +103,6 @@
     let selectedEl = null;
     let currentMode = 'mobile';
     let isResizing = false;
-    let rotationTimeout;
-    
-    const initialWindowHeight = window.innerHeight;
 
     async function init() {
         const resp = await fetch('template.html');
@@ -116,40 +112,13 @@
             <style>
                 html, body { height: auto; min-height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
                 #editor-root { flex: 1 0 auto; width: 100%; display: flex; flex-direction: column; }
-                
-                /* BASE EDITABLE STYLE */
-                .editable { 
-                    display: block !important; 
-                    width: 100%; 
-                    clear: both; 
-                    box-sizing: border-box; 
-                    position: relative; 
-                    min-height: 1.2em; 
-                }
-                
+                .editable { display: block !important; width: 100%; clear: both; box-sizing: border-box; position: relative; min-height: 1.2em; }
                 .selected-item { outline: 3px solid #ebd5c9 !important; }
                 body { padding-bottom: 250px !important; }
-                
                 .block_heading { border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
                 .no-line { border-bottom: none !important; }
-                
-                /* GHOST PLACEHOLDER STYLING */
-                .editable:empty::before {
-                    content: attr(data-placeholder);
-                    color: #888888;
-                    font-family: 'Source Sans Pro', sans-serif; /* Same as menu font */
-                    text-transform: none; /* mixed case, not uppercase */
-                    font-style: normal;
-                    pointer-events: none;
-                    display: block;
-                    opacity: 0.7;
-                }
-
-                .resize-handle { 
-                    width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; 
-                    cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center;
-                    color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px;
-                }
+                .editable:empty::before { content: attr(data-placeholder); color: #888; font-family: 'Source Sans Pro', sans-serif; text-transform: none; pointer-events: none; opacity: 0.7; }
+                .resize-handle { width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px; }
                 .resize-handle::before { content: "\\f337"; } 
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
@@ -164,24 +133,6 @@
             });
             setDevice('mobile');
         };
-
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', () => {
-                const viewportHeight = window.visualViewport.height;
-                document.body.style.height = viewportHeight + 'px';
-                clearTimeout(rotationTimeout);
-                rotationTimeout = setTimeout(() => {
-                    setDevice(currentMode);
-                    if (selectedEl && viewportHeight < (initialWindowHeight - 150)) {
-                        const win = frame.contentWindow;
-                        selectedEl.scrollIntoView({ block: "end", behavior: "auto" });
-                        setTimeout(() => {
-                            win.scrollBy({ top: 40, behavior: 'smooth' });
-                        }, 50); 
-                    }
-                }, 300); 
-            });
-        }
     }
 
     function setDevice(type) {
@@ -189,12 +140,10 @@
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         const btn = document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop');
         if(btn) btn.classList.add('active');
-        const wrapperW = wrapper.offsetWidth;
-        const wrapperH = wrapper.offsetHeight;
         const virtualWidth = (type === 'mobile') ? 412 : 1280;
-        const scaleFactor = wrapperW / virtualWidth;
+        const scaleFactor = wrapper.offsetWidth / virtualWidth;
         frame.style.width = virtualWidth + 'px';
-        frame.style.height = (wrapperH / scaleFactor) + 'px';
+        frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
         frame.style.transform = `scale(${scaleFactor})`;
     }
 
@@ -209,8 +158,7 @@
     }
 
     function deselectAll() {
-        const doc = frame.contentDocument;
-        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        frame.contentDocument.querySelectorAll('.resize-handle').forEach(h => h.remove());
         if (selectedEl) selectedEl.classList.remove('selected-item');
         selectedEl = null;
         toolbarContent.style.visibility = 'hidden';
@@ -243,8 +191,7 @@
         const handle = frame.contentDocument.createElement('div');
         handle.className = 'resize-handle';
         const startResize = (e) => {
-            e.preventDefault(); e.stopPropagation();
-            isResizing = true;
+            e.preventDefault(); isResizing = true;
             const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             const startWidth = el.offsetWidth;
             const onMove = (mE) => {
@@ -252,20 +199,11 @@
                 const newWidth = startWidth + (currentX - startX);
                 if (newWidth > 40) el.style.width = newWidth + 'px';
             };
-            const onUp = () => {
-                isResizing = false;
-                frame.contentDocument.removeEventListener('mousemove', onMove);
-                frame.contentDocument.removeEventListener('mouseup', onUp);
-                frame.contentDocument.removeEventListener('touchmove', onMove);
-                frame.contentDocument.removeEventListener('touchend', onUp);
-            };
+            const onUp = () => { isResizing = false; frame.contentDocument.removeEventListener('mousemove', onMove); frame.contentDocument.removeEventListener('mouseup', onUp); };
             frame.contentDocument.addEventListener('mousemove', onMove);
             frame.contentDocument.addEventListener('mouseup', onUp);
-            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
-            frame.contentDocument.addEventListener('touchend', onUp);
         };
         handle.addEventListener('mousedown', startResize);
-        handle.addEventListener('touchstart', startResize, {passive: false});
         el.appendChild(handle);
     }
 
@@ -298,14 +236,7 @@
         const root = doc.getElementById('editor-root');
         const el = doc.createElement('div');
         el.className = `editable ${type}`;
-        
-        // YOUR UPDATED PLACEHOLDER WORDING
-        const placeholders = {
-            'section_heading': 'New Section',
-            'block_heading': 'New paragraph heading',
-            'block_text': 'Insert paragraph text'
-        };
-
+        const placeholders = { 'section_heading': 'New Section', 'block_heading': 'New paragraph heading', 'block_text': 'Insert paragraph text' };
         if(type === 'block_image') { 
             el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
             el.contentEditable = "false"; el.style.width = "200px"; el.style.position = "relative";
@@ -314,20 +245,8 @@
             el.setAttribute('data-placeholder', placeholders[type] || 'Type here...');
             el.contentEditable = "true"; 
         }
-        
         root.appendChild(el);
         setTimeout(() => { selectElement(el); if (type !== 'block_image') el.focus({ preventScroll: true }); }, 150);
-    }
-
-    function saveJSON() {
-        const root = frame.contentDocument.getElementById('editor-root');
-        const data = Array.from(root.children).map(c => ({ 
-            type: c.className.replace('editable ','').replace('selected-item','').trim(), 
-            content: c.innerHTML, style: c.getAttribute('style')||"" 
-        }));
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type:'application/json'}));
-        a.download = 'layout.json'; a.click();
     }
 
     window.onload = init;
