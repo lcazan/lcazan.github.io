@@ -2,7 +2,7 @@
 <html lang="en-US">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>My Snoozing Baby | Template</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Source+Sans+Pro:wght@300;400;600&display=swap" rel="stylesheet">
@@ -10,7 +10,12 @@
     <link rel="stylesheet" href="styles.css">
     
     <style>
-        /* Essential for v3.39 Footer-Push Logic */ 
+        /* Base reference for internal calculation: 16px = 1rem */
+        html {
+            font-size: 16px;
+        }
+
+        /* Essential for Footer-Push Logic */ 
         html, body { 
             height: 100%; margin: 0; padding: 0;
             display: flex; flex-direction: column; 
@@ -22,11 +27,24 @@
             flex: 1 0 auto; 
             width: 100%;
             box-sizing: border-box;
+            /* Padding is handled by .content-container in styles.css (1.25rem) */
         }
 
         footer {
             flex-shrink: 0;
             margin-top: auto;
+        }
+
+        /* Ensure the overlay covers the full viewport precisely */
+        #navOverlay {
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.2); 
+            z-index: 8500;
         }
     </style>
 </head>
@@ -39,7 +57,7 @@
     <div class="logo">My Snoozing Baby</div>
 </header>
 
-<div id="navOverlay" onclick="toggleNav(event)" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.2); z-index:8500;"></div>
+<div id="navOverlay" onclick="toggleNav(event)"></div>
 
 <nav id="nav-sidebar">
     <div class="sidebar-close-icon menu-lines active" onclick="toggleNav(event)">
@@ -60,7 +78,7 @@
     </div>
 </nav>
 
-<div class="content-container">
+<div class="content-container" id="editor-root">
     </div>
 
 <footer>
@@ -76,6 +94,7 @@
 </footer>
 
 <script>
+    // Logic remains in JS but controls elements sized by REM in CSS
     function toggleNav(e) {
         if(e) e.stopPropagation();
         const nav = document.getElementById('nav-sidebar');
@@ -85,6 +104,8 @@
         hamburger.classList.toggle('active');
         
         document.getElementById('navOverlay').style.display = isOpen ? 'block' : 'none';
+        
+        // Locking the body scroll for a better mobile experience
         document.body.style.overflow = isOpen ? 'hidden' : 'auto';
     }
 
