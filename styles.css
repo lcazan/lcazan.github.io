@@ -196,43 +196,43 @@ footer {
 /* --- Corrected Rectangular Luxury Button --- */
 /* --- Final Luxury Button Lock --- */
 /* --- Final Luxury Button Lock (v2) --- */
+/* Container to handle the automatic centering */
 .block_button_container {
     width: 100%;
     display: flex;
-    justify-content: center; 
-    padding: 0 0;
+    justify-content: center;
+    padding: 40px 0;
     clear: both;
 }
 
+/* The Button Styling - Exact Match */
 .block_button {
-    display: inline-block !important;
-    /* Use the heaviest weight available in the Source Sans Pro family */
-    font-family: 'Source Sans Pro', sans-serif !important;
-    font-weight: 700 !important; 
-    font-size: 14px !important;
-    letter-spacing: 3px !important; /* Increased spacing for luxury feel */
-    text-transform: uppercase !important;
-    text-decoration: none !important;
+    display: inline-block;
     
-    /* Solid Black/White contrast - No overlays */
-    color: #151515 !important;
-    background-color: #ffffff !important;
-    background-image: none !important; /* Kills any gradient overlays */
-    border: 1px solid #151515 !important;
+    /* Typography */
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 900;          /* Maximum thickness/heavy look */
+    font-size: 16px;
+    letter-spacing: 4px;       /* Wide spacing seen in the image */
+    text-transform: uppercase;
+    text-decoration: none;
     
-    padding: 18px 25px !important; /* Slightly larger padding for better presence */
-    border-radius: 4px !important;
-    cursor: pointer !important;
+    /* Colors & Border */
+    color: #151515;            /* Deep black/grey text */
+    background-color: #ffffff; /* White background */
+    border: 1.5px solid #151515; /* Thin, sharp black border */
     
-    /* Clean, fast transition */
-    transition: all 0.1s ease-in-out !important;
+    /* Shape & Sizing */
+    padding: 20px 55px;        /* Large hit area */
+    border-radius: 8px;        /* The rounded corner you noticed */
+    
+    /* Instant Interaction */
+    transition: all 0.1s ease-in-out; 
+    cursor: pointer;
 }
 
-/* THE HOVER FLIP: Immediate Black-out with zero color bleed */
+/* Instant Hover State */
 .block_button:hover {
-    background-color: #151515 !important; 
-    background-image: none !important;
-    color: #ffffff !important;
-    border-color: #151515 !important;
-    box-shadow: none !important;
+    background-color: #151515; /* Flip to black background */
+    color: #ffffff !important;  /* Flip to white text */
 }
