@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.8.0</title>
+    <title>Snoozing Builder | v3.8.0 Corrected</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -118,7 +118,12 @@
                 .block_heading { border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
                 .no-line { border-bottom: none !important; }
                 .editable:empty::before { content: attr(data-placeholder); color: #888; font-family: 'Source Sans Pro', sans-serif; text-transform: none; pointer-events: none; opacity: 0.7; }
-                .resize-handle { width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px; }
+                .resize-handle { 
+                    width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; 
+                    cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; 
+                    color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px; 
+                    pointer-events: auto !important;
+                }
                 .resize-handle::before { content: "\\f337"; } 
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
@@ -149,7 +154,9 @@
 
     function selectElement(el) {
         const doc = frame.contentDocument;
+        // This line is why stopPropagation is needed - otherwise clicking a handle deletes the handle
         doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        
         if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
         selectedEl.classList.add('selected-item');
@@ -158,6 +165,7 @@
     }
 
     function deselectAll() {
+        if (isResizing) return;
         frame.contentDocument.querySelectorAll('.resize-handle').forEach(h => h.remove());
         if (selectedEl) selectedEl.classList.remove('selected-item');
         selectedEl = null;
@@ -190,20 +198,44 @@
     function addResizeHandle(el) {
         const handle = frame.contentDocument.createElement('div');
         handle.className = 'resize-handle';
+        
         const startResize = (e) => {
-            e.preventDefault(); isResizing = true;
+            // CRITICAL FIX: Stop event from bubbling to selection logic
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            
+            isResizing = true;
             const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             const startWidth = el.offsetWidth;
+
+            // ACCOUNT FOR CSS SCALE FACTOR
+            const virtualWidth = (currentMode === 'mobile') ? 412 : 1280;
+            const scaleFactor = wrapper.offsetWidth / virtualWidth;
+
             const onMove = (mE) => {
                 const currentX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
-                const newWidth = startWidth + (currentX - startX);
+                const diff = (currentX - startX) / scaleFactor; // Adjust diff by scale
+                const newWidth = startWidth + diff;
                 if (newWidth > 40) el.style.width = newWidth + 'px';
             };
-            const onUp = () => { isResizing = false; frame.contentDocument.removeEventListener('mousemove', onMove); frame.contentDocument.removeEventListener('mouseup', onUp); };
+
+            const onUp = () => {
+                isResizing = false;
+                frame.contentDocument.removeEventListener('mousemove', onMove);
+                frame.contentDocument.removeEventListener('mouseup', onUp);
+                frame.contentDocument.removeEventListener('touchmove', onMove);
+                frame.contentDocument.removeEventListener('touchend', onUp);
+            };
+
             frame.contentDocument.addEventListener('mousemove', onMove);
             frame.contentDocument.addEventListener('mouseup', onUp);
+            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
+            frame.contentDocument.addEventListener('touchend', onUp);
         };
+
         handle.addEventListener('mousedown', startResize);
+        handle.addEventListener('touchstart', startResize, {passive: false});
         el.appendChild(handle);
     }
 
