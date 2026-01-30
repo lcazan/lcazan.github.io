@@ -6,17 +6,19 @@
     --text-dark: #151515;
 }
 
-/* MODIFIED: The body is now a flex container with 100% height. */
+/* MODIFIED: The body is now a flex container with 100% height.
+   This allows the footer to stay at the bottom of the fixed iframe viewport.
+*/
 body { 
     font-family: 'Source Sans Pro', sans-serif; 
     margin: 0; 
     color: var(--text-dark); 
     background-color: #fff; 
-    display: flex;             
-    flex-direction: column;    
-    height: 100%;              
+    display: flex;             /* REQUIRED for Footer-Push */
+    flex-direction: column;    /* REQUIRED for Footer-Push */
+    height: 100%;              /* Matches the fixed height of the iframe */
     overflow-x: hidden; 
-    overflow-y: auto;          
+    overflow-y: auto;          /* Allows internal scrolling when content expands */
 }
 
 /* --- Core Layout Containers --- */
@@ -25,7 +27,7 @@ body {
     margin: 0;
     padding: 20px;
     background-color: #ffffff;
-    flex: 1 0 auto;           
+    flex: 1 0 auto;           /* MODIFIED: Grows to push footer down to the bottom */
     display: block;
     box-sizing: border-box;
 }
@@ -65,7 +67,7 @@ header {
     background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); 
     position: sticky; top: 0; z-index: 8000; border-bottom: 1px solid rgba(0,0,0,0.05); 
     min-height: 60px;
-    flex-shrink: 0;           
+    flex-shrink: 0;           /* Prevents header from being compressed */
 }
 
 .logo { 
@@ -110,7 +112,7 @@ nav#nav-sidebar a {
     display: block; 
     width: 100%;
     text-transform: uppercase;
-    text-align: left; 
+    text-align: left; /* Section headings remain left-aligned */
 }
 
 .block_heading { 
@@ -119,8 +121,8 @@ nav#nav-sidebar a {
     border-bottom: 1px solid var(--brand-pink); 
     padding-bottom: 8px; 
     margin: 10px auto 10px; 
-    display: table; 
-    text-align: center; 
+    display: table; /* Center centering logic */
+    text-align: center; /* UPDATED: Centered by default */
 }
 
 .no-line { border-bottom: 1px solid transparent !important; }
@@ -131,12 +133,12 @@ nav#nav-sidebar a {
     color: #333; 
     line-height: 1.8; 
     margin: 10px 0 30px; 
-    text-align: center; 
+    text-align: center; /* UPDATED: Justified by default */
 }
 
 .block_image img { max-width: 100%; height: auto; display: block; }
 
-/* --- Standard Button Styling --- */
+/* --- "Find Out More" Button (Luxury Style) --- */
 .block_button {
     display: inline-block;
     font-family: 'Cinzel', serif;
@@ -169,12 +171,13 @@ footer {
     text-align: center; 
     padding: 60px 20px 40px; 
     border-top: 1px solid #eee; 
-    margin-top: auto;          
-    flex-shrink: 0;            
+    margin-top: auto;          /* REQUIRED: Sticks to the bottom of the viewport content */
+    flex-shrink: 0;            /* Prevents the footer from being squashed */
 }
 
 .social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
 
+/* Force standard color on social links */
 .social-icons a, 
 .social-icons a:visited,
 .social-icons i { 
@@ -194,16 +197,17 @@ footer {
     .block_heading { font-size: 1.4rem; } 
 }
 
+/* --- SUBMENU TOGGLE LOGIC (Corrected) --- */
 .sub-nav {
-    display: none; 
+    display: none; /* Hidden by default */
     background: rgba(0,0,0,0.02);
 }
 
 .sub-nav.show {
-    display: block !important; 
+    display: block !important; /* Instant open when class added */
 }
 
 .sub-nav a {
-    padding-left: 50px !important; 
+    padding-left: 50px !important; /* Indent sub-links */
     font-size: 16px !important;
 }
