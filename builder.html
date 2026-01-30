@@ -76,7 +76,6 @@
     <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i></button>
     <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i></button>
     <button class="insert-btn" onclick="insertElement('block_spacer')"><i class="fa-solid fa-arrows-up-down"></i></button>
-    <button class="insert-btn" style="margin-top:auto" onclick="saveJSON()"><i class="fa-solid fa-floppy-disk"></i></button>
 </div>
 
 <div id="preview-container">
@@ -331,17 +330,6 @@
                 frame.contentWindow.scrollBy({ top: 40, behavior: 'smooth' });
             }, 300);
         }, 150);
-    }
-
-    function saveJSON() {
-        const root = frame.contentDocument.getElementById('editor-root');
-        const data = Array.from(root.children).map(c => ({ 
-            type: c.className.replace('editable ','').replace('selected-item','').trim(), 
-            content: c.innerHTML, style: c.getAttribute('style')||"" 
-        }));
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type:'application/json'}));
-        a.download = 'layout.json'; a.click();
     }
 
     window.onload = init;
