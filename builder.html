@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.7.0</title>
+    <title>Snoozing Builder | v3.7.2</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -83,7 +83,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.7.0</div>
+            <div class="version-status">v3.7.2</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -116,11 +116,35 @@
             <style>
                 html, body { height: auto; min-height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
                 #editor-root { flex: 1 0 auto; width: 100%; display: flex; flex-direction: column; }
-                .editable { display: block !important; width: 100%; clear: both; box-sizing: border-box; position: relative; }
+                
+                /* BASE EDITABLE STYLE */
+                .editable { 
+                    display: block !important; 
+                    width: 100%; 
+                    clear: both; 
+                    box-sizing: border-box; 
+                    position: relative; 
+                    min-height: 1.2em; 
+                }
+                
                 .selected-item { outline: 3px solid #ebd5c9 !important; }
-                body { padding-bottom: 250px !important; } /* Extended padding for the nudge space */
+                body { padding-bottom: 250px !important; }
+                
                 .block_heading { border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
                 .no-line { border-bottom: none !important; }
+                
+                /* GHOST PLACEHOLDER STYLING */
+                .editable:empty::before {
+                    content: attr(data-placeholder);
+                    color: #888888;
+                    font-family: 'Source Sans Pro', sans-serif; /* Same as menu font */
+                    text-transform: none; /* mixed case, not uppercase */
+                    font-style: normal;
+                    pointer-events: none;
+                    display: block;
+                    opacity: 0.7;
+                }
+
                 .resize-handle { 
                     width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; 
                     cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center;
@@ -148,19 +172,11 @@
                 clearTimeout(rotationTimeout);
                 rotationTimeout = setTimeout(() => {
                     setDevice(currentMode);
-                    
                     if (selectedEl && viewportHeight < (initialWindowHeight - 150)) {
                         const win = frame.contentWindow;
-                        
-                        // Step 1: Native scroll to end of element
                         selectedEl.scrollIntoView({ block: "end", behavior: "auto" });
-                        
-                        // Step 2: Nudge downward by 40px to create white space
                         setTimeout(() => {
-                            win.scrollBy({
-                                top: 40, 
-                                behavior: 'smooth'
-                            });
+                            win.scrollBy({ top: 40, behavior: 'smooth' });
                         }, 50); 
                     }
                 }, 300); 
@@ -173,13 +189,10 @@
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         const btn = document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop');
         if(btn) btn.classList.add('active');
-
         const wrapperW = wrapper.offsetWidth;
         const wrapperH = wrapper.offsetHeight;
-        
         const virtualWidth = (type === 'mobile') ? 412 : 1280;
         const scaleFactor = wrapperW / virtualWidth;
-        
         frame.style.width = virtualWidth + 'px';
         frame.style.height = (wrapperH / scaleFactor) + 'px';
         frame.style.transform = `scale(${scaleFactor})`;
@@ -285,10 +298,23 @@
         const root = doc.getElementById('editor-root');
         const el = doc.createElement('div');
         el.className = `editable ${type}`;
+        
+        // YOUR UPDATED PLACEHOLDER WORDING
+        const placeholders = {
+            'section_heading': 'New Section',
+            'block_heading': 'New paragraph heading',
+            'block_text': 'Insert paragraph text'
+        };
+
         if(type === 'block_image') { 
             el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
             el.contentEditable = "false"; el.style.width = "200px"; el.style.position = "relative";
-        } else { el.innerText = "New Block"; el.contentEditable = "true"; }
+        } else { 
+            el.innerText = ""; 
+            el.setAttribute('data-placeholder', placeholders[type] || 'Type here...');
+            el.contentEditable = "true"; 
+        }
+        
         root.appendChild(el);
         setTimeout(() => { selectElement(el); if (type !== 'block_image') el.focus({ preventScroll: true }); }, 150);
     }
