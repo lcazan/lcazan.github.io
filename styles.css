@@ -101,6 +101,15 @@ nav#nav-sidebar a {
     font-weight: 400; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; 
 }
 
+/* Add this to your styles.css */
+.sub-nav {
+    display: none; /* Keeps it hidden by default */
+}
+
+.sub-nav.show {
+    display: block !important; /* Shows it when the 'show' class is added by JS */
+}
+
 /* --- Content Block Styles --- */
 .section_heading { 
     font-family: 'Source Sans Pro', sans-serif; 
