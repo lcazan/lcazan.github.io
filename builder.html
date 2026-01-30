@@ -50,5 +50,308 @@
         .tool-btn { 
             background: #444; border: 1px solid #666; color: white; 
             padding: 0; border-radius: 4px; cursor: pointer;
-            font-size: 20px; min-width: 40px; height
-            
+            font-size: 20px; min-width: 40px; height: 38px;
+            margin: 5px 0; 
+            display: flex; align-items: center; justify-content: center;
+        }
+        .tool-btn.active { background: var(--brand-pink); color: #000; }
+        
+        .hex-input {
+            background: #333; border: 1px solid #666; color: #fff;
+            padding: 5px; border-radius: 4px; width: 80px; font-family: monospace;
+        }
+
+        #frame-wrapper { 
+            flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
+            background: #333; overflow: hidden; position: relative;
+        }
+        
+        #preview-frame { 
+            border: none; background: white; 
+            transform-origin: top left; 
+            position: absolute; top: 0; left: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <button class="insert-btn" onclick="insertElement('block_container')"><i class="fa-solid fa-square"></i></button>
+    <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i></button>
+    <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_spacer')"><i class="fa-solid fa-arrows-up-down"></i></button>
+</div>
+
+<div id="preview-container">
+    <div id="header-area">
+        <div id="device-bar">
+            <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
+            <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
+            <div class="version-status">v3.9.4</div>
+        </div>
+    </div>
+    <div id="sticky-toolbar">
+        <div id="toolbar-content"></div>
+    </div>
+    <div id="frame-wrapper">
+        <iframe id="preview-frame" scrolling="yes"></iframe>
+    </div>
+</div>
+
+<input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
+
+<script>
+    const frame = document.getElementById('preview-frame');
+    const toolbarContent = document.getElementById('toolbar-content');
+    const wrapper = document.getElementById('frame-wrapper');
+    
+    let selectedEl = null;
+    let currentMode = 'mobile';
+    let isResizing = false;
+    let rotationTimeout;
+    
+    const initialWindowHeight = window.innerHeight;
+
+    async function init() {
+        const resp = await fetch('template.html');
+        let html = await resp.text();
+        html = html.replace('</head>', `
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+            <style>
+                html, body { height: auto; min-height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
+                #editor-root { flex: 1 0 auto; width: 100%; display: flex; flex-direction: column; }
+                .editable { display: block !important; width: 100%; clear: both; box-sizing: border-box; position: relative; min-height: 1.2em; }
+                .selected-item { outline: 3px solid #ebd5c9 !important; }
+                body { padding-bottom: 250px !important; }
+                
+                .block_container { width: 100%; min-height: 50px; padding: 20px 0; border: 1px dashed #ccc; margin-bottom: 10px; }
+                .block_heading { border-bottom: 1px solid #ebd5c9; padding-bottom: 10px; margin-bottom: 15px; }
+                .block_spacer { height: 40px; border-bottom: 1px solid #ebd5c9; margin-bottom: 10px; }
+                .no-line { border-bottom: none !important; }
+                .block_image img { width: 100%; height: auto; display: block; }
+                
+                .editable:empty::before {
+                    content: attr(data-placeholder);
+                    color: #888888;
+                    font-family: 'Source Sans Pro', sans-serif;
+                    text-transform: none;
+                    pointer-events: none;
+                    display: block;
+                    opacity: 0.7;
+                }
+                .resize-handle { 
+                    width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; 
+                    cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center;
+                    color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px;
+                }
+                .resize-handle::before { content: "\\f337"; } 
+            </style>
+            <link rel="stylesheet" href="styles.css"></head>`);
+        
+        frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
+        
+        frame.onload = () => {
+            frame.contentDocument.addEventListener('mousedown', (e) => {
+                if (isResizing) return;
+                const el = e.target.closest('.editable');
+                if (el) selectElement(el); else deselectAll();
+            });
+            setDevice('mobile');
+        };
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', () => {
+                const viewportHeight = window.visualViewport.height;
+                document.body.style.height = viewportHeight + 'px';
+                clearTimeout(rotationTimeout);
+                rotationTimeout = setTimeout(() => {
+                    setDevice(currentMode);
+                    if (selectedEl && viewportHeight < (initialWindowHeight - 150)) {
+                        const win = frame.contentWindow;
+                        selectedEl.scrollIntoView({ block: "end", behavior: "auto" });
+                        setTimeout(() => {
+                            win.scrollBy({ top: 40, behavior: 'smooth' });
+                        }, 50); 
+                    }
+                }, 300); 
+            });
+        }
+    }
+
+    function setDevice(type) {
+        currentMode = type;
+        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop');
+        if(btn) btn.classList.add('active');
+        const virtualWidth = (type === 'mobile') ? 412 : 1280;
+        const scaleFactor = wrapper.offsetWidth / virtualWidth;
+        frame.style.width = virtualWidth + 'px';
+        frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
+        frame.style.transform = `scale(${scaleFactor})`;
+    }
+
+    function selectElement(el) {
+        const doc = frame.contentDocument;
+        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
+        selectedEl = el;
+        selectedEl.classList.add('selected-item');
+        if (el.classList.contains('block_image') || el.classList.contains('block_spacer')) addResizeHandle(el);
+        renderToolbar();
+    }
+
+    function deselectAll() {
+        const doc = frame.contentDocument;
+        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        if (selectedEl) selectedEl.classList.remove('selected-item');
+        selectedEl = null;
+        toolbarContent.style.visibility = 'hidden';
+    }
+
+    function renderToolbar() {
+        if (!selectedEl) return;
+        toolbarContent.style.visibility = 'visible';
+        const isImg = selectedEl.classList.contains('block_image');
+        const isHeading = selectedEl.classList.contains('block_heading');
+        const isSpacer = selectedEl.classList.contains('block_spacer');
+        const isContainer = selectedEl.classList.contains('block_container');
+        const lineHidden = selectedEl.classList.contains('no-line');
+        
+        let html = '';
+        if (isContainer) {
+            const currentBg = selectedEl.style.backgroundColor || '';
+            html += `<input type="text" class="hex-input" placeholder="#FFFFFF" value="${currentBg}" oninput="setBg(this.value)">`;
+        } else if (isSpacer) {
+            html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`;
+        } else if (isImg) { 
+            html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`; 
+            html += `<button class="tool-btn" onclick="fitImageWidth()"><i class="fa-solid fa-expand"></i></button>`;
+        } else {
+            html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
+            if (isHeading) { html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`; }
+        }
+
+        if (!isSpacer && !isContainer) {
+            html += `
+                <button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
+                <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
+                <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
+            `;
+        }
+        html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
+        toolbarContent.innerHTML = html;
+    }
+
+    function fitImageWidth() { if(selectedEl) { selectedEl.style.width = "100%"; selectedEl.style.display = "block"; selectedEl.style.float = "none"; } }
+    function setBg(color) { if(selectedEl) selectedEl.style.backgroundColor = color; }
+    function toggleLine() { if (selectedEl) { selectedEl.classList.toggle('no-line'); renderToolbar(); } }
+
+    function addResizeHandle(el) {
+        const handle = frame.contentDocument.createElement('div');
+        handle.className = 'resize-handle';
+        const isSpacer = el.classList.contains('block_spacer');
+        const startResize = (e) => {
+            e.preventDefault(); e.stopPropagation();
+            isResizing = true;
+            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            const startW = el.offsetWidth;
+            const startH = el.offsetHeight;
+            const scale = wrapper.offsetWidth / (currentMode === 'mobile' ? 412 : 1280);
+
+            const onMove = (mE) => {
+                const curX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
+                const curY = mE.type.includes('touch') ? mE.touches[0].clientY : mE.clientY;
+                if (isSpacer) {
+                    const newH = startH + (curY - startY) / scale;
+                    if (newH > 5) el.style.height = newH + 'px';
+                } else {
+                    const newW = startW + (curX - startX) / scale;
+                    if (newW > 40) el.style.width = newW + 'px';
+                }
+            };
+            const onUp = () => {
+                isResizing = false;
+                frame.contentDocument.removeEventListener('mousemove', onMove);
+                frame.contentDocument.removeEventListener('mouseup', onUp);
+                frame.contentDocument.removeEventListener('touchmove', onMove);
+                frame.contentDocument.removeEventListener('touchend', onUp);
+            };
+            frame.contentDocument.addEventListener('mousemove', onMove);
+            frame.contentDocument.addEventListener('mouseup', onUp);
+            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
+            frame.contentDocument.addEventListener('touchend', onUp);
+        };
+        handle.addEventListener('mousedown', startResize);
+        handle.addEventListener('touchstart', startResize, {passive: false});
+        el.appendChild(handle);
+    }
+
+    function setAlign(pos) {
+        if (!selectedEl) return;
+        if (selectedEl.classList.contains('block_image')) {
+             selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
+             selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
+             selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none';
+             selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
+        } else { 
+            selectedEl.style.textAlign = pos; 
+        }
+    }
+
+    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
+    function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
+    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+    function handleImageUpload(i) { 
+        if(i.files[0]) { 
+            const r = new FileReader(); 
+            r.onload = e => {
+                if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result;
+                else insertElement('block_image', e.target.result);
+            };
+            r.readAsDataURL(i.files[0]); 
+        } 
+    }
+
+    function insertElement(type, data) {
+        const doc = frame.contentDocument;
+        const root = doc.getElementById('editor-root');
+        const el = doc.createElement('div');
+        el.className = `editable ${type}`;
+        const placeholders = { 'section_heading': 'New Section', 'block_heading': 'New paragraph heading', 'block_text': 'Insert paragraph text', 'block_spacer': '', 'block_container': '' };
+        
+        if(type === 'block_image') { 
+            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
+            el.contentEditable = "false"; el.style.width = "200px"; el.style.position = "relative";
+        } else if(type === 'block_spacer' || type === 'block_container') {
+            el.contentEditable = "false";
+        } else { 
+            el.innerText = ""; 
+            el.setAttribute('data-placeholder', placeholders[type] || 'Type here...');
+            el.contentEditable = "true"; 
+        }
+
+        if (selectedEl && selectedEl.classList.contains('block_container')) {
+            selectedEl.appendChild(el);
+        } else if (selectedEl && selectedEl.parentNode === root) {
+            selectedEl.after(el);
+        } else {
+            root.appendChild(el);
+        }
+        
+        setTimeout(() => { 
+            selectElement(el); 
+            if (type !== 'block_image' && type !== 'block_spacer' && type !== 'block_container') el.focus({ preventScroll: true }); 
+            el.scrollIntoView({ block: "end", behavior: "smooth" });
+            setTimeout(() => {
+                frame.contentWindow.scrollBy({ top: 40, behavior: 'smooth' });
+            }, 300);
+        }, 150);
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
