@@ -47,11 +47,15 @@
     </div>
     <div class="nav-content">
         <a href="https://mysnoozingbaby.com/">Home</a>
-        <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">Snoo Smart Sleeper <i class="fa-solid fa-caret-down"></i></a>
+        
+        <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">
+            Snoo Smart Sleeper <i class="fa-solid fa-caret-down" style="font-size: 0.8rem; margin-left: 5px;"></i>
+        </a>
         <div class="sub-nav">
             <a href="https://mysnoozingbaby.com/snoo-rental">SNOO Rental</a>
             <a href="https://mysnoozingbaby.com/snoo-cleaning-and-repairs">SNOO Cleaning/Repair</a>
         </div>
+
         <a href="https://mysnoozingbaby.com/baby-gear-rentals">Baby Gear Rentals</a>
         <a href="https://mysnoozingbaby.com/toddler-party-rentals">Toddler Party Rentals</a>
         <a href="https://mysnoozingbaby.com/about-us">About Us</a>
@@ -89,8 +93,12 @@
     }
 
     function toggleDropdown(btn) {
+        // Toggle 'active' on the button and 'show' on the next sibling (.sub-nav)
         btn.classList.toggle('active');
-        btn.nextElementSibling.classList.toggle('show');
+        const menu = btn.nextElementSibling;
+        if (menu) {
+            menu.classList.toggle('show');
+        }
     }
 </script>
 
