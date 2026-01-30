@@ -102,14 +102,19 @@ nav#nav-sidebar a {
 }
 
 /* Add this to your styles.css */
+/* Indent submenu links by 40px */
+.sub-nav a {
+    padding-left: 40px !important;
+}
+
+/* Ensure the submenu is functional */
 .sub-nav {
-    display: none; /* Keeps it hidden by default */
+    display: none;
 }
 
 .sub-nav.show {
-    display: block !important; /* Shows it when the 'show' class is added by JS */
+    display: block !important;
 }
-
 /* --- Content Block Styles --- */
 .section_heading { 
     font-family: 'Source Sans Pro', sans-serif; 
