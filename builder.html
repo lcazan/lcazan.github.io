@@ -3,30 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.5.3 Stable</title>
+    <title>Snoozing Builder | v3.7.2</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         
-        body { 
-            margin: 0; display: flex; height: 100vh; width: 100vw; 
-            font-family: 'Source Sans Pro', sans-serif; background: #111; 
-            overflow: hidden; position: fixed; touch-action: none;
+        html, body { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; position: fixed; top: 0; left: 0; 
+            background: #111; touch-action: none;
         }
         
+        body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
+        
         #sidebar { 
-            width: 90px; height: 100vh; background: var(--panel-bg); 
+            width: 75px; height: 100%; background: var(--panel-bg); 
             display: flex; flex-direction: column; align-items: center; 
-            padding: 20px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; 
+            padding: 15px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; 
         }
         .insert-btn { 
-            width: 65px; height: 65px; background: #444; border: 1px solid #666; color: #fff; 
-            margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 9px; 
-            font-weight: bold; text-transform: uppercase; display: flex; 
-            flex-direction: column; justify-content: center; align-items: center; gap: 5px; 
+            width: 60px; height: 32px; background: #444; border: 1px solid #666; color: #fff; 
+            margin: 0 5px 10px 5px; border-radius: 4px; cursor: pointer; 
+            font-size: 14px; display: flex; justify-content: center; align-items: center; 
+            padding: 0;
         }
 
-        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100vh; overflow: hidden; }
+        #preview-container { 
+            flex-grow: 1; display: flex; flex-direction: column; 
+            background: #333; height: 100%; overflow: hidden; position: relative;
+        }
+
         #header-area { background: #222; border-bottom: 1px solid #000; flex-shrink: 0; z-index: 500; height: 50px; position: relative; }
         #device-bar { height: 100%; display: flex; align-items: center; justify-content: center; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 26px; margin: 0 15px; }
@@ -34,38 +40,42 @@
         .version-status { position: absolute; right: 25px; top: 12px; color: #fff; font-size: 16px; font-weight: 800; }
 
         #sticky-toolbar { 
-            height: 85px; background: #1a1a1a; display: flex; 
-            align-items: center; justify-content: center; gap: 18px; 
-            padding: 0 25px; border-bottom: 1px solid #000; flex-shrink: 0;
+            height: 48px; background: #1a1a1a; display: flex; 
+            align-items: center; justify-content: center; 
+            border-bottom: 1px solid #000; flex-shrink: 0;
         }
         
-        #toolbar-content { display: flex; gap: 18px; visibility: hidden; align-items: center; height: 100%; }
+        #toolbar-content { display: flex; gap: 8px; visibility: hidden; align-items: center; height: 100%; }
+
+        .tool-btn { 
+            background: #444; border: 1px solid #666; color: white; 
+            padding: 0; border-radius: 4px; cursor: pointer;
+            font-size: 20px; min-width: 40px; height: 38px;
+            margin: 5px 0; 
+            display: flex; align-items: center; justify-content: center;
+        }
+        .tool-btn.active { background: var(--brand-pink); color: #000; }
 
         #frame-wrapper { 
             flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
             background: #333; overflow: hidden; position: relative;
         }
         
-        #preview-frame { border: none; background: white; transform-origin: top center; }
-
-        /* UPDATED: Increased icon size by 50% (36px) while keeping container fixed */
-        .tool-btn { 
-            background: #444; border: 1px solid #666; color: white; 
-            padding: 8px 12px; border-radius: 6px; cursor: pointer;
-            font-size: 36px; min-width: 60px; height: 60px;
-            display: flex; align-items: center; justify-content: center;
+        #preview-frame { 
+            border: none; background: white; 
+            transform-origin: top left; 
+            position: absolute; top: 0; left: 0;
         }
-        .tool-btn.active { background: var(--brand-pink); color: #000; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i>Section</button>
-    <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i>Heading</button>
-    <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i>Text</button>
-    <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i>Image</button>
-    <button class="insert-btn" style="margin-top:auto" onclick="saveJSON()"><i class="fa-solid fa-floppy-disk"></i>Save</button>
+    <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i></button>
+    <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i></button>
+    <button class="insert-btn" style="margin-top:auto" onclick="saveJSON()"><i class="fa-solid fa-floppy-disk"></i></button>
 </div>
 
 <div id="preview-container">
@@ -73,7 +83,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.5.3</div>
+            <div class="version-status">v3.7.2</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -91,11 +101,12 @@
     const toolbarContent = document.getElementById('toolbar-content');
     const wrapper = document.getElementById('frame-wrapper');
     
-    let initialWidth = window.innerWidth;
     let selectedEl = null;
     let currentMode = 'mobile';
     let isResizing = false;
     let rotationTimeout;
+    
+    const initialWindowHeight = window.innerHeight;
 
     async function init() {
         const resp = await fetch('template.html');
@@ -104,20 +115,42 @@
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
             <style>
                 html, body { height: auto; min-height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
-                .selected-item { outline: 3px solid #ebd5c9 !important; position: relative; }
-                #editor-root { flex: 1 0 auto; width: 100%; }
-                body { padding-bottom: 60px !important; }
-                footer { flex-shrink: 0; margin-top: auto; }
-                .block_heading { display: block; width: 100%; border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 10px; }
+                #editor-root { flex: 1 0 auto; width: 100%; display: flex; flex-direction: column; }
+                
+                /* BASE EDITABLE STYLE */
+                .editable { 
+                    display: block !important; 
+                    width: 100%; 
+                    clear: both; 
+                    box-sizing: border-box; 
+                    position: relative; 
+                    min-height: 1.2em; 
+                }
+                
+                .selected-item { outline: 3px solid #ebd5c9 !important; }
+                body { padding-bottom: 250px !important; }
+                
+                .block_heading { border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
                 .no-line { border-bottom: none !important; }
+                
+                /* GHOST PLACEHOLDER STYLING */
+                .editable:empty::before {
+                    content: attr(data-placeholder);
+                    color: #888888;
+                    font-family: 'Source Sans Pro', sans-serif; /* Same as menu font */
+                    text-transform: none; /* mixed case, not uppercase */
+                    font-style: normal;
+                    pointer-events: none;
+                    display: block;
+                    opacity: 0.7;
+                }
+
                 .resize-handle { 
-                    width: 44px; height: 44px; position: absolute; right: -5px; bottom: -5px; 
+                    width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; 
                     cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center;
                     color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px;
-                    pointer-events: auto !important; text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
                 }
-                .resize-handle::before { content: "\\f338"; }
-                .editable img { pointer-events: none; width: 100%; display: block; }
+                .resize-handle::before { content: "\\f337"; } 
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
         
@@ -134,10 +167,19 @@
 
         if (window.visualViewport) {
             window.visualViewport.addEventListener('resize', () => {
+                const viewportHeight = window.visualViewport.height;
+                document.body.style.height = viewportHeight + 'px';
                 clearTimeout(rotationTimeout);
                 rotationTimeout = setTimeout(() => {
                     setDevice(currentMode);
-                }, 200);
+                    if (selectedEl && viewportHeight < (initialWindowHeight - 150)) {
+                        const win = frame.contentWindow;
+                        selectedEl.scrollIntoView({ block: "end", behavior: "auto" });
+                        setTimeout(() => {
+                            win.scrollBy({ top: 40, behavior: 'smooth' });
+                        }, 50); 
+                    }
+                }, 300); 
             });
         }
     }
@@ -147,28 +189,19 @@
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         const btn = document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop');
         if(btn) btn.classList.add('active');
-
         const wrapperW = wrapper.offsetWidth;
         const wrapperH = wrapper.offsetHeight;
-        
-        if (type === 'mobile') {
-            const scaleFactor = wrapperW / 412;
-            frame.style.width = '412px';
-            frame.style.height = (wrapperH / scaleFactor) + 'px';
-            frame.style.transform = `scale(${scaleFactor})`;
-        } else {
-            frame.style.width = '100%';
-            frame.style.height = '100%';
-            frame.style.transform = 'none';
-        }
+        const virtualWidth = (type === 'mobile') ? 412 : 1280;
+        const scaleFactor = wrapperW / virtualWidth;
+        frame.style.width = virtualWidth + 'px';
+        frame.style.height = (wrapperH / scaleFactor) + 'px';
+        frame.style.transform = `scale(${scaleFactor})`;
     }
 
     function selectElement(el) {
-        if(selectedEl && selectedEl !== el) {
-            selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if(h) h.remove();
-        }
+        const doc = frame.contentDocument;
+        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
         selectedEl.classList.add('selected-item');
         if (el.classList.contains('block_image')) addResizeHandle(el);
@@ -176,11 +209,9 @@
     }
 
     function deselectAll() {
-        if (selectedEl) {
-            selectedEl.classList.remove('selected-item');
-            const h = selectedEl.querySelector('.resize-handle');
-            if(h) h.remove();
-        }
+        const doc = frame.contentDocument;
+        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        if (selectedEl) selectedEl.classList.remove('selected-item');
         selectedEl = null;
         toolbarContent.style.visibility = 'hidden';
     }
@@ -191,7 +222,6 @@
         const isImg = selectedEl.classList.contains('block_image');
         const isHeading = selectedEl.classList.contains('block_heading');
         const lineHidden = selectedEl.classList.contains('no-line');
-
         let html = '';
         if (isImg) { html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`; }
         else {
@@ -207,12 +237,7 @@
         toolbarContent.innerHTML = html;
     }
 
-    function toggleHeadingLine() {
-        if (selectedEl && selectedEl.classList.contains('block_heading')) {
-            selectedEl.classList.toggle('no-line');
-            renderToolbar();
-        }
-    }
+    function toggleHeadingLine() { if (selectedEl && selectedEl.classList.contains('block_heading')) { selectedEl.classList.toggle('no-line'); renderToolbar(); } }
 
     function addResizeHandle(el) {
         const handle = frame.contentDocument.createElement('div');
@@ -273,12 +298,25 @@
         const root = doc.getElementById('editor-root');
         const el = doc.createElement('div');
         el.className = `editable ${type}`;
+        
+        // YOUR UPDATED PLACEHOLDER WORDING
+        const placeholders = {
+            'section_heading': 'New Section',
+            'block_heading': 'New paragraph heading',
+            'block_text': 'Insert paragraph text'
+        };
+
         if(type === 'block_image') { 
             el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
             el.contentEditable = "false"; el.style.width = "200px"; el.style.position = "relative";
-        } else { el.innerText = "New Block"; el.contentEditable = "true"; }
+        } else { 
+            el.innerText = ""; 
+            el.setAttribute('data-placeholder', placeholders[type] || 'Type here...');
+            el.contentEditable = "true"; 
+        }
+        
         root.appendChild(el);
-        setTimeout(() => { selectElement(el); if (type !== 'block_image') el.focus(); }, 150);
+        setTimeout(() => { selectElement(el); if (type !== 'block_image') el.focus({ preventScroll: true }); }, 150);
     }
 
     function saveJSON() {
