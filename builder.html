@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.7.2</title>
+    <title>Snoozing Builder | v3.7.6</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -21,6 +21,7 @@
             display: flex; flex-direction: column; align-items: center; 
             padding: 15px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; 
         }
+        
         .insert-btn { 
             width: 60px; height: 32px; background: #444; border: 1px solid #666; color: #fff; 
             margin: 0 5px 10px 5px; border-radius: 4px; cursor: pointer; 
@@ -71,10 +72,12 @@
 <body>
 
 <div id="sidebar">
-    <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i></button>
-    <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i></button>
-    <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i></button>
-    <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i></button>
+    <button class="insert-btn" title="Section Heading" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i></button>
+    <button class="insert-btn" title="Main Heading" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i></button>
+    <button class="insert-btn" title="Text Paragraph" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i></button>
+    <button class="insert-btn" title="Image" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i></button>
+    <button class="insert-btn" title="Button" onclick="insertElement('block_button')"><i class="fa-solid fa-link"></i></button>
+    
     <button class="insert-btn" style="margin-top:auto" onclick="saveJSON()"><i class="fa-solid fa-floppy-disk"></i></button>
 </div>
 
@@ -83,7 +86,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.7.2</div>
+            <div class="version-status">v3.7.6</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -116,29 +119,17 @@
             <style>
                 html, body { height: auto; min-height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
                 #editor-root { flex: 1 0 auto; width: 100%; display: flex; flex-direction: column; }
-                
-                /* BASE EDITABLE STYLE */
-                .editable { 
-                    display: block !important; 
-                    width: 100%; 
-                    clear: both; 
-                    box-sizing: border-box; 
-                    position: relative; 
-                    min-height: 1.2em; 
-                }
-                
+                .editable { display: block !important; width: 100%; clear: both; box-sizing: border-box; position: relative; min-height: 1.2em; }
                 .selected-item { outline: 3px solid #ebd5c9 !important; }
                 body { padding-bottom: 250px !important; }
-                
                 .block_heading { border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
                 .no-line { border-bottom: none !important; }
                 
-                /* GHOST PLACEHOLDER STYLING */
                 .editable:empty::before {
                     content: attr(data-placeholder);
                     color: #888888;
-                    font-family: 'Source Sans Pro', sans-serif; /* Same as menu font */
-                    text-transform: none; /* mixed case, not uppercase */
+                    font-family: 'Source Sans Pro', sans-serif;
+                    text-transform: none;
                     font-style: normal;
                     pointer-events: none;
                     display: block;
@@ -172,6 +163,7 @@
                 clearTimeout(rotationTimeout);
                 rotationTimeout = setTimeout(() => {
                     setDevice(currentMode);
+                    
                     if (selectedEl && viewportHeight < (initialWindowHeight - 150)) {
                         const win = frame.contentWindow;
                         selectedEl.scrollIntoView({ block: "end", behavior: "auto" });
@@ -189,10 +181,12 @@
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         const btn = document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop');
         if(btn) btn.classList.add('active');
+
         const wrapperW = wrapper.offsetWidth;
         const wrapperH = wrapper.offsetHeight;
         const virtualWidth = (type === 'mobile') ? 412 : 1280;
         const scaleFactor = wrapperW / virtualWidth;
+        
         frame.style.width = virtualWidth + 'px';
         frame.style.height = (wrapperH / scaleFactor) + 'px';
         frame.style.transform = `scale(${scaleFactor})`;
@@ -299,16 +293,20 @@
         const el = doc.createElement('div');
         el.className = `editable ${type}`;
         
-        // YOUR UPDATED PLACEHOLDER WORDING
         const placeholders = {
             'section_heading': 'New Section',
             'block_heading': 'New paragraph heading',
-            'block_text': 'Insert paragraph text'
+            'block_text': 'Insert paragraph text',
+            'block_button': 'Find Out More'
         };
 
         if(type === 'block_image') { 
             el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
             el.contentEditable = "false"; el.style.width = "200px"; el.style.position = "relative";
+        } else if(type === 'block_button') {
+            // Inserts a button that uses your existing styles.css .block_button class
+            el.innerHTML = `<a href="#" class="block_button" onclick="return false;">${placeholders[type]}</a>`;
+            el.contentEditable = "true";
         } else { 
             el.innerText = ""; 
             el.setAttribute('data-placeholder', placeholders[type] || 'Type here...');
@@ -316,7 +314,21 @@
         }
         
         root.appendChild(el);
-        setTimeout(() => { selectElement(el); if (type !== 'block_image') el.focus({ preventScroll: true }); }, 150);
+        setTimeout(() => { 
+            selectElement(el); 
+            if (type !== 'block_image') {
+                el.focus({ preventScroll: true });
+                // If it's a button, put cursor inside the link tag
+                if(type === 'block_button') {
+                    const range = doc.createRange();
+                    const sel = frame.contentWindow.getSelection();
+                    const btnLink = el.querySelector('.block_button');
+                    range.selectNodeContents(btnLink);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
+            }
+        }, 150);
     }
 
     function saveJSON() {
