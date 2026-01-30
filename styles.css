@@ -200,7 +200,7 @@ footer {
     width: 100%;
     display: flex;
     justify-content: center; 
-    padding: 10px 0;
+    padding: 0 0;
     clear: both;
 }
 
