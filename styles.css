@@ -195,6 +195,7 @@ footer {
 /* --- Centering Container --- */
 /* --- Corrected Rectangular Luxury Button --- */
 /* --- Final Luxury Button Lock --- */
+/* --- Final Luxury Button Lock (v2) --- */
 .block_button_container {
     width: 100%;
     display: flex;
@@ -204,30 +205,34 @@ footer {
 }
 
 .block_button {
-    display: inline-block;
+    display: inline-block !important;
+    /* Use the heaviest weight available in the Source Sans Pro family */
     font-family: 'Source Sans Pro', sans-serif !important;
-    font-weight: 700 !important; /* Forces the BOLD look */
+    font-weight: 900 !important; 
     font-size: 14px !important;
-    letter-spacing: 2px !important;
-    text-transform: uppercase;
-    text-decoration: none;
+    letter-spacing: 3px !important; /* Increased spacing for luxury feel */
+    text-transform: uppercase !important;
+    text-decoration: none !important;
     
-    /* Default: Clean White/Black Border */
+    /* Solid Black/White contrast - No overlays */
     color: #151515 !important;
     background-color: #ffffff !important;
+    background-image: none !important; /* Kills any gradient overlays */
     border: 1px solid #151515 !important;
     
-    padding: 16px 40px;
-    border-radius: 4px;
-    cursor: pointer;
+    padding: 18px 45px !important; /* Slightly larger padding for better presence */
+    border-radius: 4px !important;
+    cursor: pointer !important;
     
-    /* This stops the "weird" color transitions */
-    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out !important;
+    /* Clean, fast transition */
+    transition: all 0.1s ease-in-out !important;
 }
 
-/* INSTANT BLACK & WHITE FLIP - No Pink/Blue Bleed */
+/* THE HOVER FLIP: Immediate Black-out with zero color bleed */
 .block_button:hover {
     background-color: #151515 !important; 
+    background-image: none !important;
     color: #ffffff !important;
     border-color: #151515 !important;
+    box-shadow: none !important;
 }
