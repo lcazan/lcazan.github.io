@@ -6,15 +6,9 @@
     <title>Snoozing Builder | v4.0.1</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { 
-            --admin-bg: #1e1e1e; 
-            --panel-bg: #2d2d2d; 
-            --brand-pink: #ebd5c9; 
-            --base-size: 16px;
-        }
+        :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         
-        html { font-size: var(--base-size); }
-
+        /* The Mountain Lock: Prevents the body from moving at all */
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             overflow: hidden; position: fixed; top: 0; left: 0; 
@@ -23,7 +17,7 @@
         
         body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
         
-        /* Sidebar: 75px -> 4.6875rem */
+        /* Sidebar is now strictly locked - 75px / 16 = 4.6875rem */
         #sidebar { 
             width: 4.6875rem; height: 100vh; background: var(--panel-bg); 
             display: flex; flex-direction: column; align-items: center; 
@@ -36,13 +30,8 @@
             background: #333; height: 100vh; overflow: hidden; position: relative;
         }
 
-        /* Header: 50px -> 3.125rem */
-        #header-area { 
-            background: #222; border-bottom: 1px solid #000; 
-            flex-shrink: 0; z-index: 1001; height: 3.125rem; 
-        }
-
-        /* Toolbar: 48px -> 3rem */
+        /* UI elements locked to top - 50px = 3.125rem | 48px = 3rem */
+        #header-area { background: #222; border-bottom: 1px solid #000; flex-shrink: 0; z-index: 1001; height: 3.125rem; }
         #sticky-toolbar { 
             height: 3rem; background: #1a1a1a; display: flex; 
             align-items: center; justify-content: center; 
@@ -53,41 +42,20 @@
             flex-grow: 1; position: relative; background: #333; overflow: hidden;
         }
         
+        /* The Iframe is the only thing allowed to shift if needed */
         #preview-frame { 
             border: none; background: white; 
             transform-origin: top left; 
             position: absolute; top: 0; left: 0;
         }
 
-        .insert-btn { 
-            width: 3.75rem; height: 2rem; background: #444; border: 1px solid #666; 
-            color: #fff; margin-bottom: 0.625rem; border-radius: 4px; cursor: pointer; 
-            display: flex; justify-content: center; align-items: center; 
-        }
-
-        .tool-btn { 
-            background: #444; border: 1px solid #666; color: white; 
-            font-size: 1.25rem; min-width: 2.5rem; height: 2.375rem; 
-            display: flex; align-items: center; justify-content: center; border-radius: 4px; 
-        }
-
-        .tool-input { 
-            background: #333; border: 1px solid #666; color: #fff; 
-            padding: 0.3125rem; border-radius: 4px; width: 7.5rem; font-size: 0.75rem; 
-        }
-
+        .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 4px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        .tool-btn { background: #444; border: 1px solid #666; color: white; font-size: 1.25rem; min-width: 2.5rem; height: 2.375rem; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
+        .tool-input { background: #333; border: 1px solid #666; color: #fff; padding: 0.3125rem; border-radius: 4px; width: 7.5rem; font-size: 0.75rem; }
         #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
-
-        .device-btn { 
-            background: transparent; border: none; color: #fff; cursor: pointer; 
-            font-size: 1.625rem; margin: 0 0.9375rem; 
-        }
+        .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.625rem; margin: 0 0.9375rem; }
         .device-btn.active { color: var(--brand-pink); }
-
-        .version-status { 
-            position: absolute; right: 1.5625rem; top: 0.75rem; 
-            color: #fff; font-size: 1rem; font-weight: 800; 
-        }
+        .version-status { position: absolute; right: 1.5625rem; top: 0.75rem; color: #fff; font-size: 1rem; font-weight: 800; }
     </style>
 </head>
 <body>
@@ -129,10 +97,12 @@
     let currentMode = 'mobile';
     let isResizing = false;
 
-    // Viewport lock logic to handle mobile keyboard
+    // KEYBOARD LOCK: This forces the editor to stay put even when the keyboard opens
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
+            // Force the body to the height of the actual visible area
             document.body.style.height = window.visualViewport.height + 'px';
+            // Offset any scrolling the browser tries to do to the main page
             window.scrollTo(0, 0);
         });
         window.visualViewport.addEventListener('scroll', () => {
@@ -151,16 +121,16 @@
                 html, body { height: auto; min-height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
                 #editor-root { width: 100%; display: flex; flex-direction: column; }
                 .editable { position: relative; min-height: 1.2em; cursor: pointer; box-sizing: border-box; }
-                .selected-item { outline: 3px solid #ebd5c9 !important; }
-                body { padding-bottom: 18.75rem !important; } /* 300px safety padding */
+                .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
+                body { padding-bottom: 18.75rem !important; } /* 300px safety */
                 
                 .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.7; pointer-events: none; }
-                .resize-handle { width: 2.75rem; height: 2.75rem; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.75rem; }
+                .resize-handle { width: 2.75rem; height: 2.75rem; position: absolute; right: -0.125rem; bottom: -0.125rem; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.75rem; }
                 .resize-handle::before { content: "\\f337"; } 
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
         
-        frame.srcdoc = html.replace(/<div class="content-container" id="editor-root">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
+        frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
         
         frame.onload = () => {
             frame.contentDocument.addEventListener('mousedown', (e) => {
@@ -309,7 +279,7 @@
         el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
         if(type === 'block_image') { 
             el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
-            el.contentEditable = "false"; el.style.width = "12.5rem";
+            el.contentEditable = "false"; el.style.width = "12.5rem"; /* 200px */
         } else if(type === 'block_button') {
             el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`;
             el.contentEditable = "false";
