@@ -8,27 +8,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Source+Sans+Pro:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
-    
-    <style>
-        /* Essential for v3.39 Footer-Push Logic */
-        html, body { 
-            height: 100%; margin: 0; padding: 0;
-            display: flex; flex-direction: column; 
-            overflow-x: hidden;
-        }
-
-        /* This container grows to fill empty space, pushing the footer down */
-        .content-container {
-            flex: 1 0 auto; 
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        footer {
-            flex-shrink: 0;
-            margin-top: auto;
-        }
-    </style>
 </head>
 <body>
 
@@ -47,11 +26,15 @@
     </div>
     <div class="nav-content">
         <a href="https://mysnoozingbaby.com/">Home</a>
-        <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">Snoo Smart Sleeper <i class="fa-solid fa-caret-down"></i></a>
+        
+        <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">
+            Snoo Smart Sleeper <i class="fa-solid fa-caret-down"></i>
+        </a>
         <div class="sub-nav">
             <a href="https://mysnoozingbaby.com/snoo-rental">SNOO Rental</a>
             <a href="https://mysnoozingbaby.com/snoo-cleaning-and-repairs">SNOO Cleaning/Repair</a>
         </div>
+
         <a href="https://mysnoozingbaby.com/baby-gear-rentals">Baby Gear Rentals</a>
         <a href="https://mysnoozingbaby.com/toddler-party-rentals">Toddler Party Rentals</a>
         <a href="https://mysnoozingbaby.com/about-us">About Us</a>
@@ -70,9 +53,6 @@
         <a href="#"><i class="fa-brands fa-tiktok"></i></a>
     </div>
     <span class="copyright-text">Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.</span>
-    <div class="disclaimer">
-        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.
-    </div>
 </footer>
 
 <script>
@@ -80,17 +60,19 @@
         if(e) e.stopPropagation();
         const nav = document.getElementById('nav-sidebar');
         const hamburger = document.getElementById('headerHamburger');
-        
         const isOpen = nav.classList.toggle('open');
         hamburger.classList.toggle('active');
-        
         document.getElementById('navOverlay').style.display = isOpen ? 'block' : 'none';
         document.body.style.overflow = isOpen ? 'hidden' : 'auto';
     }
 
     function toggleDropdown(btn) {
+        // Toggle 'active' on the button and 'show' on the next sibling (.sub-nav)
         btn.classList.toggle('active');
-        btn.nextElementSibling.classList.toggle('show');
+        const menu = btn.nextElementSibling;
+        if (menu) {
+            menu.classList.toggle('show');
+        }
     }
 </script>
 
