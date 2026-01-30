@@ -194,6 +194,7 @@ footer {
 /* --- Luxury Pill Button --- */
 /* --- Centering Container --- */
 /* --- Corrected Rectangular Luxury Button --- */
+/* --- Final Luxury Button Lock --- */
 .block_button_container {
     width: 100%;
     display: flex;
@@ -204,29 +205,29 @@ footer {
 
 .block_button {
     display: inline-block;
-    font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 700;
-    font-size: 14px;
-    letter-spacing: 2px; /* Precise character spacing */
+    font-family: 'Source Sans Pro', sans-serif !important;
+    font-weight: 700 !important; /* Forces the BOLD look */
+    font-size: 14px !important;
+    letter-spacing: 2px !important;
     text-transform: uppercase;
     text-decoration: none;
     
-    /* Default: White background, Dark text/border */
-    color: var(--text-dark); /* #151515 */
-    background: #ffffff;
-    border: 1px solid var(--text-dark);
+    /* Default: Clean White/Black Border */
+    color: #151515 !important;
+    background-color: #ffffff !important;
+    border: 1px solid #151515 !important;
     
     padding: 16px 40px;
-    border-radius: 4px; /* Subtle rounding, NOT a pill */
-    
+    border-radius: 4px;
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
-    text-align: center;
+    
+    /* This stops the "weird" color transitions */
+    transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out !important;
 }
 
-/* THE HOVER FLIP: Black background with White text */
+/* INSTANT BLACK & WHITE FLIP - No Pink/Blue Bleed */
 .block_button:hover {
-    background-color: var(--text-dark); /* Becomes Black */
-    border-color: var(--text-dark);
-    color: #ffffff;                    /* Text becomes White */
+    background-color: #151515 !important; 
+    color: #ffffff !important;
+    border-color: #151515 !important;
 }
