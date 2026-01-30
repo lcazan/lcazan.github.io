@@ -108,7 +108,7 @@ nav#nav-sidebar a {
     font-weight: 600; 
     letter-spacing: 2px; 
     color: var(--icon-brown); 
-    margin: 40px 0 10px; 
+    margin: 10px 0 10px; 
     display: block; 
     width: 100%;
     text-transform: uppercase;
@@ -120,7 +120,7 @@ nav#nav-sidebar a {
     font-size: 1.6rem; 
     border-bottom: 1px solid var(--brand-pink); 
     padding-bottom: 8px; 
-    margin: 20px auto 10px; 
+    margin: 10px auto 10px; 
     display: table; /* Center centering logic */
     text-align: center; /* UPDATED: Centered by default */
 }
