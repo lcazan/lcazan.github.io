@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.9.3</title>
+    <title>Snoozing Builder | v3.9.4</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -89,7 +89,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.9.3</div>
+            <div class="version-status">v3.9.4</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -130,6 +130,7 @@
                 .block_heading { border-bottom: 1px solid #ebd5c9; padding-bottom: 10px; margin-bottom: 15px; }
                 .block_spacer { height: 40px; border-bottom: 1px solid #ebd5c9; margin-bottom: 10px; }
                 .no-line { border-bottom: none !important; }
+                .block_image img { width: 100%; height: auto; display: block; }
                 
                 .editable:empty::before {
                     content: attr(data-placeholder);
@@ -226,6 +227,7 @@
             html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`;
         } else if (isImg) { 
             html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`; 
+            html += `<button class="tool-btn" onclick="fitImageWidth()"><i class="fa-solid fa-expand"></i></button>`;
         } else {
             html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
             if (isHeading) { html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`; }
@@ -242,6 +244,7 @@
         toolbarContent.innerHTML = html;
     }
 
+    function fitImageWidth() { if(selectedEl) { selectedEl.style.width = "100%"; selectedEl.style.display = "block"; selectedEl.style.float = "none"; } }
     function setBg(color) { if(selectedEl) selectedEl.style.backgroundColor = color; }
     function toggleLine() { if (selectedEl) { selectedEl.classList.toggle('no-line'); renderToolbar(); } }
 
@@ -330,7 +333,6 @@
             el.contentEditable = "true"; 
         }
 
-        // NESTING / INSERT AFTER LOGIC
         if (selectedEl && selectedEl.classList.contains('block_container')) {
             selectedEl.appendChild(el);
         } else if (selectedEl && selectedEl.parentNode === root) {
