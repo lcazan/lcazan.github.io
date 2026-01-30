@@ -133,8 +133,7 @@ nav#nav-sidebar a {
     color: #333; 
     line-height: 1.8; 
     margin: 10px 0 30px; 
-    text-align: justify; /* UPDATED: Justified by default */
-    text-justify: inter-word;
+    text-align: center; /* UPDATED: Justified by default */
 }
 
 .block_image img { max-width: 100%; height: auto; display: block; }
