@@ -212,7 +212,7 @@ footer {
     /* Typography */
     font-family: 'Source Sans Pro', sans-serif;
     font-weight: 700;          /* Maximum thickness/heavy look */
-    font-size: 16px;
+    font-size: 14px;
     letter-spacing: 4px;       /* Wide spacing seen in the image */
     text-transform: uppercase;
     text-decoration: none;
@@ -223,8 +223,8 @@ footer {
     border: 1.5px solid #151515; /* Thin, sharp black border */
     
     /* Shape & Sizing */
-    padding: 15px 35px;        /* Large hit area */
-    border-radius: 4px;        /* The rounded corner you noticed */
+    padding: 12px 35px;        /* Large hit area */
+    border-radius: 6px;        /* The rounded corner you noticed */
     
     /* Instant Interaction */
     transition: all 0.1s ease-in-out; 
