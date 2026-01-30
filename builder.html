@@ -75,6 +75,7 @@
     <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i></button>
     <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i></button>
     <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_spacer')"><i class="fa-solid fa-arrows-up-down"></i></button>
 </div>
 
 <div id="preview-container">
@@ -115,8 +116,11 @@
                 .editable { display: block !important; width: 100%; clear: both; box-sizing: border-box; position: relative; min-height: 1.2em; }
                 .selected-item { outline: 3px solid #ebd5c9 !important; }
                 body { padding-bottom: 250px !important; }
-                .block_heading { border-bottom: 1px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
+                
+                .block_heading { border-bottom: 1px solid #ebd5c9; padding-bottom: 10px; margin-bottom: 15px; }
+                .block_spacer { height: 40px; border-bottom: 1px solid #ebd5c9; margin-bottom: 10px; }
                 .no-line { border-bottom: none !important; }
+                
                 .editable:empty::before { content: attr(data-placeholder); color: #888; font-family: 'Source Sans Pro', sans-serif; text-transform: none; pointer-events: none; opacity: 0.7; }
                 .resize-handle { 
                     width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; 
@@ -157,7 +161,7 @@
         if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
         selectedEl.classList.add('selected-item');
-        if (el.classList.contains('block_image')) addResizeHandle(el);
+        if (el.classList.contains('block_image') || el.classList.contains('block_spacer')) addResizeHandle(el);
         renderToolbar();
     }
 
@@ -175,41 +179,58 @@
         const isImg = selectedEl.classList.contains('block_image');
         const isHeading = selectedEl.classList.contains('block_heading');
         const isText = selectedEl.classList.contains('block_text');
+        const isSpacer = selectedEl.classList.contains('block_spacer');
         const lineHidden = selectedEl.classList.contains('no-line');
+        
         let html = '';
-        if (isImg) { html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`; }
-        else {
+        if (isSpacer) {
+            html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`;
+        } else if (isImg) { 
+            html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`; 
+        } else {
             html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
-            if (isHeading) { html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleHeadingLine()"><i class="fa-solid fa-underline"></i></button>`; }
+            if (isHeading) { html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`; }
         }
-        html += `
-            <button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
-            <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
-            <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
-        `;
-        if (isText) { html += `<button class="tool-btn" onclick="setAlign('justify')"><i class="fa-solid fa-align-justify"></i></button>`; }
+
+        if (!isSpacer) {
+            html += `
+                <button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
+                <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
+                <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
+            `;
+            if (isText) { html += `<button class="tool-btn" onclick="setAlign('justify')"><i class="fa-solid fa-align-justify"></i></button>`; }
+        }
+
         html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
         toolbarContent.innerHTML = html;
     }
 
-    function toggleHeadingLine() { if (selectedEl && selectedEl.classList.contains('block_heading')) { selectedEl.classList.toggle('no-line'); renderToolbar(); } }
+    function toggleLine() { if (selectedEl) { selectedEl.classList.toggle('no-line'); renderToolbar(); } }
 
     function addResizeHandle(el) {
         const handle = frame.contentDocument.createElement('div');
         handle.className = 'resize-handle';
+        const isSpacer = el.classList.contains('block_spacer');
+
         const startResize = (e) => {
             e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
             isResizing = true;
             const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const startWidth = el.offsetWidth;
-            const virtualWidth = (currentMode === 'mobile') ? 412 : 1280;
-            const scaleFactor = wrapper.offsetWidth / virtualWidth;
+            const startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            const startW = el.offsetWidth;
+            const startH = el.offsetHeight;
+            const scale = wrapper.offsetWidth / (currentMode === 'mobile' ? 412 : 1280);
 
             const onMove = (mE) => {
-                const currentX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
-                const diff = (currentX - startX) / scaleFactor;
-                const newWidth = startWidth + diff;
-                if (newWidth > 40) el.style.width = newWidth + 'px';
+                const curX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
+                const curY = mE.type.includes('touch') ? mE.touches[0].clientY : mE.clientY;
+                if (isSpacer) {
+                    const newH = startH + (curY - startY) / scale;
+                    if (newH > 5) el.style.height = newH + 'px';
+                } else {
+                    const newW = startW + (curX - startX) / scale;
+                    if (newW > 40) el.style.width = newW + 'px';
+                }
             };
             const onUp = () => {
                 isResizing = false;
@@ -260,17 +281,31 @@
         const root = doc.getElementById('editor-root');
         const el = doc.createElement('div');
         el.className = `editable ${type}`;
-        const placeholders = { 'section_heading': 'New Section', 'block_heading': 'New paragraph heading', 'block_text': 'Insert paragraph text' };
+        const placeholders = { 'section_heading': 'New Section', 'block_heading': 'New paragraph heading', 'block_text': 'Insert paragraph text', 'block_spacer': '' };
+        
         if(type === 'block_image') { 
             el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
             el.contentEditable = "false"; el.style.width = "200px"; el.style.position = "relative";
+        } else if(type === 'block_spacer') {
+            el.contentEditable = "false";
         } else { 
             el.innerText = ""; 
             el.setAttribute('data-placeholder', placeholders[type] || 'Type here...');
             el.contentEditable = "true"; 
         }
+        
         root.appendChild(el);
-        setTimeout(() => { selectElement(el); if (type !== 'block_image') el.focus({ preventScroll: true }); }, 150);
+        
+        // restored auto-scroll logic
+        setTimeout(() => { 
+            selectElement(el); 
+            el.scrollIntoView({ block: "end", behavior: "smooth" });
+            if (type !== 'block_image' && type !== 'block_spacer') {
+                el.focus({ preventScroll: true });
+            }
+            // extra comfort scroll
+            setTimeout(() => { frame.contentWindow.scrollBy({ top: 60, behavior: 'smooth' }); }, 300);
+        }, 150);
     }
 
     window.onload = init;
