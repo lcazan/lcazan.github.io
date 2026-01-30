@@ -1,98 +1,93 @@
-<!DOCTYPE html>
-<html lang="en-US">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>My Snoozing Baby | Template</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Source+Sans+Pro:wght@300;400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="styles.css">
-    
-    <style>
-        /* Essential for v3.39 Footer-Push Logic */
-        html, body { 
-            height: 100%; margin: 0; padding: 0;
-            display: flex; flex-direction: column; 
-            overflow-x: hidden;
-        }
+/* --- Brand Variables & Global Reset --- */
+:root {
+    --brand-cream: #FAF6F3;
+    --brand-pink: #ebd5c9;    
+    --icon-brown: #877267; 
+    --text-dark: #151515;
+}
 
-        /* This container grows to fill empty space, pushing the footer down */
-        .content-container {
-            flex: 1 0 auto; 
-            width: 100%;
-            box-sizing: border-box;
-        }
+body { 
+    font-family: 'Source Sans Pro', sans-serif; 
+    margin: 0; 
+    color: var(--text-dark); 
+    background-color: #fff; 
+    display: flex;             
+    flex-direction: column;    
+    height: 100%;              
+    overflow-x: hidden; 
+    overflow-y: auto;          
+}
 
-        footer {
-            flex-shrink: 0;
-            margin-top: auto;
-        }
-    </style>
-</head>
-<body>
+.content-container {
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    background-color: #ffffff;
+    flex: 1 0 auto;           
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+}
 
-<header>
-    <div class="header-menu-icon menu-lines" id="headerHamburger" onclick="toggleNav(event)">
-        <div class="line1"></div><div class="line2"></div><div class="line3"></div>
-    </div>
-    <div class="logo">My Snoozing Baby</div>
-</header>
+/* --- Content Block Styles --- */
+.section_heading { 
+    font-family: 'Source Sans Pro', sans-serif; 
+    font-size: 14px; 
+    font-weight: 600; 
+    letter-spacing: 2px; 
+    color: var(--icon-brown); 
+    margin: 40px 0 10px; 
+    display: block; 
+    width: 100%;
+    text-transform: uppercase;
+    text-align: left; /* Service heading aligned left */
+}
 
-<div id="navOverlay" onclick="toggleNav(event)" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.2); z-index:8500;"></div>
+.block_heading { 
+    font-family: 'Cinzel', serif; 
+    font-size: 1.6rem; 
+    border-bottom: 1px solid var(--brand-pink); 
+    padding-bottom: 8px; 
+    margin: 20px 0 10px; 
+    display: block; 
+    text-align: center; /* Heading centered by default */
+}
 
-<nav id="nav-sidebar">
-    <div class="sidebar-close-icon menu-lines active" onclick="toggleNav(event)">
-        <div class="line1"></div><div class="line2"></div><div class="line3"></div>
-    </div>
-    <div class="nav-content">
-        <a href="https://mysnoozingbaby.com/">Home</a>
-        <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">Snoo Smart Sleeper <i class="fa-solid fa-caret-down"></i></a>
-        <div class="sub-nav">
-            <a href="https://mysnoozingbaby.com/snoo-rental">SNOO Rental</a>
-            <a href="https://mysnoozingbaby.com/snoo-cleaning-and-repairs">SNOO Cleaning/Repair</a>
-        </div>
-        <a href="https://mysnoozingbaby.com/baby-gear-rentals">Baby Gear Rentals</a>
-        <a href="https://mysnoozingbaby.com/toddler-party-rentals">Toddler Party Rentals</a>
-        <a href="https://mysnoozingbaby.com/about-us">About Us</a>
-        <a href="https://mysnoozingbaby.com/contact-us">Contact Us</a>
-        <a href="https://mysnoozingbaby.com/faqs">FAQs</a>
-    </div>
-</nav>
+.block_text { 
+    font-family: 'Source Sans Pro', sans-serif; 
+    font-size: 1.05rem; 
+    color: #333; 
+    line-height: 1.8; 
+    margin: 10px 0 30px; 
+    text-align: justify; /* Text justified by default */
+}
 
-<div class="content-container">
-    </div>
+.block_image img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
 
-<footer>
-    <div class="social-icons">
-        <a href="#"><i class="fa-brands fa-facebook"></i></a>
-        <a href="#"><i class="fa-brands fa-instagram"></i></a>
-        <a href="#"><i class="fa-brands fa-tiktok"></i></a>
-    </div>
-    <span class="copyright-text">Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.</span>
-    <div class="disclaimer">
-        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.
-    </div>
-</footer>
+/* --- "Find Out More" Button (Updated per document) --- */
+.block_button {
+    display: block;
+    width: fit-content;
+    margin: 25px auto;         /* Centered by default */
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 2px;       /* Spacing per document style */
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--text-dark);
+    background: transparent;
+    border: 1px solid var(--text-dark);
+    border-radius: 6px;        /* Slightly rounded corners as requested */
+    padding: 14px 42px;        /* Padding per document style */
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    text-align: center;
+}
 
-<script>
-    function toggleNav(e) {
-        if(e) e.stopPropagation();
-        const nav = document.getElementById('nav-sidebar');
-        const hamburger = document.getElementById('headerHamburger');
-        
-        const isOpen = nav.classList.toggle('open');
-        hamburger.classList.toggle('active');
-        
-        document.getElementById('navOverlay').style.display = isOpen ? 'block' : 'none';
-        document.body.style.overflow = isOpen ? 'hidden' : 'auto';
-    }
-
-    function toggleDropdown(btn) {
-        btn.classList.toggle('active');
-        btn.nextElementSibling.classList.toggle('show');
-    }
-</script>
-
-</body>
-</html>
+.block_button:hover {
+    background-color: var(--brand-pink);
+    border-color: var(--brand-pink);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
