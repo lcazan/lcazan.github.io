@@ -3,106 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.7.2</title>
+    <title>Snoozing Builder | v3.7.2.5</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; --icon-brown: #877267; }
+        :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; background: #111; display: flex; font-family: 'Source Sans Pro', sans-serif; }
         
-        html, body { 
-            margin: 0; padding: 0; width: 100%; height: 100%; 
-            overflow: hidden; position: fixed; top: 0; left: 0; 
-            background: #111; touch-action: none;
-        }
-        
-        body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
-        
+        /* Control Toolbar (Sidebar) */
         #sidebar { 
             width: 75px; height: 100%; background: var(--panel-bg); 
             display: flex; flex-direction: column; align-items: center; 
             padding: 15px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; 
         }
-
-        .insert-btn {
-            width: 45px; height: 45px; margin-bottom: 15px; border-radius: 8px;
-            border: none; background: #3d3d3d; color: #ccc; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; font-size: 18px;
-            transition: 0.2s ease;
+        .insert-btn { 
+            width: 50px; height: 50px; background: #444; border: 1px solid #666; color: #fff; 
+            margin-bottom: 15px; border-radius: 8px; cursor: pointer; font-size: 20px;
+            display: flex; justify-content: center; align-items: center; transition: 0.2s;
         }
-        .insert-btn:hover { background: var(--brand-pink); color: #fff; }
+        .insert-btn:hover { background: var(--brand-pink); color: #000; }
 
-        #preview-wrap { flex-grow: 1; position: relative; background: #333; display: flex; flex-direction: column; }
-        iframe { width: 100%; height: 100%; border: none; background: #fff; }
+        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100%; overflow: hidden; position: relative; }
 
-        /* Sticky Control Toolbar */
-        #sticky-toolbar {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: var(--panel-bg); padding: 10px 20px; border-radius: 50px;
-            display: flex; gap: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            z-index: 2000; border: 1px solid #444; align-items: center;
-        }
-        .tool-btn { background: none; border: none; color: #fff; cursor: pointer; font-size: 16px; padding: 5px; opacity: 0.7; transition: 0.2s; }
-        .tool-btn:hover { opacity: 1; color: var(--brand-pink); }
-        
-        #version-tag { position: absolute; bottom: 10px; right: 20px; color: #666; font-size: 11px; pointer-events: none; }
+        /* Device Bar */
+        #header-area { background: #222; border-bottom: 1px solid #000; flex-shrink: 0; height: 50px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 22px; margin: 0 15px; opacity: 0.5; }
+        .device-btn.active { color: var(--brand-pink); opacity: 1; }
+        .version-status { position: absolute; right: 20px; color: #666; font-size: 12px; }
+
+        /* Contextual Action Toolbar */
+        #sticky-toolbar { height: 48px; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #000; }
+        #toolbar-content { display: flex; gap: 8px; visibility: hidden; }
+        .tool-btn { background: #444; border: 1px solid #666; color: white; border-radius: 4px; cursor: pointer; width: 40px; height: 34px; display: flex; align-items: center; justify-content: center; }
+
+        #frame-wrapper { flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; background: #333; overflow: hidden; position: relative; }
+        #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; left: 0; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
     <button class="insert-btn" onclick="insertElement('section_heading')" title="Heading"><i class="fa-solid fa-heading"></i></button>
-    <button class="insert-btn" onclick="insertElement('block_text')" title="Text Block"><i class="fa-solid fa-paragraph"></i></button>
-    <button class="insert-btn" onclick="insertElement('block_image')" title="Image"><i class="fa-solid fa-image"></i></button>
-    <button class="insert-btn" onclick="insertElement('block_button')" title="Insert Button"><i class="fa-solid fa-square"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_text')" title="Text"><i class="fa-solid fa-paragraph"></i></button>
+    <button class="insert-btn" onclick="triggerImageUpload()" title="Image"><i class="fa-solid fa-image"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_button')" title="Button"><i class="fa-solid fa-square"></i></button>
 </div>
 
-<div id="preview-wrap">
-    <iframe id="preview-frame" src="template.html"></iframe>
-    
-    <div id="sticky-toolbar">
-        <button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
-        <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
-        <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
-        <button class="tool-btn" style="color:#ff6b6b; margin-left: 10px;" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>
+<div id="preview-container">
+    <div id="header-area">
+        <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
+        <button class="device-btn active" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
+        <div class="version-status">v3.7.2.5</div>
     </div>
-
-    <div id="version-tag">Version 2.1</div>
+    <div id="sticky-toolbar">
+        <div id="toolbar-content"></div>
+    </div>
+    <div id="frame-wrapper">
+        <iframe id="preview-frame" src="template.html"></iframe>
+    </div>
 </div>
+
+<input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
 
 <script>
     const frame = document.getElementById('preview-frame');
+    const toolbarContent = document.getElementById('toolbar-content');
+    const wrapper = document.getElementById('frame-wrapper');
     let selectedEl = null;
+    let currentMode = 'mobile';
 
     frame.onload = () => {
         const doc = frame.contentDocument;
-        doc.addEventListener('click', (e) => {
-            const editable = e.target.closest('.editable');
-            if (editable) selectElement(editable);
+        doc.addEventListener('mousedown', (e) => {
+            const el = e.target.closest('.editable');
+            if (el) selectElement(el); else deselectAll();
         });
+        setDevice('mobile');
     };
 
-    function selectElement(el) {
-        if (selectedEl) selectedEl.classList.remove('selected-item');
-        selectedEl = el;
-        selectedEl.classList.add('selected-item');
+    function setDevice(type) {
+        currentMode = type;
+        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + type).classList.add('active');
+        
+        const virtualWidth = (type === 'mobile') ? 412 : 1280;
+        const scaleFactor = wrapper.offsetWidth / virtualWidth;
+        
+        frame.style.width = virtualWidth + 'px';
+        frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
+        frame.style.transform = `scale(${scaleFactor})`;
     }
 
-    function insertElement(type) {
+    function selectElement(el) {
+        if(selectedEl) selectedEl.classList.remove('selected-item');
+        selectedEl = el;
+        selectedEl.classList.add('selected-item');
+        renderToolbar();
+    }
+
+    function deselectAll() {
+        if (selectedEl) selectedEl.classList.remove('selected-item');
+        selectedEl = null;
+        toolbarContent.style.visibility = 'hidden';
+    }
+
+    function renderToolbar() {
+        toolbarContent.style.visibility = 'visible';
+        const isImg = selectedEl.classList.contains('block_image');
+        const isBtn = selectedEl.classList.contains('button-wrapper');
+        
+        let html = '';
+        if (!isImg && !isBtn) html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
+        
+        html += `
+            <button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
+            <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
+            <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
+            <button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>
+        `;
+        toolbarContent.innerHTML = html;
+    }
+
+    function insertElement(type, data) {
         const doc = frame.contentDocument;
         const root = doc.querySelector('.content-container');
-        let el = doc.createElement('div');
+        const el = doc.createElement('div');
+        el.className = `editable ${type === 'block_button' ? 'button-wrapper' : type}`;
         
         if (type === 'block_button') {
-            el.className = 'editable button-wrapper';
             el.innerHTML = '<a href="#" class="block_button" contenteditable="true">Find Out More</a>';
         } else if (type === 'block_image') {
-            el.className = 'editable block_image';
-            el.innerHTML = '<img src="https://via.placeholder.com/400x200" style="width:100%; max-width:400px;">';
+            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}" style="width:100%;">`;
+            el.contentEditable = "false";
         } else {
-            el.className = 'editable ' + type;
             el.contentEditable = "true";
-            el.innerText = type === 'section_heading' ? 'NEW HEADING' : 'Type paragraph text here...';
+            el.innerText = type === 'section_heading' ? 'New Heading' : 'New paragraph text...';
         }
-
+        
         root.appendChild(el);
         selectElement(el);
     }
@@ -113,16 +149,18 @@
             const map = { left: 'flex-start', center: 'center', right: 'flex-end' };
             selectedEl.style.display = 'flex';
             selectedEl.style.justifyContent = map[pos];
-        } else {
-            selectedEl.style.textAlign = pos;
-        }
+        } else { selectedEl.style.textAlign = pos; }
     }
 
-    function deleteElement() {
-        if (selectedEl) {
-            selectedEl.remove();
-            selectedEl = null;
-        }
+    function execCmd(cmd) { frame.contentWindow.document.execCommand(cmd, false, null); }
+    function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
+    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+    function handleImageUpload(i) { 
+        if(i.files[0]) { 
+            const r = new FileReader(); 
+            r.onload = e => insertElement('block_image', e.target.result);
+            r.readAsDataURL(i.files[0]); 
+        } 
     }
 </script>
 </body>
