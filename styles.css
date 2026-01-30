@@ -104,7 +104,7 @@ nav#nav-sidebar a {
 /* Add this to your styles.css */
 /* Indent submenu links by 40px */
 .sub-nav a {
-    padding-left: 40px !important;
+    padding-left: 60px !important;
 }
 
 /* Ensure the submenu is functional */
