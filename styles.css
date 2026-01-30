@@ -201,33 +201,40 @@ footer {
     clear: both;
 }
 /* --- Corrected Rectangular Button --- */
+/* --- Centering Container --- */
 .block_button_container {
     width: 100%;
     display: flex;
-    justify-content: center; /* Centers the button horizontally */
+    justify-content: center; 
     padding: 40px 0;
     clear: both;
 }
 
+/* --- Corrected Rectangular Luxury Button --- */
 .block_button {
     display: inline-block;
-    font-family: 'Source Sans Pro', sans-serif; [span_3](start_span)/*[span_3](end_span) */
-    font-weight: 700;
+    font-family: 'Source Sans Pro', sans-serif;
+    font-weight: 700;        /* Bold weight for sharpness */
     font-size: 14px;
-    letter-spacing: 2px;
+    letter-spacing: 2px;     /* Corrected character spacing */
     text-transform: uppercase;
     text-decoration: none;
+    
+    /* Dark, high-contrast text and border */
     color: var(--text-dark); /* #151515 */
     background: #ffffff;
     border: 1px solid var(--text-dark);
-    padding: 16px 35px;
-    border-radius: 4px; /* Slightly rounded rectangle, NOT a pill */
+    
+    padding: 16px 40px;      /* Matches original button proportions */
+    border-radius: 4px;      /* Slight rounding, not a pill shape */
+    
     cursor: pointer;
-    transition: all 0.3s ease-in-out;
+    transition: all 0.3s ease;
+    text-align: center;
 }
 
 .block_button:hover {
-    background-color: var(--brand-pink); [span_4](start_span)/* #ebd5c9 from site metadata[span_4](end_span) */
+    background-color: var(--brand-pink); /* #ebd5c9 from site theme */
     border-color: var(--brand-pink);
-    color: #ffffff;
+    color: #ffffff;          /* Text turns white on hover */
 }
