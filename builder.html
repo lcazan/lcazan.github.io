@@ -207,7 +207,6 @@
         toolbarContent.style.visibility = 'visible';
         const isImg = selectedEl.classList.contains('block_image');
         const isHeading = selectedEl.classList.contains('block_heading');
-        const isText = selectedEl.classList.contains('block_text');
         const isSpacer = selectedEl.classList.contains('block_spacer');
         const lineHidden = selectedEl.classList.contains('no-line');
         
@@ -227,7 +226,6 @@
                 <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
                 <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
             `;
-            if (isText) { html += `<button class="tool-btn" onclick="setAlign('justify')"><i class="fa-solid fa-align-justify"></i></button>`; }
         }
         html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
         toolbarContent.innerHTML = html;
@@ -285,7 +283,6 @@
              selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
         } else { 
             selectedEl.style.textAlign = pos; 
-            if (pos === 'justify') selectedEl.style.textJustify = 'inter-word';
         }
     }
 
