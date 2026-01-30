@@ -201,7 +201,7 @@ footer {
     width: 100%;
     display: flex;
     justify-content: center;
-    padding: 40px 0;
+    padding: 10px 0;
     clear: both;
 }
 
@@ -211,7 +211,7 @@ footer {
     
     /* Typography */
     font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 900;          /* Maximum thickness/heavy look */
+    font-weight: 700;          /* Maximum thickness/heavy look */
     font-size: 16px;
     letter-spacing: 4px;       /* Wide spacing seen in the image */
     text-transform: uppercase;
