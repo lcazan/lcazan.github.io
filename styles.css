@@ -200,7 +200,7 @@ footer {
     width: 100%;
     display: flex;
     justify-content: center; 
-    padding: 40px 0;
+    padding: 10px 0;
     clear: both;
 }
 
@@ -208,7 +208,7 @@ footer {
     display: inline-block !important;
     /* Use the heaviest weight available in the Source Sans Pro family */
     font-family: 'Source Sans Pro', sans-serif !important;
-    font-weight: 900 !important; 
+    font-weight: 700 !important; 
     font-size: 14px !important;
     letter-spacing: 3px !important; /* Increased spacing for luxury feel */
     text-transform: uppercase !important;
@@ -220,7 +220,7 @@ footer {
     background-image: none !important; /* Kills any gradient overlays */
     border: 1px solid #151515 !important;
     
-    padding: 18px 45px !important; /* Slightly larger padding for better presence */
+    padding: 18px 25px !important; /* Slightly larger padding for better presence */
     border-radius: 4px !important;
     cursor: pointer !important;
     
