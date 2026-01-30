@@ -6,19 +6,16 @@
     --text-dark: #151515;
 }
 
-/* MODIFIED: The body is now a flex container with 100% height.
-   This allows the footer to stay at the bottom of the fixed iframe viewport.
-*/
 body { 
     font-family: 'Source Sans Pro', sans-serif; 
     margin: 0; 
     color: var(--text-dark); 
     background-color: #fff; 
-    display: flex;             /* REQUIRED for Footer-Push */
-    flex-direction: column;    /* REQUIRED for Footer-Push */
-    height: 100%;              /* Matches the fixed height of the iframe */
+    display: flex;             
+    flex-direction: column;    
+    height: 100%;              
     overflow-x: hidden; 
-    overflow-y: auto;          /* Allows internal scrolling when content expands */
+    overflow-y: auto;          
 }
 
 /* --- Core Layout Containers --- */
@@ -27,81 +24,14 @@ body {
     margin: 0;
     padding: 20px;
     background-color: #ffffff;
-    flex: 1 0 auto;           /* MODIFIED: Grows to push footer down to the bottom */
+    flex: 1 0 auto;           
     display: block;
     box-sizing: border-box;
-}
-
-/* --- Media Group (Image + Text Pairing) --- */
-.media-group {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    align-items: center;
-    padding: 15px 0;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-@media (min-width: 500px) {
-    .media-group {
-        flex-direction: row;
-        align-items: flex-start;
-        text-align: left;
-    }
-    .media-group .block_image { flex-shrink: 0; }
-}
-
-.heading-wrapper {
-    width: 100%;
-    display: block;
-    clear: both;
-    margin-bottom: 15px;
-    box-sizing: border-box;
-    text-align: inherit; 
-}
-
-/* --- Header & Hamburger Menu --- */
-header { 
-    display: flex; align-items: center; justify-content: center; padding: 15px 10px; 
-    background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); 
-    position: sticky; top: 0; z-index: 8000; border-bottom: 1px solid rgba(0,0,0,0.05); 
-    min-height: 60px;
-    flex-shrink: 0;           /* Prevents header from being compressed */
-}
-
-.logo { 
-    font-family: 'Cinzel', serif; font-size: 1.25rem; text-transform: uppercase; 
-    letter-spacing: 1px; border: 1px solid var(--text-dark); padding: 8px 20px; 
-    display: inline-block; white-space: nowrap; user-select: none; 
-}
-
-.header-menu-icon { position: absolute; top: 50%; left: 20px; transform: translateY(-50%); z-index: 8001; padding: 5px; cursor: pointer; }
-.menu-lines div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0.2s; }
-
-.active .line1 { transform: rotate(-45deg) translate(-4.5px, 5px); }
-.active .line2 { opacity: 0; }
-.active .line3 { transform: rotate(45deg) translate(-4.5px, -5.5px); }
-
-/* --- Sidebar Navigation --- */
-nav#nav-sidebar { 
-    position: fixed; top: 0; left: -340px; width: 320px; height: 100%; 
-    background: var(--brand-cream); transition: left 0.2s ease-in-out; z-index: 9000; 
-    box-shadow: 4px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto; 
-}
-nav#nav-sidebar.open { left: 0; }
-
-.sidebar-close-icon { position: absolute; top: 25px; left: 20px; padding: 5px; display: none; z-index: 9001; cursor: pointer; }
-nav#nav-sidebar.open .sidebar-close-icon { display: block; }
-
-.nav-content { padding-top: 100px; padding-bottom: 50px; }
-
-nav#nav-sidebar a { 
-    display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); 
-    font-weight: 400; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; 
 }
 
 /* --- Content Block Styles --- */
+
+/* Updated: Aligned Left and All Caps */
 .section_heading { 
     font-family: 'Source Sans Pro', sans-serif; 
     font-size: 14px; 
@@ -111,100 +41,74 @@ nav#nav-sidebar a {
     margin: 40px 0 10px; 
     display: block; 
     width: 100%;
+    text-align: left;
     text-transform: uppercase;
 }
 
+/* Updated: Centered and Mixed Case (none) */
 .block_heading { 
     font-family: 'Cinzel', serif; 
     font-size: 1.6rem; 
     border-bottom: 1px solid var(--brand-pink); 
     padding-bottom: 8px; 
-    margin-bottom: 10px; 
-    display: inline-block; 
+    margin: 20px auto 10px; 
+    display: table; 
+    text-align: center;
+    text-transform: none; 
 }
 
 .no-line { border-bottom: 1px solid transparent !important; }
 
+/* Updated: Justified and Mixed Case (none) */
 .block_text { 
     font-family: 'Source Sans Pro', sans-serif; 
     font-size: 1.05rem; 
     color: #333; 
     line-height: 1.8; 
     margin: 10px 0 30px; 
+    text-align: justify;
+    text-justify: inter-word;
+    text-transform: none;
 }
 
-.block_image img { max-width: 100%; height: auto; display: block; }
-
-/* --- "Find Out More" Button (Luxury Style) --- */
-.block_button {
-    display: inline-block;
-    font-family: 'Cinzel', serif;
-    font-size: 13px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    text-decoration: none;
-    color: var(--text-dark);
-    background: transparent;
-    border: 1px solid var(--text-dark);
-    padding: 14px 28px;
-    margin: 20px 0;
-    cursor: pointer;
-    transition: all 0.3s ease;
+/* --- Sidebar & Submenu Styling --- */
+nav#nav-sidebar { 
+    position: fixed; top: 0; left: -340px; width: 320px; height: 100%; 
+    background: var(--brand-cream); transition: left 0.2s ease-in-out; z-index: 9000; 
+    box-shadow: 4px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto; 
 }
 
-.block_button:hover {
-    background-color: var(--brand-pink);
-    border-color: var(--brand-pink);
-    color: white;
-}
-
-/* --- Editor Logic (Selection & Handles) --- */
-.editable { position: relative; outline: none; transition: background 0.1s; }
-.editable:hover { background: rgba(235, 213, 201, 0.1); }
-.selected-item { border: 1px dashed var(--icon-brown) !important; background: rgba(235, 213, 201, 0.15); }
-
-/* --- Footer & Social Icons --- */
-footer { 
-    text-align: center; 
-    padding: 60px 20px 40px; 
-    border-top: 1px solid #eee; 
-    margin-top: auto;          /* REQUIRED: Sticks to the bottom of the viewport content */
-    flex-shrink: 0;            /* Prevents the footer from being squashed */
-}
-
-.social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
-
-/* Force standard color on social links */
-.social-icons a, 
-.social-icons a:visited,
-.social-icons i { 
-    color: var(--text-dark) !important; 
-    text-decoration: none !important; 
-    font-size: 1.4rem; 
-}
-
-.social-icons a:hover,
-.social-icons a:hover i {
-    color: var(--icon-brown) !important;
-}
-
-.disclaimer { font-size: 0.75rem; color: #666; max-width: 850px; margin: 0 auto; line-height: 1.7; }
-
-@media (max-width: 767px) { 
-    .block_heading { font-size: 1.4rem; } 
-}
-
-/* --- SUBMENU TOGGLE LOGIC (Corrected) --- */
+/* Updated: Submenu background matches main menu (brand-cream) */
 .sub-nav {
-    display: none; /* Hidden by default */
-    background: rgba(0,0,0,0.02);
+    display: none;
+    background-color: var(--brand-cream); 
 }
 
 .sub-nav.show {
-    display: block !important; /* Instant open when class added */
+    display: block !important;
 }
 
 .sub-nav a {
-    padding-left: 50px !important; /* Indent sub-links */
+    padding-left: 50px !important;
     font-size: 16px !important;
+    text-transform: uppercase;
+}
+
+/* --- Remaining Styles (Locked) --- */
+header { 
+    display: flex; align-items: center; justify-content: center; padding: 15px 10px; 
+    background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); 
+    position: sticky; top: 0; z-index: 8000; border-bottom: 1px solid rgba(0,0,0,0.05); 
+    min-height: 60px; flex-shrink: 0;
+}
+
+.logo { 
+    font-family: 'Cinzel', serif; font-size: 1.25rem; text-transform: uppercase; 
+    letter-spacing: 1px; border: 1px solid var(--text-dark); padding: 8px 20px; 
+    display: inline-block; white-space: nowrap; 
+}
+
+footer { 
+    text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; 
+    margin-top: auto; flex-shrink: 0;            
 }
