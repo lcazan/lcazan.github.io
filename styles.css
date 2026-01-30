@@ -112,6 +112,7 @@ nav#nav-sidebar a {
     display: block; 
     width: 100%;
     text-transform: uppercase;
+    text-align: left; /* Section headings remain left-aligned */
 }
 
 .block_heading { 
@@ -119,8 +120,9 @@ nav#nav-sidebar a {
     font-size: 1.6rem; 
     border-bottom: 1px solid var(--brand-pink); 
     padding-bottom: 8px; 
-    margin-bottom: 10px; 
-    display: inline-block; 
+    margin: 20px auto 10px; 
+    display: table; /* Center centering logic */
+    text-align: center; /* UPDATED: Centered by default */
 }
 
 .no-line { border-bottom: 1px solid transparent !important; }
@@ -131,6 +133,8 @@ nav#nav-sidebar a {
     color: #333; 
     line-height: 1.8; 
     margin: 10px 0 30px; 
+    text-align: justify; /* UPDATED: Justified by default */
+    text-justify: inter-word;
 }
 
 .block_image img { max-width: 100%; height: auto; display: block; }
