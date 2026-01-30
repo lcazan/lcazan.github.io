@@ -6,28 +6,30 @@
     --text-dark: #151515;
 }
 
-/* MODIFIED: The body is now a flex container with 100% height.
-   This allows the footer to stay at the bottom of the fixed iframe viewport.
-*/
+/* Base Reference: 1rem = 16px */
+html {
+    font-size: 16px;
+}
+
 body { 
     font-family: 'Source Sans Pro', sans-serif; 
     margin: 0; 
     color: var(--text-dark); 
     background-color: #fff; 
-    display: flex;             /* REQUIRED for Footer-Push */
-    flex-direction: column;    /* REQUIRED for Footer-Push */
-    height: 100%;              /* Matches the fixed height of the iframe */
+    display: flex;             
+    flex-direction: column;    
+    height: 100%;              
     overflow-x: hidden; 
-    overflow-y: auto;          /* Allows internal scrolling when content expands */
+    overflow-y: auto;          
 }
 
 /* --- Core Layout Containers --- */
 .content-container {
     width: 100%;
     margin: 0;
-    padding: 20px;
+    padding: 1.25rem; /* 20px */
     background-color: #ffffff;
-    flex: 1 0 auto;           /* MODIFIED: Grows to push footer down to the bottom */
+    flex: 1 0 auto;           
     display: block;
     box-sizing: border-box;
 }
@@ -36,14 +38,14 @@ body {
 .media-group {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 1.25rem; /* 20px */
     align-items: center;
-    padding: 15px 0;
+    padding: 0.9375rem 0; /* 15px */
     width: 100%;
     box-sizing: border-box;
 }
 
-@media (min-width: 500px) {
+@media (min-width: 31.25rem) { /* 500px */
     .media-group {
         flex-direction: row;
         align-items: flex-start;
@@ -56,183 +58,159 @@ body {
     width: 100%;
     display: block;
     clear: both;
-    margin-bottom: 15px;
+    margin-bottom: 0.9375rem; /* 15px */
     box-sizing: border-box;
     text-align: inherit; 
 }
 
 /* --- Header & Hamburger Menu --- */
 header { 
-    display: flex; align-items: center; justify-content: center; padding: 15px 10px; 
+    display: flex; align-items: center; justify-content: center; 
+    padding: 0.9375rem 0.625rem; /* 15px 10px */
     background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); 
-    position: sticky; top: 0; z-index: 8000; border-bottom: 1px solid rgba(0,0,0,0.05); 
-    min-height: 60px;
-    flex-shrink: 0;           /* Prevents header from being compressed */
+    position: sticky; top: 0; z-index: 8000; 
+    border-bottom: 1px solid rgba(0,0,0,0.05); /* Kept px for sharpness */
+    min-height: 3.75rem; /* 60px */
+    flex-shrink: 0;           
 }
 
 .logo { 
-    font-family: 'Cinzel', serif; font-size: 1.25rem; text-transform: uppercase; 
-    letter-spacing: 1px; border: 1px solid var(--text-dark); padding: 8px 20px; 
+    font-family: 'Cinzel', serif; 
+    font-size: 1.25rem; /* 20px */
+    text-transform: uppercase; 
+    letter-spacing: 0.0625rem; /* 1px */
+    border: 1px solid var(--text-dark); 
+    padding: 0.5rem 1.25rem; /* 8px 20px */
     display: inline-block; white-space: nowrap; user-select: none; 
 }
 
-.header-menu-icon { position: absolute; top: 50%; left: 20px; transform: translateY(-50%); z-index: 8001; padding: 5px; cursor: pointer; }
-.menu-lines div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0.2s; }
+.header-menu-icon { 
+    position: absolute; top: 50%; left: 1.25rem; 
+    transform: translateY(-50%); z-index: 8001; 
+    padding: 0.3125rem; /* 5px */
+    cursor: pointer; 
+}
 
-.active .line1 { transform: rotate(-45deg) translate(-4.5px, 5px); }
-.active .line2 { opacity: 0; }
-.active .line3 { transform: rotate(45deg) translate(-4.5px, -5.5px); }
+.menu-lines div { 
+    width: 1.1875rem; /* 19px */
+    height: 1.6px; /* Kept px for fine detail */
+    background-color: var(--icon-brown); 
+    margin: 0.3125rem 0; /* 5px */
+    transition: 0.2s; 
+}
 
 /* --- Sidebar Navigation --- */
 nav#nav-sidebar { 
-    position: fixed; top: 0; left: -340px; width: 320px; height: 100%; 
+    position: fixed; top: 0; 
+    left: -21.25rem; /* -340px */
+    width: 20rem; /* 320px */
+    height: 100%; 
     background: var(--brand-cream); transition: left 0.2s ease-in-out; z-index: 9000; 
-    box-shadow: 4px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto; 
+    box-shadow: 4px 0 15px rgba(0,0,0,0.1); /* Kept px for soft shadow */
+    display: flex; flex-direction: column; overflow-y: auto; 
 }
 nav#nav-sidebar.open { left: 0; }
 
-.sidebar-close-icon { position: absolute; top: 25px; left: 20px; padding: 5px; display: none; z-index: 9001; cursor: pointer; }
-nav#nav-sidebar.open .sidebar-close-icon { display: block; }
-
-.nav-content { padding-top: 100px; padding-bottom: 50px; }
+.nav-content { padding-top: 6.25rem; padding-bottom: 3.125rem; }
 
 nav#nav-sidebar a { 
-    display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); 
-    font-weight: 400; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; 
+    display: block; 
+    padding: 0.9375rem 1.875rem; /* 15px 30px */
+    text-decoration: none; color: var(--text-dark); 
+    font-weight: 400; 
+    font-size: 1.125rem; /* 18px */
+    text-transform: uppercase; 
+    letter-spacing: 0.0625rem; 
+    white-space: nowrap; 
 }
 
 /* --- Content Block Styles --- */
 .section_heading { 
     font-family: 'Source Sans Pro', sans-serif; 
-    font-size: 14px; 
+    font-size: 0.875rem; /* 14px */
     font-weight: 600; 
-    letter-spacing: 2px; 
+    letter-spacing: 0.125rem; /* 2px */
     color: var(--icon-brown); 
-    margin: 10px 0 10px; 
+    margin: 0.625rem 0; 
     display: block; 
     width: 100%;
     text-transform: uppercase;
-    text-align: left; /* Section headings remain left-aligned */
+    text-align: left; 
 }
 
 .block_heading { 
     font-family: 'Cinzel', serif; 
     font-size: 1.6rem; 
     border-bottom: 1px solid var(--brand-pink); 
-    padding-bottom: 8px; 
-    margin: 10px auto 10px; 
-    display: table; /* Center centering logic */
-    text-align: center; /* UPDATED: Centered by default */
+    padding-bottom: 0.5rem; /* 8px */
+    margin: 0.625rem auto; 
+    display: table; 
+    text-align: center; 
 }
-
-.no-line { border-bottom: 1px solid transparent !important; }
 
 .block_text { 
     font-family: 'Source Sans Pro', sans-serif; 
     font-size: 1.05rem; 
     color: #333; 
     line-height: 1.8; 
-    margin: 10px 0 30px; 
-    text-align: center; /* UPDATED: Justified by default */
+    margin: 0.625rem 0 1.875rem; /* 10px 0 30px */
+    text-align: center; 
 }
-
-.block_image img { max-width: 100%; height: auto; display: block; }
-
-/* --- "Find Out More" Button (Luxury Style) --- */
-
-
-/* --- Editor Logic (Selection & Handles) --- */
-.editable { position: relative; outline: none; transition: background 0.1s; }
-.editable:hover { background: rgba(235, 213, 201, 0.1); }
-.selected-item { border: 1px dashed var(--icon-brown) !important; background: rgba(235, 213, 201, 0.15); }
 
 /* --- Footer & Social Icons --- */
 footer { 
     text-align: center; 
-    padding: 60px 20px 40px; 
+    padding: 3.75rem 1.25rem 2.5rem; /* 60px 20px 40px */
     border-top: 1px solid #eee; 
-    margin-top: auto;          /* REQUIRED: Sticks to the bottom of the viewport content */
-    flex-shrink: 0;            /* Prevents the footer from being squashed */
+    margin-top: auto;          
+    flex-shrink: 0;            
 }
 
-.social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
+.social-icons { 
+    margin-bottom: 1.5625rem; /* 25px */
+    display: flex; justify-content: center; 
+    gap: 1.875rem; /* 30px */
+}
 
-/* Force standard color on social links */
-.social-icons a, 
-.social-icons a:visited,
 .social-icons i { 
-    color: var(--text-dark) !important; 
-    text-decoration: none !important; 
     font-size: 1.4rem; 
 }
 
-.social-icons a:hover,
-.social-icons a:hover i {
-    color: var(--icon-brown) !important;
+.disclaimer { 
+    font-size: 0.75rem; 
+    color: #666; 
+    max-width: 53.125rem; /* 850px */
+    margin: 0 auto; 
+    line-height: 1.7; 
 }
 
-.disclaimer { font-size: 0.75rem; color: #666; max-width: 850px; margin: 0 auto; line-height: 1.7; }
-
-@media (max-width: 767px) { 
-    .block_heading { font-size: 1.4rem; } 
-}
-
-/* --- SUBMENU TOGGLE LOGIC (Corrected) --- */
-.sub-nav {
-    display: none; /* Hidden by default */
-    background: rgba(0,0,0,0.02);
-}
-
-.sub-nav.show {
-    display: block !important; /* Instant open when class added */
-}
-
-.sub-nav a {
-    padding-left: 50px !important; /* Indent sub-links */
-    font-size: 16px !important;
-}
-/* --- Luxury Pill Button --- */
-/* --- Centering Container --- */
-/* --- Corrected Rectangular Luxury Button --- */
-/* --- Final Luxury Button Lock --- */
-/* --- Final Luxury Button Lock (v2) --- */
-/* Container to handle the automatic centering */
+/* --- Luxury Button --- */
 .block_button_container {
     width: 100%;
     display: flex;
     justify-content: center;
-    padding: 10px 0;
+    padding: 0.625rem 0; /* 10px */
     clear: both;
 }
 
-/* The Button Styling - Exact Match */
 .block_button {
     display: inline-block;
-    
-    /* Typography */
     font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 700;          /* Maximum thickness/heavy look */
-    font-size: 14px;
-    letter-spacing: 4px;       /* Wide spacing seen in the image */
+    font-weight: 700;          
+    font-size: 0.875rem; /* 14px */
+    letter-spacing: 0.25rem; /* 4px */
     text-transform: uppercase;
     text-decoration: none;
-    
-    /* Colors & Border */
-    color: #151515;            /* Deep black/grey text */
-    background-color: #ffffff; /* White background */
-    border: 1.5px solid #151515; /* Thin, sharp black border */
-    
-    /* Shape & Sizing */
-    padding: 12px 15px;        /* Large hit area */
-    border-radius: 4px;        /* The rounded corner you noticed */
-    
-    /* Instant Interaction */
+    color: #151515;            
+    background-color: #ffffff; 
+    border: 1.5px solid #151515; /* Kept px for border width consistency */
+    padding: 0.75rem 0.9375rem; /* 12px 15px */
+    border-radius: 4px;        /* Kept px for specific corner shape */
     transition: all 0.1s ease-in-out; 
     cursor: pointer;
 }
 
-/* Instant Hover State */
 .block_button:hover {
-    background-color: #151515; /* Flip to black background */
-    color: #ffffff !important;  /* Flip to white text */
+    background-color: #151515; 
+    color: #ffffff !important;  
 }
