@@ -144,7 +144,7 @@ nav#nav-sidebar a {
 .block_heading { 
     font-family: 'Cinzel', serif; 
     font-size: 1.6rem; 
-    border-bottom: 1px solid var(--brand-pink); 
+    color: #1A1A1A;
     padding-bottom: 0.5rem;    /* 8px */
     margin: 0.625rem auto 0.625rem; /* 10px */
     display: table; /* Center centering logic */
@@ -175,6 +175,7 @@ nav#nav-sidebar a {
 /* --- Footer & Social Icons --- */
 footer { 
     text-align: center; 
+    color: #1A1A1A;
     padding: 3.75rem 1.25rem 2.5rem; /* 60px 20px 40px */
     border-top: 1px solid #eee; 
     margin-top: auto;          /* REQUIRED: Sticks to the bottom of the viewport content */
