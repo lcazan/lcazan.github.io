@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.42</title>
+    <title>Snoozing Builder | v4.3.43</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -50,7 +50,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.42</div>
+        <div class="version-status">v4.3.43</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -76,16 +76,21 @@
                 h2, h3, p { display: block !important; margin: 0; padding: 0; color: inherit; font-family: inherit; }
                 .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; }
                 
-                .block_container { display: flex; flex-wrap: wrap; align-items: center; width: 100%; min-height: 2rem; overflow: hidden; }
-                .block_container > .block_image { flex: 0 0 61.8%; max-width: 61.8%; }
+                /* Fixed Div Expansion Logic */
+                .block_container { 
+                    display: flex; flex-wrap: wrap; align-items: center; 
+                    width: 100%; height: auto; min-height: 4rem; 
+                    overflow: visible; 
+                }
+                .block_container > .block_image { flex: 0 0 61.8%; max-width: 61.8%; height: auto; }
                 .block_container > h2, .block_container > h3, .block_container > p { flex: 0 0 38.2%; max-width: 38.2%; }
 
                 @media (max-width: 600px) {
                     .block_container > .block_image, .block_container > h2, .block_container > h3, .block_container > p { flex: 0 0 100%; max-width: 100%; }
                 }
 
-                .block_image { display: inline-block; vertical-align: top; }
-                .block_image img { width: 100%; display: block; pointer-events: none; }
+                .block_image { display: inline-block; vertical-align: top; position: relative; }
+                .block_image img { width: 100%; height: auto; display: block; pointer-events: none; }
 
                 .block_spacer { height: 1.5rem !important; width: 100%; flex: 0 0 100% !important; border-bottom: 1px solid #eee; }
                 .resize-handle { width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; }
@@ -207,7 +212,7 @@
         el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
         if(type === 'block_image') { 
             el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
-            el.contentEditable = "false"; el.style.width = "200px"; 
+            el.contentEditable = "false"; el.style.width = "100%"; // Set to 100% initially for the flex-box, but still resizable
         } else if(type === 'block_button') { 
             el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`; 
             el.contentEditable = "false"; 
@@ -217,9 +222,17 @@
             el.innerText = ""; el.setAttribute('data-placeholder', placeholders[type] || 'Type here...'); el.contentEditable = "true"; 
         }
         const root = doc.getElementById('editor-root');
-        if (selectedEl && selectedEl.classList.contains('block_container')) selectedEl.appendChild(el);
-        else if (selectedEl && selectedEl.parentNode === root) selectedEl.after(el);
-        else root.appendChild(el);
+        
+        // Logical Insertion check:
+        if (selectedEl && selectedEl.classList.contains('block_container')) {
+            selectedEl.appendChild(el);
+        } else if (selectedEl && selectedEl.closest('.block_container')) {
+             selectedEl.after(el); // Still stays inside the div
+        } else if (selectedEl) {
+            selectedEl.after(el);
+        } else {
+            root.appendChild(el);
+        }
         setTimeout(() => selectElement(el), 150);
     }
 
