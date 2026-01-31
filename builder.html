@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.73</title>
+    <title>Snoozing Builder | v4.3.74</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -22,7 +22,7 @@
         
         .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; }
         .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; font-size: 1.1rem; }
-        .tool-input { background: #333; border: 0.0625rem solid #666; color: #fff; padding: 0.3125rem; border-radius: 0.25rem; width: 6.5rem; font-size: 0.75rem; min-height: 1.2em; outline: none; }
+        .tool-input { background: #333; border: 0.0625rem solid #666; color: #fff; padding: 0.3125rem; border-radius: 0.25rem; width: 6.5rem; font-size: 0.75rem; }
         .color-swatch { width: 1.5rem; height: 1.5rem; border: 1px solid #666; cursor: pointer; border-radius: 2px; }
         #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.5rem; margin: 0 0.6rem; }
@@ -50,7 +50,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.73</div>
+        <div class="version-status">v4.3.74</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -136,46 +136,6 @@
         if(el.contentEditable === "true") el.focus();
     }
 
-    function renderToolbar() {
-        if (!selectedEl) return;
-        toolbarContent.style.visibility = 'visible';
-        const inDiv = selectedEl.closest('.block_container');
-        const isBtn = selectedEl.classList.contains('block_button_container');
-        const isImg = selectedEl.classList.contains('block_image');
-        const isSpacer = selectedEl.classList.contains('block_spacer');
-        const isDiv = selectedEl.classList.contains('block_container');
-        let html = '';
-        if (isDiv) {
-            html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
-        } else if (isBtn) {
-            const currentText = selectedEl.querySelector('a').innerText;
-            html += `<span contenteditable="plaintext-only" class="tool-input" oninput="updateBtnText(this.innerText)" style="display:inline-block; overflow:hidden; white-space:nowrap;">${currentText}</span>`;
-        } else if (isImg) {
-            html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`;
-            html += `<button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>`;
-        } else if (isSpacer) {
-            html += `<button class="tool-btn" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
-        } else if (selectedEl.contentEditable === "true") {
-            html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
-        }
-        if (!inDiv && !isDiv && !isSpacer) {
-            html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
-        }
-        html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
-        toolbarContent.innerHTML = html;
-    }
-
-    function updateBtnText(val) { if(selectedEl) selectedEl.querySelector('a').innerText = val.toUpperCase(); }
-    function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
-    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
-    function deleteElement() { if(selectedEl) { const p = selectedEl.parentElement; selectedEl.remove(); if (p && p.classList.contains('div-other-wrapper') && p.children.length === 0) p.remove(); deselectAll(); } }
-    function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbarContent.style.visibility = 'hidden'; }
-    function triggerImageUpload() { document.getElementById('image-upload').click(); }
-    function handleImageUpload(i) { if(i.files[0]) { const r = new FileReader(); r.onload = e => { if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result; else insertElement('block_image', e.target.result); i.value = ''; }; r.readAsDataURL(i.files[0]); } }
-    function setAlign(pos) { if (selectedEl && !selectedEl.closest('.block_container')) { selectedEl.style.textAlign = pos; if(selectedEl.classList.contains('block_image')) { selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block'; selectedEl.style.margin = pos === 'center' ? '0 auto' : '0'; } } }
-    function centerItem() { setAlign('center'); }
-
-    /* Other Core Methods Kept 1:1 with Baseline */
     function addResizeHandle(el) {
         const handle = frame.contentDocument.createElement('div');
         handle.className = 'resize-handle';
@@ -202,19 +162,58 @@
                 isResizing = false;
                 frame.contentDocument.removeEventListener('mousemove', onMove);
                 frame.contentDocument.removeEventListener('mouseup', onUp);
+                frame.contentDocument.removeEventListener('touchmove', onMove);
+                frame.contentDocument.removeEventListener('touchend', onUp);
             };
             frame.contentDocument.addEventListener('mousemove', onMove);
             frame.contentDocument.addEventListener('mouseup', onUp);
+            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
+            frame.contentDocument.addEventListener('touchend', onUp);
         };
         handle.addEventListener('mousedown', startResize);
+        handle.addEventListener('touchstart', startResize, {passive: false});
         el.appendChild(handle);
+    }
+
+    function renderToolbar() {
+        if (!selectedEl) return;
+        toolbarContent.style.visibility = 'visible';
+        const inDiv = selectedEl.closest('.block_container');
+        const isBtn = selectedEl.classList.contains('block_button_container');
+        const isImg = selectedEl.classList.contains('block_image');
+        const isSpacer = selectedEl.classList.contains('block_spacer');
+        const isDiv = selectedEl.classList.contains('block_container');
+        let html = '';
+        if (isDiv) {
+            html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
+        } else if (isBtn) {
+            const currentText = selectedEl.querySelector('a').innerText;
+            html += `<span contenteditable="plaintext-only" class="tool-input" oninput="updateBtnText(this.innerText)" style="display:inline-block; outline:none; white-space:nowrap; overflow:hidden;">${currentText}</span>`;
+        } else if (isImg) {
+            html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`;
+            html += `<button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>`;
+        } else if (isSpacer) {
+            html += `<button class="tool-btn" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
+        } else if (selectedEl.contentEditable === "true") {
+            html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
+        }
+        if (!inDiv && !isDiv && !isSpacer) {
+            html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
+        }
+        html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
+        toolbarContent.innerHTML = html;
     }
 
     function fitToWidth() {
         if (!selectedEl) return;
         const inDiv = selectedEl.closest('.block_container');
-        if (inDiv) selectedEl.setAttribute('data-scale-factor', '1.0');
-        else { selectedEl.style.width = '100%'; selectedEl.style.display = 'block'; selectedEl.style.margin = '0 auto'; }
+        if (inDiv) {
+            selectedEl.setAttribute('data-scale-factor', '1.0');
+        } else {
+            selectedEl.style.width = '100%';
+            selectedEl.style.display = 'block';
+            selectedEl.style.margin = '0 auto';
+        }
     }
 
     function toggleSpacerLine() {
@@ -239,5 +238,45 @@
 
         const root = doc.getElementById('editor-root');
         const targetDiv = selectedEl ? selectedEl.closest('.block_container') : null;
-        if
-            
+        if (targetDiv) {
+            if (type === 'block_image' && !targetDiv.querySelector('.block_image')) targetDiv.prepend(el);
+            else if (type !== 'block_image') {
+                let wrap = targetDiv.querySelector('.div-other-wrapper');
+                if (!wrap) { wrap = doc.createElement('div'); wrap.className = 'div-other-wrapper'; targetDiv.appendChild(wrap); }
+                wrap.appendChild(el);
+            }
+        } else if (type === 'block_container') { root.appendChild(el); frame.contentWindow.initDivLogic(); }
+        else { selectedEl && selectedEl.parentNode === root ? selectedEl.after(el) : root.appendChild(el); }
+        setTimeout(() => selectElement(el), 150);
+    }
+
+    function setDevice(type) {
+        currentMode = type; document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-${type}`).classList.add('active');
+        const widths = { 'desktop': 1200, 'android': 448, 'iphone': 393 };
+        const scaleFactor = Math.min(wrapper.offsetWidth / widths[type], 1);
+        frame.style.width = widths[type] + 'px'; frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
+        frame.style.transform = `scale(${scaleFactor})`;
+        frame.style.left = (scaleFactor < 1) ? '0px' : ((wrapper.offsetWidth - widths[type]) / 2) + 'px';
+    }
+
+    function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
+    function updateBtnText(val) { if(selectedEl) selectedEl.querySelector('a').innerText = val.toUpperCase(); }
+    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
+    function deleteElement() { if(selectedEl) { const p = selectedEl.parentElement; selectedEl.remove(); if (p && p.classList.contains('div-other-wrapper') && p.children.length === 0) p.remove(); deselectAll(); } }
+    function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbarContent.style.visibility = 'hidden'; }
+    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+    function handleImageUpload(i) { if(i.files[0]) { const r = new FileReader(); r.onload = e => { if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result; else insertElement('block_image', e.target.result); i.value = ''; }; r.readAsDataURL(i.files[0]); } }
+    function setAlign(pos) { if (selectedEl && !selectedEl.closest('.block_container')) { selectedEl.style.textAlign = pos; if(selectedEl.classList.contains('block_image')) { selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block'; selectedEl.style.margin = pos === 'center' ? '0 auto' : '0'; } } }
+    function centerItem() { setAlign('center'); }
+    
+    function exportHTML() {
+        deselectAll(); const doc = frame.contentDocument.cloneNode(true);
+        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        doc.querySelectorAll('.editable').forEach(e => { e.classList.remove('selected-item', 'editable'); e.removeAttribute('contenteditable'); });
+        const blob = new Blob([doc.documentElement.outerHTML], {type: 'text/html'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index.html'; a.click();
+    }
+    window.onload = init;
+</script>
+</body>
+</html>
