@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.45</title>
+    <title>Snoozing Builder | v4.3.46</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -50,7 +50,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.45</div>
+        <div class="version-status">v4.3.46</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -76,21 +76,22 @@
                 h2, h3, p { display: block !important; margin: 0; padding: 0; color: inherit; font-family: inherit; }
                 .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; }
                 
-                /* Smart Container v4.3.45 */
+                /* Smart Container v4.3.46 - Fixes Image Disappearance and Resize Lock */
                 .block_container { 
                     display: flex; 
                     flex-wrap: wrap; 
-                    align-items: center; 
+                    align-items: flex-start; /* Fixes centering collapse */
                     width: 100%; 
-                    min-height: 2rem;
+                    height: auto !important;
+                    min-height: 4rem;
                 }
 
-                /* Breakpoint set to 744px per request (62% of 1200px) */
                 @media (min-width: 745px) {
-                    .block_container > .block_image { flex: 0 0 61.8%; max-width: 61.8%; }
+                    /* Allowing the image to be resizable while maintaining the 61.8% cap */
+                    .block_container > .block_image { flex: 0 1 auto; max-width: 61.8%; }
                     .block_container > h2, 
                     .block_container > h3, 
-                    .block_container > p { flex: 0 0 38.2%; max-width: 38.2%; }
+                    .block_container > p { flex: 1 1 38.2%; max-width: 38.2%; }
                 }
 
                 @media (max-width: 744px) {
@@ -100,8 +101,8 @@
                     .block_container > p { flex: 0 0 100%; max-width: 100%; }
                 }
 
-                .block_image { position: relative; display: inline-block; }
-                .block_image img { width: 100%; display: block; pointer-events: none; }
+                .block_image { position: relative; display: inline-block; min-width: 40px; }
+                .block_image img { width: 100%; display: block; pointer-events: none; height: auto; }
 
                 .block_spacer { height: 1.5rem !important; width: 100%; flex: 0 0 100% !important; border-bottom: 1px solid #eee; }
                 .resize-handle { width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; }
