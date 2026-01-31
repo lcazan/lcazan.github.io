@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v4.3.2</title>
+    <title>Snoozing Builder | v4.3.3</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -40,12 +40,12 @@
 
         #frame-wrapper { 
             flex-grow: 1; position: relative; background: #333; overflow: hidden;
-            display: flex; justify-content: center; align-items: flex-start;
+            display: block; /* Using block + manual centering for transform-origin control */
         }
         
         #preview-frame { 
             border: none; background: white; 
-            transform-origin: top center; 
+            transform-origin: top left; 
             position: absolute; top: 0;
         }
 
@@ -75,11 +75,11 @@
 <div id="preview-container">
     <div id="header-area">
         <div id="device-bar">
-            <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
-            <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
+            <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop" title="Desktop"></i></button>
+            <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button" title="Android (448px)"></i></button>
+            <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile" title="iPhone (393px)"></i></button>
         </div>
-        <div class="version-status">v4.3.2</div>
+        <div class="version-status">v4.3.3</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -100,6 +100,7 @@
     let currentMode = 'iphone';
     let isResizing = false;
 
+    // Viewport lock for phone keyboard
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
             document.body.style.height = window.visualViewport.height + 'px';
@@ -121,21 +122,13 @@
                 .editable { position: relative; min-height: 1.2em; cursor: pointer; box-sizing: border-box; }
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
                 body { padding-bottom: 25rem !important; } 
-                
-                /* NO LINES BY DEFAULT */
                 .block_heading, .section_heading { border-bottom: none; padding-bottom: 0.625rem; margin-bottom: 0.9375rem; }
                 .block_spacer { height: 2.5rem; border-bottom: none; margin-bottom: 0.625rem; }
-                
-                /* Class to toggle visibility */
                 .show-line { border-bottom: 0.0625rem solid #ebd5c9 !important; }
 
                 @media (min-width: 64rem) {
                     .content-container { width: 85%; max-width: 75rem; margin: 0 auto !important; }
-                    .block_heading, .block_text { 
-                        max-width: 46.35rem; 
-                        margin-left: auto !important; 
-                        margin-right: auto !important; 
-                    }
+                    .block_heading, .block_text { max-width: 46.35rem; margin-left: auto !important; margin-right: auto !important; }
                 }
 
                 .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.7; pointer-events: none; }
@@ -147,7 +140,7 @@
         frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
         
         frame.onload = () => {
-            // PLAIN TEXT PASTE LOGIC
+            // FIX: PLAIN TEXT PASTE
             frame.contentDocument.addEventListener('paste', (e) => {
                 e.preventDefault();
                 const text = (e.originalEvent || e).clipboardData.getData('text/plain');
@@ -167,23 +160,71 @@
         currentMode = type;
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`btn-${type}`).classList.add('active');
+        
         const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 };
         const virtualWidth = widths[type];
+        
+        // DYNAMIC SCALE: Fit-to-screen if phone screen is narrower than preview
         const availableWidth = wrapper.offsetWidth;
         const scaleFactor = Math.min(availableWidth / virtualWidth, 1);
+        
         frame.style.width = virtualWidth + 'px';
         frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
         frame.style.transform = `scale(${scaleFactor})`;
-        frame.style.left = ((availableWidth - (virtualWidth * scaleFactor)) / 2) + 'px';
+        
+        // ALIGNMENT: Flush left if scaling is required (mobile), Centered if room exists (laptop)
+        if (scaleFactor < 1) {
+            frame.style.left = '0px';
+        } else {
+            frame.style.left = ((availableWidth - virtualWidth) / 2) + 'px';
+        }
     }
 
+    function insertElement(type, data) {
+        const doc = frame.contentDocument;
+        const root = doc.getElementById('editor-root');
+        const el = doc.createElement('div');
+        el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
+        
+        const placeholders = { 
+            'section_heading': 'Service Heading', 
+            'block_heading': 'Heading', 
+            'block_text': 'Paragraph...' 
+        };
+        
+        if(type === 'block_image') { 
+            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
+            el.contentEditable = "false"; el.style.width = "12.5rem"; el.style.position = "relative";
+        } else if(type === 'block_button') {
+            el.innerHTML = `<a href="#" class="block_button" style="font-weight:900 !important;" onclick="return false;">FIND OUT MORE</a>`;
+            el.contentEditable = "false";
+        } else if(type === 'block_spacer' || type === 'block_container') {
+            el.contentEditable = "false";
+        } else { 
+            // FIX: Heading Input Restore
+            el.innerText = ""; 
+            el.setAttribute('data-placeholder', placeholders[type] || 'Type here...');
+            el.contentEditable = "true"; 
+        }
+
+        if (selectedEl && selectedEl.classList.contains('block_container')) selectedEl.appendChild(el);
+        else if (selectedEl && selectedEl.parentNode === root) selectedEl.after(el);
+        else root.appendChild(el);
+
+        setTimeout(() => { 
+            selectElement(el); 
+            el.scrollIntoView({ block: "end", behavior: "smooth" });
+            if(el.contentEditable === "true") el.focus();
+        }, 150);
+    }
+
+    // preserved selector/toolbar/utility functions
     function selectElement(el) {
         const doc = frame.contentDocument;
         doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
         if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
         selectedEl.classList.add('selected-item');
-        // SPACER REMOVED FROM RESIZE ELIGIBILITY
         if (el.classList.contains('block_image')) addResizeHandle(el);
         renderToolbar();
     }
@@ -250,32 +291,6 @@
         } 
     }
 
-    function insertElement(type, data) {
-        const doc = frame.contentDocument;
-        const root = doc.getElementById('editor-root');
-        const el = doc.createElement('div');
-        el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
-        const placeholders = { 'section_heading': 'Service Heading', 'block_heading': 'Heading', 'block_text': 'Paragraph...' };
-        
-        if(type === 'block_image') { 
-            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
-            el.contentEditable = "false"; el.style.width = "12.5rem"; el.style.position = "relative";
-        } else if(type === 'block_button') {
-            el.innerHTML = `<a href="#" class="block_button" style="font-weight:900 !important;" onclick="return false;">FIND OUT MORE</a>`;
-            el.contentEditable = "false";
-        } else if(type === 'block_spacer' || type === 'block_container') {
-            el.contentEditable = "false";
-        } else { 
-            el.innerText = ""; 
-            el.setAttribute('data-placeholder', placeholders[type] || 'Type here...');
-            el.contentEditable = "true"; 
-        }
-        if (selectedEl && selectedEl.classList.contains('block_container')) selectedEl.appendChild(el);
-        else if (selectedEl && selectedEl.parentNode === root) selectedEl.after(el);
-        else root.appendChild(el);
-        setTimeout(() => { selectElement(el); el.scrollIntoView({ block: "end", behavior: "smooth" }); }, 150);
-    }
-
     function addResizeHandle(el) {
         const handle = frame.contentDocument.createElement('div');
         handle.className = 'resize-handle';
@@ -284,7 +299,6 @@
             isResizing = true;
             const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             const startW = el.offsetWidth;
-            // Get parent width for boundary check
             const parentW = el.parentElement.offsetWidth;
             const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 };
             const scale = wrapper.offsetWidth / widths[currentMode];
@@ -292,7 +306,6 @@
             const onMove = (mE) => {
                 const curX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
                 let newW = startW + (curX - startX) / scale;
-                // BOUNDARY CHECK: Prevent image from going off the right edge
                 if (newW > parentW) newW = parentW;
                 if (newW > 40) el.style.width = newW + 'px';
             };
