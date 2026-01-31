@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v4.3.7</title>
+    <title>Snoozing Builder | v4.3.6</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -18,16 +18,7 @@
         #frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; display: block; }
         #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; }
         
-        /* Updated Sidebar Buttons: Reduced padding, larger fonts */
-        .insert-btn { 
-            width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; 
-            margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; 
-            display: flex; justify-content: center; align-items: center; 
-            font-size: 1.2rem; font-weight: bold; padding: 0; line-height: 1;
-        }
-        .insert-btn sub { font-size: 0.6rem; margin-left: 0.0625rem; }
-        .btn-label { font-size: 0.7rem; text-transform: uppercase; }
-
+        .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 0.75rem; font-weight: bold; }
         .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; font-size: 1.25rem; min-width: 2.5rem; height: 2.375rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; }
         .tool-btn.active { background: var(--brand-pink); color: #000; }
         .tool-input { background: #333; border: 0.0625rem solid #666; color: #fff; padding: 0.3125rem; border-radius: 0.25rem; width: 7.5rem; font-size: 0.75rem; }
@@ -41,13 +32,13 @@
 <body>
 
 <div id="sidebar">
-    <button class="insert-btn" onclick="insertElement('block_container')" title="Div"><i class="fa-solid fa-square" style="font-size: 1rem;"></i></button>
-    <button class="insert-btn" onclick="triggerImageUpload()" title="Picture"><i class="fa-solid fa-image" style="font-size: 1rem;"></i></button>
-    <button class="insert-btn" onclick="insertElement('section_heading')" title="Service Heading">T<sub>1</sub></button>
-    <button class="insert-btn" onclick="insertElement('block_heading')" title="Block Heading">T<sub>2</sub></button>
-    <button class="insert-btn" onclick="insertElement('block_text')" title="Block Text">T<sub>3</sub></button>
-    <button class="insert-btn" onclick="insertElement('block_button')" title="Button"><span class="btn-label">Button</span></button>
-    <button class="insert-btn" onclick="insertElement('block_spacer')" title="Spacer"><i class="fa-solid fa-arrows-up-down" style="font-size: 1rem;"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_container')" title="Div"><i class="fa-solid fa-square"></i></button>
+    <button class="insert-btn" onclick="triggerImageUpload()" title="Picture"><i class="fa-solid fa-image"></i></button>
+    <button class="insert-btn" onclick="insertElement('section_heading')" title="Service Heading"><i class="fa-solid fa-sitemap"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_heading')" title="Block Heading"><i class="fa-solid fa-paragraph"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_text')" title="Block Text"><i class="fa-solid fa-align-left"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_button')" title="Button">Button</button>
+    <button class="insert-btn" onclick="insertElement('block_spacer')" title="Spacer"><i class="fa-solid fa-arrows-up-down"></i></button>
 </div>
 
 <div id="preview-container">
@@ -57,7 +48,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.7</div>
+        <div class="version-status">v4.3.6</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -71,87 +62,81 @@
     const wrapper = document.getElementById('frame-wrapper');
     let selectedEl = null; let currentMode = 'iphone'; let isResizing = false;
 
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => { document.body.style.height = window.visualViewport.height + 'px'; window.scrollTo(0, 0); });
+        window.visualViewport.addEventListener('scroll', () => window.scrollTo(0, 0));
+    }
+
     async function init() {
         const resp = await fetch('template.html');
         let html = await resp.text();
         html = html.replace('</head>', `
+            <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;700;900&display=swap" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
             <style>
                 html, body { height: auto; min-height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
                 #editor-root { width: 100%; display: flex; flex-direction: column; }
-                .editable { position: relative; min-height: 1.2em; cursor: pointer; box-sizing: border-box; width: 100%; outline: none; }
+                .editable { position: relative; min-height: 1.2em; cursor: pointer; box-sizing: border-box; width: 100%; }
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
                 body { padding-bottom: 25rem !important; } 
                 
-                /* Layout & Typography Defaults */
-                .block_spacer { height: 1.5rem; margin-bottom: 0.625rem; }
-                .show-line { border-bottom: 0.0625rem solid #ebd5c9 !important; }
+                /* Precise 1.5rem spacer height */
+                .block_spacer { height: 1.5rem; border-bottom: none; margin-bottom: 0.625rem; width: 100%; }
                 
-                h2, h3, p { margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; border-bottom: none; }
+                .block_heading, .section_heading { border-bottom: none; padding-bottom: 0.625rem; margin-bottom: 0.9375rem; outline: none; }
+                .show-line { border-bottom: 0.0625rem solid #ebd5c9 !important; }
                 
                 @media (min-width: 64rem) {
                     .content-container { width: 85%; max-width: 75rem; margin: 0 auto !important; }
-                    .section_heading, .block_heading, .block_text { max-width: 46.35rem; margin-left: auto; margin-right: auto; }
+                    /* Fixed Alignment Trapping: Max-width is set, but margins are flexible */
+                    .block_heading, .block_text { max-width: 46.35rem; margin-left: auto; margin-right: auto; }
                 }
 
                 .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.7; pointer-events: none; }
+                .resize-handle { width: 2.75rem; height: 2.75rem; position: absolute; right: -0.125rem; bottom: -0.125rem; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.75rem; }
+                .resize-handle::before { content: "\\f337"; } 
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
         
         frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
         frame.onload = () => {
-            frame.contentDocument.addEventListener('mousedown', (e) => {
-                if (isResizing) return;
-                const el = e.target.closest('.editable');
-                // FIX: If already selected, do nothing to allow native word selection
-                if (el && el === selectedEl) return; 
-                if (el) selectElement(el); else deselectAll();
-            });
+            frame.contentDocument.addEventListener('paste', (e) => { e.preventDefault(); const text = (e.originalEvent || e).clipboardData.getData('text/plain'); frame.contentDocument.execCommand('insertText', false, text); });
+            frame.contentDocument.addEventListener('mousedown', (e) => { if (isResizing) return; const el = e.target.closest('.editable'); if (el) selectElement(el); else deselectAll(); });
             setDevice('iphone');
         };
     }
 
-    function insertElement(type, data) {
-        const doc = frame.contentDocument;
-        const root = doc.getElementById('editor-root');
-        
-        // Map types to proper HTML tags
-        const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
-        const tag = tagMap[type] || 'div';
-        
-        const el = doc.createElement(tag);
-        el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
-        
-        const placeholders = { 'section_heading': 'Service Heading (H2)', 'block_heading': 'Block Heading (H3)', 'block_text': 'Paragraph (P)' };
-        
-        if(type === 'block_image') { 
-            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
-            el.contentEditable = "false"; el.style.width = "12.5rem"; el.style.position = "relative";
-        } else if(type === 'block_button') {
-            el.innerHTML = `<a href="#" class="block_button" style="font-weight:900 !important;" onclick="return false;">FIND OUT MORE</a>`;
-            el.contentEditable = "false";
-        } else if(type === 'block_spacer' || type === 'block_container') {
-            el.contentEditable = "false";
-        } else { 
-            // Unified cloned logic for T1, T2, T3
-            el.innerText = ""; 
-            el.setAttribute('data-placeholder', placeholders[type] || 'Type here...');
-            el.setAttribute('spellcheck', 'false'); // Prevents some mobile keyboard overlays
-            el.contentEditable = "true"; 
-        }
+    function setDevice(type) {
+        currentMode = type; document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-${type}`).classList.add('active');
+        const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 }; const virtualWidth = widths[type];
+        const availableWidth = wrapper.offsetWidth; const scaleFactor = Math.min(availableWidth / virtualWidth, 1);
+        frame.style.width = virtualWidth + 'px'; frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
+        frame.style.transform = `scale(${scaleFactor})`; frame.style.left = (scaleFactor < 1) ? '0px' : ((availableWidth - virtualWidth) / 2) + 'px';
+    }
 
+    function insertElement(type, data) {
+        const doc = frame.contentDocument; const root = doc.getElementById('editor-root'); const el = doc.createElement('div');
+        el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
+        const placeholders = { 'section_heading': 'Service Heading', 'block_heading': 'Heading', 'block_text': 'Paragraph...' };
+        if(type === 'block_image') { el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; el.contentEditable = "false"; el.style.width = "12.5rem"; el.style.position = "relative"; }
+        else if(type === 'block_button') { el.innerHTML = `<a href="#" class="block_button" style="font-weight:900 !important;" onclick="return false;">FIND OUT MORE</a>`; el.contentEditable = "false"; }
+        else if(type === 'block_spacer' || type === 'block_container') { el.contentEditable = "false"; }
+        else { el.innerText = ""; el.setAttribute('data-placeholder', placeholders[type] || 'Type here...'); el.contentEditable = "true"; }
         if (selectedEl && selectedEl.classList.contains('block_container')) selectedEl.appendChild(el);
         else if (selectedEl && selectedEl.parentNode === root) selectedEl.after(el);
         else root.appendChild(el);
-
-        setTimeout(() => { selectElement(el); if(el.contentEditable === "true") el.focus(); }, 150);
+        setTimeout(() => { selectElement(el); el.scrollIntoView({ block: "end", behavior: "smooth" }); if(el.contentEditable === "true") el.focus(); }, 150);
     }
 
     function selectElement(el) {
+        const doc = frame.contentDocument; doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
         if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
-        selectedEl = el;
-        selectedEl.classList.add('selected-item');
-        renderToolbar();
+        selectedEl = el; selectedEl.classList.add('selected-item');
+        if (el.classList.contains('block_image')) addResizeHandle(el);
+        renderToolbar(); if(el.contentEditable === "true") el.focus();
     }
+
+    function deselectAll() { const doc = frame.contentDocument; doc.querySelectorAll('.resize-handle').forEach(h => h.remove()); if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbarContent.style.visibility = 'hidden'; }
 
     function renderToolbar() {
         if (!selectedEl) return;
@@ -162,38 +147,49 @@
         const isSpacer = selectedEl.classList.contains('block_spacer');
         const lineShown = selectedEl.classList.contains('show-line');
         let html = '';
-        
-        if (isBtn) { 
-            const link = selectedEl.querySelector('a'); 
-            html += `<input type="text" class="tool-input" value="${link.innerText}" oninput="updateBtnText(this.value)">`; 
-        }
-        else if (isImg) { html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`; }
+        if (isBtn) { const link = selectedEl.querySelector('a'); html += `<input type="text" class="tool-input" value="${link.innerText}" oninput="updateBtnText(this.value)"> <input type="text" class="tool-input" style="width:10rem" value="${link.getAttribute('href') || ''}" oninput="updateBtnLink(this.value)">`; }
+        else if (isImg) { html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button> <button class="tool-btn" onclick="fitImageWidth()"><i class="fa-solid fa-expand"></i></button>`; }
         else if (isSpacer) { html += `<button class="tool-btn ${lineShown?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`; }
         else if (isText) { html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`; }
-
-        if (!isSpacer && !isBtn) { 
-            html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button> <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button> <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>`; 
-        }
+        if (!isSpacer && !isBtn) { html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button> <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button> <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>`; }
         html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
         toolbarContent.innerHTML = html;
     }
 
-    // Remaining utility functions (execCmd, setAlign, etc.) stay the same
     function toggleLine() { if (selectedEl) { selectedEl.classList.toggle('show-line'); renderToolbar(); } }
-    function setAlign(pos) { if (selectedEl) selectedEl.style.textAlign = pos; }
+    function fitImageWidth() { if(selectedEl) { selectedEl.style.width = "100%"; selectedEl.style.display = "block"; selectedEl.style.float = "none"; } }
+    function updateBtnText(val) { if(selectedEl) selectedEl.querySelector('a').innerText = val.toUpperCase(); }
+    function updateBtnLink(val) { if(selectedEl) selectedEl.querySelector('a').setAttribute('href', val); }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
-    function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbarContent.style.visibility = 'hidden'; }
-    function setDevice(type) {
-        currentMode = type; document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-${type}`).classList.add('active');
-        const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 };
-        const virtualWidth = widths[type]; const availableWidth = wrapper.offsetWidth;
-        const scaleFactor = Math.min(availableWidth / virtualWidth, 1);
-        frame.style.width = virtualWidth + 'px'; frame.style.transform = `scale(${scaleFactor})`;
-        frame.style.left = (scaleFactor < 1) ? '0px' : ((availableWidth - virtualWidth) / 2) + 'px';
-    }
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
     function handleImageUpload(i) { if(i.files[0]) { const r = new FileReader(); r.onload = e => { if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result; else insertElement('block_image', e.target.result); }; r.readAsDataURL(i.files[0]); } }
+
+    function addResizeHandle(el) {
+        const handle = frame.contentDocument.createElement('div'); handle.className = 'resize-handle';
+        const startResize = (e) => {
+            e.preventDefault(); e.stopPropagation(); isResizing = true;
+            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX; const startW = el.offsetWidth;
+            const parentW = el.parentElement.offsetWidth; const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 }; const scale = wrapper.offsetWidth / widths[currentMode];
+            const onMove = (mE) => { const curX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX; let newW = startW + (curX - startX) / scale; if (newW > parentW) newW = parentW; if (newW > 40) el.style.width = newW + 'px'; };
+            const onUp = () => { isResizing = false; frame.contentDocument.removeEventListener('mousemove', onMove); frame.contentDocument.removeEventListener('mouseup', onUp); };
+            frame.contentDocument.addEventListener('mousemove', onMove); frame.contentDocument.addEventListener('mouseup', onUp);
+        };
+        handle.addEventListener('mousedown', startResize); el.appendChild(handle);
+    }
+
+    function setAlign(pos) { 
+        if (!selectedEl) return; 
+        if (selectedEl.classList.contains('block_image')) {
+             selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
+             selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
+             selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none';
+             selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
+        } else { 
+            // Ensures alignment works within the centered container
+            selectedEl.style.textAlign = pos; 
+        }
+    }
     window.onload = init;
 </script>
 </body>
