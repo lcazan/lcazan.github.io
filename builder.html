@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.58</title>
+    <title>Snoozing Builder | v4.3.59</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -24,13 +24,12 @@
         .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; font-size: 1.1rem; }
         .tool-input { background: #333; border: 0.0625rem solid #666; color: #fff; padding: 0.3125rem; border-radius: 0.25rem; width: 6.5rem; font-size: 0.75rem; }
         
-        /* Expansion CSS */
-        .href-input-wrap { position: relative; width: 44px; transition: width 0.3s ease; flex-shrink: 0; }
-        .href-input-wrap.expanded { position: absolute; left: 5px; right: 5px; width: auto; z-index: 10; background: #1a1a1a; }
-        .href-input-wrap input { width: 100%; box-sizing: border-box; }
+        /* Surgical Href Expansion Fix */
+        .href-input-wrap { width: 40px; transition: width 0.25s ease; flex-shrink: 0; overflow: hidden; }
+        .href-input-wrap.expanded { width: 180px; }
 
         .color-swatch { width: 1.5rem; height: 1.5rem; border: 1px solid #666; cursor: pointer; border-radius: 2px; }
-        #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; width: 95%; position: relative; }
+        #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.5rem; margin: 0 0.6rem; }
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 1.5625rem; top: 0.75rem; color: #fff; font-size: 1rem; font-weight: 800; }
@@ -56,7 +55,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.58</div>
+        <div class="version-status">v4.3.59</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -158,10 +157,21 @@
                 }
                 if (newW > 40) el.style.width = newW + 'px';
             };
-            const onUp = () => { isResizing = false; frame.contentDocument.removeEventListener('mousemove', onMove); frame.contentDocument.removeEventListener('mouseup', onUp); };
-            frame.contentDocument.addEventListener('mousemove', onMove); frame.contentDocument.addEventListener('mouseup', onUp);
+            const onUp = () => {
+                isResizing = false;
+                frame.contentDocument.removeEventListener('mousemove', onMove);
+                frame.contentDocument.removeEventListener('mouseup', onUp);
+                frame.contentDocument.removeEventListener('touchmove', onMove);
+                frame.contentDocument.removeEventListener('touchend', onUp);
+            };
+            frame.contentDocument.addEventListener('mousemove', onMove);
+            frame.contentDocument.addEventListener('mouseup', onUp);
+            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
+            frame.contentDocument.addEventListener('touchend', onUp);
         };
-        handle.addEventListener('mousedown', startResize); el.appendChild(handle);
+        handle.addEventListener('mousedown', startResize);
+        handle.addEventListener('touchstart', startResize, {passive: false});
+        el.appendChild(handle);
     }
 
     function renderToolbar() {
@@ -179,9 +189,9 @@
         } else if (isBtn) {
             const link = selectedEl.querySelector('a');
             html += `<div class="href-input-wrap" id="href-wrap">
-                        <input type="text" class="tool-input" placeholder="url" value="${link.getAttribute('href') || ''}" onfocus="expandHref(true)" onblur="expandHref(false)" oninput="updateBtnLink(this.value)">
+                        <input type="text" class="tool-input" placeholder="url" style="width:100%" value="${link.getAttribute('href') || ''}" onfocus="this.parentElement.classList.add('expanded')" onblur="this.parentElement.classList.remove('expanded')" oninput="updateBtnLink(this.value)">
                      </div>`;
-            html += `<input type="text" class="tool-input" style="width:70px" value="${link.innerText}" oninput="updateBtnText(this.value)">`;
+            html += `<input type="text" class="tool-input" style="width:60px" value="${link.innerText}" oninput="updateBtnText(this.value)">`;
         } else if (isImg) {
             html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`;
             html += `<button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>`;
@@ -198,26 +208,23 @@
         toolbarContent.innerHTML = html;
     }
 
-    function expandHref(expand) {
-        const wrap = document.getElementById('href-wrap');
-        if (expand) wrap.classList.add('expanded');
-        else setTimeout(() => wrap.classList.remove('expanded'), 200);
-    }
-
     function updateBtnLink(v) { if(selectedEl) selectedEl.querySelector('a').setAttribute('href', v); }
     function updateBtnText(v) { if(selectedEl) selectedEl.querySelector('a').innerText = v.toUpperCase(); }
+    
     function fitToWidth() {
         if (!selectedEl) return;
         const inDiv = selectedEl.closest('.block_container');
         if (inDiv) {
             selectedEl.setAttribute('data-scale-factor', '1.0');
-            // Force a micro-layout change to wake up the ResizeObserver instantly
-            selectedEl.style.opacity = '0.99'; setTimeout(() => selectedEl.style.opacity = '1', 10);
+            // Surgical Layout "Kick"
+            selectedEl.style.display = 'none'; selectedEl.offsetHeight; selectedEl.style.display = 'inline-block';
         } else {
             selectedEl.style.width = '100%'; selectedEl.style.display = 'block'; selectedEl.style.margin = '0 auto';
         }
     }
+
     function toggleSpacerLine() { if (selectedEl) { const currentLine = selectedEl.style.borderBottom; selectedEl.style.borderBottom = (currentLine === 'none' || !currentLine) ? '1px solid #eee' : 'none'; } }
+    
     function insertElement(type, data) {
         const doc = frame.contentDocument;
         const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
@@ -240,6 +247,7 @@
         else { selectedEl && selectedEl.parentNode === root ? selectedEl.after(el) : root.appendChild(el); }
         setTimeout(() => selectElement(el), 150);
     }
+    
     function setDevice(type) {
         currentMode = type; document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-${type}`).classList.add('active');
         const widths = { 'desktop': 1200, 'android': 448, 'iphone': 393 };
@@ -248,6 +256,7 @@
         frame.style.transform = `scale(${scaleFactor})`;
         frame.style.left = (scaleFactor < 1) ? '0px' : ((wrapper.offsetWidth - widths[type]) / 2) + 'px';
     }
+    
     function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function deleteElement() { if(selectedEl) { const p = selectedEl.parentElement; selectedEl.remove(); if (p && p.classList.contains('div-other-wrapper') && p.children.length === 0) p.remove(); deselectAll(); } }
