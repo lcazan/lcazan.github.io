@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v4.3.0</title>
+    <title>Snoozing Builder | v4.3.1</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         
-        /* THE LOCK: Absolute pinning to prevent keyboard-induced shifting */
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             overflow: hidden; position: fixed; top: 0; left: 0; 
@@ -39,14 +38,16 @@
             border-bottom: 0.0625rem solid #000; flex-shrink: 0; z-index: 1001;
         }
 
+        /* THE STAGE: Centering the iframe horizontally */
         #frame-wrapper { 
             flex-grow: 1; position: relative; background: #333; overflow: hidden;
+            display: flex; justify-content: center; align-items: flex-start;
         }
         
         #preview-frame { 
             border: none; background: white; 
-            transform-origin: top left; 
-            position: absolute; top: 0; left: 0;
+            transform-origin: top center; /* Centered scaling */
+            position: absolute; top: 0;
         }
 
         .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; }
@@ -76,10 +77,10 @@
     <div id="header-area">
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop" title="Desktop"></i></button>
-            <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen" title="Android (448px)"></i></button>
+            <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button" title="Android (448px)"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile" title="iPhone (393px)"></i></button>
         </div>
-        <div class="version-status">v4.3.0</div>
+        <div class="version-status">v4.3.1</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -100,7 +101,6 @@
     let currentMode = 'iphone';
     let isResizing = false;
 
-    // VIEWPORT STABILITY: Locks the UI top during keyboard expansion
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
             document.body.style.height = window.visualViewport.height + 'px';
@@ -127,9 +127,8 @@
                 .block_spacer { height: 2.5rem; border-bottom: 0.0625rem solid #ebd5c9; margin-bottom: 0.625rem; }
                 .no-line { border-bottom: none !important; }
 
-                /* DESKTOP GOLDEN RATIO CONSTRAINTS */
                 @media (min-width: 64rem) {
-                    .content-container { width: 80%; max-width: 75rem; margin: 0 auto !important; }
+                    .content-container { width: 85%; max-width: 75rem; margin: 0 auto !important; }
                     .block_heading, .block_text { 
                         max-width: 46.35rem; 
                         margin-left: auto !important; 
@@ -160,22 +159,22 @@
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`btn-${type}`).classList.add('active');
         
-        // Define widths for the requested devices
         const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 };
         const virtualWidth = widths[type];
         
-        // Scale factor relative to the available space in the builder
         const availableWidth = wrapper.offsetWidth;
         const scaleFactor = Math.min(availableWidth / virtualWidth, 1);
         
         frame.style.width = virtualWidth + 'px';
         frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
         frame.style.transform = `scale(${scaleFactor})`;
-        frame.style.left = '0px'; 
+        
+        // Centering math: Offset from left is half the empty space
+        const scaledWidth = virtualWidth * scaleFactor;
+        frame.style.left = ((availableWidth - scaledWidth) / 2) + 'px';
     }
 
-    // --- Core Builder Functions (Preserved from v4.1.1) ---
-
+    // Core Builder Logic preserved
     function selectElement(el) {
         const doc = frame.contentDocument;
         doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
