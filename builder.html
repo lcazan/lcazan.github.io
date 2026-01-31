@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v4.2.2</title>
+    <title>Snoozing Builder | v4.3.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         
-        /* THE LOCK: Absolute pinning to the top */
+        /* THE LOCK: Absolute pinning to prevent keyboard-induced shifting */
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             overflow: hidden; position: fixed; top: 0; left: 0; 
@@ -20,7 +20,7 @@
         #sidebar { 
             width: 4.6875rem; height: 100%; background: var(--panel-bg); 
             display: flex; flex-direction: column; align-items: center; 
-            padding: 0.9375rem 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; 
+            padding: 0.9375rem 0; border-right: 0.125rem solid #000; flex-shrink: 0; z-index: 1000; 
         }
 
         #preview-container { 
@@ -29,33 +29,33 @@
         }
 
         #header-area { 
-            background: #222; border-bottom: 1px solid #000; flex-shrink: 0; z-index: 1001; height: 3.125rem; 
+            background: #222; border-bottom: 0.0625rem solid #000; flex-shrink: 0; z-index: 1001; height: 3.125rem; 
             display: flex; align-items: center; justify-content: center; 
         }
 
         #sticky-toolbar { 
             height: 3rem; background: #1a1a1a; display: flex; 
             align-items: center; justify-content: center; 
-            border-bottom: 1px solid #000; flex-shrink: 0; z-index: 1001;
+            border-bottom: 0.0625rem solid #000; flex-shrink: 0; z-index: 1001;
         }
 
         #frame-wrapper { 
             flex-grow: 1; position: relative; background: #333; overflow: hidden;
-            display: flex; justify-content: center; align-items: flex-start;
         }
         
         #preview-frame { 
             border: none; background: white; 
-            transform-origin: top center; 
-            position: absolute; top: 0;
+            transform-origin: top left; 
+            position: absolute; top: 0; left: 0;
         }
 
-        .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 4px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        .tool-btn { background: #444; border: 1px solid #666; color: white; font-size: 1.25rem; min-width: 2.5rem; height: 2.375rem; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
+        .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; font-size: 1.25rem; min-width: 2.5rem; height: 2.375rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; }
         .tool-btn.active { background: var(--brand-pink); color: #000; }
-        .tool-input { background: #333; border: 1px solid #666; color: #fff; padding: 0.3125rem; border-radius: 4px; width: 7.5rem; font-size: 0.75rem; }
+        .tool-input { background: #333; border: 0.0625rem solid #666; color: #fff; padding: 0.3125rem; border-radius: 0.25rem; width: 7.5rem; font-size: 0.75rem; }
         #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
-        .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.625rem; margin: 0 0.9375rem; }
+        
+        .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.5rem; margin: 0 0.6rem; transition: color 0.2s; }
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 1.5625rem; top: 0.75rem; color: #fff; font-size: 1rem; font-weight: 800; }
     </style>
@@ -75,10 +75,11 @@
 <div id="preview-container">
     <div id="header-area">
         <div id="device-bar">
-            <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
-            <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
+            <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop" title="Desktop"></i></button>
+            <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen" title="Android (448px)"></i></button>
+            <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile" title="iPhone (393px)"></i></button>
         </div>
-        <div class="version-status">v4.2.2</div>
+        <div class="version-status">v4.3.0</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -96,15 +97,13 @@
     const wrapper = document.getElementById('frame-wrapper');
     
     let selectedEl = null;
-    let currentMode = 'mobile';
+    let currentMode = 'iphone';
     let isResizing = false;
 
-    // KEYBOARD LOCK: Prevent the UI from shifting when keyboard opens
+    // VIEWPORT STABILITY: Locks the UI top during keyboard expansion
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
-            const viewport = window.visualViewport;
-            document.body.style.height = viewport.height + 'px';
-            // Force scroll back to top to counteract browser shift
+            document.body.style.height = window.visualViewport.height + 'px';
             window.scrollTo(0, 0);
         });
         window.visualViewport.addEventListener('scroll', () => window.scrollTo(0, 0));
@@ -124,12 +123,13 @@
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
                 body { padding-bottom: 25rem !important; } 
                 
-                .block_heading { border-bottom: 1px solid #ebd5c9; padding-bottom: 0.625rem; margin-bottom: 0.9375rem; }
-                .block_spacer { height: 2.5rem; border-bottom: 1px solid #ebd5c9; margin-bottom: 0.625rem; }
+                .block_heading { border-bottom: 0.0625rem solid #ebd5c9; padding-bottom: 0.625rem; margin-bottom: 0.9375rem; }
+                .block_spacer { height: 2.5rem; border-bottom: 0.0625rem solid #ebd5c9; margin-bottom: 0.625rem; }
                 .no-line { border-bottom: none !important; }
 
+                /* DESKTOP GOLDEN RATIO CONSTRAINTS */
                 @media (min-width: 64rem) {
-                    .content-container { max-width: 75rem; margin: 0 auto !important; }
+                    .content-container { width: 80%; max-width: 75rem; margin: 0 auto !important; }
                     .block_heading, .block_text { 
                         max-width: 46.35rem; 
                         margin-left: auto !important; 
@@ -151,24 +151,30 @@
                 const el = e.target.closest('.editable');
                 if (el) selectElement(el); else deselectAll();
             });
-            setDevice('mobile');
+            setDevice('iphone');
         };
     }
 
     function setDevice(type) {
         currentMode = type;
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
-        const btn = document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop');
-        if(btn) btn.classList.add('active');
+        document.getElementById(`btn-${type}`).classList.add('active');
         
-        const virtualWidth = (type === 'mobile') ? 412 : 1280;
-        const scaleFactor = Math.min(wrapper.offsetWidth / virtualWidth, 1);
+        // Define widths for the requested devices
+        const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 };
+        const virtualWidth = widths[type];
+        
+        // Scale factor relative to the available space in the builder
+        const availableWidth = wrapper.offsetWidth;
+        const scaleFactor = Math.min(availableWidth / virtualWidth, 1);
         
         frame.style.width = virtualWidth + 'px';
         frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
         frame.style.transform = `scale(${scaleFactor})`;
-        frame.style.left = (wrapper.offsetWidth - (virtualWidth * scaleFactor)) / 2 + 'px';
+        frame.style.left = '0px'; 
     }
+
+    // --- Core Builder Functions (Preserved from v4.1.1) ---
 
     function selectElement(el) {
         const doc = frame.contentDocument;
@@ -195,17 +201,13 @@
         const isImg = selectedEl.classList.contains('block_image');
         const isHeading = selectedEl.classList.contains('block_heading');
         const isSpacer = selectedEl.classList.contains('block_spacer');
-        const isContainer = selectedEl.classList.contains('block_container');
         const lineHidden = selectedEl.classList.contains('no-line');
         
         let html = '';
         if (isBtn) {
             const link = selectedEl.querySelector('a');
-            html += `<input type="text" class="tool-input" placeholder="Button Text" value="${link.innerText}" oninput="updateBtnText(this.value)">`;
-            html += `<input type="text" class="tool-input" style="width:10rem" placeholder="Link URL" value="${link.getAttribute('href') || ''}" oninput="updateBtnLink(this.value)">`;
-        } else if (isContainer) {
-            const currentBg = selectedEl.style.backgroundColor || '';
-            html += `<input type="text" class="tool-input" placeholder="#FFFFFF" value="${currentBg}" oninput="setBg(this.value)">`;
+            html += `<input type="text" class="tool-input" value="${link.innerText}" oninput="updateBtnText(this.value)">`;
+            html += `<input type="text" class="tool-input" style="width:10rem" value="${link.getAttribute('href') || ''}" oninput="updateBtnLink(this.value)">`;
         } else if (isSpacer) {
             html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`;
         } else if (isImg) { 
@@ -213,12 +215,10 @@
             html += `<button class="tool-btn" onclick="fitImageWidth()"><i class="fa-solid fa-expand"></i></button>`;
         } else {
             html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
-            if (isHeading) { 
-                html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`; 
-            }
+            if (isHeading) html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`;
         }
 
-        if (!isSpacer && !isContainer && !isBtn) {
+        if (!isSpacer && !isBtn) {
             html += `
                 <button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
                 <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
@@ -233,7 +233,45 @@
     function fitImageWidth() { if(selectedEl) { selectedEl.style.width = "100%"; selectedEl.style.display = "block"; selectedEl.style.float = "none"; } }
     function updateBtnText(val) { if(selectedEl) selectedEl.querySelector('a').innerText = val.toUpperCase(); }
     function updateBtnLink(val) { if(selectedEl) selectedEl.querySelector('a').setAttribute('href', val); }
-    function setBg(color) { if(selectedEl) selectedEl.style.backgroundColor = color; }
+    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
+    function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
+    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+
+    function handleImageUpload(i) { 
+        if(i.files[0]) { 
+            const r = new FileReader(); 
+            r.onload = e => {
+                if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result;
+                else insertElement('block_image', e.target.result);
+            };
+            r.readAsDataURL(i.files[0]); 
+        } 
+    }
+
+    function insertElement(type, data) {
+        const doc = frame.contentDocument;
+        const root = doc.getElementById('editor-root');
+        const el = doc.createElement('div');
+        el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
+        const placeholders = { 'section_heading': 'New Section', 'block_heading': 'Heading', 'block_text': 'Paragraph...' };
+        
+        if(type === 'block_image') { 
+            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
+            el.contentEditable = "false"; el.style.width = "12.5rem"; el.style.position = "relative";
+        } else if(type === 'block_button') {
+            el.innerHTML = `<a href="#" class="block_button" style="font-weight:900 !important;" onclick="return false;">FIND OUT MORE</a>`;
+            el.contentEditable = "false";
+        } else if(type === 'block_spacer') {
+            el.contentEditable = "false";
+        } else { 
+            el.innerText = ""; 
+            el.setAttribute('data-placeholder', placeholders[type] || 'Type here...');
+            el.contentEditable = "true"; 
+        }
+        if (selectedEl && selectedEl.parentNode === root) selectedEl.after(el);
+        else root.appendChild(el);
+        setTimeout(() => { selectElement(el); el.scrollIntoView({ block: "end", behavior: "smooth" }); }, 150);
+    }
 
     function addResizeHandle(el) {
         const handle = frame.contentDocument.createElement('div');
@@ -246,7 +284,8 @@
             const startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
             const startW = el.offsetWidth;
             const startH = el.offsetHeight;
-            const scale = wrapper.offsetWidth / (currentMode === 'mobile' ? 412 : 1280);
+            const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 };
+            const scale = wrapper.offsetWidth / widths[currentMode];
 
             const onMove = (mE) => {
                 const curX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
@@ -284,47 +323,6 @@
              selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none';
              selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
         } else { selectedEl.style.textAlign = pos; }
-    }
-
-    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
-    function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
-    function triggerImageUpload() { document.getElementById('image-upload').click(); }
-
-    function handleImageUpload(i) { 
-        if(i.files[0]) { 
-            const r = new FileReader(); 
-            r.onload = e => {
-                if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result;
-                else insertElement('block_image', e.target.result);
-            };
-            r.readAsDataURL(i.files[0]); 
-        } 
-    }
-
-    function insertElement(type, data) {
-        const doc = frame.contentDocument;
-        const root = doc.getElementById('editor-root');
-        const el = doc.createElement('div');
-        el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
-        const placeholders = { 'section_heading': 'New Section', 'block_heading': 'Heading', 'block_text': 'Paragraph text...' };
-        
-        if(type === 'block_image') { 
-            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
-            el.contentEditable = "false"; el.style.width = "12.5rem"; el.style.position = "relative";
-        } else if(type === 'block_button') {
-            el.innerHTML = `<a href="#" class="block_button" style="font-weight:900 !important;" onclick="return false;">FIND OUT MORE</a>`;
-            el.contentEditable = "false";
-        } else if(type === 'block_spacer' || type === 'block_container') {
-            el.contentEditable = "false";
-        } else { 
-            el.innerText = ""; 
-            el.setAttribute('data-placeholder', placeholders[type] || 'Type here...');
-            el.contentEditable = "true"; 
-        }
-        if (selectedEl && selectedEl.classList.contains('block_container')) selectedEl.appendChild(el);
-        else if (selectedEl && selectedEl.parentNode === root) selectedEl.after(el);
-        else root.appendChild(el);
-        setTimeout(() => { selectElement(el); el.scrollIntoView({ block: "end", behavior: "smooth" }); }, 150);
     }
 
     window.onload = init;
