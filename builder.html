@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.52</title>
+    <title>Snoozing Builder | v4.3.53</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -50,7 +50,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.52</div>
+        <div class="version-status">v4.3.53</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -85,7 +85,7 @@
                 .block_image img { width: 100%; display: block; pointer-events: none; }
 
                 .div-other-wrapper {
-                    flex: 1; display: flex; align-items: center; justify-content: center; min-height: 1.2em;
+                    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 1.2em;
                 }
 
                 .block_spacer { height: 1.5rem !important; width: 100%; border-bottom: 1px solid #eee; }
@@ -220,11 +220,18 @@
 
         const root = doc.getElementById('editor-root');
         const targetDiv = selectedEl ? selectedEl.closest('.block_container') : null;
+        
         if (targetDiv) {
-            if (type === 'block_image' && !targetDiv.querySelector('.block_image')) targetDiv.prepend(el);
-            else if (type !== 'block_image' && !targetDiv.querySelector('.div-other-wrapper')) {
-                const wrap = doc.createElement('div'); wrap.className = 'div-other-wrapper';
-                wrap.appendChild(el); targetDiv.appendChild(wrap);
+            if (type === 'block_image' && !targetDiv.querySelector('.block_image')) {
+                targetDiv.prepend(el);
+            } else if (type !== 'block_image') {
+                let otherWrap = targetDiv.querySelector('.div-other-wrapper');
+                if (!otherWrap) {
+                    otherWrap = doc.createElement('div');
+                    otherWrap.className = 'div-other-wrapper';
+                    targetDiv.appendChild(otherWrap);
+                }
+                otherWrap.appendChild(el);
             }
         } else if (type === 'block_container') {
             root.appendChild(el); frame.contentWindow.initDivLogic();
@@ -246,7 +253,19 @@
     function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
     function updateBtnText(val) { if(selectedEl) selectedEl.querySelector('a').innerText = val.toUpperCase(); }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
-    function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
+    
+    function deleteElement() { 
+        if(selectedEl) { 
+            const parent = selectedEl.parentElement;
+            selectedEl.remove(); 
+            // Clean up empty wrapper
+            if (parent && parent.classList.contains('div-other-wrapper') && parent.children.length === 0) {
+                parent.remove();
+            }
+            deselectAll(); 
+        } 
+    }
+
     function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbarContent.style.visibility = 'hidden'; }
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
     function handleImageUpload(i) { 
@@ -255,7 +274,7 @@
             r.onload = e => { 
                 if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result; 
                 else insertElement('block_image', e.target.result); 
-                i.value = ''; // FIX: Allow same-image re-selection
+                i.value = '';
             }; 
             r.readAsDataURL(i.files[0]); 
         } 
