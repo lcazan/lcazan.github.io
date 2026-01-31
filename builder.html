@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.9.9</title>
+    <title>Snoozing Builder | v3.9.8</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -90,7 +90,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.9.9</div>
+            <div class="version-status">v3.9.8</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -116,30 +116,24 @@
         const resp = await fetch('template.html');
         let html = await resp.text();
         
+        // Cleaned Header Injection: Only essential editor UI styles, NO content styling.
         html = html.replace('</head>', `
             <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;700;900&display=swap" rel="stylesheet">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
             <style>
                 html, body { height: auto; min-height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-x: hidden; }
                 #editor-root { flex: 1 0 auto; width: 100%; display: flex; flex-direction: column; }
-                .editable { position: relative; min-height: 1.2em; cursor: pointer; box-sizing: border-box; }
+                .editable { position: relative; min-height: 1.2em; cursor: pointer; }
                 .selected-item { outline: 3px solid #ebd5c9 !important; }
                 body { padding-bottom: 250px !important; }
                 
+                /* Placeholder logic only */
                 .editable:empty::before {
                     content: attr(data-placeholder);
                     color: #888888;
                     font-family: 'Source Sans Pro', sans-serif;
                     opacity: 0.7;
-                    pointer-events: none;
                 }
-
-                .resize-handle { 
-                    width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; 
-                    cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center;
-                    color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px;
-                }
-                .resize-handle::before { content: "\\f337"; } 
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
         
@@ -147,7 +141,6 @@
         
         frame.onload = () => {
             frame.contentDocument.addEventListener('mousedown', (e) => {
-                if (isResizing) return;
                 const el = e.target.closest('.editable');
                 if (el) selectElement(el); else deselectAll();
             });
@@ -168,19 +161,13 @@
     }
 
     function selectElement(el) {
-        const doc = frame.contentDocument;
-        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
         if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
         selectedEl.classList.add('selected-item');
-        
-        if (el.classList.contains('block_image') || el.classList.contains('block_spacer')) addResizeHandle(el);
         renderToolbar();
     }
 
     function deselectAll() {
-        const doc = frame.contentDocument;
-        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
         if (selectedEl) selectedEl.classList.remove('selected-item');
         selectedEl = null;
         toolbarContent.style.visibility = 'hidden';
@@ -205,7 +192,6 @@
             html += `<input type="text" class="tool-input" placeholder="#FFFFFF" value="${currentBg}" oninput="setBg(this.value)">`;
         } else if (isImg) { 
             html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`; 
-            html += `<button class="tool-btn" onclick="fitImageWidth()"><i class="fa-solid fa-expand"></i></button>`;
         } else {
             html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
         }
@@ -221,62 +207,13 @@
         toolbarContent.innerHTML = html;
     }
 
-    function fitImageWidth() { if(selectedEl) { selectedEl.style.width = "100%"; selectedEl.style.display = "block"; selectedEl.style.float = "none"; } }
     function updateBtnText(val) { if(selectedEl) selectedEl.querySelector('a').innerText = val.toUpperCase(); }
     function updateBtnLink(val) { if(selectedEl) selectedEl.querySelector('a').setAttribute('href', val); }
     function setBg(color) { if(selectedEl) selectedEl.style.backgroundColor = color; }
 
-    function addResizeHandle(el) {
-        const handle = frame.contentDocument.createElement('div');
-        handle.className = 'resize-handle';
-        const isSpacer = el.classList.contains('block_spacer');
-        const startResize = (e) => {
-            e.preventDefault(); e.stopPropagation();
-            isResizing = true;
-            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-            const startW = el.offsetWidth;
-            const startH = el.offsetHeight;
-            const scale = wrapper.offsetWidth / (currentMode === 'mobile' ? 412 : 1280);
-
-            const onMove = (mE) => {
-                const curX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
-                const curY = mE.type.includes('touch') ? mE.touches[0].clientY : mE.clientY;
-                if (isSpacer) {
-                    const newH = startH + (curY - startY) / scale;
-                    if (newH > 5) el.style.height = newH + 'px';
-                } else {
-                    const newW = startW + (curX - startX) / scale;
-                    if (newW > 40) el.style.width = newW + 'px';
-                }
-            };
-            const onUp = () => {
-                isResizing = false;
-                frame.contentDocument.removeEventListener('mousemove', onMove);
-                frame.contentDocument.removeEventListener('mouseup', onUp);
-                frame.contentDocument.removeEventListener('touchmove', onMove);
-                frame.contentDocument.removeEventListener('touchend', onUp);
-            };
-            frame.contentDocument.addEventListener('mousemove', onMove);
-            frame.contentDocument.addEventListener('mouseup', onUp);
-            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
-            frame.contentDocument.addEventListener('touchend', onUp);
-        };
-        handle.addEventListener('mousedown', startResize);
-        handle.addEventListener('touchstart', startResize, {passive: false});
-        el.appendChild(handle);
-    }
-
     function setAlign(pos) {
         if (!selectedEl) return;
-        if (selectedEl.classList.contains('block_image')) {
-             selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
-             selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
-             selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none';
-             selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
-        } else { 
-            selectedEl.style.textAlign = pos; 
-        }
+        selectedEl.style.textAlign = pos;
     }
 
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
@@ -299,13 +236,15 @@
         const root = doc.getElementById('editor-root');
         const el = doc.createElement('div');
         
+        // Use class names ONLY. Styling must exist in styles.css
         el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
         const placeholders = { 'section_heading': 'New Section', 'block_heading': 'Heading', 'block_text': 'Paragraph text...' };
         
         if(type === 'block_image') { 
             el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
-            el.contentEditable = "false"; el.style.width = "200px"; el.style.position = "relative";
+            el.contentEditable = "false";
         } else if(type === 'block_button') {
+            // Clean structure. No inline styles.
             el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`;
             el.contentEditable = "false";
         } else if(type === 'block_spacer' || type === 'block_container') {
