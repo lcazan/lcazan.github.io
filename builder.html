@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v4.3.20</title>
+    <title>Snoozing Builder | v4.3.21</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -49,7 +49,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.20</div>
+        <div class="version-status">v4.3.21</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -74,9 +74,18 @@
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
                 h2, h3, p { display: block !important; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
                 .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; font-family: Helvetica, Arial, sans-serif !important; font-weight: 400 !important; }
+                
+                /* THE 64% SPLIT LOGIC */
                 .block_container { display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; width: 100%; min-height: 2rem; }
-                .block_container > .editable { flex: 1 1 auto; margin: 0; }
-                .block_container > .block_image { flex: 0 0 auto; position: relative; }
+                .block_container > .block_image { flex: 0 0 64%; max-width: 64%; position: relative; }
+                .block_container > .editable:not(.block_image) { flex: 1 1 30%; margin: 0; }
+
+                /* MOBILE STACKING (for Android/iPhone width views) */
+                @media (max-width: 500px) {
+                    .block_container > .block_image { flex: 0 0 100%; max-width: 100%; }
+                    .block_container > .editable:not(.block_image) { flex: 0 0 100%; }
+                }
+
                 .resize-handle { width: 2.75rem; height: 2.75rem; position: absolute; right: -0.125rem; bottom: -0.125rem; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; }
                 .resize-handle::before { content: "\\f337"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.75rem; }
             </style>
@@ -103,7 +112,7 @@
         
         if(type === 'block_image') { 
             el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}" style="display:block; max-width:100%;">`; 
-            el.contentEditable = "false"; el.style.width = "12.5rem"; el.style.position = "relative";
+            el.contentEditable = "false"; el.style.width = "100%"; el.style.position = "relative";
         } else if(type === 'block_button') {
             el.innerHTML = `<a href="#" class="block_button" style="font-weight:900 !important;" onclick="return false;">FIND OUT MORE</a>`;
             el.contentEditable = "false";
@@ -180,7 +189,6 @@
     }
 
     function addResizeHandle(el) {
-        // MERGED 3.9.4 RESIZE MATH
         const handle = frame.contentDocument.createElement('div'); handle.className = 'resize-handle';
         const isSpacer = el.classList.contains('block_spacer');
         const startResize = (e) => {
