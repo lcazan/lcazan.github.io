@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.49</title>
+    <title>Snoozing Builder | v4.3.48</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -50,7 +50,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.49</div>
+        <div class="version-status">v4.3.48</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -73,79 +73,52 @@
                 #editor-root { width: 100%; display: flex; flex-direction: column; padding-bottom: 250px; }
                 .editable { position: relative; min-height: 1.2em; cursor: pointer; outline: none; box-sizing: border-box; }
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
-                h2, h3, p { display: block !important; margin: 0; color: inherit; font-family: inherit; }
+                h2, h3, p { display: block !important; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
                 .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; }
                 
+                /* Smart Container v4.3.48 */
                 .block_container { 
                     display: flex; 
                     flex-wrap: wrap; 
                     align-items: center; 
                     width: 100%; 
-                    min-height: 4rem;
-                    box-sizing: border-box;
-                    padding: 10px;
+                    min-height: 2rem;
+                    container-type: inline-size;
                 }
 
-                .block_image { position: relative; display: inline-block; flex-shrink: 0; }
+                /* Mobile/Portrait logic: If container width <= 744px */
+                @container (max-width: 744px) {
+                    .block_container > .block_image { flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important; }
+                    .block_container > h2, .block_container > h3, .block_container > p { flex: 0 0 100%; margin: 15px 0; }
+                }
+
+                /* Desktop/Landscape logic: If container width > 744px */
+                @container (min-width: 745px) {
+                    .block_container > .block_image { 
+                        flex: 0 0 auto; 
+                        width: 61.8%; /* Default Golden Ratio */
+                        max-width: 61.8%; /* Hard Lock - Cannot be bigger */
+                    }
+                    .block_container > h2, .block_container > h3, .block_container > p { 
+                        flex: 1; 
+                        margin: 0 0 0 25px; 
+                    }
+                }
+
+                .block_image { position: relative; display: inline-block; }
                 .block_image img { width: 100%; display: block; pointer-events: none; }
-
-                /* Other object container inside div */
-                .div-other-wrapper {
-                    flex: 1;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    min-height: 1.2em;
-                }
 
                 .block_spacer { height: 1.5rem !important; width: 100%; border-bottom: 1px solid #eee; }
                 .resize-handle { width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; }
                 .resize-handle::before { content: "\\f337"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px; }
             </style>
-            <script>
-                // Responsive State Machine for Divs
-                const observer = new ResizeObserver(entries => {
-                    for (let entry of entries) {
-                        const div = entry.target;
-                        const width = entry.contentRect.width;
-                        const img = div.querySelector('.block_image');
-                        const other = div.querySelector('.div-other-wrapper');
-                        
-                        if (!img) return;
-                        
-                        const factor = parseFloat(img.getAttribute('data-scale-factor') || '1.0');
-                        
-                        if (width <= 744) {
-                            // PORTRAIT: Center, Full Base
-                            div.style.flexDirection = 'column';
-                            div.style.justifyContent = 'center';
-                            img.style.width = (width * factor) + 'px';
-                            img.style.margin = '0 auto';
-                            if(other) other.style.width = '100%';
-                        } else {
-                            // DESKTOP: Left Align, 62% Base
-                            div.style.flexDirection = 'row';
-                            div.style.justifyContent = 'flex-start';
-                            const baseWidth = width * 0.618;
-                            img.style.width = (baseWidth * factor) + 'px';
-                            img.style.margin = '0';
-                            if(other) other.style.width = 'auto';
-                        }
-                    }
-                });
-
-                window.initDivLogic = () => {
-                    document.querySelectorAll('.block_container').forEach(div => observer.observe(div));
-                };
-            <\/script>
             <link rel="stylesheet" href="styles.css"></head>`);
         
         frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
         frame.onload = () => {
-            frame.contentWindow.initDivLogic();
             frame.contentDocument.addEventListener('mousedown', (e) => { 
                 if (isResizing) return;
-                const el = e.target.closest('.editable') || e.target.closest('.div-other-wrapper > *'); 
+                const el = e.target.closest('.editable'); 
                 if (el && el === selectedEl && el.contentEditable === "true") return;
                 if (el) selectElement(el); else deselectAll(); 
             });
@@ -176,8 +149,6 @@
             const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             const startW = el.offsetWidth;
             const parentW = el.parentElement.offsetWidth;
-            const isDesktop = parentW > 744;
-            const baseW = isDesktop ? parentW * 0.618 : parentW;
             const virtualWidth = (currentMode === 'iphone') ? 393 : (currentMode === 'android' ? 448 : 1200);
             const scale = wrapper.offsetWidth / virtualWidth;
 
@@ -185,34 +156,37 @@
                 const curX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
                 let newW = startW + (curX - startX) / scale;
                 
-                // Enforce Resize Cap
-                if (newW > baseW) newW = baseW;
-                if (newW < 40) newW = 40;
+                // If inside a container and container > 744, enforce the 61.8% cap
+                if (el.parentElement.classList.contains('block_container') && parentW > 744) {
+                    const maxAllowed = parentW * 0.618;
+                    if (newW > maxAllowed) newW = maxAllowed;
+                }
 
-                const newFactor = newW / baseW;
-                el.setAttribute('data-scale-factor', newFactor.toFixed(4));
-                el.style.width = newW + 'px';
+                if (newW > 40) el.style.width = newW + 'px';
             };
             const onUp = () => {
                 isResizing = false;
                 frame.contentDocument.removeEventListener('mousemove', onMove);
                 frame.contentDocument.removeEventListener('mouseup', onUp);
+                frame.contentDocument.removeEventListener('touchmove', onMove);
+                frame.contentDocument.removeEventListener('touchend', onUp);
             };
             frame.contentDocument.addEventListener('mousemove', onMove);
             frame.contentDocument.addEventListener('mouseup', onUp);
+            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
+            frame.contentDocument.addEventListener('touchend', onUp);
         };
         handle.addEventListener('mousedown', startResize);
+        handle.addEventListener('touchstart', startResize, {passive: false});
         el.appendChild(handle);
     }
 
     function renderToolbar() {
         if (!selectedEl) return;
         toolbarContent.style.visibility = 'visible';
-        const inDiv = selectedEl.closest('.block_container');
         const isBtn = selectedEl.classList.contains('block_button_container');
         const isImg = selectedEl.classList.contains('block_image');
         const isDiv = selectedEl.classList.contains('block_container');
-        
         let html = '';
         if (isDiv) {
             html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div>`;
@@ -226,60 +200,11 @@
         } else if (selectedEl.contentEditable === "true") {
             html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
         }
-
-        // Hide Alignment buttons if in Div
-        if (!inDiv && !isDiv && !isBtn && !selectedEl.classList.contains('block_spacer')) {
+        if (!isDiv && !isBtn && !selectedEl.classList.contains('block_spacer')) {
             html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button> <button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button> <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>`;
         }
-        
         html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
         toolbarContent.innerHTML = html;
-    }
-
-    function insertElement(type, data) {
-        const doc = frame.contentDocument;
-        const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
-        const el = doc.createElement(tagMap[type] || 'div');
-        el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
-        
-        if(type === 'block_image') { 
-            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
-            el.contentEditable = "false";
-            el.setAttribute('data-scale-factor', '1.0');
-        } else if(type === 'block_button') { 
-            el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`; 
-            el.contentEditable = "false"; 
-        } else if(type === 'block_spacer' || type === 'block_container') { 
-            el.contentEditable = "false"; 
-        } else { 
-            el.innerText = ""; el.setAttribute('data-placeholder', 'Type here...'); el.contentEditable = "true"; 
-        }
-
-        const root = doc.getElementById('editor-root');
-        const targetDiv = selectedEl ? selectedEl.closest('.block_container') : null;
-
-        if (targetDiv) {
-            // Restriction: One Image, One "Other"
-            const hasImg = targetDiv.querySelector('.block_image');
-            const hasOther = targetDiv.querySelector('.div-other-wrapper');
-
-            if (type === 'block_image' && !hasImg) {
-                targetDiv.prepend(el);
-            } else if (type !== 'block_image' && !hasOther) {
-                const wrapper = doc.createElement('div');
-                wrapper.className = 'div-other-wrapper';
-                wrapper.appendChild(el);
-                targetDiv.appendChild(wrapper);
-            }
-        } else if (type === 'block_container') {
-            root.appendChild(el);
-            frame.contentWindow.initDivLogic(); // Re-bind observer
-        } else if (selectedEl && selectedEl.parentNode === root) {
-            selectedEl.after(el);
-        } else {
-            root.appendChild(el);
-        }
-        setTimeout(() => selectElement(el), 150);
     }
 
     function setDevice(type) {
@@ -292,7 +217,7 @@
     }
 
     function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
-    function fitImageWidth() { if(selectedEl) { selectedEl.setAttribute('data-scale-factor', '1.0'); } }
+    function fitImageWidth() { if(selectedEl) { selectedEl.style.width = "100%"; selectedEl.style.display = "block"; selectedEl.style.float = "none"; } }
     function updateBtnText(val) { if(selectedEl) selectedEl.querySelector('a').innerText = val.toUpperCase(); }
     function updateBtnLink(val) { if(selectedEl) selectedEl.querySelector('a').setAttribute('href', val); }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
@@ -303,6 +228,35 @@
     function setAlign(pos) { if (!selectedEl) return; if (selectedEl.classList.contains('block_image')) { selectedEl.style.float = pos; selectedEl.style.margin = "0"; selectedEl.style.display = "inline-block"; } else { selectedEl.style.textAlign = pos; } }
     function centerItem() { if (!selectedEl) return; if (selectedEl.classList.contains('block_image')) { selectedEl.style.float = "none"; selectedEl.style.margin = "0 auto"; selectedEl.style.display = "block"; } else { selectedEl.style.textAlign = "center"; } }
     
+    function insertElement(type, data) {
+        const doc = frame.contentDocument;
+        const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
+        const el = doc.createElement(tagMap[type] || 'div');
+        el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
+        if(type === 'block_image') { 
+            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}" style="display:block; max-width:100%;">`; 
+            el.contentEditable = "false"; el.style.width = "200px"; el.style.position = "relative"; 
+        } else if(type === 'block_button') { 
+            el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`; 
+            el.contentEditable = "false"; 
+        } else if(type === 'block_spacer' || type === 'block_container') { 
+            el.contentEditable = "false"; 
+        } else { 
+            el.innerText = ""; el.setAttribute('data-placeholder', 'Type here...'); el.contentEditable = "true"; 
+        }
+        const root = doc.getElementById('editor-root');
+        
+        if (selectedEl && (selectedEl.classList.contains('block_container') || selectedEl.closest('.block_container'))) {
+            const target = selectedEl.classList.contains('block_container') ? selectedEl : selectedEl.closest('.block_container');
+            target.appendChild(el);
+        } else if (selectedEl && selectedEl.parentNode === root) {
+            selectedEl.after(el);
+        } else {
+            root.appendChild(el);
+        }
+        setTimeout(() => selectElement(el), 150);
+    }
+
     function exportHTML() {
         deselectAll();
         const doc = frame.contentDocument.cloneNode(true);
@@ -321,4 +275,5 @@
     
     window.onload = init;
 </script>
-<
+</body>
+</html>
