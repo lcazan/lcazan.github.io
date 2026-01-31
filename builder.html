@@ -3,23 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v4.3.5</title>
+    <title>Snoozing Builder | v4.3.6</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; top: 0; left: 0; background: #111; touch-action: none; }
         body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
+        
         #sidebar { width: 4.6875rem; height: 100%; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 0.9375rem 0; border-right: 0.125rem solid #000; flex-shrink: 0; z-index: 1000; }
+        
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100%; overflow: hidden; position: relative; }
         #header-area { background: #222; border-bottom: 0.0625rem solid #000; flex-shrink: 0; z-index: 1001; height: 3.125rem; display: flex; align-items: center; justify-content: center; }
         #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 0.0625rem solid #000; flex-shrink: 0; z-index: 1001; }
         #frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; display: block; }
         #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; }
-        .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        
+        .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 0.75rem; font-weight: bold; }
         .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; font-size: 1.25rem; min-width: 2.5rem; height: 2.375rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; }
         .tool-btn.active { background: var(--brand-pink); color: #000; }
         .tool-input { background: #333; border: 0.0625rem solid #666; color: #fff; padding: 0.3125rem; border-radius: 0.25rem; width: 7.5rem; font-size: 0.75rem; }
         #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
+        
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.5rem; margin: 0 0.6rem; transition: color 0.2s; }
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 1.5625rem; top: 0.75rem; color: #fff; font-size: 1rem; font-weight: 800; }
@@ -30,10 +34,10 @@
 <div id="sidebar">
     <button class="insert-btn" onclick="insertElement('block_container')" title="Div"><i class="fa-solid fa-square"></i></button>
     <button class="insert-btn" onclick="triggerImageUpload()" title="Picture"><i class="fa-solid fa-image"></i></button>
-    <button class="insert-btn" onclick="insertElement('section_heading')" title="Service Heading"><i class="fa-solid fa-heading"></i></button>
-    <button class="insert-btn" onclick="insertElement('block_heading')" title="Block Heading"><i class="fa-solid fa-font"></i></button>
+    <button class="insert-btn" onclick="insertElement('section_heading')" title="Service Heading"><i class="fa-solid fa-sitemap"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_heading')" title="Block Heading"><i class="fa-solid fa-paragraph"></i></button>
     <button class="insert-btn" onclick="insertElement('block_text')" title="Block Text"><i class="fa-solid fa-align-left"></i></button>
-    <button class="insert-btn" onclick="insertElement('block_button')" title="Button"><i class="fa-solid fa-square-minus"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_button')" title="Button">Button</button>
     <button class="insert-btn" onclick="insertElement('block_spacer')" title="Spacer"><i class="fa-solid fa-arrows-up-down"></i></button>
 </div>
 
@@ -44,7 +48,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.5</div>
+        <div class="version-status">v4.3.6</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -72,21 +76,28 @@
             <style>
                 html, body { height: auto; min-height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
                 #editor-root { width: 100%; display: flex; flex-direction: column; }
-                .editable { position: relative; min-height: 1.2em; cursor: pointer; box-sizing: border-box; }
+                .editable { position: relative; min-height: 1.2em; cursor: pointer; box-sizing: border-box; width: 100%; }
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
                 body { padding-bottom: 25rem !important; } 
+                
+                /* Precise 1.5rem spacer height */
+                .block_spacer { height: 1.5rem; border-bottom: none; margin-bottom: 0.625rem; width: 100%; }
+                
                 .block_heading, .section_heading { border-bottom: none; padding-bottom: 0.625rem; margin-bottom: 0.9375rem; outline: none; }
-                .block_spacer { height: 2.5rem; border-bottom: none; margin-bottom: 0.625rem; }
                 .show-line { border-bottom: 0.0625rem solid #ebd5c9 !important; }
+                
                 @media (min-width: 64rem) {
                     .content-container { width: 85%; max-width: 75rem; margin: 0 auto !important; }
-                    .block_heading, .block_text { max-width: 46.35rem; margin-left: auto !important; margin-right: auto !important; }
+                    /* Fixed Alignment Trapping: Max-width is set, but margins are flexible */
+                    .block_heading, .block_text { max-width: 46.35rem; margin-left: auto; margin-right: auto; }
                 }
+
                 .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.7; pointer-events: none; }
                 .resize-handle { width: 2.75rem; height: 2.75rem; position: absolute; right: -0.125rem; bottom: -0.125rem; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.75rem; }
                 .resize-handle::before { content: "\\f337"; } 
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
+        
         frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
         frame.onload = () => {
             frame.contentDocument.addEventListener('paste', (e) => { e.preventDefault(); const text = (e.originalEvent || e).clipboardData.getData('text/plain'); frame.contentDocument.execCommand('insertText', false, text); });
@@ -167,7 +178,18 @@
         handle.addEventListener('mousedown', startResize); el.appendChild(handle);
     }
 
-    function setAlign(pos) { if (!selectedEl) return; if (selectedEl.classList.contains('block_image')) { selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0'; selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0'; selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none'; selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block'; } else { selectedEl.style.textAlign = pos; } }
+    function setAlign(pos) { 
+        if (!selectedEl) return; 
+        if (selectedEl.classList.contains('block_image')) {
+             selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
+             selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
+             selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none';
+             selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
+        } else { 
+            // Ensures alignment works within the centered container
+            selectedEl.style.textAlign = pos; 
+        }
+    }
     window.onload = init;
 </script>
 </body>
