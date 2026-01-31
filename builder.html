@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.31</title>
+    <title>Snoozing Builder | v4.3.33</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -45,7 +45,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.31</div>
+        <div class="version-status">v4.3.33</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -59,7 +59,6 @@
     const wrapper = document.getElementById('frame-wrapper');
     let selectedEl = null; let currentMode = 'iphone'; let isResizing = false;
 
-    // v3.7.2.5 Keyboard Stability
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
             document.body.style.height = window.visualViewport.height + 'px';
@@ -99,17 +98,29 @@
         deselectAll();
         const doc = frame.contentDocument.cloneNode(true);
         
-        // CLEANUP: Remove editor-only UI and attributes
+        // DEEP CLEAN: Strip all editor-specific logic
         doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
         doc.querySelectorAll('.editable').forEach(e => {
+            // Remove the contentEditable state
             e.removeAttribute('contenteditable');
+            // Remove builder-only helper attributes
             e.removeAttribute('data-placeholder');
+            // Remove editor-specific CSS classes
             e.classList.remove('selected-item');
+            e.classList.remove('editable');
+            // Reset pointer events so user can interact with it normally
+            e.style.cursor = 'default';
         });
 
-        // FIX: Ensure editor-root doesn't keep the massive padding-bottom
         const root = doc.getElementById('editor-root');
-        if(root) root.style.paddingBottom = "0";
+        if(root) {
+            root.style.paddingBottom = "0";
+            root.removeAttribute('id'); // Remove editor-root ID on live site
+        }
+
+        // Remove the builder-only style block
+        const styleBlock = doc.getElementById('editor-styles');
+        if (styleBlock) styleBlock.remove();
 
         const blob = new Blob([doc.documentElement.outerHTML], {type: 'text/html'});
         const a = document.createElement('a');
@@ -125,7 +136,6 @@
         if(el.contentEditable === "true") el.focus({preventScroll: true});
     }
 
-    /* Standard Tools */
     function setDevice(type) {
         currentMode = type; document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-${type}`).classList.add('active');
         const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 };
@@ -145,16 +155,24 @@
         } else if(type === 'block_button') { 
             el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`; el.contentEditable = "false"; 
         } else { 
-            el.innerText = ""; el.setAttribute('data-placeholder', 'Type...'); el.contentEditable = "true"; 
+            el.innerText = ""; el.setAttribute('data-placeholder', 'Type here...'); el.contentEditable = "true"; 
         }
         doc.getElementById('editor-root').appendChild(el);
         setTimeout(() => selectElement(el), 150);
     }
 
+    function duplicateElement() {
+        if (!selectedEl) return;
+        const clone = selectedEl.cloneNode(true);
+        clone.classList.remove('selected-item');
+        selectedEl.after(clone);
+        selectElement(clone);
+    }
+
     function renderToolbar() {
         if (!selectedEl) return;
         toolbarContent.style.visibility = 'visible';
-        let html = '';
+        let html = `<button class="tool-btn" title="Duplicate" onclick="duplicateElement()"><i class="fa-solid fa-copy"></i></button>`;
         if (selectedEl.contentEditable === "true") html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
         html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button> <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button> <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>`;
         html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
