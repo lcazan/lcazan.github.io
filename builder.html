@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.63</title>
+    <title>Snoozing Builder | v4.3.64</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; top: 0; left: 0; background: #111; touch-action: none; }
         body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
         
+        /* Sidebar stays locked */
         #sidebar { width: 4.6875rem; height: 100%; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 0.9375rem 0; border-right: 0.125rem solid #000; flex-shrink: 0; z-index: 1000; }
         .export-wrap { margin-top: auto; margin-bottom: 60px; }
         .export-btn { width: 3.75rem; height: 3.75rem; background: var(--brand-pink); border: none; color: #000; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
@@ -17,23 +18,31 @@
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100%; overflow: hidden; position: relative; }
         #header-area { background: #222; border-bottom: 0.0625rem solid #000; height: 3.125rem; display: flex; align-items: center; justify-content: center; z-index: 1001; }
         
-        /* Fixed the Sticky Toolbar stage */
-        #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; border-bottom: 0.0625rem solid #000; z-index: 1001; position: relative; }
+        /* The Stage: Centered, Fixed Height, 90% Width */
+        #sticky-toolbar { 
+            height: 3rem; 
+            background: #1a1a1a; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-bottom: 0.0625rem solid #000; 
+            z-index: 1001; 
+            position: relative; 
+        }
         
         #toolbar-content { 
-            position: absolute; 
-            left: 4px; 
-            right: 4px; 
-            height: 100%; 
+            position: relative; 
+            width: 90%; 
+            height: 2.2rem; 
             visibility: hidden; 
         }
 
-        /* Toolbase: All Absolute */
+        /* Elements: Absolute Positioning relative to #toolbar-content left edge */
         .tool-btn, .tool-input { 
             position: absolute; 
-            top: 50%; 
-            transform: translateY(-50%); 
-            transition: width 0.25s ease, z-index 0s;
+            top: 0; 
+            transition: width 0.25s ease-out, z-index 0s;
+            box-sizing: border-box;
         }
 
         .tool-btn { 
@@ -46,18 +55,18 @@
         .tool-input { 
             background: #333; border: 0.0625rem solid #666; color: #fff; 
             padding: 0 8px; border-radius: 0.25rem; font-size: 0.75rem; 
-            z-index: 10; height: 2rem; width: 45px; 
+            z-index: 10; height: 2.2rem; width: 45px; 
         }
 
-        /* Fixed Left Coordinates */
+        /* Fixed Left Coordinates (4px gap logic) */
         .p0 { left: 0px; }
-        .p1 { left: 50px; }
-        .p2 { left: 100px; }
-        .p3 { left: 150px; }
+        .p1 { left: 49px; }
+        .p2 { left: 98px; }
+        .p3 { left: 147px; }
 
-        /* Focus: Expand Right edge only */
+        /* Expansion: Moves Right Edge Only */
         .tool-input:focus { 
-            width: calc(100% - 4px) !important; 
+            width: 100% !important; 
             z-index: 20 !important; 
             background: #222;
             outline: 1px solid var(--brand-pink);
@@ -92,7 +101,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.63</div>
+        <div class="version-status">v4.3.64</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -115,7 +124,6 @@
                 #editor-root { width: 100%; display: flex; flex-direction: column; padding-bottom: 250px; }
                 .editable { position: relative; min-height: 1.2em; cursor: pointer; outline: none; box-sizing: border-box; }
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
-                h2, h3, p { display: block !important; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
                 .block_container { display: flex; flex-wrap: wrap; align-items: center; width: 100%; min-height: 2rem; box-sizing: border-box; padding: 10px; }
                 .block_image { position: relative; display: inline-block; flex-shrink: 0; }
                 .block_image img { width: 100%; display: block; pointer-events: none; }
@@ -170,11 +178,12 @@
             html += `<button class="tool-btn p2" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
         } else if (selectedEl.contentEditable === "true") {
             html += `<button class="tool-btn p0" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
+            let pos = 1;
             if (!inDiv) {
-                html += `<button class="tool-btn p1" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>`;
-                html += `<button class="tool-btn p2" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>`;
-                html += `<button class="tool-btn p3" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
-            } else { html += `<button class="tool-btn p1" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`; }
+                html += `<button class="tool-btn p${pos++}" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>`;
+                html += `<button class="tool-btn p${pos++}" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>`;
+            }
+            html += `<button class="tool-btn p${pos}" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
         } else if (isSpacer) {
             html += `<button class="tool-btn p0" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
             html += `<button class="tool-btn p1" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
