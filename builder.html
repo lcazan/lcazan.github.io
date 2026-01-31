@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v4.3.11</title>
+    <title>Snoozing Builder | v4.3.12</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -20,11 +20,14 @@
         .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; padding: 0; }
         .insert-btn sub { font-size: 0.6rem; margin-left: 1px; }
 
-        .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; font-size: 1.25rem; min-width: 2.5rem; height: 2.375rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; }
+        .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; font-size: 1.1rem; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; }
         .tool-btn.active { background: var(--brand-pink); color: #000; }
-        .tool-input { background: #333; border: 0.0625rem solid #666; color: #fff; padding: 0.3125rem; border-radius: 0.25rem; width: 6.5rem; font-size: 0.75rem; }
+        .tool-input { background: #333; border: 0.0625rem solid #666; color: #fff; padding: 0.3125rem; border-radius: 0.25rem; width: 5.5rem; font-size: 0.75rem; }
         
         .swatch { width: 1.5rem; height: 1.5rem; border: 1px solid #666; border-radius: 3px; cursor: pointer; margin: 0 2px; }
+        .picker-wrapper { position: relative; width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; }
+        #native-picker { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+
         #toolbar-content { display: flex; gap: 0.4rem; visibility: hidden; align-items: center; height: 100%; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.5rem; margin: 0 0.6rem; }
         .device-btn.active { color: var(--brand-pink); }
@@ -50,7 +53,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.11</div>
+        <div class="version-status">v4.3.12</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -75,21 +78,15 @@
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
                 body { padding-bottom: 25rem !important; } 
                 
-                /* Typography Hierarchy */
-                h2, h3, p { display: block; width: 100%; margin: 0 0 0.9375rem 0; padding: 0 0 0.625rem 0; color: inherit; font-family: inherit; }
+                /* T1, T2, T3 Styling Inheritance */
+                h2, .block_text { display: block; width: 100%; margin: 0 0 0.9375rem 0; padding: 0 0 0.625rem 0; color: inherit; font-family: inherit; }
                 
-                /* Ghost Text Matching */
-                .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.7; pointer-events: none; font-family: inherit; font-size: inherit; font-weight: inherit; }
+                /* Ghost Text */
+                .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.7; pointer-events: none; font-family: inherit; font-size: inherit; }
                 
-                /* The Landscape/Flex Shift */
+                /* Flex Container behavior */
                 .block_container { 
-                    display: flex; 
-                    flex-wrap: wrap; 
-                    align-items: center; /* Vertical centering */
-                    justify-content: flex-start; 
-                    gap: 1.5rem;
-                    min-height: 2rem;
-                    width: 100%;
+                    display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start; gap: 1.5rem; min-height: 2rem; width: 100%; 
                 }
                 .block_container > .editable { flex: 1 1 auto; margin-top: 0; margin-bottom: 0; }
                 .block_container > .block_image { flex: 0 0 auto; width: auto; }
@@ -115,10 +112,14 @@
 
     function insertElement(type, data) {
         const doc = frame.contentDocument;
-        const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
-        const tag = tagMap[type] || 'div';
+        // CARBON COPY: T2 now uses the same class as T3
+        const isMirrorText = (type === 'block_heading' || type === 'block_text');
+        const tag = (type === 'section_heading') ? 'h2' : 'p'; 
         const el = doc.createElement(tag);
-        el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
+        
+        // Both T2 and T3 get 'block_text' class for CSS consistency
+        el.className = `editable ${type === 'block_button' ? 'block_button_container' : (isMirrorText ? 'block_text' : type)}`;
+        
         const placeholders = { 'section_heading': 'Service Heading', 'block_heading': 'Heading', 'block_text': 'Paragraph...' };
         
         if(type === 'block_image') { 
@@ -130,7 +131,6 @@
         } else if(type === 'block_spacer' || type === 'block_container') {
             el.contentEditable = "false";
         } else {
-            // Identical logic for T1, T2, T3
             el.innerText = ""; el.setAttribute('data-placeholder', placeholders[type] || 'Type...');
             el.contentEditable = "true"; 
         }
@@ -161,14 +161,12 @@
         let html = '';
 
         if (isDiv) {
+            html += `<div class="picker-wrapper"><button class="tool-btn"><i class="fa-solid fa-eye-dropper"></i></button><input type="color" id="native-picker" oninput="updateColor(this.value)"></div>`;
             html += `<input type="text" class="tool-input" placeholder="Hex #" oninput="updateColor(this.value)">`;
             html += `<div class="swatch" style="background:transparent; border:1px dashed #fff" onclick="updateColor('transparent')"></div>`;
             html += `<div class="swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div>`;
-            html += `<div class="swatch" style="background:#927B73" onclick="updateColor('#927B73')"></div>`;
-            html += `<div class="swatch" style="background:#151515" onclick="updateColor('#151515')"></div>`;
         } else if (isBtn) {
-            const link = selectedEl.querySelector('a');
-            html += `<input type="text" class="tool-input" value="${link.innerText}" oninput="updateBtnText(this.value)">`;
+            html += `<input type="text" class="tool-input" value="${selectedEl.querySelector('a').innerText}" oninput="updateBtnText(this.value)">`;
         } else if (isImg) {
             html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`;
         } else if (isText) {
@@ -214,14 +212,7 @@
         el.appendChild(handle);
     }
 
-    function setAlign(pos) { 
-        if (!selectedEl) return; 
-        selectedEl.style.textAlign = pos; 
-        if (selectedEl.classList.contains('block_image')) {
-            selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
-            selectedEl.style.margin = pos === 'center' ? '0 auto' : '0';
-        }
-    }
+    function setAlign(pos) { if (!selectedEl) return; selectedEl.style.textAlign = pos; if (selectedEl.classList.contains('block_image')) { selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block'; selectedEl.style.margin = pos === 'center' ? '0 auto' : '0'; } }
     
     window.onload = init;
 </script>
