@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v4.2.0</title>
+    <title>Snoozing Builder | v4.1.1</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -17,6 +17,7 @@
         
         body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
         
+        /* Sidebar: 75px */
         #sidebar { 
             width: 4.6875rem; height: 100vh; background: var(--panel-bg); 
             display: flex; flex-direction: column; align-items: center; 
@@ -29,6 +30,7 @@
             background: #333; height: 100vh; overflow: hidden; position: relative;
         }
 
+        /* Header: 50px - Fixed Centering for v3.9.x behavior */
         #header-area { 
             background: #222; border-bottom: 1px solid #000; flex-shrink: 0; z-index: 1001; height: 3.125rem; 
             position: relative; display: flex; align-items: center; justify-content: center; 
@@ -79,7 +81,7 @@
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
         </div>
-        <div class="version-status">v4.2.0</div>
+        <div class="version-status">v4.1.1</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -125,12 +127,6 @@
                 .block_heading { border-bottom: 1px solid #ebd5c9; padding-bottom: 0.625rem; margin-bottom: 0.9375rem; }
                 .block_spacer { height: 2.5rem; border-bottom: 1px solid #ebd5c9; margin-bottom: 0.625rem; }
                 .no-line { border-bottom: none !important; }
-
-                /* THE GOLDEN RATIO DESKTOP CONSTRAINTS */
-                @media (min-width: 64rem) {
-                    .content-container { max-width: 75rem; margin: 0 auto !important; }
-                    .block_heading, .block_text { max-width: 46.35rem; margin-left: auto !important; margin-right: auto !important; }
-                }
 
                 .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.7; pointer-events: none; }
                 .resize-handle { width: 2.75rem; height: 2.75rem; position: absolute; right: -0.125rem; bottom: -0.125rem; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.75rem; }
