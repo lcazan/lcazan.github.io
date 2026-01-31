@@ -2,7 +2,7 @@
 :root {
     --brand-cream: #FAF6F3;
     --brand-pink: #ebd5c9;    
-    --icon-brown: #877267; 
+    --icon-brown: #927B73; 
     --text-dark: #151515;
 }
 
@@ -131,7 +131,7 @@ nav#nav-sidebar a {
 .section_heading { 
     font-family: 'Source Sans Pro', sans-serif; 
     font-size: 0.875rem;       /* 14px */
-    font-weight: 600; 
+    font-weight: 400; 
     letter-spacing: 0.125rem;  /* 2px */
     color: var(--icon-brown); 
     margin: 0.625rem 0 0.625rem; /* 10px */
@@ -156,7 +156,7 @@ nav#nav-sidebar a {
 .block_text { 
     font-family: 'Source Sans Pro', sans-serif; 
     font-size: 1.05rem; 
-    color: #333; 
+    color: #5F5F5F; 
     line-height: 1.8; 
     margin: 0.625rem 0 1.875rem; /* 10px 30px */
     text-align: center; /* UPDATED: Justified by default */
