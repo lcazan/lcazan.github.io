@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.62</title>
+    <title>Snoozing Builder | v4.3.63</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -16,9 +16,10 @@
 
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100%; overflow: hidden; position: relative; }
         #header-area { background: #222; border-bottom: 0.0625rem solid #000; height: 3.125rem; display: flex; align-items: center; justify-content: center; z-index: 1001; }
-        #sticky-toolbar { height: 3rem; background: #1a1a1a; position: relative; border-bottom: 0.0625rem solid #000; z-index: 1001; }
         
-        /* Surgical Toolbar Container */
+        /* Fixed the Sticky Toolbar stage */
+        #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; border-bottom: 0.0625rem solid #000; z-index: 1001; position: relative; }
+        
         #toolbar-content { 
             position: absolute; 
             left: 4px; 
@@ -26,13 +27,13 @@
             height: 100%; 
             visibility: hidden; 
         }
-        
-        /* Tool Base Styles */
+
+        /* Toolbase: All Absolute */
         .tool-btn, .tool-input { 
             position: absolute; 
             top: 50%; 
             transform: translateY(-50%); 
-            transition: width 0.25s ease-out, z-index 0s;
+            transition: width 0.25s ease, z-index 0s;
         }
 
         .tool-btn { 
@@ -48,20 +49,15 @@
             z-index: 10; height: 2rem; width: 45px; 
         }
 
-        /* Fixed Coordinates for all Toolbars */
+        /* Fixed Left Coordinates */
         .p0 { left: 0px; }
-        .p1 { left: 45px; }
-        .p2 { left: 90px; }
-        .p3 { left: 135px; }
-        .p4 { left: 180px; }
-        
-        /* Specific Button Spacing */
-        .btn-p1 { left: 50px; } /* href starts 0, text starts 50 */
-        .btn-p2 { left: 100px; } /* trash starts 100 */
+        .p1 { left: 50px; }
+        .p2 { left: 100px; }
+        .p3 { left: 150px; }
 
-        /* Expansion Logic */
+        /* Focus: Expand Right edge only */
         .tool-input:focus { 
-            width: calc(100% - 8px) !important; 
+            width: calc(100% - 4px) !important; 
             z-index: 20 !important; 
             background: #222;
             outline: 1px solid var(--brand-pink);
@@ -69,6 +65,7 @@
 
         #frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; }
         #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; left: 0; }
+        
         .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.5rem; margin: 0 0.6rem; }
         .device-btn.active { color: var(--brand-pink); }
@@ -95,7 +92,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.62</div>
+        <div class="version-status">v4.3.63</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -158,7 +155,6 @@
         const isBtn = selectedEl.classList.contains('block_button_container');
         const isImg = selectedEl.classList.contains('block_image');
         const isSpacer = selectedEl.classList.contains('block_spacer');
-        const isEditable = selectedEl.contentEditable === "true";
         let html = '';
 
         if (isBtn) {
@@ -166,26 +162,23 @@
             const url = link.getAttribute('href') || '';
             const txt = link.innerText;
             html += `<input type="text" class="tool-input p0" value="href" onfocus="this.value='${url}'" onblur="updateBtnLink(this.value); this.value='href'" oninput="updateBtnLink(this.value)">`;
-            html += `<input type="text" class="tool-input btn-p1" value="text" onfocus="this.value='${txt}'" onblur="updateBtnText(this.value); this.value='text'" oninput="updateBtnText(this.value)">`;
-            html += `<button class="tool-btn btn-p2" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
+            html += `<input type="text" class="tool-input p1" value="text" onfocus="this.value='${txt}'" onblur="updateBtnText(this.value); this.value='text'" oninput="updateBtnText(this.value)">`;
+            html += `<button class="tool-btn p2" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
         } else if (isImg) {
             html += `<button class="tool-btn p0" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`;
             html += `<button class="tool-btn p1" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>`;
             html += `<button class="tool-btn p2" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
-        } else if (isEditable) {
+        } else if (selectedEl.contentEditable === "true") {
             html += `<button class="tool-btn p0" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
             if (!inDiv) {
                 html += `<button class="tool-btn p1" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>`;
                 html += `<button class="tool-btn p2" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>`;
                 html += `<button class="tool-btn p3" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
-            } else {
-                html += `<button class="tool-btn p1" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
-            }
+            } else { html += `<button class="tool-btn p1" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`; }
         } else if (isSpacer) {
             html += `<button class="tool-btn p0" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
             html += `<button class="tool-btn p1" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
         }
-
         toolbarContent.innerHTML = html;
     }
 
@@ -196,15 +189,30 @@
     function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function setAlign(pos) { if(selectedEl) selectedEl.style.textAlign = pos; }
-    function toggleSpacerLine() { if(selectedEl) { const b = selectedEl.style.borderBottom; selectedEl.style.borderBottom = (b==='none'||!b)?'1px solid #eee':'none'; } }
+    
+    function insertElement(type, data) {
+        const doc = frame.contentDocument; const root = doc.getElementById('editor-root');
+        const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
+        const el = doc.createElement(tagMap[type] || 'div');
+        el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
+        if(type === 'block_image') { el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; el.contentEditable = "false"; el.style.width = "200px"; el.setAttribute('data-scale-factor', '1.0'); }
+        else if(type === 'block_button') { el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`; el.contentEditable = "false"; }
+        else if(type === 'block_spacer' || type === 'block_container') { el.contentEditable = "false"; }
+        else { el.innerText = ""; el.setAttribute('data-placeholder', 'Type here...'); el.contentEditable = "true"; }
+        root.appendChild(el);
+        setTimeout(() => selectElement(el), 150);
+    }
+
     function setDevice(type) {
         currentMode = type;
         const widths = { 'desktop': 1200, 'android': 448, 'iphone': 393 };
         const scaleFactor = Math.min(wrapper.offsetWidth / widths[type], 1);
         frame.style.width = widths[type] + 'px';
+        frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
         frame.style.transform = `scale(${scaleFactor})`;
         frame.style.left = (scaleFactor < 1) ? '0px' : ((wrapper.offsetWidth - widths[type]) / 2) + 'px';
     }
+
     window.onload = init;
 </script>
 </body>
