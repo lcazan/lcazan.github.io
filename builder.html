@@ -3,27 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v4.3.65</title>
+    <title>Snoozing Builder | v4.3.66</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; --side-w: 4.6875rem; --head-h: 3.125rem; --tool-h: 3rem; }
         
-        /* Kill Flex on body to prevent keyboard squishing */
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             overflow: hidden; background: #111; display: block; 
         }
 
-        /* SIDEBAR: Absolute Fixed Position */
+        /* SIDEBAR: Scrollable and Layered on top */
         #sidebar { 
             position: fixed; top: 0; left: 0; 
             width: var(--side-w); height: 100vh; 
             background: var(--panel-bg); border-right: 0.125rem solid #000;
             display: flex; flex-direction: column; align-items: center; 
-            padding: 0.9375rem 0; z-index: 2000; box-sizing: border-box;
+            padding: 0.9375rem 0; z-index: 3000; box-sizing: border-box;
+            overflow-y: auto; overflow-x: hidden; 
+            scrollbar-width: none; /* Firefox */
         }
+        #sidebar::-webkit-scrollbar { display: none; } /* Chrome/Safari */
 
-        /* HEADER: Absolute Fixed Position */
         #header-area { 
             position: fixed; top: 0; left: var(--side-w); right: 0;
             height: var(--head-h); background: #222; 
@@ -31,7 +32,6 @@
             display: flex; align-items: center; justify-content: center; z-index: 1001; 
         }
 
-        /* STICKY TOOLBAR: Absolute Fixed Position */
         #sticky-toolbar { 
             position: fixed; top: var(--head-h); left: var(--side-w); right: 0;
             height: var(--tool-h); background: #1a1a1a; 
@@ -39,7 +39,6 @@
             display: flex; align-items: center; justify-content: center; z-index: 1001; 
         }
 
-        /* TOOLBAR CONTENT: The 90% Stage */
         #toolbar-content { 
             position: relative; width: 90%; height: 2.2rem; visibility: hidden; 
         }
@@ -61,7 +60,6 @@
             z-index: 10; width: 45px; 
         }
 
-        /* Fixed Left Positions relative to 90% stage */
         .p0 { left: 0px; }
         .p1 { left: 49px; }
         .p2 { left: 98px; }
@@ -69,7 +67,6 @@
 
         .tool-input:focus { width: 100% !important; z-index: 20 !important; background: #222; outline: 1px solid var(--brand-pink); }
 
-        /* FRAME WRAPPER: Absolute Fixed Position filling the rest */
         #frame-wrapper { 
             position: fixed; top: calc(var(--head-h) + var(--tool-h)); 
             left: var(--side-w); right: 0; bottom: 0;
@@ -78,12 +75,11 @@
 
         #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; left: 0; }
 
-        /* Sidebar Buttons */
-        .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; }
+        .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; flex-shrink: 0; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.5rem; margin: 0 0.6rem; }
         .device-btn.active { color: var(--brand-pink); }
-        .export-wrap { margin-top: auto; margin-bottom: 60px; }
-        .export-btn { width: 3.75rem; height: 3.75rem; background: var(--brand-pink); border: none; color: #000; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; }
+        .export-wrap { margin-top: auto; padding: 20px 0; flex-shrink: 0; }
+        .export-btn { width: 3.75rem; height: 3.75rem; background: var(--brand-pink); border: none; color: #000; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; cursor: pointer; }
         .version-status { position: absolute; right: 1.5625rem; top: 0.75rem; color: #fff; font-size: 1rem; font-weight: 800; }
     </style>
 </head>
@@ -106,7 +102,7 @@
         <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
         <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
     </div>
-    <div class="version-status">v4.3.65</div>
+    <div class="version-status">v4.3.66</div>
 </div>
 
 <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
@@ -126,12 +122,13 @@
     async function init() {
         const resp = await fetch('template.html');
         let html = await resp.text();
-        // Injection logic for internal editor styles remains same as stable
         frame.srcdoc = html.replace('</head>', `
             <style>
                 #editor-root { width: 100%; display: flex; flex-direction: column; padding-bottom: 250px; }
                 .editable { position: relative; min-height: 1.2em; cursor: pointer; outline: none; }
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
+                .block_button_container { display: flex; justify-content: center; padding: 10px; }
+                .block_button { background: #000; color: #fff; padding: 10px 20px; text-decoration: none; display: inline-block; font-weight: bold; }
             </style>
         `).replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
         
@@ -142,6 +139,52 @@
                 if (el) selectElement(el); else deselectAll();
             });
         };
+    }
+
+    function insertElement(type) {
+        const doc = frame.contentDocument;
+        const root = doc.getElementById('editor-root');
+        if (!root) return;
+
+        const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
+        let el;
+
+        if (type === 'block_button') {
+            el = doc.createElement('div');
+            el.className = 'block_button_container';
+            el.innerHTML = '<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>';
+        } else if (type === 'block_container') {
+            el = doc.createElement('div');
+            el.className = 'block_container editable';
+            el.style.minHeight = '50px';
+            el.style.background = '#f9f9f9';
+        } else {
+            el = doc.createElement(tagMap[type] || 'div');
+            el.className = 'editable ' + type;
+            el.innerText = 'New ' + type.replace('_', ' ');
+            el.contentEditable = "true";
+        }
+
+        root.appendChild(el);
+        selectElement(el);
+    }
+
+    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+    
+    function handleImageUpload(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const doc = frame.contentDocument;
+                const root = doc.getElementById('editor-root');
+                const div = doc.createElement('div');
+                div.className = 'block_image editable';
+                div.innerHTML = `<img src="${e.target.result}" style="width:100%">`;
+                root.appendChild(div);
+                selectElement(div);
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
     }
 
     function selectElement(el) {
@@ -188,7 +231,8 @@
         frame.style.left = (scaleFactor < 1) ? '0px' : ((wrapper.offsetWidth - widths[type]) / 2) + 'px';
     }
 
-    // Auto-rescale on orientation change
+    function exportHTML() { console.log(frame.srcdoc); alert('HTML exported to console'); }
+
     window.addEventListener('resize', () => setDevice(currentMode));
     window.onload = init;
 </script>
