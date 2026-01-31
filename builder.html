@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v4.3.14</title>
+    <title>Snoozing Builder | v4.3.15</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -17,8 +17,10 @@
         #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; }
         
         .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; }
-        .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; }
-        .tool-input { background: #333; border: 0.0625rem solid #666; color: #fff; padding: 0.3125rem; border-radius: 0.25rem; width: 5.5rem; font-size: 0.75rem; }
+        .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; font-size: 1.1rem; }
+        .tool-btn.active { background: var(--brand-pink); color: #000; }
+        .tool-input { background: #333; border: 0.0625rem solid #666; color: #fff; padding: 0.3125rem; border-radius: 0.25rem; width: 6.5rem; font-size: 0.75rem; }
+        
         .swatch { width: 1.5rem; height: 1.5rem; border: 1px solid #666; border-radius: 3px; cursor: pointer; margin: 0 2px; }
         .picker-wrapper { position: relative; width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; }
         #native-picker { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
@@ -47,7 +49,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.14</div>
+        <div class="version-status">v4.3.15</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -71,18 +73,12 @@
                 .editable { position: relative; min-height: 1.2em; cursor: pointer; box-sizing: border-box; width: 100%; outline: none; }
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
                 
-                /* Helvetica Ghost Text */
-                .editable:empty::before { 
-                    content: attr(data-placeholder); 
-                    color: #888; 
-                    opacity: 0.6; 
-                    pointer-events: none; 
-                    font-family: Helvetica, Arial, sans-serif !important; 
-                    font-weight: 400 !important;
-                    font-style: normal !important;
-                }
+                /* Force Block Display to fix focus issues */
+                h2, h3, p { display: block !important; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
                 
-                h2, h3, p { margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
+                /* Helvetica Ghost Text */
+                .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; font-family: Helvetica, Arial, sans-serif !important; font-weight: 400 !important; }
+                
                 .block_container { display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; width: 100%; min-height: 2rem; }
                 .block_container > .editable { flex: 1 1 auto; margin: 0; }
                 .block_container > .block_image { flex: 0 0 auto; position: relative; }
@@ -143,9 +139,10 @@
     function renderToolbar() {
         if (!selectedEl) return;
         toolbarContent.style.visibility = 'visible';
-        const isDiv = selectedEl.classList.contains('block_container');
+        const isBtn = selectedEl.classList.contains('block_button_container');
         const isImg = selectedEl.classList.contains('block_image');
         const isText = selectedEl.contentEditable === "true";
+        const isDiv = selectedEl.classList.contains('block_container');
         let html = '';
 
         if (isDiv) {
@@ -153,13 +150,18 @@
             html += `<input type="text" class="tool-input" placeholder="Hex #" oninput="updateColor(this.value)">`;
             html += `<div class="swatch" style="background:transparent; border:1px dashed #fff" onclick="updateColor('transparent')"></div>`;
             html += `<div class="swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div>`;
+        } else if (isBtn) {
+            // RESTORED v4.3.8 Button Toolbar
+            const link = selectedEl.querySelector('a');
+            html += `<input type="text" class="tool-input" value="${link.innerText}" oninput="updateBtnText(this.value)">`;
+            html += `<input type="text" class="tool-input" style="width:10rem" value="${link.getAttribute('href') || ''}" oninput="updateBtnLink(this.value)">`;
         } else if (isImg) {
             html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button> <button class="tool-btn" onclick="fitImageWidth()"><i class="fa-solid fa-expand"></i></button>`;
         } else if (isText) {
             html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
         }
         
-        if (!isDiv && !selectedEl.classList.contains('block_button_container') && !selectedEl.classList.contains('block_spacer')) {
+        if (!isDiv && !isBtn && !selectedEl.classList.contains('block_spacer')) {
             html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button> <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button> <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>`;
         }
         html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
@@ -168,6 +170,8 @@
 
     function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
     function fitImageWidth() { if(selectedEl) { selectedEl.style.width = "100%"; selectedEl.style.display = "block"; selectedEl.style.float = "none"; } }
+    function updateBtnText(val) { if(selectedEl) selectedEl.querySelector('a').innerText = val.toUpperCase(); }
+    function updateBtnLink(val) { if(selectedEl) selectedEl.querySelector('a').setAttribute('href', val); }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
     function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbarContent.style.visibility = 'hidden'; }
@@ -183,6 +187,7 @@
     }
 
     function addResizeHandle(el) {
+        // RESTORED v4.3.8 Resize Math
         const handle = frame.contentDocument.createElement('div'); handle.className = 'resize-handle';
         const startResize = (e) => {
             e.preventDefault(); e.stopPropagation(); isResizing = true;
