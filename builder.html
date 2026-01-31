@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v4.3.1</title>
+    <title>Snoozing Builder | v4.3.2</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -38,7 +38,6 @@
             border-bottom: 0.0625rem solid #000; flex-shrink: 0; z-index: 1001;
         }
 
-        /* THE STAGE: Centering the iframe horizontally */
         #frame-wrapper { 
             flex-grow: 1; position: relative; background: #333; overflow: hidden;
             display: flex; justify-content: center; align-items: flex-start;
@@ -46,7 +45,7 @@
         
         #preview-frame { 
             border: none; background: white; 
-            transform-origin: top center; /* Centered scaling */
+            transform-origin: top center; 
             position: absolute; top: 0;
         }
 
@@ -64,23 +63,23 @@
 <body>
 
 <div id="sidebar">
-    <button class="insert-btn" onclick="insertElement('block_container')"><i class="fa-solid fa-square"></i></button>
-    <button class="insert-btn" onclick="insertElement('block_button')"><i class="fa-solid fa-square-minus"></i></button>
-    <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i></button>
-    <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i></button>
-    <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i></button>
-    <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i></button>
-    <button class="insert-btn" onclick="insertElement('block_spacer')"><i class="fa-solid fa-arrows-up-down"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_container')" title="Div"><i class="fa-solid fa-square"></i></button>
+    <button class="insert-btn" onclick="triggerImageUpload()" title="Picture"><i class="fa-solid fa-image"></i></button>
+    <button class="insert-btn" onclick="insertElement('section_heading')" title="Service Heading"><i class="fa-solid fa-heading"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_heading')" title="Block Heading"><i class="fa-solid fa-font"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_text')" title="Block Text"><i class="fa-solid fa-align-left"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_button')" title="Button"><i class="fa-solid fa-square-minus"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_spacer')" title="Spacer"><i class="fa-solid fa-arrows-up-down"></i></button>
 </div>
 
 <div id="preview-container">
     <div id="header-area">
         <div id="device-bar">
-            <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop" title="Desktop"></i></button>
-            <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button" title="Android (448px)"></i></button>
-            <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile" title="iPhone (393px)"></i></button>
+            <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
+            <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
+            <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.1</div>
+        <div class="version-status">v4.3.2</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -123,9 +122,12 @@
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
                 body { padding-bottom: 25rem !important; } 
                 
-                .block_heading { border-bottom: 0.0625rem solid #ebd5c9; padding-bottom: 0.625rem; margin-bottom: 0.9375rem; }
-                .block_spacer { height: 2.5rem; border-bottom: 0.0625rem solid #ebd5c9; margin-bottom: 0.625rem; }
-                .no-line { border-bottom: none !important; }
+                /* NO LINES BY DEFAULT */
+                .block_heading, .section_heading { border-bottom: none; padding-bottom: 0.625rem; margin-bottom: 0.9375rem; }
+                .block_spacer { height: 2.5rem; border-bottom: none; margin-bottom: 0.625rem; }
+                
+                /* Class to toggle visibility */
+                .show-line { border-bottom: 0.0625rem solid #ebd5c9 !important; }
 
                 @media (min-width: 64rem) {
                     .content-container { width: 85%; max-width: 75rem; margin: 0 auto !important; }
@@ -145,6 +147,13 @@
         frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
         
         frame.onload = () => {
+            // PLAIN TEXT PASTE LOGIC
+            frame.contentDocument.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+                frame.contentDocument.execCommand('insertText', false, text);
+            });
+
             frame.contentDocument.addEventListener('mousedown', (e) => {
                 if (isResizing) return;
                 const el = e.target.closest('.editable');
@@ -158,30 +167,24 @@
         currentMode = type;
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`btn-${type}`).classList.add('active');
-        
         const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 };
         const virtualWidth = widths[type];
-        
         const availableWidth = wrapper.offsetWidth;
         const scaleFactor = Math.min(availableWidth / virtualWidth, 1);
-        
         frame.style.width = virtualWidth + 'px';
         frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
         frame.style.transform = `scale(${scaleFactor})`;
-        
-        // Centering math: Offset from left is half the empty space
-        const scaledWidth = virtualWidth * scaleFactor;
-        frame.style.left = ((availableWidth - scaledWidth) / 2) + 'px';
+        frame.style.left = ((availableWidth - (virtualWidth * scaleFactor)) / 2) + 'px';
     }
 
-    // Core Builder Logic preserved
     function selectElement(el) {
         const doc = frame.contentDocument;
         doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
         if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
         selectedEl.classList.add('selected-item');
-        if (el.classList.contains('block_image') || el.classList.contains('block_spacer')) addResizeHandle(el);
+        // SPACER REMOVED FROM RESIZE ELIGIBILITY
+        if (el.classList.contains('block_image')) addResizeHandle(el);
         renderToolbar();
     }
 
@@ -198,9 +201,9 @@
         toolbarContent.style.visibility = 'visible';
         const isBtn = selectedEl.classList.contains('block_button_container');
         const isImg = selectedEl.classList.contains('block_image');
-        const isHeading = selectedEl.classList.contains('block_heading');
+        const isHeading = selectedEl.classList.contains('block_heading') || selectedEl.classList.contains('section_heading');
         const isSpacer = selectedEl.classList.contains('block_spacer');
-        const lineHidden = selectedEl.classList.contains('no-line');
+        const lineShown = selectedEl.classList.contains('show-line');
         
         let html = '';
         if (isBtn) {
@@ -208,13 +211,13 @@
             html += `<input type="text" class="tool-input" value="${link.innerText}" oninput="updateBtnText(this.value)">`;
             html += `<input type="text" class="tool-input" style="width:10rem" value="${link.getAttribute('href') || ''}" oninput="updateBtnLink(this.value)">`;
         } else if (isSpacer) {
-            html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`;
+            html += `<button class="tool-btn ${lineShown?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`;
         } else if (isImg) { 
             html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`; 
             html += `<button class="tool-btn" onclick="fitImageWidth()"><i class="fa-solid fa-expand"></i></button>`;
         } else {
             html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
-            if (isHeading) html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`;
+            if (isHeading) html += `<button class="tool-btn ${lineShown?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`;
         }
 
         if (!isSpacer && !isBtn) {
@@ -228,7 +231,7 @@
         toolbarContent.innerHTML = html;
     }
 
-    function toggleLine() { if (selectedEl) { selectedEl.classList.toggle('no-line'); renderToolbar(); } }
+    function toggleLine() { if (selectedEl) { selectedEl.classList.toggle('show-line'); renderToolbar(); } }
     function fitImageWidth() { if(selectedEl) { selectedEl.style.width = "100%"; selectedEl.style.display = "block"; selectedEl.style.float = "none"; } }
     function updateBtnText(val) { if(selectedEl) selectedEl.querySelector('a').innerText = val.toUpperCase(); }
     function updateBtnLink(val) { if(selectedEl) selectedEl.querySelector('a').setAttribute('href', val); }
@@ -252,7 +255,7 @@
         const root = doc.getElementById('editor-root');
         const el = doc.createElement('div');
         el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
-        const placeholders = { 'section_heading': 'New Section', 'block_heading': 'Heading', 'block_text': 'Paragraph...' };
+        const placeholders = { 'section_heading': 'Service Heading', 'block_heading': 'Heading', 'block_text': 'Paragraph...' };
         
         if(type === 'block_image') { 
             el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
@@ -260,14 +263,15 @@
         } else if(type === 'block_button') {
             el.innerHTML = `<a href="#" class="block_button" style="font-weight:900 !important;" onclick="return false;">FIND OUT MORE</a>`;
             el.contentEditable = "false";
-        } else if(type === 'block_spacer') {
+        } else if(type === 'block_spacer' || type === 'block_container') {
             el.contentEditable = "false";
         } else { 
             el.innerText = ""; 
             el.setAttribute('data-placeholder', placeholders[type] || 'Type here...');
             el.contentEditable = "true"; 
         }
-        if (selectedEl && selectedEl.parentNode === root) selectedEl.after(el);
+        if (selectedEl && selectedEl.classList.contains('block_container')) selectedEl.appendChild(el);
+        else if (selectedEl && selectedEl.parentNode === root) selectedEl.after(el);
         else root.appendChild(el);
         setTimeout(() => { selectElement(el); el.scrollIntoView({ block: "end", behavior: "smooth" }); }, 150);
     }
@@ -275,27 +279,22 @@
     function addResizeHandle(el) {
         const handle = frame.contentDocument.createElement('div');
         handle.className = 'resize-handle';
-        const isSpacer = el.classList.contains('block_spacer');
         const startResize = (e) => {
             e.preventDefault(); e.stopPropagation();
             isResizing = true;
             const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
             const startW = el.offsetWidth;
-            const startH = el.offsetHeight;
+            // Get parent width for boundary check
+            const parentW = el.parentElement.offsetWidth;
             const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 };
             const scale = wrapper.offsetWidth / widths[currentMode];
 
             const onMove = (mE) => {
                 const curX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
-                const curY = mE.type.includes('touch') ? mE.touches[0].clientY : mE.clientY;
-                if (isSpacer) {
-                    const newH = startH + (curY - startY) / scale;
-                    if (newH > 5) el.style.height = newH + 'px';
-                } else {
-                    const newW = startW + (curX - startX) / scale;
-                    if (newW > 40) el.style.width = newW + 'px';
-                }
+                let newW = startW + (curX - startX) / scale;
+                // BOUNDARY CHECK: Prevent image from going off the right edge
+                if (newW > parentW) newW = parentW;
+                if (newW > 40) el.style.width = newW + 'px';
             };
             const onUp = () => {
                 isResizing = false;
