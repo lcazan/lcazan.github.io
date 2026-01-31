@@ -1,61 +1,54 @@
-5<!DOCTYPE html>
+l<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v4.3.23</title>
+    <title>Snoozing Builder | v4.3.24</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         
-        /* LOCK THE OUTER SHELL */
+        /* STRICT EDITOR LOCK */
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100vh; 
             overflow: hidden; position: fixed; top: 0; left: 0; 
-            background: #111; touch-action: none;
+            background: #111; touch-action: none; 
         }
         body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
-        
+
+        /* SIDEBAR WITH EXPORT BUTTON */
         #sidebar { 
             width: 4.6875rem; height: 100vh; background: var(--panel-bg); 
             display: flex; flex-direction: column; align-items: center; 
             padding: 0.9375rem 0; border-right: 0.125rem solid #000; 
-            flex-shrink: 0; z-index: 1000; 
+            flex-shrink: 0; z-index: 1000; position: relative;
         }
-
-        .export-wrap { margin-top: auto; margin-bottom: 60px; }
+        .export-wrap { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); }
         .export-btn { 
             width: 3.75rem; height: 3.75rem; background: var(--brand-pink); 
             border: none; color: #000; border-radius: 50%; cursor: pointer; 
             display: flex; justify-content: center; align-items: center; 
-            font-size: 1.5rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); 
+            font-size: 1.5rem; box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
         }
 
-        #preview-container { 
-            flex-grow: 1; display: flex; flex-direction: column; 
-            background: #333; height: 100vh; overflow: hidden; position: relative; 
-        }
-
+        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100vh; overflow: hidden; position: relative; }
+        
+        /* FIXED TOOLBARS */
         #header-area { background: #222; border-bottom: 0.0625rem solid #000; height: 3.125rem; display: flex; align-items: center; justify-content: center; z-index: 1001; flex-shrink: 0; }
         #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 0.0625rem solid #000; z-index: 1001; flex-shrink: 0; }
         
-        #frame-wrapper { 
-            flex-grow: 1; position: relative; background: #333; 
-            overflow: hidden; /* Prevent wrapper from scrolling */
-        }
-
-        #preview-frame { 
-            border: none; background: white; transform-origin: top left; 
-            position: absolute; top: 0; 
-        }
+        #frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; }
+        #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; }
         
         .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; }
-        .spacer-icon { font-size: 1.5rem; }
-        
         .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; font-size: 1.1rem; }
+        .tool-btn.active { background: var(--brand-pink); color: #000; }
         .tool-input { background: #333; border: 0.0625rem solid #666; color: #fff; padding: 0.3125rem; border-radius: 0.25rem; width: 6.5rem; font-size: 0.75rem; }
-        #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
         
+        .swatch { width: 1.5rem; height: 1.5rem; border: 1px solid #666; border-radius: 3px; cursor: pointer; margin: 0 2px; }
+        .picker-wrapper { position: relative; width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; }
+        #native-picker { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+        #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.5rem; margin: 0 0.6rem; }
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 1.5625rem; top: 0.75rem; color: #fff; font-size: 1rem; font-weight: 800; }
@@ -70,7 +63,7 @@
     <button class="insert-btn" onclick="insertElement('block_heading')">T<sub>2</sub></button>
     <button class="insert-btn" onclick="insertElement('block_text')">T<sub>3</sub></button>
     <button class="insert-btn" onclick="insertElement('block_button')"><span>Btn</span></button>
-    <button class="insert-btn" onclick="insertElement('block_spacer')"><i class="fa-solid fa-arrows-up-down spacer-icon"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_spacer')"><i class="fa-solid fa-arrows-up-down"></i></button>
     
     <div class="export-wrap">
         <button class="export-btn" onclick="exportHTML()"><i class="fa-solid fa-download"></i></button>
@@ -84,7 +77,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.23</div>
+        <div class="version-status">v4.3.24</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -98,11 +91,6 @@
     const wrapper = document.getElementById('frame-wrapper');
     let selectedEl = null; let currentMode = 'iphone'; let isResizing = false;
 
-    // PREVENT KEYBOARD SHIFT
-    window.addEventListener('resize', () => {
-        document.body.style.height = window.innerHeight + 'px';
-    });
-
     async function init() {
         const resp = await fetch('template.html');
         let html = await resp.text();
@@ -114,17 +102,9 @@
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
                 h2, h3, p { display: block !important; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
                 .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; font-family: Helvetica, Arial, sans-serif !important; font-weight: 400 !important; }
-                
                 .block_container { display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; width: 100%; min-height: 2rem; }
-                .block_container > .block_image { flex: 0 0 64%; max-width: 64%; position: relative; }
-                .block_container > .editable:not(.block_image) { flex: 1 1 30%; margin: 0; }
-                .block_spacer { height: 2.5rem; width: 100%; }
-
-                @media (max-width: 500px) {
-                    .block_container > .block_image { flex: 0 0 100%; max-width: 100%; }
-                    .block_container > .editable:not(.block_image) { flex: 0 0 100%; }
-                }
-
+                .block_container > .editable { flex: 1 1 auto; margin: 0; }
+                .block_container > .block_image { flex: 0 0 auto; position: relative; }
                 .resize-handle { width: 2.75rem; height: 2.75rem; position: absolute; right: -0.125rem; bottom: -0.125rem; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; }
                 .resize-handle::before { content: "\\f337"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.75rem; }
             </style>
@@ -142,15 +122,6 @@
         };
     }
 
-    function selectElement(el) {
-        const doc = frame.contentDocument; doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
-        if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
-        selectedEl = el; selectedEl.classList.add('selected-item');
-        // SPACERS ARE NO LONGER RESIZABLE
-        if (el.classList.contains('block_image')) addResizeHandle(el);
-        renderToolbar(); if(el.contentEditable === "true") el.focus();
-    }
-
     function exportHTML() {
         deselectAll();
         const doc = frame.contentDocument.cloneNode(true);
@@ -165,21 +136,38 @@
         a.href = URL.createObjectURL(blob); a.download = 'export.html'; a.click();
     }
 
+    /* ALL v4.3.20 LOGIC PRESERVED BELOW */
     function insertElement(type, data) {
         const doc = frame.contentDocument;
         const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
         const placeholders = { 'section_heading': 'Service Heading', 'block_heading': 'Heading', 'block_text': 'Paragraph...' };
         const el = doc.createElement(tagMap[type] || 'div');
         el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
-        if(type === 'block_image') { el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}" style="display:block; max-width:100%;">`; el.contentEditable = "false"; el.style.width = "100%"; el.style.position = "relative"; }
-        else if(type === 'block_button') { el.innerHTML = `<a href="#" class="block_button" style="font-weight:900 !important;" onclick="return false;">FIND OUT MORE</a>`; el.contentEditable = "false"; }
-        else if(type === 'block_spacer' || type === 'block_container') { el.contentEditable = "false"; }
-        else { el.innerText = ""; el.setAttribute('data-placeholder', placeholders[type] || 'Type...'); el.contentEditable = "true"; }
+        if(type === 'block_image') { 
+            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}" style="display:block; max-width:100%;">`; 
+            el.contentEditable = "false"; el.style.width = "12.5rem"; el.style.position = "relative";
+        } else if(type === 'block_button') {
+            el.innerHTML = `<a href="#" class="block_button" style="font-weight:900 !important;" onclick="return false;">FIND OUT MORE</a>`;
+            el.contentEditable = "false";
+        } else if(type === 'block_spacer' || type === 'block_container') {
+            el.contentEditable = "false";
+        } else {
+            el.innerText = ""; el.setAttribute('data-placeholder', placeholders[type] || 'Type...');
+            el.contentEditable = "true"; 
+        }
         const root = doc.getElementById('editor-root');
         if (selectedEl && selectedEl.classList.contains('block_container')) selectedEl.appendChild(el);
         else if (selectedEl && selectedEl.parentNode === root) selectedEl.after(el);
         else root.appendChild(el);
         setTimeout(() => { selectElement(el); if(el.contentEditable === "true") el.focus(); }, 150);
+    }
+
+    function selectElement(el) {
+        const doc = frame.contentDocument; doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
+        selectedEl = el; selectedEl.classList.add('selected-item');
+        if (el.classList.contains('block_image') || el.classList.contains('block_spacer')) addResizeHandle(el);
+        renderToolbar(); if(el.contentEditable === "true") el.focus();
     }
 
     function renderToolbar() {
@@ -221,21 +209,30 @@
 
     function addResizeHandle(el) {
         const handle = frame.contentDocument.createElement('div'); handle.className = 'resize-handle';
+        const isSpacer = el.classList.contains('block_spacer');
         const startResize = (e) => {
             e.preventDefault(); e.stopPropagation(); isResizing = true;
             const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-            const startW = el.offsetWidth;
+            const startY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            const startW = el.offsetWidth; const startH = el.offsetHeight;
             const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 };
             const scale = wrapper.offsetWidth / widths[currentMode];
             const onMove = (mE) => { 
                 const curX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
-                let newW = startW + (curX - startX) / scale; 
-                if (newW > 40) el.style.width = newW + 'px';
+                const curY = mE.type.includes('touch') ? mE.touches[0].clientY : mE.clientY;
+                if (isSpacer) {
+                    const newH = startH + (curY - startY) / scale;
+                    if (newH > 5) el.style.height = newH + 'px';
+                } else {
+                    const newW = startW + (curX - startX) / scale;
+                    if (newW > 40) el.style.width = newW + 'px';
+                }
             };
-            const onUp = () => { isResizing = false; frame.contentDocument.removeEventListener('mousemove', onMove); frame.contentDocument.removeEventListener('mouseup', onUp); };
-            frame.contentDocument.addEventListener('mousemove', onMove); frame.contentDocument.addEventListener('mouseup', onUp);
+            const onUp = () => { isResizing = false; frame.contentDocument.removeEventListener('mousemove', onMove); frame.contentDocument.removeEventListener('mouseup', onUp); frame.contentDocument.removeEventListener('touchmove', onMove); frame.contentDocument.removeEventListener('touchend', onUp); };
+            frame.contentDocument.addEventListener('mousemove', onMove); frame.contentDocument.addEventListener('mouseup', onUp); frame.contentDocument.addEventListener('touchmove', onMove, {passive: false}); frame.contentDocument.addEventListener('touchend', onUp);
         };
-        handle.addEventListener('mousedown', startResize); el.appendChild(handle);
+        handle.addEventListener('mousedown', startResize); handle.addEventListener('touchstart', startResize, {passive: false});
+        el.appendChild(handle);
     }
 
     function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
