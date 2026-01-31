@@ -3,30 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.30</title>
+    <title>Snoozing Builder | v4.3.22</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
-        
-        html, body { 
-            margin: 0; padding: 0; width: 100%; height: 100%; 
-            overflow: hidden; position: fixed; top: 0; left: 0; 
-            background: #111; touch-action: none;
-        }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; top: 0; left: 0; background: #111; touch-action: none; }
         body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
         
+        /* SIDEBAR WITH BOTTOM EXPORT */
         #sidebar { width: 4.6875rem; height: 100%; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 0.9375rem 0; border-right: 0.125rem solid #000; flex-shrink: 0; z-index: 1000; }
         .export-wrap { margin-top: auto; margin-bottom: 60px; }
         .export-btn { width: 3.75rem; height: 3.75rem; background: var(--brand-pink); border: none; color: #000; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
 
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100%; overflow: hidden; position: relative; }
-        #header-area { background: #222; border-bottom: 0.0625rem solid #000; height: 3.125rem; display: flex; align-items: center; justify-content: center; z-index: 1001; flex-shrink: 0; }
-        #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 0.0625rem solid #000; z-index: 1001; flex-shrink: 0; }
-        
+        #header-area { background: #222; border-bottom: 0.0625rem solid #000; height: 3.125rem; display: flex; align-items: center; justify-content: center; z-index: 1001; }
+        #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 0.0625rem solid #000; z-index: 1001; }
         #frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; }
-        #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; left: 0; }
+        #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; }
         
         .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; }
+        .spacer-icon { font-size: 1.5rem; } /* Requested 1.5rem icon */
+        
         .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; font-size: 1.1rem; }
         .tool-input { background: #333; border: 0.0625rem solid #666; color: #fff; padding: 0.3125rem; border-radius: 0.25rem; width: 6.5rem; font-size: 0.75rem; }
         #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
@@ -44,8 +41,11 @@
     <button class="insert-btn" onclick="insertElement('block_heading')">T<sub>2</sub></button>
     <button class="insert-btn" onclick="insertElement('block_text')">T<sub>3</sub></button>
     <button class="insert-btn" onclick="insertElement('block_button')"><span>Btn</span></button>
-    <button class="insert-btn" onclick="insertElement('block_spacer')"><i class="fa-solid fa-arrows-up-down"></i></button>
-    <div class="export-wrap"><button class="export-btn" onclick="exportHTML()"><i class="fa-solid fa-download"></i></button></div>
+    <button class="insert-btn" onclick="insertElement('block_spacer')"><i class="fa-solid fa-arrows-up-down spacer-icon"></i></button>
+    
+    <div class="export-wrap">
+        <button class="export-btn" onclick="exportHTML()"><i class="fa-solid fa-download"></i></button>
+    </div>
 </div>
 
 <div id="preview-container">
@@ -55,7 +55,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.30</div>
+        <div class="version-status">v4.3.22</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -68,34 +68,28 @@
     const toolbarContent = document.getElementById('toolbar-content');
     const wrapper = document.getElementById('frame-wrapper');
     let selectedEl = null; let currentMode = 'iphone'; let isResizing = false;
-    const initialWindowHeight = window.innerHeight;
-
-    // v3.7.2.5 Keyboard Fix
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => {
-            document.body.style.height = window.visualViewport.height + 'px';
-            setTimeout(() => {
-                setDevice(currentMode); 
-                if (selectedEl && window.visualViewport.height < (initialWindowHeight - 150)) {
-                    selectedEl.scrollIntoView({ block: "end", behavior: "auto" });
-                }
-            }, 300);
-        });
-    }
 
     async function init() {
         const resp = await fetch('template.html');
         let html = await resp.text();
         html = html.replace('</head>', `
             <style>
-                html, body { height: auto; min-height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
-                #editor-root { flex: 1 0 auto; width: 100%; display: flex; flex-direction: column; padding-bottom: 250px !important; }
-                .editable { position: relative; min-height: 1.2em; cursor: pointer; box-sizing: border-box; width: 100%; outline: none; display: block !important; clear: both; }
+                html, body { height: auto; min-height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
+                #editor-root { width: 100%; display: flex; flex-direction: column; }
+                .editable { position: relative; min-height: 1.2em; cursor: pointer; box-sizing: border-box; width: 100%; outline: none; }
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
                 h2, h3, p { display: block !important; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
-                .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; font-family: Helvetica, Arial, sans-serif !important; }
+                .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; font-family: Helvetica, Arial, sans-serif !important; font-weight: 400 !important; }
                 .block_container { display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; width: 100%; min-height: 2rem; }
+                .block_container > .block_image { flex: 0 0 64%; max-width: 64%; position: relative; }
+                .block_container > .editable:not(.block_image) { flex: 1 1 30%; margin: 0; }
                 .block_spacer { height: 2.5rem; width: 100%; }
+
+                @media (max-width: 500px) {
+                    .block_container > .block_image { flex: 0 0 100%; max-width: 100%; }
+                    .block_container > .editable:not(.block_image) { flex: 0 0 100%; }
+                }
+
                 .resize-handle { width: 2.75rem; height: 2.75rem; position: absolute; right: -0.125rem; bottom: -0.125rem; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; }
                 .resize-handle::before { content: "\\f337"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.75rem; }
             </style>
@@ -106,10 +100,7 @@
             frame.contentDocument.addEventListener('mousedown', (e) => { 
                 if (isResizing) return;
                 const el = e.target.closest('.editable'); 
-                
-                // NEW: If already selected and contentEditable, don't interrupt the browser selection
-                if (el && el === selectedEl && el.contentEditable === "true") return; 
-
+                if (el && el === selectedEl) return; 
                 if (el) selectElement(el); else deselectAll(); 
             });
             setDevice('iphone');
@@ -120,55 +111,41 @@
         const doc = frame.contentDocument; doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
         if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el; selectedEl.classList.add('selected-item');
+        // RESTRICED: Only images get resize handles now
         if (el.classList.contains('block_image')) addResizeHandle(el);
-        renderToolbar(); 
-        if(el.contentEditable === "true") el.focus({preventScroll: true});
+        renderToolbar(); if(el.contentEditable === "true") el.focus();
     }
 
-    function addResizeHandle(el) {
-        const handle = frame.contentDocument.createElement('div'); handle.className = 'resize-handle';
-        const startResize = (e) => {
-            e.preventDefault(); e.stopPropagation(); isResizing = true;
-            const touch = e.type.includes('touch') ? e.touches[0] : e;
-            const startX = touch.clientX; const startW = el.offsetWidth;
-            const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 };
-            const scale = wrapper.offsetWidth / widths[currentMode];
-            const onMove = (mE) => { 
-                const mTouch = mE.type.includes('touch') ? mE.touches[0] : mE;
-                let newW = startW + (mTouch.clientX - startX) / scale; 
-                if (newW > 40) el.style.width = newW + 'px';
-            };
-            const onUp = () => { isResizing = false; frame.contentDocument.removeEventListener('mousemove', onMove); frame.contentDocument.removeEventListener('mouseup', onUp); };
-            frame.contentDocument.addEventListener('mousemove', onMove); frame.contentDocument.addEventListener('mouseup', onUp);
-        };
-        handle.addEventListener('mousedown', startResize); handle.addEventListener('touchstart', startResize, {passive: false}); el.appendChild(handle);
+    function exportHTML() {
+        deselectAll(); // Clean UI artifacts
+        const doc = frame.contentDocument.cloneNode(true);
+        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        doc.querySelectorAll('.editable').forEach(e => {
+            e.classList.remove('selected-item');
+            e.removeAttribute('contenteditable');
+            e.removeAttribute('data-placeholder');
+        });
+        const blob = new Blob([doc.documentElement.outerHTML], {type: 'text/html'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = 'export.html'; a.click();
     }
 
-    function setDevice(type) {
-        currentMode = type; document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-${type}`).classList.add('active');
-        const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 }; const virtualWidth = widths[type];
-        const scaleFactor = wrapper.offsetWidth / virtualWidth;
-        frame.style.width = virtualWidth + 'px'; frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
-        frame.style.transform = `scale(${scaleFactor})`;
-    }
-
+    /* REST OF CORE FUNCTIONS PRESERVED EXACTLY AS v4.3.21 */
     function insertElement(type, data) {
         const doc = frame.contentDocument;
         const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
-        const placeholders = { 'section_heading': 'New Section', 'block_heading': 'New heading', 'block_text': 'Insert text' };
+        const placeholders = { 'section_heading': 'Service Heading', 'block_heading': 'Heading', 'block_text': 'Paragraph...' };
         const el = doc.createElement(tagMap[type] || 'div');
         el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
-        if(type === 'block_image') { 
-            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}" style="display:block; max-width:100%;">`; 
-            el.contentEditable = "false"; el.style.width = "100%"; 
-        } else if(type === 'block_button') { 
-            el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`; el.contentEditable = "false"; 
-        } else if(type === 'block_spacer' || type === 'block_container') { el.contentEditable = "false"; }
-        else { 
-            el.innerText = ""; el.setAttribute('data-placeholder', placeholders[type] || 'Type...'); el.contentEditable = "true"; 
-        }
-        doc.getElementById('editor-root').appendChild(el);
-        setTimeout(() => { selectElement(el); if(el.contentEditable === "true") el.focus({preventScroll: true}); }, 150);
+        if(type === 'block_image') { el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}" style="display:block; max-width:100%;">`; el.contentEditable = "false"; el.style.width = "100%"; el.style.position = "relative"; }
+        else if(type === 'block_button') { el.innerHTML = `<a href="#" class="block_button" style="font-weight:900 !important;" onclick="return false;">FIND OUT MORE</a>`; el.contentEditable = "false"; }
+        else if(type === 'block_spacer' || type === 'block_container') { el.contentEditable = "false"; }
+        else { el.innerText = ""; el.setAttribute('data-placeholder', placeholders[type] || 'Type...'); el.contentEditable = "true"; }
+        const root = doc.getElementById('editor-root');
+        if (selectedEl && selectedEl.classList.contains('block_container')) selectedEl.appendChild(el);
+        else if (selectedEl && selectedEl.parentNode === root) selectedEl.after(el);
+        else root.appendChild(el);
+        setTimeout(() => { selectElement(el); if(el.contentEditable === "true") el.focus(); }, 150);
     }
 
     function renderToolbar() {
@@ -180,23 +157,57 @@
         const isDiv = selectedEl.classList.contains('block_container');
         let html = '';
         if (isDiv) {
-            html += `<input type="color" oninput="updateColor(this.value)"> <input type="text" class="tool-input" placeholder="Hex #" oninput="updateColor(this.value)">`;
+            html += `<div class="picker-wrapper"><button class="tool-btn"><i class="fa-solid fa-eye-dropper"></i></button><input type="color" id="native-picker" oninput="updateColor(this.value)"></div>`;
+            html += `<input type="text" class="tool-input" placeholder="Hex #" oninput="updateColor(this.value)">`;
+            html += `<div class="swatch" style="background:transparent; border:1px dashed #fff" onclick="updateColor('transparent')"></div>`;
+            html += `<div class="swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div>`;
         } else if (isBtn) {
             const link = selectedEl.querySelector('a');
             html += `<input type="text" class="tool-input" value="${link.innerText}" oninput="updateBtnText(this.value)">`;
+            html += `<input type="text" class="tool-input" style="width:10rem" value="${link.getAttribute('href') || ''}" oninput="updateBtnLink(this.value)">`;
         } else if (isImg) {
-            html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`;
+            html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button> <button class="tool-btn" onclick="fitImageWidth()"><i class="fa-solid fa-expand"></i></button>`;
         } else if (isText) {
             html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
         }
-        html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button> <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button> <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>`;
+        if (!isDiv && !isBtn && !selectedEl.classList.contains('block_spacer')) {
+            html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button> <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button> <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>`;
+        }
         html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
         toolbarContent.innerHTML = html;
     }
 
-    function exportHTML() { deselectAll(); const blob = new Blob([frame.contentDocument.documentElement.outerHTML], {type: 'text/html'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'export.html'; a.click(); }
+    function setDevice(type) {
+        currentMode = type; document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-${type}`).classList.add('active');
+        const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 }; const virtualWidth = widths[type];
+        const scaleFactor = Math.min(wrapper.offsetWidth / virtualWidth, 1);
+        frame.style.width = virtualWidth + 'px'; frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
+        frame.style.transform = `scale(${scaleFactor})`; frame.style.left = (scaleFactor < 1) ? '0px' : ((wrapper.offsetWidth - virtualWidth) / 2) + 'px';
+    }
+
+    function addResizeHandle(el) {
+        const handle = frame.contentDocument.createElement('div'); handle.className = 'resize-handle';
+        const startResize = (e) => {
+            e.preventDefault(); e.stopPropagation(); isResizing = true;
+            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const startW = el.offsetWidth;
+            const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 };
+            const scale = wrapper.offsetWidth / widths[currentMode];
+            const onMove = (mE) => { 
+                const curX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
+                let newW = startW + (curX - startX) / scale; 
+                if (newW > 40) el.style.width = newW + 'px';
+            };
+            const onUp = () => { isResizing = false; frame.contentDocument.removeEventListener('mousemove', onMove); frame.contentDocument.removeEventListener('mouseup', onUp); };
+            frame.contentDocument.addEventListener('mousemove', onMove); frame.contentDocument.addEventListener('mouseup', onUp);
+        };
+        handle.addEventListener('mousedown', startResize); el.appendChild(handle);
+    }
+
     function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
+    function fitImageWidth() { if(selectedEl) { selectedEl.style.width = "100%"; selectedEl.style.display = "block"; selectedEl.style.float = "none"; } }
     function updateBtnText(val) { if(selectedEl) selectedEl.querySelector('a').innerText = val.toUpperCase(); }
+    function updateBtnLink(val) { if(selectedEl) selectedEl.querySelector('a').setAttribute('href', val); }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
     function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbarContent.style.visibility = 'hidden'; }
