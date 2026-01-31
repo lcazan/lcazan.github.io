@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.41</title>
+    <title>Snoozing Builder | v4.3.42</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -50,7 +50,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.41</div>
+        <div class="version-status">v4.3.42</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -71,7 +71,7 @@
             <style>
                 html, body { height: auto; min-height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
                 #editor-root { width: 100%; display: flex; flex-direction: column; padding-bottom: 250px; }
-                .editable { position: relative; min-height: 1.2em; cursor: pointer; box-sizing: border-box; outline: none; }
+                .editable { position: relative; min-height: 1.2em; cursor: pointer; box-sizing: border-box; outline: none; display: block; }
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
                 h2, h3, p { display: block !important; margin: 0; padding: 0; color: inherit; font-family: inherit; }
                 .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; }
@@ -84,6 +84,9 @@
                     .block_container > .block_image, .block_container > h2, .block_container > h3, .block_container > p { flex: 0 0 100%; max-width: 100%; }
                 }
 
+                .block_image { display: inline-block; vertical-align: top; }
+                .block_image img { width: 100%; display: block; pointer-events: none; }
+
                 .block_spacer { height: 1.5rem !important; width: 100%; flex: 0 0 100% !important; border-bottom: 1px solid #eee; }
                 .resize-handle { width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; }
                 .resize-handle::before { content: "\\f337"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px; }
@@ -95,14 +98,8 @@
             frame.contentDocument.addEventListener('mousedown', (e) => { 
                 if (isResizing) return;
                 const el = e.target.closest('.editable');
-                // If clicking inside an already selected text box, allow selection/caret
                 if (el && el === selectedEl && el.contentEditable === "true") return; 
-                
-                if (el) {
-                    selectElement(el);
-                } else {
-                    deselectAll();
-                }
+                if (el) selectElement(el); else deselectAll();
             });
             frame.contentDocument.addEventListener('paste', (e) => {
                 e.preventDefault();
@@ -136,7 +133,7 @@
             const onMove = (mE) => {
                 const curX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
                 const newW = startW + (curX - startX) / scale;
-                if (newW > 40) el.style.width = newW + 'px';
+                if (newW > 20) el.style.width = newW + 'px';
             };
             const onUp = () => {
                 isResizing = false;
@@ -209,8 +206,8 @@
         const el = doc.createElement(tagMap[type] || 'div');
         el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
         if(type === 'block_image') { 
-            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}" style="display:block; width:100%;">`; 
-            el.contentEditable = "false"; el.style.width = "100%"; el.style.position = "relative"; 
+            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
+            el.contentEditable = "false"; el.style.width = "200px"; 
         } else if(type === 'block_button') { 
             el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`; 
             el.contentEditable = "false"; 
