@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v4.1.1</title>
+    <title>Snoozing Builder | v4.2.2</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         
-        /* The Mountain Lock */
+        /* THE LOCK: Absolute pinning to the top */
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             overflow: hidden; position: fixed; top: 0; left: 0; 
@@ -17,25 +17,21 @@
         
         body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
         
-        /* Sidebar: 75px */
         #sidebar { 
-            width: 4.6875rem; height: 100vh; background: var(--panel-bg); 
+            width: 4.6875rem; height: 100%; background: var(--panel-bg); 
             display: flex; flex-direction: column; align-items: center; 
             padding: 0.9375rem 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; 
-            position: relative;
         }
 
         #preview-container { 
             flex-grow: 1; display: flex; flex-direction: column; 
-            background: #333; height: 100vh; overflow: hidden; position: relative;
+            background: #333; height: 100%; overflow: hidden; position: relative;
         }
 
-        /* Header: 50px - Fixed Centering for v3.9.x behavior */
         #header-area { 
             background: #222; border-bottom: 1px solid #000; flex-shrink: 0; z-index: 1001; height: 3.125rem; 
-            position: relative; display: flex; align-items: center; justify-content: center; 
+            display: flex; align-items: center; justify-content: center; 
         }
-        #device-bar { display: flex; align-items: center; justify-content: center; }
 
         #sticky-toolbar { 
             height: 3rem; background: #1a1a1a; display: flex; 
@@ -45,12 +41,13 @@
 
         #frame-wrapper { 
             flex-grow: 1; position: relative; background: #333; overflow: hidden;
+            display: flex; justify-content: center; align-items: flex-start;
         }
         
         #preview-frame { 
             border: none; background: white; 
-            transform-origin: top left; 
-            position: absolute; top: 0; left: 0;
+            transform-origin: top center; 
+            position: absolute; top: 0;
         }
 
         .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 1px solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 4px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
@@ -81,7 +78,7 @@
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
         </div>
-        <div class="version-status">v4.1.1</div>
+        <div class="version-status">v4.2.2</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -102,9 +99,12 @@
     let currentMode = 'mobile';
     let isResizing = false;
 
+    // KEYBOARD LOCK: Prevent the UI from shifting when keyboard opens
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', () => {
-            document.body.style.height = window.visualViewport.height + 'px';
+            const viewport = window.visualViewport;
+            document.body.style.height = viewport.height + 'px';
+            // Force scroll back to top to counteract browser shift
             window.scrollTo(0, 0);
         });
         window.visualViewport.addEventListener('scroll', () => window.scrollTo(0, 0));
@@ -122,11 +122,20 @@
                 #editor-root { width: 100%; display: flex; flex-direction: column; }
                 .editable { position: relative; min-height: 1.2em; cursor: pointer; box-sizing: border-box; }
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
-                body { padding-bottom: 15.625rem !important; } 
+                body { padding-bottom: 25rem !important; } 
                 
                 .block_heading { border-bottom: 1px solid #ebd5c9; padding-bottom: 0.625rem; margin-bottom: 0.9375rem; }
                 .block_spacer { height: 2.5rem; border-bottom: 1px solid #ebd5c9; margin-bottom: 0.625rem; }
                 .no-line { border-bottom: none !important; }
+
+                @media (min-width: 64rem) {
+                    .content-container { max-width: 75rem; margin: 0 auto !important; }
+                    .block_heading, .block_text { 
+                        max-width: 46.35rem; 
+                        margin-left: auto !important; 
+                        margin-right: auto !important; 
+                    }
+                }
 
                 .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.7; pointer-events: none; }
                 .resize-handle { width: 2.75rem; height: 2.75rem; position: absolute; right: -0.125rem; bottom: -0.125rem; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.75rem; }
@@ -151,11 +160,14 @@
         document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         const btn = document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop');
         if(btn) btn.classList.add('active');
+        
         const virtualWidth = (type === 'mobile') ? 412 : 1280;
-        const scaleFactor = wrapper.offsetWidth / virtualWidth;
+        const scaleFactor = Math.min(wrapper.offsetWidth / virtualWidth, 1);
+        
         frame.style.width = virtualWidth + 'px';
         frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
         frame.style.transform = `scale(${scaleFactor})`;
+        frame.style.left = (wrapper.offsetWidth - (virtualWidth * scaleFactor)) / 2 + 'px';
     }
 
     function selectElement(el) {
