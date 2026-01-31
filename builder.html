@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v3.9.8</title>
+    <title>Snoozing Builder | v3.9.7</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -90,7 +90,7 @@
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
             <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <div class="version-status">v3.9.8</div>
+            <div class="version-status">v3.9.7</div>
         </div>
     </div>
     <div id="sticky-toolbar">
@@ -111,23 +111,61 @@
     let selectedEl = null;
     let currentMode = 'mobile';
     let isResizing = false;
+    let rotationTimeout;
+    
+    const initialWindowHeight = window.innerHeight;
 
     async function init() {
+        // Fetching the user's template
         const resp = await fetch('template.html');
         let html = await resp.text();
-        
-        // Cleaned Header Injection: Only essential editor UI styles, NO content styling.
         html = html.replace('</head>', `
             <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;700;900&display=swap" rel="stylesheet">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
             <style>
-                html, body { height: auto; min-height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-x: hidden; }
+                html, body { height: auto; min-height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto !important; }
                 #editor-root { flex: 1 0 auto; width: 100%; display: flex; flex-direction: column; }
-                .editable { position: relative; min-height: 1.2em; cursor: pointer; }
+                .editable { display: block !important; width: 100%; clear: both; box-sizing: border-box; position: relative; min-height: 1.2em; }
                 .selected-item { outline: 3px solid #ebd5c9 !important; }
                 body { padding-bottom: 250px !important; }
                 
-                /* Placeholder logic only */
+                /* THE LUXURY BUTTON LOCK (v2) */
+                .block_button_container { 
+                    width: 100% !important; 
+                    display: flex !important; 
+                    justify-content: center !important; 
+                    padding: 40px 0 !important; 
+                    clear: both !important; 
+                }
+                .block_button { 
+                    display: inline-block !important;
+                    font-family: 'Source Sans Pro', sans-serif !important;
+                    font-weight: 900 !important; 
+                    font-size: 14px !important;
+                    letter-spacing: 2.5px !important;
+                    text-transform: uppercase !important;
+                    text-decoration: none !important;
+                    color: #151515 !important;
+                    background-color: #ffffff !important;
+                    border: 1px solid #151515 !important;
+                    padding: 18px 45px !important;
+                    border-radius: 4px !important;
+                    transition: all 0.1s ease-in-out !important;
+                    cursor: pointer !important;
+                }
+                .block_button:hover {
+                    background-color: #151515 !important;
+                    color: #ffffff !important;
+                    background-image: none !important; /* Kills pink/blue gradients */
+                    border-color: #151515 !important;
+                }
+
+                .block_container { width: 100%; min-height: 50px; padding: 20px 0; border: 1px dashed #ccc; margin-bottom: 10px; }
+                .block_heading { border-bottom: 1px solid #ebd5c9; padding-bottom: 10px; margin-bottom: 15px; }
+                .block_spacer { height: 40px; border-bottom: 1px solid #ebd5c9; margin-bottom: 10px; }
+                .no-line { border-bottom: none !important; }
+                .block_image img { width: 100%; height: auto; display: block; }
+                
                 .editable:empty::before {
                     content: attr(data-placeholder);
                     color: #888888;
@@ -141,6 +179,7 @@
         
         frame.onload = () => {
             frame.contentDocument.addEventListener('mousedown', (e) => {
+                if (isResizing) return;
                 const el = e.target.closest('.editable');
                 if (el) selectElement(el); else deselectAll();
             });
@@ -161,6 +200,8 @@
     }
 
     function selectElement(el) {
+        const doc = frame.contentDocument;
+        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
         if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el;
         selectedEl.classList.add('selected-item');
@@ -181,19 +222,23 @@
         const isHeading = selectedEl.classList.contains('block_heading');
         const isSpacer = selectedEl.classList.contains('block_spacer');
         const isContainer = selectedEl.classList.contains('block_container');
+        const lineHidden = selectedEl.classList.contains('no-line');
         
         let html = '';
         if (isBtn) {
             const link = selectedEl.querySelector('a');
             html += `<input type="text" class="tool-input" placeholder="Button Text" value="${link.innerText}" oninput="updateBtnText(this.value)">`;
-            html += `<input type="text" class="tool-input" style="width:160px" placeholder="Link URL" value="${link.getAttribute('href') || ''}" oninput="updateBtnLink(this.value)">`;
+            html += `<input type="text" class="tool-input" style="width:160px" placeholder="Link URL (e.g. /repair)" value="${link.getAttribute('href') || ''}" oninput="updateBtnLink(this.value)">`;
         } else if (isContainer) {
             const currentBg = selectedEl.style.backgroundColor || '';
             html += `<input type="text" class="tool-input" placeholder="#FFFFFF" value="${currentBg}" oninput="setBg(this.value)">`;
+        } else if (isSpacer) {
+            html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`;
         } else if (isImg) { 
             html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`; 
         } else {
             html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
+            if (isHeading) { html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`; }
         }
 
         if (!isSpacer && !isContainer && !isBtn) {
@@ -207,13 +252,20 @@
         toolbarContent.innerHTML = html;
     }
 
+    // Force Uppercase to match Luxury Look
     function updateBtnText(val) { if(selectedEl) selectedEl.querySelector('a').innerText = val.toUpperCase(); }
     function updateBtnLink(val) { if(selectedEl) selectedEl.querySelector('a').setAttribute('href', val); }
     function setBg(color) { if(selectedEl) selectedEl.style.backgroundColor = color; }
+    function toggleLine() { if (selectedEl) { selectedEl.classList.toggle('no-line'); renderToolbar(); } }
 
     function setAlign(pos) {
         if (!selectedEl) return;
-        selectedEl.style.textAlign = pos;
+        if (selectedEl.classList.contains('block_image')) {
+             selectedEl.style.display = 'block';
+             selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
+             selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
+             selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none';
+        } else { selectedEl.style.textAlign = pos; }
     }
 
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
@@ -236,16 +288,16 @@
         const root = doc.getElementById('editor-root');
         const el = doc.createElement('div');
         
-        // Use class names ONLY. Styling must exist in styles.css
+        // Correct container class for centering
         el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
         const placeholders = { 'section_heading': 'New Section', 'block_heading': 'Heading', 'block_text': 'Paragraph text...' };
         
         if(type === 'block_image') { 
             el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
-            el.contentEditable = "false";
+            el.contentEditable = "false"; el.style.width = "100%";
         } else if(type === 'block_button') {
-            // Clean structure. No inline styles.
-            el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`;
+            // Added 900 weight directly to style attribute for maximum compatibility
+            el.innerHTML = `<a href="#" class="block_button" style="font-weight:900 !important;" onclick="return false;">FIND OUT MORE</a>`;
             el.contentEditable = "false";
         } else if(type === 'block_spacer' || type === 'block_container') {
             el.contentEditable = "false";
