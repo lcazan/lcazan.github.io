@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.56</title>
+    <title>Snoozing Builder | v4.3.57</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -50,7 +50,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.56</div>
+        <div class="version-status">v4.3.57</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -145,7 +145,8 @@
             isResizing = true;
             const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             const startW = el.offsetWidth;
-            const scale = wrapper.offsetWidth / { 'desktop': 1200, 'android': 448, 'iphone': 393 }[currentMode];
+            const widths = { 'desktop': 1200, 'android': 448, 'iphone': 393 };
+            const scale = wrapper.offsetWidth / widths[currentMode];
             const onMove = (mE) => {
                 const curX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
                 let newW = startW + (curX - startX) / scale;
@@ -157,10 +158,21 @@
                 }
                 if (newW > 40) el.style.width = newW + 'px';
             };
-            const onUp = () => { isResizing = false; frame.contentDocument.removeEventListener('mousemove', onMove); frame.contentDocument.removeEventListener('mouseup', onUp); };
-            frame.contentDocument.addEventListener('mousemove', onMove); frame.contentDocument.addEventListener('mouseup', onUp);
+            const onUp = () => {
+                isResizing = false;
+                frame.contentDocument.removeEventListener('mousemove', onMove);
+                frame.contentDocument.removeEventListener('mouseup', onUp);
+                frame.contentDocument.removeEventListener('touchmove', onMove);
+                frame.contentDocument.removeEventListener('touchend', onUp);
+            };
+            frame.contentDocument.addEventListener('mousemove', onMove);
+            frame.contentDocument.addEventListener('mouseup', onUp);
+            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
+            frame.contentDocument.addEventListener('touchend', onUp);
         };
-        handle.addEventListener('mousedown', startResize); el.appendChild(handle);
+        handle.addEventListener('mousedown', startResize);
+        handle.addEventListener('touchstart', startResize, {passive: false});
+        el.appendChild(handle);
     }
 
     function renderToolbar() {
@@ -172,7 +184,6 @@
         const isSpacer = selectedEl.classList.contains('block_spacer');
         const isDiv = selectedEl.classList.contains('block_container');
         let html = '';
-
         if (isDiv) {
             html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
         } else if (isBtn) {
@@ -185,7 +196,6 @@
         } else if (selectedEl.contentEditable === "true") {
             html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
         }
-
         if (!inDiv && !isDiv && !isSpacer) {
             html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
         }
@@ -207,8 +217,8 @@
 
     function toggleSpacerLine() {
         if (!selectedEl) return;
-        const currentStyle = selectedEl.style.borderBottom;
-        selectedEl.style.borderBottom = (currentStyle === 'none' || !currentStyle) ? '1px solid #eee' : 'none';
+        const currentLine = selectedEl.style.borderBottom;
+        selectedEl.style.borderBottom = (currentLine === 'none' || !currentLine) ? '1px solid #eee' : 'none';
     }
 
     function insertElement(type, data) {
