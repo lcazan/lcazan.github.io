@@ -262,3 +262,27 @@ footer {
     background-color: #151515; /* Flip to black background */
     color: #ffffff !important;  /* Flip to white text */
 }
+/* --- Desktop Golden Ratio Constraints --- */
+/* This ONLY activates on screens wider than 1024px (Laptops/Desktops) */
+@media (min-width: 64rem) {
+    .content-container {
+        max-width: 75rem; /* Limits the total site width to 1200px */
+        margin: 0 auto !important; /* Forces centering */
+    }
+
+    /* Constrains text for that luxury magazine feel */
+    /* 46.35rem is the Golden Ratio of the 75rem container */
+    .block_heading, 
+    .block_text {
+        max-width: 46.35rem; 
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    /* Images and Buttons usually look better staying wider or centered */
+    .block_image,
+    .block_button_container {
+        max-width: 100%;
+    }
+}
+
