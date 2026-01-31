@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.47</title>
+    <title>Snoozing Builder | v4.3.48</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -50,7 +50,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.47</div>
+        <div class="version-status">v4.3.48</div>
     </div>
     <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -76,28 +76,33 @@
                 h2, h3, p { display: block !important; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
                 .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; }
                 
-                /* Flexible Flex Container */
+                /* Smart Container v4.3.48 */
                 .block_container { 
                     display: flex; 
                     flex-wrap: wrap; 
                     align-items: center; 
                     width: 100%; 
-                    min-height: 2rem; 
+                    min-height: 2rem;
+                    container-type: inline-size;
                 }
 
-                @media (min-width: 745px) {
-                    /* Allowing image to dictate width via JS resizing, but enabling side-by-side */
-                    .block_container > .block_image { flex: 0 0 auto; max-width: 90%; }
-                    .block_container > h2, 
-                    .block_container > h3, 
-                    .block_container > p { flex: 1; margin: 0 0 0 20px; }
+                /* Mobile/Portrait logic: If container width <= 744px */
+                @container (max-width: 744px) {
+                    .block_container > .block_image { flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important; }
+                    .block_container > h2, .block_container > h3, .block_container > p { flex: 0 0 100%; margin: 15px 0; }
                 }
 
-                @media (max-width: 744px) {
-                    .block_container > .block_image,
-                    .block_container > h2,
-                    .block_container > h3,
-                    .block_container > p { flex: 0 0 100%; max-width: 100%; margin: 0 0 15px 0; }
+                /* Desktop/Landscape logic: If container width > 744px */
+                @container (min-width: 745px) {
+                    .block_container > .block_image { 
+                        flex: 0 0 auto; 
+                        width: 61.8%; /* Default Golden Ratio */
+                        max-width: 61.8%; /* Hard Lock - Cannot be bigger */
+                    }
+                    .block_container > h2, .block_container > h3, .block_container > p { 
+                        flex: 1; 
+                        margin: 0 0 0 25px; 
+                    }
                 }
 
                 .block_image { position: relative; display: inline-block; }
@@ -143,12 +148,20 @@
             isResizing = true;
             const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             const startW = el.offsetWidth;
+            const parentW = el.parentElement.offsetWidth;
             const virtualWidth = (currentMode === 'iphone') ? 393 : (currentMode === 'android' ? 448 : 1200);
             const scale = wrapper.offsetWidth / virtualWidth;
 
             const onMove = (mE) => {
                 const curX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
-                const newW = startW + (curX - startX) / scale;
+                let newW = startW + (curX - startX) / scale;
+                
+                // If inside a container and container > 744, enforce the 61.8% cap
+                if (el.parentElement.classList.contains('block_container') && parentW > 744) {
+                    const maxAllowed = parentW * 0.618;
+                    if (newW > maxAllowed) newW = maxAllowed;
+                }
+
                 if (newW > 40) el.style.width = newW + 'px';
             };
             const onUp = () => {
