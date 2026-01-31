@@ -3,73 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Snoozing Builder | v4.3.26</title>
+    <title>Snoozing Builder | v3.9.7</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         
-        /* The v3.9.7 Fixed Shell Logic */
         html, body { 
-            margin: 0; padding: 0; width: 100%; 
-            overflow: hidden !important; position: fixed; 
-            top: 0; left: 0; right: 0; bottom: 0;
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; position: fixed; top: 0; left: 0; 
             background: #111; touch-action: none;
         }
-        body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
-
-        #sidebar { 
-            width: 4.6875rem; height: 100%; background: var(--panel-bg); 
-            display: flex; flex-direction: column; align-items: center; 
-            padding: 0.9375rem 0; border-right: 0.125rem solid #000; 
-            flex-shrink: 0; z-index: 1000;
-        }
-        .export-wrap { margin-top: auto; margin-bottom: 60px; }
-        .export-btn { 
-            width: 3.75rem; height: 3.75rem; background: var(--brand-pink); 
-            border: none; color: #000; border-radius: 50%; cursor: pointer; 
-            display: flex; justify-content: center; align-items: center; font-size: 1.5rem;
-        }
-
-        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100%; overflow: hidden; position: relative; }
-        #header-area { background: #222; border-bottom: 0.0625rem solid #000; height: 3.125rem; display: flex; align-items: center; justify-content: center; z-index: 1001; flex-shrink: 0; }
-        #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 0.0625rem solid #000; z-index: 1001; flex-shrink: 0; }
-        #frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; }
-        #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; }
         
-        /* Insert/Tool UI preserved from 4.3.20 */
-        .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; }
-        .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; }
-        .tool-input { background: #333; border: 0.0625rem solid #666; color: #fff; padding: 0.3125rem; border-radius: 0.25rem; width: 6.5rem; font-size: 0.75rem; }
-        #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
-        .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.5rem; margin: 0 0.6rem; }
+        body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
+        
+        #sidebar { 
+            width: 75px; height: 100%; background: var(--panel-bg); 
+            display: flex; flex-direction: column; align-items: center; 
+            padding: 15px 0; border-right: 2px solid #000; flex-shrink: 0; z-index: 1000; 
+        }
+        .insert-btn { 
+            width: 60px; height: 32px; background: #444; border: 1px solid #666; color: #fff; 
+            margin: 0 5px 10px 5px; border-radius: 4px; cursor: pointer; 
+            font-size: 14px; display: flex; justify-content: center; align-items: center; 
+            padding: 0;
+        }
+
+        #preview-container { 
+            flex-grow: 1; display: flex; flex-direction: column; 
+            background: #333; height: 100%; overflow: hidden; position: relative;
+        }
+
+        #header-area { background: #222; border-bottom: 1px solid #000; flex-shrink: 0; z-index: 500; height: 50px; position: relative; }
+        #device-bar { height: 100%; display: flex; align-items: center; justify-content: center; }
+        .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 26px; margin: 0 15px; }
         .device-btn.active { color: var(--brand-pink); }
-        .version-status { position: absolute; right: 1.5625rem; top: 0.75rem; color: #fff; font-size: 1rem; font-weight: 800; }
+        .version-status { position: absolute; right: 25px; top: 12px; color: #fff; font-size: 16px; font-weight: 800; }
+
+        #sticky-toolbar { 
+            height: 48px; background: #1a1a1a; display: flex; 
+            align-items: center; justify-content: center; 
+            border-bottom: 1px solid #000; flex-shrink: 0;
+        }
+        
+        #toolbar-content { display: flex; gap: 8px; visibility: hidden; align-items: center; height: 100%; }
+
+        .tool-btn { 
+            background: #444; border: 1px solid #666; color: white; 
+            padding: 0; border-radius: 4px; cursor: pointer;
+            font-size: 20px; min-width: 40px; height: 38px;
+            margin: 5px 0; 
+            display: flex; align-items: center; justify-content: center;
+        }
+        .tool-btn.active { background: var(--brand-pink); color: #000; }
+        
+        .tool-input {
+            background: #333; border: 1px solid #666; color: #fff;
+            padding: 5px; border-radius: 4px; width: 120px; font-size: 12px;
+        }
+
+        #frame-wrapper { 
+            flex-grow: 1; display: flex; justify-content: center; align-items: flex-start; 
+            background: #333; overflow: hidden; position: relative;
+        }
+        
+        #preview-frame { 
+            border: none; background: white; 
+            transform-origin: top left; 
+            position: absolute; top: 0; left: 0;
+        }
     </style>
 </head>
-<body id="main-body">
+<body>
 
 <div id="sidebar">
     <button class="insert-btn" onclick="insertElement('block_container')"><i class="fa-solid fa-square"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_button')"><i class="fa-solid fa-square-minus"></i></button>
+    <button class="insert-btn" onclick="insertElement('section_heading')"><i class="fa-solid fa-heading"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_heading')"><i class="fa-solid fa-font"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_text')"><i class="fa-solid fa-align-left"></i></button>
     <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i></button>
-    <button class="insert-btn" onclick="insertElement('section_heading')">T<sub>1</sub></button>
-    <button class="insert-btn" onclick="insertElement('block_heading')">T<sub>2</sub></button>
-    <button class="insert-btn" onclick="insertElement('block_text')">T<sub>3</sub></button>
-    <button class="insert-btn" onclick="insertElement('block_button')"><span>Btn</span></button>
     <button class="insert-btn" onclick="insertElement('block_spacer')"><i class="fa-solid fa-arrows-up-down"></i></button>
-    <div class="export-wrap"><button class="export-btn" onclick="exportHTML()"><i class="fa-solid fa-download"></i></button></div>
 </div>
 
 <div id="preview-container">
     <div id="header-area">
         <div id="device-bar">
             <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
-            <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
+            <button class="device-btn" id="btn-mobile" onclick="setDevice('mobile')"><i class="fa-solid fa-mobile-screen-button"></i></button>
+            <div class="version-status">v3.9.7</div>
         </div>
-        <div class="version-status">v4.3.26</div>
     </div>
-    <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
-    <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
+    <div id="sticky-toolbar">
+        <div id="toolbar-content"></div>
+    </div>
+    <div id="frame-wrapper">
+        <iframe id="preview-frame" scrolling="yes"></iframe>
+    </div>
 </div>
 
 <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
@@ -78,96 +107,111 @@
     const frame = document.getElementById('preview-frame');
     const toolbarContent = document.getElementById('toolbar-content');
     const wrapper = document.getElementById('frame-wrapper');
-    let selectedEl = null; let currentMode = 'iphone'; let isResizing = false;
-
-    // The v3.9.7 Anti-Push Logic
-    function fixViewport() {
-        const vh = window.innerHeight;
-        document.documentElement.style.setProperty('--vh', `${vh}px`);
-        document.getElementById('main-body').style.height = `${vh}px`;
-        window.scrollTo(0,0);
-    }
-    window.addEventListener('resize', fixViewport);
-    window.addEventListener('orientationchange', fixViewport);
-    fixViewport();
+    
+    let selectedEl = null;
+    let currentMode = 'mobile';
+    let isResizing = false;
+    let rotationTimeout;
+    
+    const initialWindowHeight = window.innerHeight;
 
     async function init() {
+        // Fetching the user's template
         const resp = await fetch('template.html');
         let html = await resp.text();
         html = html.replace('</head>', `
+            <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;700;900&display=swap" rel="stylesheet">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
             <style>
-                html, body { height: auto; min-height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
-                #editor-root { width: 100%; display: flex; flex-direction: column; }
-                .editable { position: relative; min-height: 1.2em; cursor: pointer; box-sizing: border-box; width: 100%; outline: none; }
-                .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
-                h2, h3, p { display: block !important; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
-                .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; font-family: Helvetica, Arial, sans-serif !important; }
-                .block_container { display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem; width: 100%; min-height: 2rem; }
-                .block_container > .editable { flex: 1 1 auto; }
-                .block_container > .block_image { flex: 0 0 auto; position: relative; }
-                .resize-handle { width: 2.75rem; height: 2.75rem; position: absolute; right: -0.125rem; bottom: -0.125rem; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; }
-                .resize-handle::before { content: "\\f337"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 1.75rem; }
+                html, body { height: auto; min-height: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto !important; }
+                #editor-root { flex: 1 0 auto; width: 100%; display: flex; flex-direction: column; }
+                .editable { display: block !important; width: 100%; clear: both; box-sizing: border-box; position: relative; min-height: 1.2em; }
+                .selected-item { outline: 3px solid #ebd5c9 !important; }
+                body { padding-bottom: 250px !important; }
+                
+                /* THE LUXURY BUTTON LOCK (v2) */
+                .block_button_container { 
+                    width: 100% !important; 
+                    display: flex !important; 
+                    justify-content: center !important; 
+                    padding: 40px 0 !important; 
+                    clear: both !important; 
+                }
+                .block_button { 
+                    display: inline-block !important;
+                    font-family: 'Source Sans Pro', sans-serif !important;
+                    font-weight: 900 !important; 
+                    font-size: 14px !important;
+                    letter-spacing: 2.5px !important;
+                    text-transform: uppercase !important;
+                    text-decoration: none !important;
+                    color: #151515 !important;
+                    background-color: #ffffff !important;
+                    border: 1px solid #151515 !important;
+                    padding: 18px 45px !important;
+                    border-radius: 4px !important;
+                    transition: all 0.1s ease-in-out !important;
+                    cursor: pointer !important;
+                }
+                .block_button:hover {
+                    background-color: #151515 !important;
+                    color: #ffffff !important;
+                    background-image: none !important; /* Kills pink/blue gradients */
+                    border-color: #151515 !important;
+                }
+
+                .block_container { width: 100%; min-height: 50px; padding: 20px 0; border: 1px dashed #ccc; margin-bottom: 10px; }
+                .block_heading { border-bottom: 1px solid #ebd5c9; padding-bottom: 10px; margin-bottom: 15px; }
+                .block_spacer { height: 40px; border-bottom: 1px solid #ebd5c9; margin-bottom: 10px; }
+                .no-line { border-bottom: none !important; }
+                .block_image img { width: 100%; height: auto; display: block; }
+                
+                .editable:empty::before {
+                    content: attr(data-placeholder);
+                    color: #888888;
+                    font-family: 'Source Sans Pro', sans-serif;
+                    opacity: 0.7;
+                }
             </style>
             <link rel="stylesheet" href="styles.css"></head>`);
         
         frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
+        
         frame.onload = () => {
-            frame.contentDocument.addEventListener('mousedown', (e) => { 
+            frame.contentDocument.addEventListener('mousedown', (e) => {
                 if (isResizing) return;
-                const el = e.target.closest('.editable'); 
-                if (el && el === selectedEl) return; 
-                if (el) selectElement(el); else deselectAll(); 
+                const el = e.target.closest('.editable');
+                if (el) selectElement(el); else deselectAll();
             });
-            setDevice('iphone');
+            setDevice('mobile');
         };
     }
 
-    function exportHTML() {
-        deselectAll();
-        const doc = frame.contentDocument.cloneNode(true);
-        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
-        doc.querySelectorAll('.editable').forEach(e => {
-            e.classList.remove('selected-item');
-            e.removeAttribute('contenteditable');
-            e.removeAttribute('data-placeholder');
-        });
-        const blob = new Blob([doc.documentElement.outerHTML], {type: 'text/html'});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob); a.download = 'export.html'; a.click();
-    }
-
-    // Core 4.3.20 Functions preserved exactly
-    function insertElement(type, data) {
-        const doc = frame.contentDocument;
-        const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
-        const placeholders = { 'section_heading': 'Service Heading', 'block_heading': 'Heading', 'block_text': 'Paragraph...' };
-        const el = doc.createElement(tagMap[type] || 'div');
-        el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
-        if(type === 'block_image') { 
-            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}" style="display:block; max-width:100%;">`; 
-            el.contentEditable = "false"; el.style.width = "12.5rem"; el.style.position = "relative";
-        } else if(type === 'block_button') {
-            el.innerHTML = `<a href="#" class="block_button" style="font-weight:900 !important;" onclick="return false;">FIND OUT MORE</a>`;
-            el.contentEditable = "false";
-        } else if(type === 'block_spacer' || type === 'block_container') {
-            el.contentEditable = "false";
-        } else {
-            el.innerText = ""; el.setAttribute('data-placeholder', placeholders[type] || 'Type...');
-            el.contentEditable = "true"; 
-        }
-        const root = doc.getElementById('editor-root');
-        if (selectedEl && selectedEl.classList.contains('block_container')) selectedEl.appendChild(el);
-        else if (selectedEl && selectedEl.parentNode === root) selectedEl.after(el);
-        else root.appendChild(el);
-        setTimeout(() => { selectElement(el); if(el.contentEditable === "true") el.focus(); }, 150);
+    function setDevice(type) {
+        currentMode = type;
+        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.getElementById(type === 'mobile' ? 'btn-mobile' : 'btn-desktop');
+        if(btn) btn.classList.add('active');
+        const virtualWidth = (type === 'mobile') ? 412 : 1280;
+        const scaleFactor = wrapper.offsetWidth / virtualWidth;
+        frame.style.width = virtualWidth + 'px';
+        frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
+        frame.style.transform = `scale(${scaleFactor})`;
     }
 
     function selectElement(el) {
-        const doc = frame.contentDocument; doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        const doc = frame.contentDocument;
+        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
         if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
-        selectedEl = el; selectedEl.classList.add('selected-item');
-        if (el.classList.contains('block_image') || el.classList.contains('block_spacer')) addResizeHandle(el);
-        renderToolbar(); if(el.contentEditable === "true") el.focus();
+        selectedEl = el;
+        selectedEl.classList.add('selected-item');
+        renderToolbar();
+    }
+
+    function deselectAll() {
+        if (selectedEl) selectedEl.classList.remove('selected-item');
+        selectedEl = null;
+        toolbarContent.style.visibility = 'hidden';
     }
 
     function renderToolbar() {
@@ -175,69 +219,105 @@
         toolbarContent.style.visibility = 'visible';
         const isBtn = selectedEl.classList.contains('block_button_container');
         const isImg = selectedEl.classList.contains('block_image');
-        const isText = selectedEl.contentEditable === "true";
-        const isDiv = selectedEl.classList.contains('block_container');
+        const isHeading = selectedEl.classList.contains('block_heading');
+        const isSpacer = selectedEl.classList.contains('block_spacer');
+        const isContainer = selectedEl.classList.contains('block_container');
+        const lineHidden = selectedEl.classList.contains('no-line');
+        
         let html = '';
-        if (isDiv) {
-            html += `<div class="picker-wrapper"><button class="tool-btn"><i class="fa-solid fa-eye-dropper"></i></button><input type="color" id="native-picker" oninput="updateColor(this.value)"></div>`;
-            html += `<input type="text" class="tool-input" placeholder="Hex #" oninput="updateColor(this.value)">`;
-            html += `<div class="swatch" style="background:transparent; border:1px dashed #fff" onclick="updateColor('transparent')"></div>`;
-            html += `<div class="swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div>`;
-        } else if (isBtn) {
+        if (isBtn) {
             const link = selectedEl.querySelector('a');
-            html += `<input type="text" class="tool-input" value="${link.innerText}" oninput="updateBtnText(this.value)">`;
-            html += `<input type="text" class="tool-input" style="width:10rem" value="${link.getAttribute('href') || ''}" oninput="updateBtnLink(this.value)">`;
-        } else if (isImg) {
-            html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button> <button class="tool-btn" onclick="fitImageWidth()"><i class="fa-solid fa-expand"></i></button>`;
-        } else if (isText) {
+            html += `<input type="text" class="tool-input" placeholder="Button Text" value="${link.innerText}" oninput="updateBtnText(this.value)">`;
+            html += `<input type="text" class="tool-input" style="width:160px" placeholder="Link URL (e.g. /repair)" value="${link.getAttribute('href') || ''}" oninput="updateBtnLink(this.value)">`;
+        } else if (isContainer) {
+            const currentBg = selectedEl.style.backgroundColor || '';
+            html += `<input type="text" class="tool-input" placeholder="#FFFFFF" value="${currentBg}" oninput="setBg(this.value)">`;
+        } else if (isSpacer) {
+            html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`;
+        } else if (isImg) { 
+            html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`; 
+        } else {
             html += `<button class="tool-btn" onclick="execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
+            if (isHeading) { html += `<button class="tool-btn ${!lineHidden?'active':''}" onclick="toggleLine()"><i class="fa-solid fa-underline"></i></button>`; }
         }
-        if (!isDiv && !isBtn && !selectedEl.classList.contains('block_spacer')) {
-            html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button> <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button> <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>`;
+
+        if (!isSpacer && !isContainer && !isBtn) {
+            html += `
+                <button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
+                <button class="tool-btn" onclick="setAlign('center')"><i class="fa-solid fa-align-center"></i></button>
+                <button class="tool-btn" onclick="setAlign('right')"><i class="fa-solid fa-align-right"></i></button>
+            `;
         }
         html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
         toolbarContent.innerHTML = html;
     }
 
-    function setDevice(type) {
-        currentMode = type; document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-${type}`).classList.add('active');
-        const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 }; const virtualWidth = widths[type];
-        const scaleFactor = Math.min(wrapper.offsetWidth / virtualWidth, 1);
-        frame.style.width = virtualWidth + 'px'; frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
-        frame.style.transform = `scale(${scaleFactor})`; frame.style.left = (scaleFactor < 1) ? '0px' : ((wrapper.offsetWidth - virtualWidth) / 2) + 'px';
-    }
-
-    function addResizeHandle(el) {
-        const handle = frame.contentDocument.createElement('div'); handle.className = 'resize-handle';
-        const isSpacer = el.classList.contains('block_spacer');
-        const startResize = (e) => {
-            e.preventDefault(); e.stopPropagation(); isResizing = true;
-            const touch = e.type.includes('touch') ? e.touches[0] : e;
-            const startX = touch.clientX; const startY = touch.clientY;
-            const startW = el.offsetWidth; const startH = el.offsetHeight;
-            const widths = { 'desktop': 1280, 'android': 448, 'iphone': 393 };
-            const scale = wrapper.offsetWidth / widths[currentMode];
-            const onMove = (mE) => { 
-                const mTouch = mE.type.includes('touch') ? mE.touches[0] : mE;
-                if (isSpacer) { el.style.height = startH + (mTouch.clientY - startY) / scale + 'px'; } 
-                else { el.style.width = startW + (mTouch.clientX - startX) / scale + 'px'; }
-            };
-            const onUp = () => { isResizing = false; frame.contentDocument.removeEventListener('mousemove', onMove); frame.contentDocument.removeEventListener('mouseup', onUp); frame.contentDocument.removeEventListener('touchmove', onMove); frame.contentDocument.removeEventListener('touchend', onUp); };
-            frame.contentDocument.addEventListener('mousemove', onMove); frame.contentDocument.addEventListener('mouseup', onUp); frame.contentDocument.addEventListener('touchmove', onMove, {passive: false}); frame.contentDocument.addEventListener('touchend', onUp);
-        };
-        handle.addEventListener('mousedown', startResize); handle.addEventListener('touchstart', startResize, {passive: false}); el.appendChild(handle);
-    }
-
-    function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
-    function fitImageWidth() { if(selectedEl) { selectedEl.style.width = "100%"; selectedEl.style.display = "block"; selectedEl.style.float = "none"; } }
+    // Force Uppercase to match Luxury Look
     function updateBtnText(val) { if(selectedEl) selectedEl.querySelector('a').innerText = val.toUpperCase(); }
     function updateBtnLink(val) { if(selectedEl) selectedEl.querySelector('a').setAttribute('href', val); }
+    function setBg(color) { if(selectedEl) selectedEl.style.backgroundColor = color; }
+    function toggleLine() { if (selectedEl) { selectedEl.classList.toggle('no-line'); renderToolbar(); } }
+
+    function setAlign(pos) {
+        if (!selectedEl) return;
+        if (selectedEl.classList.contains('block_image')) {
+             selectedEl.style.display = 'block';
+             selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0';
+             selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0';
+             selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none';
+        } else { selectedEl.style.textAlign = pos; }
+    }
+
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
-    function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbarContent.style.visibility = 'hidden'; }
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
-    function handleImageUpload(i) { if(i.files[0]) { const r = new FileReader(); r.onload = e => { if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result; else insertElement('block_image', e.target.result); }; r.readAsDataURL(i.files[0]); } }
-    function setAlign(pos) { if (!selectedEl) return; if (selectedEl.classList.contains('block_image')) { selectedEl.style.marginLeft = pos === 'center' ? 'auto' : '0'; selectedEl.style.marginRight = pos === 'center' ? 'auto' : '0'; selectedEl.style.float = (pos === 'left' || pos === 'right') ? pos : 'none'; selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block'; } else { selectedEl.style.textAlign = pos; } }
+
+    function handleImageUpload(i) { 
+        if(i.files[0]) { 
+            const r = new FileReader(); 
+            r.onload = e => {
+                if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result;
+                else insertElement('block_image', e.target.result);
+            };
+            r.readAsDataURL(i.files[0]); 
+        } 
+    }
+
+    function insertElement(type, data) {
+        const doc = frame.contentDocument;
+        const root = doc.getElementById('editor-root');
+        const el = doc.createElement('div');
+        
+        // Correct container class for centering
+        el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
+        const placeholders = { 'section_heading': 'New Section', 'block_heading': 'Heading', 'block_text': 'Paragraph text...' };
+        
+        if(type === 'block_image') { 
+            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
+            el.contentEditable = "false"; el.style.width = "100%";
+        } else if(type === 'block_button') {
+            // Added 900 weight directly to style attribute for maximum compatibility
+            el.innerHTML = `<a href="#" class="block_button" style="font-weight:900 !important;" onclick="return false;">FIND OUT MORE</a>`;
+            el.contentEditable = "false";
+        } else if(type === 'block_spacer' || type === 'block_container') {
+            el.contentEditable = "false";
+        } else { 
+            el.innerText = ""; 
+            el.setAttribute('data-placeholder', placeholders[type] || 'Type here...');
+            el.contentEditable = "true"; 
+        }
+
+        if (selectedEl && selectedEl.classList.contains('block_container')) {
+            selectedEl.appendChild(el);
+        } else if (selectedEl && selectedEl.parentNode === root) {
+            selectedEl.after(el);
+        } else {
+            root.appendChild(el);
+        }
+        
+        setTimeout(() => { selectElement(el); el.scrollIntoView({ block: "end", behavior: "smooth" }); }, 150);
+    }
+
     window.onload = init;
 </script>
 </body>
