@@ -76,7 +76,7 @@ header {
     font-family: 'Cinzel', serif; 
     font-size: 1.35rem;            
     font-weight: 500;              
-    text-transform: uppercase;     /* Ensure this is on to match Live */
+   /* Ensure this is on to match Live */
     letter-spacing: 0.1rem;        /* Increased to match the wider Live look */
     border: 1px solid var(--text-dark); 
     padding: 0.25rem 0.75rem;       /* INCREASED: This gives it the 'Live' size */
