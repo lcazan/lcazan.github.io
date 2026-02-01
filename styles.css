@@ -76,7 +76,7 @@ header {
     font-family: 'Cinzel', serif; 
     font-size: 1.25rem;            /* Scales text up to match 1453.png */
     font-weight: 400;              /* Live site uses standard weight, not light */
-    text-transform: uppercase; 
+    text-transform: none; 
     letter-spacing: 0.05rem;     /* Keep your 1px spacing */
     border: 1px solid var(--text-dark); 
     padding: 0.25rem 0.75rem;       /* Provides the spacious 'Live' look */
