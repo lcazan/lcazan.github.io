@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.90</title>
+    <title>Snoozing Builder | v4.3.91</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -17,7 +17,6 @@
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100%; overflow: hidden; position: relative; }
         #header-area { background: #222; border-bottom: 0.0625rem solid #000; height: 3.125rem; display: flex; align-items: center; justify-content: center; z-index: 1001; }
         
-        /* Sticky Toolbar with Pill Container */
         #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 0.0625rem solid #000; z-index: 1001; position: relative; }
         
         #input-pill {
@@ -34,7 +33,6 @@
         .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; }
         .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; font-size: 1.1rem; }
         
-        /* Pill Triggers */
         .btn-teal { background: #008080 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
         .btn-blue { background: #0056b3 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
 
@@ -65,7 +63,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.90</div>
+        <div class="version-status">v4.3.91</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -83,6 +81,7 @@
     const toolbarContent = document.getElementById('toolbar-content');
     const wrapper = document.getElementById('frame-wrapper');
     let selectedEl = null; let currentMode = 'iphone'; let isResizing = false;
+    let activePillMode = null;
 
     async function init() {
         const resp = await fetch('template.html');
@@ -207,8 +206,8 @@
         if (isDiv) {
             html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
         } else if (isBtn) {
-            html += `<button class="tool-btn btn-teal">TEXT</button>`;
-            html += `<button class="tool-btn btn-blue">LINK</button>`;
+            html += `<button class="tool-btn btn-teal" onclick="openPill('text')">TEXT</button>`;
+            html += `<button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>`;
         } else if (isImg) {
             html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`;
             html += `<button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>`;
@@ -222,6 +221,15 @@
         }
         html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
         toolbarContent.innerHTML = html;
+    }
+
+    function openPill(mode) {
+        const pill = document.getElementById('input-pill');
+        const editable = document.getElementById('pill-editable');
+        activePillMode = mode;
+        pill.style.display = 'flex';
+        editable.innerText = ''; 
+        setTimeout(() => editable.focus(), 10);
     }
 
     function fitToWidth() {
@@ -277,7 +285,15 @@
     function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function deleteElement() { if(selectedEl) { const p = selectedEl.parentElement; selectedEl.remove(); if (p && p.classList.contains('div-other-wrapper') && p.children.length === 0) p.remove(); deselectAll(); } }
-    function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbarContent.style.visibility = 'hidden'; document.getElementById('input-pill').style.display = 'none'; }
+    
+    function deselectAll() { 
+        if (selectedEl) selectedEl.classList.remove('selected-item'); 
+        selectedEl = null; 
+        toolbarContent.style.visibility = 'hidden'; 
+        document.getElementById('input-pill').style.display = 'none';
+        activePillMode = null;
+    }
+
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
     function handleImageUpload(i) { if(i.files[0]) { const r = new FileReader(); r.onload = e => { if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result; else insertElement('block_image', e.target.result); i.value = ''; }; r.readAsDataURL(i.files[0]); } }
     function setAlign(pos) { if (selectedEl && !selectedEl.closest('.block_container')) { selectedEl.style.textAlign = pos; if(selectedEl.classList.contains('block_image')) { selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block'; selectedEl.style.margin = pos === 'center' ? '0 auto' : '0'; } } }
@@ -287,10 +303,4 @@
         deselectAll(); const doc = frame.contentDocument.cloneNode(true);
         doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
         doc.querySelectorAll('.editable').forEach(e => { e.classList.remove('selected-item', 'editable'); e.removeAttribute('contenteditable'); });
-        const blob = new Blob([doc.documentElement.outerHTML], {type: 'text/html'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index.html'; a.click();
-    }
-    window.onload = init;
-</script>
-</body>
-</html>
+  
