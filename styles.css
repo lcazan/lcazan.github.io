@@ -73,12 +73,19 @@ header {
 }
 
 .logo { 
-    font-family: 'Cinzel', serif; font-size: 1.1rem; text-transform: uppercase; 
-    letter-spacing: 0.0625rem; /* 1px */ 
+    font-family: 'Cinzel', serif; 
+    font-size: 1.0rem;             /* Reduced from 1.1rem to match 1450.png */
+    font-weight: 300;              /* Added to match the lighter weight in 1450.png */
+    text-transform: uppercase; 
+    letter-spacing: 0.02rem;       /* Reduced for the tighter look in 1450.png */
     border: 1px solid var(--text-dark); 
-    padding: 0.35rem 1rem;  /* 8px 20px */
-    display: inline-block; white-space: nowrap; user-select: none; 
+    padding: 0.2rem 0.6rem;        /* Tightened to match the compact 1450.png box */
+    display: inline-block; 
+    white-space: nowrap; 
+    user-select: none;
+    line-height: 1.2;              /* Ensures perfect vertical centering */
 }
+
 
 .header-menu-icon { 
     position: absolute; top: 50%; left: 1.25rem; /* 20px */
