@@ -73,10 +73,10 @@ header {
 }
 
 .logo { 
-    font-family: 'Cinzel', serif; font-size: 1.5rem; text-transform: uppercase; 
+    font-family: 'Cinzel', serif; font-size: 1.1rem; text-transform: uppercase; 
     letter-spacing: 0.0625rem; /* 1px */ 
     border: 1px solid var(--text-dark); 
-    padding: 0.25rem 1rem;  /* 8px 20px */
+    padding: 0.35rem 1rem;  /* 8px 20px */
     display: inline-block; white-space: nowrap; user-select: none; 
 }
 
