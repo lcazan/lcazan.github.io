@@ -79,7 +79,7 @@ header {
     text-transform: uppercase; 
     letter-spacing: 0.0625rem;     /* Keep your 1px spacing */
     border: 1px solid var(--text-dark); 
-    padding: 0.25rem 0.75rem;       /* Provides the spacious 'Live' look */
+    padding: 0.1rem 0.75rem;       /* Provides the spacious 'Live' look */
     display: inline-block; 
     white-space: nowrap; 
     user-select: none; 
