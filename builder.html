@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.84</title>
+    <title>Snoozing Builder | v4.3.86</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -18,28 +18,28 @@
         #header-area { background: #222; border-bottom: 0.0625rem solid #000; height: 3.125rem; display: flex; align-items: center; justify-content: center; z-index: 1001; }
         #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 0.0625rem solid #000; z-index: 1002; position: relative; }
         
-        /* The Pill Layer with Editable Span */
+        /* Flattened Pill Layer */
         #input-pill {
-            position: absolute; top: 3.5rem; left: 50%; transform: translateX(-50%);
-            width: 80%; max-width: 500px; min-height: 2.2rem; background: #222;
-            border: 1px solid #444; border-radius: 30px; z-index: 1001;
-            display: none; align-items: center; justify-content: center; padding: 5px 20px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+            position: absolute; top: 3.05rem; left: 50%; transform: translateX(-50%);
+            width: 85%; max-width: 550px; min-height: 2.2rem; background: #222;
+            border: 1px solid #444; border-radius: 4px; z-index: 1001;
+            display: none; align-items: center; justify-content: center; padding: 5px 15px; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.7);
         }
         #pill-editable {
             color: white; width: 100%; font-size: 0.85rem; outline: none; 
             text-align: center; white-space: nowrap; overflow: hidden;
-            display: inline-block; padding: 4px 0;
+            display: inline-block; padding: 4px 0; font-family: 'Courier New', monospace;
         }
 
         #frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; }
         #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; left: 0; }
         
         .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; }
-        .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.5px; }
+        .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; font-size: 0.7rem; font-weight: 800; }
         
-        .btn-teal { background: #008080 !important; border-color: #006666 !important; padding: 0 10px; }
-        .btn-blue { background: #0056b3 !important; border-color: #004494 !important; padding: 0 10px; }
+        .btn-teal { background: #008080 !important; border: none; padding: 0 12px; margin-right: 5px; }
+        .btn-blue { background: #0056b3 !important; border: none; padding: 0 12px; }
 
         #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.5rem; margin: 0 0.6rem; }
@@ -67,12 +67,18 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.84</div>
+        <div class="version-status">v4.3.86</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
         <div id="input-pill">
-            <span id="pill-editable" contenteditable="true" onkeydown="if(event.key==='Enter') { event.preventDefault(); closePill(); }"></span>
+            <span id="pill-editable" 
+                  contenteditable="true" 
+                  autocapitalize="none" 
+                  spellcheck="false" 
+                  autocorrect="off"
+                  oninput="syncRealTime()" 
+                  onkeydown="if(event.key==='Enter') { event.preventDefault(); closePill(); }"></span>
         </div>
     </div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
@@ -94,10 +100,10 @@
         html = html.replace('</head>', `<style>
             html, body { height: auto; min-height: 100%; margin: 0; padding: 0; }
             #editor-root { width: 100%; display: flex; flex-direction: column; padding-bottom: 250px; }
-            .editable { position: relative; min-height: 1.2em; cursor: pointer; outline: none; box-sizing: border-box; }
+            .editable { position: relative; min-height: 1.2em; cursor: pointer; outline: none; }
             .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
-            .block_button_container { display: flex; justify-content: center; padding: 10px; }
-            .block_button { display: inline-block; padding: 12px 24px; background: #000; color: #fff; text-decoration: none; font-weight: bold; border-radius: 4px; }
+            .block_button_container { display: flex; justify-content: center; padding: 15px; width: 100%; box-sizing: border-box; }
+            .block_button { display: inline-block; padding: 12px 24px; background: #000; color: #fff; text-decoration: none; font-weight: bold; text-transform: uppercase; border-radius: 2px; }
         </style></head>`);
         
         frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
@@ -121,12 +127,10 @@
         toolbarContent.style.visibility = 'visible';
         const isBtn = selectedEl.classList.contains('block_button_container');
         let html = '';
-
         if (isBtn) {
             html += `<button class="tool-btn btn-teal" onclick="openPill('text')">TEXT</button>`;
             html += `<button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>`;
         }
-        
         html += `<button class="tool-btn" style="color:#ff6b6b; margin-left:10px" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
         toolbarContent.innerHTML = html;
     }
@@ -134,46 +138,50 @@
     function openPill(mode) {
         activeInputMode = mode;
         const btn = selectedEl.querySelector('a');
-        pillEditable.innerText = (mode === 'text') ? btn.innerText : (btn.getAttribute('href') || '#');
-        inputPill.style.display = 'flex';
         
-        // Auto-select text for immediate replacement
-        setTimeout(() => {
-            pillEditable.focus();
-            document.execCommand('selectAll', false, null);
-        }, 10);
+        // Disable auto-caps for links, enable for text
+        if (mode === 'link') {
+            pillEditable.setAttribute('autocapitalize', 'none');
+            pillEditable.innerText = btn.getAttribute('href') || '';
+        } else {
+            pillEditable.setAttribute('autocapitalize', 'sentences');
+            pillEditable.innerText = btn.innerText;
+        }
+
+        inputPill.style.display = 'flex';
+        setTimeout(() => { 
+            pillEditable.focus(); 
+            document.execCommand('selectAll', false, null); 
+        }, 50);
     }
 
-    function closePill() {
+    function syncRealTime() {
         if (!selectedEl || !activeInputMode) return;
         const btn = selectedEl.querySelector('a');
+        const val = pillEditable.innerText.trim();
         if (activeInputMode === 'text') {
-            btn.innerText = pillEditable.innerText.trim().toUpperCase();
+            btn.innerText = val.toUpperCase();
         } else {
-            btn.setAttribute('href', pillEditable.innerText.trim());
+            btn.setAttribute('href', val);
         }
-        inputPill.style.display = 'none';
-        activeInputMode = null;
+    }
+
+    function closePill() { 
+        syncRealTime();
+        inputPill.style.display = 'none'; 
+        activeInputMode = null; 
     }
 
     function handleGlobalClick(e) {
-        // Only close if we click outside the pill AND we aren't clicking the toggle buttons
         if (inputPill.style.display === 'flex') {
-            const isClickInsidePill = inputPill.contains(e.target);
-            const isClickOnToolBtn = e.target.closest('.tool-btn');
-            if (!isClickInsidePill && !isClickOnToolBtn) {
+            if (!inputPill.contains(e.target) && !e.target.closest('.tool-btn')) {
                 closePill();
             }
         }
     }
 
     function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
-    function deselectAll() { 
-        if (selectedEl) selectedEl.classList.remove('selected-item'); 
-        selectedEl = null; 
-        toolbarContent.style.visibility = 'hidden'; 
-        inputPill.style.display = 'none'; 
-    }
+    function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbarContent.style.visibility = 'hidden'; inputPill.style.display = 'none'; }
 
     function setDevice(type) {
         currentMode = type; document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-${type}`).classList.add('active');
@@ -186,12 +194,11 @@
 
     function insertElement(type) {
         const doc = frame.contentDocument;
-        const root = doc.getElementById('editor-root');
         const el = doc.createElement('div');
         el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
-        if(type === 'block_button') el.innerHTML = `<a href="#" class="block_button">FIND OUT MORE</a>`;
+        if(type === 'block_button') el.innerHTML = `<a href="#" class="block_button">NEW BUTTON</a>`;
         else { el.innerText = "New Block"; el.contentEditable = "true"; }
-        root.appendChild(el);
+        doc.getElementById('editor-root').appendChild(el);
         selectElement(el);
     }
 
