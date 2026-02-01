@@ -74,7 +74,7 @@ header {
 
 .logo { 
     font-family: 'Cinzel', serif; 
-    font-size: 1.5rem;            
+    font-size: 1.35rem;            
     font-weight: 500;              
    /* Ensure this is on to match Live */
     letter-spacing: 0.05rem;        /* Increased to match the wider Live look */
