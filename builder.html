@@ -20,12 +20,23 @@
         #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 0.0625rem solid #000; z-index: 1001; position: relative; }
         
         #input-pill {
-            position: absolute; bottom: -2.5rem; left: 50%; transform: translateX(-50%);
-            width: 85%; max-width: 550px; min-height: 2.2rem; background: #222;
-            border: 1px solid #444; border-radius: 4px; display: none; align-items: center; 
-            justify-content: center; padding: 5px 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.7);
+            position: absolute; 
+            top: calc(3rem + 1px); /* 1px below the 3rem toolbar */
+            left: 50%; transform: translateX(-50%);
+            width: 85%; max-width: 550px; 
+            background: #222;
+            border: 1px solid #444; border-radius: 4px; 
+            display: none; align-items: center; justify-content: center; 
+            padding: 0 15px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            z-index: 1002;
         }
-        #pill-editable { color: white; width: 100%; font-size: 0.85rem; outline: none; text-align: center; font-family: 'Courier New', monospace; }
+        #pill-editable { 
+            color: white; width: 100%; font-size: 0.85rem; outline: none; 
+            text-align: center; font-family: 'Courier New', monospace;
+            line-height: 1.2; /* Height is 1.2* text height */
+            padding: 4px 0;
+        }
 
         #frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; }
         #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; left: 0; }
@@ -75,6 +86,9 @@
 </div>
 
 <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
+</body>
+</html>
+
 <script>
     const frame = document.getElementById('preview-frame');
     const toolbarContent = document.getElementById('toolbar-content');
@@ -132,7 +146,7 @@
             <\/script>
             <link rel="stylesheet" href="styles.css"></head>`);
         
-        frame.srcdoc = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
+        frame.srcdoc = html.replace(/<div class=\"content-container\">([\s\S]*?)<\/div>/, '<div class=\"content-container\" id=\"editor-root\">$1</div>');
         frame.onload = () => {
             frame.contentWindow.initDivLogic();
             frame.contentDocument.addEventListener('mousedown', (e) => { 
@@ -192,12 +206,7 @@
 
         activePillMode = mode;
         pill.style.display = 'flex';
-
-        if (mode === 'text') {
-            editable.innerText = btnLink.innerText;
-        } else {
-            editable.innerText = btnLink.getAttribute('href') || '';
-        }
+        editable.innerText = (mode === 'text') ? btnLink.innerText : (btnLink.getAttribute('href') || '');
 
         setTimeout(() => {
             editable.focus();
@@ -288,7 +297,7 @@
             el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
             el.contentEditable = "false"; el.style.width = "200px"; el.setAttribute('data-scale-factor', '1.0');
         } else if(type === 'block_button') { 
-            el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`; 
+            el.innerHTML = `<a href=\"#\" class=\"block_button\" onclick=\"return false;\">FIND OUT MORE</a>`; 
             el.contentEditable = "false"; 
         } else if(type === 'block_spacer' || type === 'block_container') { el.contentEditable = "false"; }
         else { el.innerText = ""; el.setAttribute('data-placeholder', 'Type here...'); el.contentEditable = "true"; }
@@ -332,6 +341,5 @@
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index.html'; a.click();
     }
     window.onload = init;
-</script>
-</body>
-</html>
+                                                   </script>
+
