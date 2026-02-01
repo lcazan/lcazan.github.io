@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.74</title>
+    <title>Snoozing Builder | v4.3.87</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -16,12 +16,32 @@
 
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100%; overflow: hidden; position: relative; }
         #header-area { background: #222; border-bottom: 0.0625rem solid #000; height: 3.125rem; display: flex; align-items: center; justify-content: center; z-index: 1001; }
-        #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 0.0625rem solid #000; z-index: 1001; }
+        #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 0.0625rem solid #000; z-index: 1002; position: relative; }
+        
+        /* THE PILL */
+        #input-pill {
+            position: absolute; top: 3.05rem; left: 50%; transform: translateX(-50%);
+            width: 85%; max-width: 550px; min-height: 2.2rem; background: #222;
+            border: 1px solid #444; border-radius: 4px; z-index: 1001;
+            display: none; align-items: center; justify-content: center; padding: 5px 15px; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.7);
+        }
+        #pill-editable {
+            color: white; width: 100%; font-size: 0.85rem; outline: none; 
+            text-align: center; white-space: nowrap; overflow: hidden;
+            display: inline-block; padding: 4px 0; font-family: 'Courier New', monospace;
+        }
+
         #frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; }
         #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; left: 0; }
         
         .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; }
         .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; font-size: 1.1rem; }
+        
+        /* Button Tool Colors */
+        .btn-teal { background: #008080 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
+        .btn-blue { background: #0056b3 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
+
         .tool-input { background: #333; border: 0.0625rem solid #666; color: #fff; padding: 0.3125rem; border-radius: 0.25rem; width: 6.5rem; font-size: 0.75rem; }
         .color-swatch { width: 1.5rem; height: 1.5rem; border: 1px solid #666; cursor: pointer; border-radius: 2px; }
         #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
@@ -30,7 +50,7 @@
         .version-status { position: absolute; right: 1.5625rem; top: 0.75rem; color: #fff; font-size: 1rem; font-weight: 800; }
     </style>
 </head>
-<body>
+<body onclick="handleGlobalClick(event)">
 
 <div id="sidebar">
     <button class="insert-btn" onclick="insertElement('block_container')"><i class="fa-solid fa-square"></i></button>
@@ -50,9 +70,14 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.74</div>
+        <div class="version-status">v4.3.87</div>
     </div>
-    <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
+    <div id="sticky-toolbar">
+        <div id="toolbar-content"></div>
+        <div id="input-pill">
+            <span id="pill-editable" contenteditable="true" autocapitalize="none" spellcheck="false" autocorrect="off" oninput="syncRealTime()" onkeydown="if(event.key==='Enter') { event.preventDefault(); closePill(); }"></span>
+        </div>
+    </div>
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
 </div>
 
@@ -61,8 +86,10 @@
 <script>
     const frame = document.getElementById('preview-frame');
     const toolbarContent = document.getElementById('toolbar-content');
+    const inputPill = document.getElementById('input-pill');
+    const pillEditable = document.getElementById('pill-editable');
     const wrapper = document.getElementById('frame-wrapper');
-    let selectedEl = null; let currentMode = 'iphone'; let isResizing = false;
+    let selectedEl = null; let currentMode = 'iphone'; let isResizing = false; let activeInputMode = null;
 
     async function init() {
         const resp = await fetch('template.html');
@@ -75,17 +102,13 @@
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
                 h2, h3, p { display: block !important; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
                 .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; }
-                
-                .block_container { 
-                    display: flex; flex-wrap: wrap; align-items: center; 
-                    width: 100%; min-height: 2rem; box-sizing: border-box; padding: 10px;
-                }
+                .block_container { display: flex; flex-wrap: wrap; align-items: center; width: 100%; min-height: 2rem; box-sizing: border-box; padding: 10px; }
                 .block_image { position: relative; display: inline-block; flex-shrink: 0; }
                 .block_image img { width: 100%; display: block; pointer-events: none; }
-                .div-other-wrapper {
-                    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 1.2em;
-                }
+                .div-other-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 1.2em; }
                 .block_spacer { height: 1.5rem !important; width: 100%; border-bottom: none; }
+                .block_button_container { display: flex; justify-content: center; padding: 10px; }
+                .block_button { display: inline-block; padding: 12px 24px; background: #000; color: #fff; text-decoration: none; font-weight: bold; border-radius: 2px; }
                 .resize-handle { width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; }
                 .resize-handle::before { content: "\\f337"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px; }
             </style>
@@ -119,7 +142,7 @@
             frame.contentWindow.initDivLogic();
             frame.contentDocument.addEventListener('mousedown', (e) => { 
                 if (isResizing) return;
-                const el = e.target.closest('.editable') || e.target.closest('.div-other-wrapper > *') || e.target.closest('.block_spacer'); 
+                const el = e.target.closest('.editable') || e.target.closest('.div-other-wrapper > *') || e.target.closest('.block_spacer') || e.target.closest('.block_button_container'); 
                 if (el && el === selectedEl && (el.contentEditable === "true" || el.classList.contains('tool-input'))) return;
                 if (el) selectElement(el); else deselectAll(); 
             });
@@ -184,11 +207,12 @@
         const isSpacer = selectedEl.classList.contains('block_spacer');
         const isDiv = selectedEl.classList.contains('block_container');
         let html = '';
+
         if (isDiv) {
             html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
         } else if (isBtn) {
-            const currentText = selectedEl.querySelector('a').innerText;
-            html += `<span contenteditable="plaintext-only" class="tool-input" oninput="updateBtnText(this.innerText)" style="display:inline-block; outline:none; white-space:nowrap; overflow:hidden;">${currentText}</span>`;
+            html += `<button class="tool-btn btn-teal" onclick="openPill('text')">TEXT</button>`;
+            html += `<button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>`;
         } else if (isImg) {
             html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`;
             html += `<button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>`;
@@ -197,6 +221,7 @@
         } else if (selectedEl.contentEditable === "true") {
             html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
         }
+        
         if (!inDiv && !isDiv && !isSpacer) {
             html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
         }
@@ -204,16 +229,41 @@
         toolbarContent.innerHTML = html;
     }
 
+    function openPill(mode) {
+        activeInputMode = mode;
+        const btn = selectedEl.querySelector('a');
+        if (mode === 'link') {
+            pillEditable.setAttribute('autocapitalize', 'none');
+            pillEditable.innerText = btn.getAttribute('href') || '';
+        } else {
+            pillEditable.setAttribute('autocapitalize', 'sentences');
+            pillEditable.innerText = btn.innerText;
+        }
+        inputPill.style.display = 'flex';
+        setTimeout(() => { pillEditable.focus(); document.execCommand('selectAll', false, null); }, 50);
+    }
+
+    function syncRealTime() {
+        if (!selectedEl || !activeInputMode) return;
+        const btn = selectedEl.querySelector('a');
+        const val = pillEditable.innerText.trim();
+        if (activeInputMode === 'text') btn.innerText = val.toUpperCase();
+        else btn.setAttribute('href', val);
+    }
+
+    function closePill() { syncRealTime(); inputPill.style.display = 'none'; activeInputMode = null; }
+
+    function handleGlobalClick(e) {
+        if (inputPill.style.display === 'flex' && !inputPill.contains(e.target) && !e.target.closest('.tool-btn')) {
+            closePill();
+        }
+    }
+
     function fitToWidth() {
         if (!selectedEl) return;
         const inDiv = selectedEl.closest('.block_container');
-        if (inDiv) {
-            selectedEl.setAttribute('data-scale-factor', '1.0');
-        } else {
-            selectedEl.style.width = '100%';
-            selectedEl.style.display = 'block';
-            selectedEl.style.margin = '0 auto';
-        }
+        if (inDiv) selectedEl.setAttribute('data-scale-factor', '1.0');
+        else { selectedEl.style.width = '100%'; selectedEl.style.display = 'block'; selectedEl.style.margin = '0 auto'; }
     }
 
     function toggleSpacerLine() {
@@ -257,26 +307,3 @@
         frame.style.width = widths[type] + 'px'; frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
         frame.style.transform = `scale(${scaleFactor})`;
         frame.style.left = (scaleFactor < 1) ? '0px' : ((wrapper.offsetWidth - widths[type]) / 2) + 'px';
-    }
-
-    function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
-    function updateBtnText(val) { if(selectedEl) selectedEl.querySelector('a').innerText = val.toUpperCase(); }
-    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
-    function deleteElement() { if(selectedEl) { const p = selectedEl.parentElement; selectedEl.remove(); if (p && p.classList.contains('div-other-wrapper') && p.children.length === 0) p.remove(); deselectAll(); } }
-    function deselectAll() { if (selectedEl) selectedEl.classList.remove('selected-item'); selectedEl = null; toolbarContent.style.visibility = 'hidden'; }
-    function triggerImageUpload() { document.getElementById('image-upload').click(); }
-    function handleImageUpload(i) { if(i.files[0]) { const r = new FileReader(); r.onload = e => { if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result; else insertElement('block_image', e.target.result); i.value = ''; }; r.readAsDataURL(i.files[0]); } }
-    function setAlign(pos) { if (selectedEl && !selectedEl.closest('.block_container')) { selectedEl.style.textAlign = pos; if(selectedEl.classList.contains('block_image')) { selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block'; selectedEl.style.margin = pos === 'center' ? '0 auto' : '0'; } } }
-    function centerItem() { setAlign('center'); }
-    
-    function exportHTML() {
-        deselectAll(); const doc = frame.contentDocument.cloneNode(true);
-        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
-        doc.querySelectorAll('.editable').forEach(e => { e.classList.remove('selected-item', 'editable'); e.removeAttribute('contenteditable'); });
-        const blob = new Blob([doc.documentElement.outerHTML], {type: 'text/html'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index.html'; a.click();
-    }
-    window.onload = init;
-</script>
-</body>
-</html>
