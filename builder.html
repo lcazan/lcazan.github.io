@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.4.1</title>
+    <title>Snoozing Builder | v4.4.2</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; top: 0; left: 0; background: #111; touch-action: none; }
@@ -36,6 +37,7 @@
         .btn-teal { background: #008080 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
         .btn-blue { background: #0056b3 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
 
+        .color-swatch { width: 1.5rem; height: 1.5rem; border: 1px solid #666; cursor: pointer; border-radius: 2px; }
         #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.5rem; margin: 0 0.6rem; }
         .device-btn.active { color: var(--brand-pink); }
@@ -63,7 +65,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.4.1</div>
+        <div class="version-status">v4.4.2</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -77,8 +79,6 @@
 <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
 </body>
 </html>
-
-
 <script>
     const frame = document.getElementById('preview-frame');
     const toolbarContent = document.getElementById('toolbar-content');
@@ -101,6 +101,7 @@
                 .block_container { display: flex; flex-wrap: wrap; align-items: center; width: 100%; min-height: 2rem; box-sizing: border-box; padding: 0px; }
                 .block_image { position: relative; display: inline-block; flex-shrink: 0; }
                 .block_image img { width: 100%; display: block; pointer-events: none; }
+                .block_button { display: inline-block; text-decoration: none !important; color: #151515 !important; font-weight: 900 !important; border: 1px solid #151515; padding: 10px 25px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
                 .div-other-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 1.2em; }
                 .block_spacer { height: 1.5rem !important; width: 100%; border-bottom: none; }
                 .resize-handle { width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; }
@@ -108,19 +109,16 @@
 
                 /* [GALLERY GRID LOGIC] */
                 .photo_gallery { 
-                    display: grid; 
-                    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
-                    gap: 15px; width: 100%; 
-                    padding: 30px 0 0 0; /* Padding at top only as requested */
-                    margin: 20px 0; box-sizing: border-box;
+                    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+                    gap: 15px; width: 100%; padding: 40px 0 10px 0; margin: 20px 0; box-sizing: border-box;
                 }
                 .gallery-item { position: relative; aspect-ratio: 1/1; background: #f4f4f4; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; }
                 .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
-                .gallery-empty-slot::before { content: '+'; font-size: 60px; color: #aaa; font-weight: 300; }
-                .selected-gallery-sub { outline: 3px solid #0056b3; z-index: 5; }
+                .gallery-empty-slot::before { content: '+'; font-size: 70px; color: #ccc; font-weight: 300; }
+                .selected-gallery-sub { outline: 4px solid #0056b3 !important; outline-offset: -4px; z-index: 5; }
 
                 /* [LOCK: LIGHTBOX HIDDEN IN EDITOR] */
-                .modal { display: none !important; } 
+                .modal, .lightbox-modal { display: none !important; } 
             </style>
             <script>
                 /* [LOCK: RESIZE OBSERVER LOGIC] */
@@ -151,7 +149,7 @@
             frame.contentDocument.addEventListener('mousedown', (e) => { 
                 if (isResizing) return;
                 const gallerySub = e.target.closest('.gallery-item');
-                const el = e.target.closest('.editable') || e.target.closest('.div-other-wrapper > *') || e.target.closest('.block_spacer') || e.target.closest('.photo_gallery'); 
+                const el = e.target.closest('.editable') || e.target.closest('.div-other-wrapper > *') || e.target.closest('.block_spacer') || e.target.closest('.photo_gallery') || e.target.closest('.block_container'); 
                 
                 if (gallerySub) { selectGalleryItem(gallerySub); return; }
                 if (el) selectElement(el); else deselectAll(); 
@@ -184,10 +182,13 @@
         if (!selectedEl) return;
         toolbarContent.style.visibility = 'visible';
         let html = '';
+        const isDiv = selectedEl.classList.contains('block_container');
         
         if (activeGalleryItem && !activeGalleryItem.classList.contains('gallery-empty-slot')) {
             html += `<button class="tool-btn btn-blue" onclick="triggerImageUpload()">CHANGE</button>`;
             html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteGalleryImage()"><i class="fa-solid fa-trash-can"></i></button>`;
+        } else if (isDiv) {
+            html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
         } else if (selectedEl.classList.contains('block_button_container')) {
             html += `<button class="tool-btn btn-teal" onclick="openPill('text')">TEXT</button>`;
             html += `<button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>`;
@@ -199,7 +200,6 @@
         toolbarContent.innerHTML = html;
     }
 
-    /* [LOCK: DIALOG TRIGGER] */
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
 
     function handleImageUpload(i) {
@@ -227,9 +227,9 @@
         }
     }
 
-    function deleteGalleryImage() {
-        if (activeGalleryItem) { activeGalleryItem.remove(); activeGalleryItem = null; renderToolbar(); }
-    }
+    function deleteGalleryImage() { if (activeGalleryItem) { activeGalleryItem.remove(); activeGalleryItem = null; renderToolbar(); } }
+
+    function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
 
     function deselectAll() { 
         if (selectedEl) selectedEl.classList.remove('selected-item'); 
@@ -245,8 +245,7 @@
         let el;
         
         if (type === 'photo_gallery') {
-            el = doc.createElement('div');
-            el.className = 'photo_gallery';
+            el = doc.createElement('div'); el.className = 'photo_gallery';
             el.innerHTML = `<div class="gallery-item gallery-empty-slot"></div>`;
         } else {
             const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p', 'block_button': 'div' };
@@ -258,24 +257,39 @@
             } else if(type === 'block_button') { 
                 el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`; 
                 el.contentEditable = "false"; 
-            } else { el.contentEditable = "true"; el.setAttribute('data-placeholder', 'Type here...'); }
+            } else if(type === 'block_container') { el.contentEditable = "false"; }
+            else { el.contentEditable = "true"; el.setAttribute('data-placeholder', 'Type here...'); }
         }
 
-        root.appendChild(el);
+        if (type === 'block_container') { root.appendChild(el); frame.contentWindow.initDivLogic(); }
+        else { root.appendChild(el); }
         setTimeout(() => selectElement(el), 150);
     }
 
+    /* [LOCK: EXPORT LOGIC WITH LIGHTBOX ENGINE] */
     function exportHTML() {
-        deselectAll(); const doc = frame.contentDocument.cloneNode(true);
+        deselectAll(); 
+        const doc = frame.contentDocument.cloneNode(true);
         doc.querySelectorAll('.selected-item, .gallery-empty-slot, .resize-handle').forEach(e => e.remove());
         doc.querySelectorAll('.editable').forEach(e => { e.classList.remove('editable'); e.removeAttribute('contenteditable'); });
         
-        // Export logic includes Lightbox trigger script here
+        const style = doc.createElement('style');
+        style.textContent = `.lightbox-modal { display: none; position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; cursor: pointer; } .lightbox-modal img { max-width: 90%; max-height: 90%; border: 2px solid #fff; } .lightbox-close { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; }`;
+        doc.head.appendChild(style);
+
+        const modalDiv = doc.createElement('div');
+        modalDiv.className = 'lightbox-modal'; modalDiv.id = 'lb';
+        modalDiv.innerHTML = '<span class="lightbox-close">&times;</span><img id="lbi" src="">';
+        doc.body.appendChild(modalDiv);
+
+        const script = doc.createElement('script');
+        script.textContent = `const m=document.getElementById('lb'), i=document.getElementById('lbi'); document.querySelectorAll('.gallery-item img').forEach(img=>{img.style.cursor='pointer';img.onclick=(e)=>{m.style.display='flex';i.src=e.target.src;}}); m.onclick=()=>{m.style.display='none';};`;
+        doc.body.appendChild(script);
+
         const blob = new Blob([doc.documentElement.outerHTML], {type: 'text/html'});
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index.html'; a.click();
     }
 
-    /* [LOCK: DEVICE LOGIC] */
     function setDevice(type) {
         currentMode = type; document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-${type}`).classList.add('active');
         const widths = { 'desktop': 1200, 'android': 448, 'iphone': 393 };
@@ -285,5 +299,7 @@
         frame.style.left = (scaleFactor < 1) ? '0px' : ((wrapper.offsetWidth - widths[type]) / 2) + 'px';
     }
 
+    function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
+    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     window.onload = init;
 </script>
