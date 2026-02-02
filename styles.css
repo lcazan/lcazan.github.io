@@ -248,7 +248,7 @@ footer {
     
     /* Typography */
     font-family: 'Source Sans Pro', sans-serif;
-    font-weight: 900;          /* Maximum thickness/heavy look */
+    font-weight: 900 !important;          /* Maximum thickness/heavy look */
     font-size: 0.875rem;       /* 14px */
     letter-spacing: 0.09375rem;   /* 4px */
     text-transform: uppercase;
