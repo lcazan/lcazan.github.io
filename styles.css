@@ -152,9 +152,9 @@ nav#nav-sidebar a {
     font-family: 'Cinzel', serif; 
     font-size: 2.01rem; 
     color: #1A1A1A;
-    max-width: 75%;
+    max-width: 80%;
     padding-bottom: 0.5rem;    /* 8px */
-    margin: 0.625rem auto 0.625rem; /* 10px */
+    margin: 0.625rem 0 0.625rem; /* 10px */
     display: block; /* Center centering logic */
     text-align: center; /* UPDATED: Centered by default */
 }
