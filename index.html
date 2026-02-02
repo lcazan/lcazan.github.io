@@ -1,207 +1,312 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-US">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.4.7</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>My Snoozing Baby | Home</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Source+Sans+Pro:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <style>
-        :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; top: 0; left: 0; background: #111; touch-action: none; }
-        body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
-        
-        #sidebar { width: 4.6875rem; height: 100%; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 0.9375rem 0; border-right: 0.125rem solid #000; flex-shrink: 0; z-index: 1000; }
-        .export-wrap { margin-top: auto; margin-bottom: 60px; }
-        .export-btn { width: 3.75rem; height: 3.75rem; background: var(--brand-pink); border: none; color: #000; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+        :root {
+            --brand-cream: #FAF6F3;
+            --brand-pink: #ebd5c9;    
+            --icon-brown: #877267; 
+            --text-dark: #151515;
+            --gallery-gap: 15px; 
+        }
 
-        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100%; overflow: hidden; position: relative; }
-        #header-area { background: #222; border-bottom: 0.0625rem solid #000; height: 3.125rem; display: flex; align-items: center; justify-content: center; z-index: 1001; }
-        #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 0.0625rem solid #000; z-index: 1001; position: relative; }
+        body { font-family: 'Source Sans Pro', sans-serif; margin: 0; color: var(--text-dark); background-color: #fff; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
+
+        header { 
+            display: flex; align-items: center; justify-content: center; padding: 15px 10px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); position: sticky; top: 0; z-index: 8000; border-bottom: 1px solid rgba(0,0,0,0.05); min-height: 60px;
+        }
+        .logo { font-family: 'Cinzel', serif; font-size: 1.25rem; text-transform: uppercase; letter-spacing: 1px; border: 1px solid var(--text-dark); padding: 8px 20px; display: inline-block; white-space: nowrap; }
+
+        .header-menu-icon { position: absolute; top: 50%; left: 20px; transform: translateY(-50%); z-index: 8001; padding: 5px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .menu-lines div { width: 19px; height: 1.6px; background-color: var(--icon-brown); margin: 5px 0; transition: 0.2s; }
+        .active .line1 { transform: rotate(-45deg) translate(-4.5px, 5px); }
+        .active .line2 { opacity: 0; }
+        .active .line3 { transform: rotate(45deg) translate(-4.5px, -5.5px); }
+
+        nav { 
+            position: fixed; top: 0; left: -340px; width: 320px; height: 100%; background: var(--brand-cream); transition: left 0.2s ease-in-out; z-index: 9000; box-shadow: 4px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow-y: auto; -webkit-overflow-scrolling: touch;
+        }
+        nav.open { left: 0; }
+        .sidebar-close-icon { position: absolute; top: 25px; left: 20px; padding: 5px; display: none; z-index: 9001; }
+        nav.open .sidebar-close-icon { display: block; }
+        .nav-content { padding-top: 100px; padding-bottom: 50px; }
+        nav a { display: block; padding: 15px 30px; text-decoration: none; color: var(--text-dark); font-weight: 400; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
+
+        .dropdown-btn { cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .dropdown-btn i { transition: transform 0.3s ease; }
+        .dropdown-btn.active i { transform: rotate(180deg); }
+        .sub-nav { display: none; background: var(--brand-cream); }
+        .sub-nav.show { display: block; }
+        .sub-nav a { font-size: 1rem; padding: 10px 45px; }
+        #navOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.3); z-index: 8500; }
+
+        .hero-banner { background-color: var(--brand-cream); display: flex; width: 100%; align-items: stretch; overflow: hidden; }
+        .hero-banner .img-box { width: 50%; display: block; position: relative; background: var(--brand-cream); }
+        .hero-banner img { width: 100%; height: 100%; display: block; object-fit: cover; }
+        .tagline-container { width: 50%; padding: 60px; display: flex; align-items: center; box-sizing: border-box; }
+        .hero-tagline { font-family: 'Cinzel', serif; font-size: 1.2rem; text-transform: uppercase; margin: 0; line-height: 1.6; letter-spacing: 1px; }
+
+        @media (max-width: 767px) {
+            .hero-banner { flex-direction: column; }
+            .hero-banner .img-box { width: 100%; } 
+            .tagline-container { width: 100%; padding: 40px 20px; text-align: center; justify-content: center; }
+        }
+
+        .content-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; box-sizing: border-box; }
+        .section-label { font-family: 'Source Sans Pro', sans-serif; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; color: var(--icon-brown); margin: 40px 0 30px; display: block; text-align: left; }
+
+        section { margin-bottom: 60px; text-align: center; }
+        h2 { font-family: 'Cinzel', serif; border-bottom: 1px solid var(--brand-pink); padding-bottom: 8px; margin-bottom: 10px; display: inline-block; font-size: 1.2rem; font-weight: 400; text-transform: uppercase; }
+        section p { text-align: center; line-height: 1.8; margin: 5px auto 25px; max-width: 800px; }
+        .btn-find-out { display: inline-block; padding: 10px 25px; border: 1px solid var(--text-dark); text-decoration: none; color: var(--text-dark); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        .gallery-columns { display: flex; gap: var(--gallery-gap); align-items: flex-start; }
+        .gallery-column { flex: 1; display: flex; flex-direction: column; gap: var(--gallery-gap); }
+        .gallery-item { cursor: pointer; background: #f9f9f9; -webkit-tap-highlight-color: transparent; }
+        .gallery-item img { width: 100%; height: auto; display: block; }
         
-        #frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; }
-        #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; left: 0; }
-        
-        .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; }
-        .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; font-size: 1.1rem; }
-        .version-status { position: absolute; right: 1.5625rem; top: 0.75rem; color: #fff; font-size: 1rem; font-weight: 800; }
+        .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
+        .slider-track { display: flex; height: 100%; width: 100%; }
+        .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
+        .image-wrapper { position: relative; width: 90%; height: 70vh; display: flex; align-items: center; justify-content: center; }
+        .slide img { max-width: 100%; max-height: 100%; border: 2px solid #fff; object-fit: contain; opacity: 0; transition: opacity 0.3s ease; }
+        .slide img.loaded { opacity: 1; }
+        .counter { position: fixed; top: 25px; left: 25px; color: #fff; font-size: 22px; z-index: 10005; pointer-events: none; font-weight: 600; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        .close-modal { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 40px; cursor: pointer; z-index: 10005; }
+        .loader { width: 30px; height: 30px; border: 3px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 1s infinite linear; position: absolute; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        footer { text-align: center; padding: 60px 20px 40px; border-top: 1px solid #eee; margin-top: auto; }
+        .social-icons { margin-bottom: 25px; display: flex; justify-content: center; gap: 30px; }
+        .social-icons a { color: var(--text-dark); font-size: 1.4rem; text-decoration: none; }
+        .copyright-text { font-weight: 600; display: block; margin-bottom: 15px; font-size: 0.85rem; }
+        .disclaimer { font-size: 0.75rem; color: #666; max-width: 850px; margin: 0 auto; line-height: 1.7; text-align: center; }
     </style>
 </head>
 <body>
-<div id="sidebar">
-    <button class="insert-btn" onclick="insertElement('block_container')"><i class="fa-solid fa-square"></i></button>
-    <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i></button>
-    <button class="insert-btn" onclick="insertElement('section_heading')">T<sub>1</sub></button>
-    <button class="insert-btn" onclick="insertElement('block_heading')">T<sub>2</sub></button>
-    <button class="insert-btn" onclick="insertElement('block_text')">T<sub>3</sub></button>
-    <button class="insert-btn" onclick="insertElement('photo_gallery')"><i class="fa-solid fa-table-cells"></i></button>
-    <button class="insert-btn" onclick="insertElement('block_spacer')"><i class="fa-solid fa-arrows-up-down"></i></button>
-    <div class="export-wrap"><button class="export-btn" onclick="exportHTML()"><i class="fa-solid fa-download"></i></button></div>
-</div>
-<div id="preview-container">
-    <div id="header-area">
-        <div id="device-bar">
-            <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
-            <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
-            <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
-        </div>
-        <div class="version-status">v4.4.7</div>
+
+<header>
+    <div class="header-menu-icon menu-lines" id="headerHamburger" onclick="toggleNav(event)">
+        <div class="line1"></div><div class="line2"></div><div class="line3"></div>
     </div>
-    <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
-    <div id="frame-wrapper"><iframe id="preview-frame" name="preview-frame"></iframe></div>
+    <div class="logo">My Snoozing Baby</div>
+</header>
+
+<div id="navOverlay" onclick="toggleNav(event)"></div>
+
+<nav id="sidebar">
+    <div class="sidebar-close-icon menu-lines active" onclick="toggleNav(event)">
+        <div class="line1"></div><div class="line2"></div><div class="line3"></div>
+    </div>
+    <div class="nav-content">
+        <a href="index.html">Home</a>
+        <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">Snoo Smart Sleeper <i class="fa-solid fa-caret-down"></i></a>
+        <div class="sub-nav">
+            <a href="snoo-rental">SNOO Rental</a>
+            <a href="https://mysnoozingbaby.com/snoo-cleaning-and-repairs">SNOO Cleaning/Repair</a>
+        </div>
+        <a href="https://mysnoozingbaby.com/baby-gear-rentals">Baby Gear Rentals</a>
+        <a href="https://mysnoozingbaby.com/toddler-party-rentals">Toddler Party Rentals</a>
+        <a href="https://mysnoozingbaby.com/about-us">About Us</a>
+        <a href="https://mysnoozingbaby.com/contact-us">Contact Us</a>
+        <a href="https://mysnoozingbaby.com/faqs">FAQs</a>
+    </div>
+</nav>
+
+<div class="hero-banner">
+    <div class="img-box" id="heroImgBox">
+        <picture>
+            <source media="(max-width: 767px)" srcset="emerson-small.jpg">
+            <source media="(min-width: 768px)" srcset="emerson-large.jpg">
+            <img src="emerson-large.jpg" id="heroImage" alt="Baby Emerson">
+        </picture>
+    </div>
+    <div class="tagline-container">
+        <p class="hero-tagline">FOR BETTER-SLEEPING BABIES. <br> FOR HAPPIER BABIES.</p>
+    </div>
 </div>
-<input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
-</body>
-</html>
+
+<div class="content-container">
+    <div class="section-label">OUR SERVICES</div>
+    <section>
+        <h2>SNOO Smart Bassinet Rental</h2>
+        <p>Let a smart bassinet do the hard work for you, rocking and calming your baby, while you enjoy a little bit of rest.</p>
+        <a href="#" class="btn-find-out">Find out more</a>
+    </section>
+    <section>
+        <h2>SNOO deep-cleaning, servicing, and repairs</h2>
+        <p>In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p>
+        <a href="#" class="btn-find-out">Find out more</a>
+    </section>
+    <section>
+        <h2>Traveling to the DC Metro area?</h2>
+        <p>Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC or surrounding parts of Virginia and Maryland. Travel light and let us handle the rest.</p>
+        <a href="#" class="btn-find-out">Find out more</a>
+    </section>
+
+    <div class="section-label">INSTAGRAM</div>
+    <div class="instagram-container">
+        <script src="https://elfsightcdn.com/platform.js" async></script>
+        <div class="elfsight-app-5eadd9db-134a-45fa-bb7d-32ad1f117149" data-elfsight-app-lazy></div>
+    </div>
+
+    <div class="section-label">PHOTO GALLERY</div>
+    <div class="gallery-columns">
+        <div id="col-left" class="gallery-column"></div>
+        <div id="col-right" class="gallery-column"></div>
+    </div>
+</div>
+
+<div id="imageModal" class="modal">
+    <div class="counter" id="modalCounter">1 / 17</div>
+    <span class="close-modal" onclick="closeModal()">&times;</span>
+    <div id="sliderTrack" class="slider-track"></div>
+</div>
+
+<footer>
+    <div class="social-icons">
+        <a href="#"><i class="fa-brands fa-facebook"></i></a>
+        <a href="#"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#"><i class="fa-brands fa-tiktok"></i></a>
+    </div>
+    <span class="copyright-text">Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.</span>
+    <div class="disclaimer">
+        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.
+    </div>
+</footer>
+
 <script>
-    const frame = document.getElementById('preview-frame');
-    const toolbarContent = document.getElementById('toolbar-content');
-    const wrapper = document.getElementById('frame-wrapper');
-    let selectedEl = null; let activeGalleryItem = null; let isResizing = false;
-
-    async function init() {
-        const resp = await fetch('template.html');
-        let html = await resp.text();
-        html = html.replace('</head>', `
-            <style>
-                html, body { height: auto; min-height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
-                #editor-root { width: 100%; display: flex; flex-direction: column; padding-bottom: 250px; }
-                .editable { position: relative; min-height: 1.2em; cursor: pointer; outline: none; box-sizing: border-box; }
-                .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
-                
-                /* [LOCK: v4.3.92 BASELINE STYLES] */
-                .block_container { display: flex; flex-wrap: wrap; align-items: center; width: 100%; min-height: 2rem; }
-                .block_image { position: relative; display: inline-block; cursor: pointer; }
-                .block_image img { width: 100%; display: block; pointer-events: none; }
-                .resize-handle { width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; color: #ebd5c9; display: flex; align-items: center; justify-content: center; }
-                .resize-handle::before { content: "\\f337"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px; }
-
-                /* [GALLERY GRID STYLES] */
-                .photo_gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; width: 100%; padding: 20px 0; margin: 20px 0; }
-                .gallery-item { position: relative; aspect-ratio: 1/1; background: #f4f4f4; cursor: pointer; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-                .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
-                .gallery-empty-slot::before { content: '+'; font-size: 80px; color: #bbb; }
-                .selected-gallery-sub { outline: 4px solid #0056b3 !important; outline-offset: -4px; z-index: 5; }
-            </style>
-            <link rel="stylesheet" href="styles.css"></head>`);
-        
-        frame.srcdoc = html.replace(/<div class=\"content-container\">([\s\S]*?)<\/div>/, '<div class=\"content-container\" id=\"editor-root\">$1</div>');
-        frame.onload = () => {
-            frame.contentDocument.addEventListener('mousedown', (e) => { 
-                if (isResizing) return;
-                const gs = e.target.closest('.gallery-item');
-                const el = e.target.closest('.editable') || e.target.closest('.photo_gallery'); 
-                if (gs) { selectGalleryItem(gs); return; }
-                if (el) selectElement(el); else deselectAll(); 
-            });
-            setDevice('iphone');
-        };
-    }
-
-    function selectElement(el) {
-        frame.contentDocument.querySelectorAll('.resize-handle').forEach(h => h.remove());
-        if(selectedEl) selectedEl.classList.remove('selected-item');
-        if(activeGalleryItem) activeGalleryItem.classList.remove('selected-gallery-sub');
-        selectedEl = el; selectedEl.classList.add('selected-item');
-        if (el.classList.contains('block_image')) addResizeHandle(el);
-        renderToolbar();
-    }
-
-    function selectGalleryItem(subEl) {
-        deselectAll(); activeGalleryItem = subEl; activeGalleryItem.classList.add('selected-gallery-sub');
-        selectedEl = subEl.closest('.photo_gallery'); selectedEl.classList.add('selected-item');
-        renderToolbar();
-        if (subEl.classList.contains('gallery-empty-slot')) triggerImageUpload();
-    }
-
-    function renderToolbar() {
-        if (!selectedEl) return;
-        toolbarContent.style.visibility = 'visible';
-        let html = '';
-        if (activeGalleryItem && !activeGalleryItem.classList.contains('gallery-empty-slot')) {
-            html += `<button class="tool-btn btn-blue" onclick="triggerImageUpload()">CHANGE</button>`;
-        }
-        html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
-        toolbarContent.innerHTML = html;
-    }
-
-    function triggerImageUpload() { document.getElementById('image-upload').click(); }
-    function handleImageUpload(i) {
-        if(i.files[0]) {
-            const r = new FileReader();
-            r.onload = e => {
-                if (activeGalleryItem) {
-                    const isNew = activeGalleryItem.classList.contains('gallery-empty-slot');
-                    activeGalleryItem.classList.remove('gallery-empty-slot');
-                    activeGalleryItem.innerHTML = `<img src="${e.target.result}">`;
-                    if (isNew) {
-                        const ns = frame.contentDocument.createElement('div');
-                        ns.className = 'gallery-item gallery-empty-slot';
-                        selectedEl.appendChild(ns);
-                    }
-                } else if (selectedEl && selectedEl.classList.contains('block_image')) {
-                    selectedEl.querySelector('img').src = e.target.result;
-                } else {
-                    insertElement('block_image', e.target.result);
-                }
-                i.value = '';
-            };
-            r.readAsDataURL(i.files[0]);
-        }
-    }
-
-    function insertElement(type, data) {
-        const doc = frame.contentDocument; const root = doc.getElementById('editor-root'); let el;
-        if (type === 'photo_gallery') {
-            el = doc.createElement('div'); el.className = 'photo_gallery';
-            el.innerHTML = `<div class="gallery-item gallery-empty-slot"></div>`;
+    /* HEIGHT LOCK LOGIC */
+    let portraitHeight = 0;
+    function lockHeroHeight() {
+        const imgBox = document.getElementById('heroImgBox');
+        const img = document.getElementById('heroImage');
+        if (window.innerWidth < 768) {
+            if (window.innerHeight > window.innerWidth && portraitHeight === 0) {
+                portraitHeight = img.offsetHeight;
+                if (portraitHeight > 0) imgBox.style.height = portraitHeight + 'px';
+            } else if (portraitHeight > 0) {
+                imgBox.style.height = portraitHeight + 'px';
+            }
         } else {
-            const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
-            el = doc.createElement(tagMap[type] || 'div');
-            el.className = `editable ${type}`;
-            if(type === 'block_image') { 
-                el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
-                el.style.width = "200px";
-            } else { el.contentEditable = "true"; }
+            imgBox.style.height = 'auto';
         }
-        root.appendChild(el);
-        setTimeout(() => selectElement(el), 150);
+    }
+    window.addEventListener('load', lockHeroHeight);
+    window.addEventListener('resize', lockHeroHeight);
+    window.addEventListener('orientationchange', lockHeroHeight);
+
+    /* NAVIGATION LOGIC */
+    function toggleNav(e) {
+        if(e) e.stopPropagation();
+        const nav = document.getElementById('sidebar');
+        const isOpen = nav.classList.toggle('open');
+        document.getElementById('headerHamburger').style.visibility = isOpen ? 'hidden' : 'visible';
+        document.getElementById('navOverlay').style.display = isOpen ? 'block' : 'none';
+        document.body.style.overflow = isOpen ? 'hidden' : 'auto';
     }
 
-    function deleteElement() { 
-        if(activeGalleryItem) { activeGalleryItem.remove(); activeGalleryItem = null; renderToolbar(); }
-        else if(selectedEl) { selectedEl.remove(); deselectAll(); } 
+    function toggleDropdown(btn) {
+        btn.classList.toggle('active');
+        btn.nextElementSibling.classList.toggle('show');
     }
 
-    function deselectAll() { 
-        if (selectedEl) selectedEl.classList.remove('selected-item'); 
-        if (activeGalleryItem) activeGalleryItem.classList.remove('selected-gallery-sub');
-        selectedEl = null; activeGalleryItem = null; toolbarContent.style.visibility = 'hidden'; 
-    }
+    /* GALLERY LOGIC - RESTORED FROM 2.4.3 */
+    const galleryItems = [
+        {"id": 1, "small": "1-small.jpg", "large": "1-large.jpg"},
+        {"id": 2, "small": "2-small.jpg", "large": "2-large.jpg"},
+        {"id": 3, "small": "3-small.jpg", "large": "3-large.jpg"},
+        {"id": 4, "small": "4-small.jpg", "large": "4-large.jpg"},
+        {"id": 5, "small": "5-small.jpg", "large": "5-large.jpg"},
+        {"id": 6, "small": "6-small.jpg", "large": "6-large.jpg"},
+        {"id": 7, "small": "7-small.jpg", "large": "7-large.jpg"},
+        {"id": 8, "small": "8-small.jpg", "large": "8-large.jpg"},
+        {"id": 9, "small": "9-small.jpg", "large": "9-large.jpg"},
+        {"id": 10, "small": "10-small.jpg", "large": "10-large.jpg"},
+        {"id": 11, "small": "11-small.jpg", "large": "11-large.jpg"},
+        {"id": 12, "small": "12-small.jpg", "large": "12-large.jpg"},
+        {"id": 13, "small": "13-small.jpg", "large": "13-large.jpg"},
+        {"id": 14, "small": "14-small.jpg", "large": "14-large.jpg"},
+        {"id": 15, "small": "15-small.jpg", "large": "15-large.jpg"},
+        {"id": 16, "small": "16-small.jpg", "large": "16-large.jpg"},
+        {"id": 17, "small": "17-small.jpg", "large": "17-large.jpg"}
+    ];
 
-    function setDevice(type) {
-        const widths = { 'desktop': 1200, 'android': 448, 'iphone': 393 };
-        const scaleFactor = Math.min(wrapper.offsetWidth / widths[type], 1);
-        frame.style.width = widths[type] + 'px'; frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
-        frame.style.transform = `scale(${scaleFactor})`;
-    }
+    let currentIndex = 0, startX = 0, prevTranslate = 0, isDragging = false;
+    const VELOCITY = 2500;
 
-    function addResizeHandle(el) {
-        const h = document.createElement('div'); h.className = 'resize-handle'; el.appendChild(h);
-        h.addEventListener('mousedown', e => {
-            e.preventDefault(); e.stopPropagation(); isResizing = true;
-            const startX = e.clientX; const startW = el.offsetWidth;
-            const onMove = e => { el.style.width = (startW + (e.clientX - startX)) + 'px'; };
-            const onUp = () => { isResizing = false; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-            window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
+    function renderGallery() {
+        const left = document.getElementById('col-left'), right = document.getElementById('col-right'), track = document.getElementById('sliderTrack');
+        galleryItems.forEach((item, index) => {
+            const itemHtml = `<div class=\"gallery-item\" onclick=\"openModal(${index})\"><img src=\"${item.small}\" loading=\"lazy\"></div>`;
+            index % 2 === 0 ? left.innerHTML += itemHtml : right.innerHTML += itemHtml;
+            const slide = document.createElement('div'); slide.className = 'slide'; 
+            slide.innerHTML = `<div class=\"image-wrapper\" data-index=\"${index}\"><div class=\"loader\"></div><img data-src=\"${item.large}\"></div>`;
+            track.appendChild(slide);
         });
     }
 
-    function exportHTML() {
-        deselectAll(); const doc = frame.contentDocument.cloneNode(true);
-        doc.querySelectorAll('.selected-item, .gallery-empty-slot, .resize-handle').forEach(e => e.remove());
-        doc.querySelectorAll('.editable').forEach(e => { e.classList.remove('editable'); e.removeAttribute('contenteditable'); });
-        const blob = new Blob([doc.documentElement.outerHTML], {type: 'text/html'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index.html'; a.click();
+    function loadImage(index) {
+        const slide = document.querySelector(`.image-wrapper[data-index="${index}"]`);
+        if (!slide) return;
+        const img = slide.querySelector('img'), loader = slide.querySelector('.loader');
+        if (img && img.dataset.src) {
+            img.src = img.dataset.src;
+            img.onload = () => { img.classList.add('loaded'); if (loader) loader.style.display = 'none'; };
+        }
     }
-    window.onload = init;
+
+    function updateTrackPos(animate = false) {
+        const track = document.getElementById('sliderTrack'), width = document.getElementById('imageModal').offsetWidth;
+        const currentTranslate = currentIndex * -width;
+        prevTranslate = currentTranslate;
+        track.style.transition = animate ? `transform ${width / VELOCITY}s ease-out` : 'none';
+        track.style.transform = `translateX(${currentTranslate}px)`;
+        document.getElementById('modalCounter').innerText = `${currentIndex + 1} / ${galleryItems.length}`;
+    }
+
+    function openModal(index) {
+        currentIndex = index;
+        document.getElementById('imageModal').style.display = "block";
+        document.getElementById('headerHamburger').style.visibility = "hidden";
+        updateTrackPos(false);
+        document.body.style.overflow = "hidden";
+        loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
+    }
+
+    function moveSlide(step) {
+        currentIndex = Math.max(0, Math.min(currentIndex + step, galleryItems.length - 1));
+        updateTrackPos(true);
+        loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
+    }
+
+    function closeModal() { 
+        document.getElementById('imageModal').style.display = "none";
+        document.getElementById('headerHamburger').style.visibility = "visible";
+        document.body.style.overflow = "auto"; 
+    }
+
+    window.addEventListener('resize', () => {
+        if (document.getElementById('imageModal').style.display === "block") updateTrackPos(false);
+    });
+
+    const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
+    modal.addEventListener('touchstart', e => { isDragging = true; startX = e.touches[0].clientX; track.style.transition = 'none'; });
+    modal.addEventListener('touchmove', e => { if (!isDragging) return; track.style.transform = `translateX(${prevTranslate + (e.touches[0].clientX - startX)}px)`; });
+    modal.addEventListener('touchend', e => { 
+        isDragging = false; const diff = e.changedTouches[0].clientX - startX;
+        if (diff < -50) moveSlide(1); else if (diff > 50) moveSlide(-1); else moveSlide(0);
+    });
+
+    window.addEventListener('load', renderGallery);
 </script>
+
+</body>
+</html>
