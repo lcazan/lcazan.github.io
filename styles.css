@@ -77,9 +77,9 @@ header {
     font-size: 1.35rem;            
     font-weight: 550;              
    /* Ensure this is on to match Live */
-    letter-spacing: 0.05rem;        /* Increased to match the wider Live look */
+    letter-spacing: 0.05046rem;        /* Increased to match the wider Live look */
     border: 1px solid var(--text-dark); 
-    padding: 0.266rem 1.56rem;       /* INCREASED: This gives it the 'Live' size */
+    padding: 0.266rem 1.012rem;       /* INCREASED: This gives it the 'Live' size */
     display: inline-block; 
     white-space: nowrap; 
     user-select: none; 
