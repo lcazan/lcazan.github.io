@@ -217,7 +217,7 @@ footer {
 /* --- SUBMENU TOGGLE LOGIC (Corrected) --- */
 .sub-nav {
     display: none; /* Hidden by default */
-    background: rgba(0,0,0,0.02);
+    /*background: rgba(0,0,0,0.02);*/
 }
 
 .sub-nav.show {
