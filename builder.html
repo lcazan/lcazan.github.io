@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.95</title>
+    <title>Snoozing Builder | v4.3.92</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -18,28 +18,42 @@
         #header-area { background: #222; border-bottom: 0.0625rem solid #000; height: 3.125rem; display: flex; align-items: center; justify-content: center; z-index: 1001; }
         #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 0.0625rem solid #000; z-index: 1001; position: relative; }
         
-        #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
-        .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; font-size: 1.1rem; }
-        
-        /* Gallery Mode Toggle */
-        .switch-container { display: flex; align-items: center; gap: 10px; color: white; font-size: 12px; font-weight: bold; margin: 0 10px; }
-        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #555; transition: .4s; border-radius: 20px; }
-        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--brand-pink); }
-        input:checked + .slider:before { transform: translateX(20px); }
+        #input-pill {
+            position: absolute; top: calc(3rem + 1px); left: 50%; transform: translateX(-50%);
+            width: 85%; max-width: 550px; background: #222; border: 1px solid #444; border-radius: 4px; 
+            display: none; align-items: center; justify-content: center; padding: 0 15px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 1002;
+        }
+        #pill-editable { color: white; width: 100%; font-size: 0.85rem; outline: none; text-align: center; font-family: 'Courier New', monospace; line-height: 1.2; padding: 4px 0; }
 
         #frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; }
         #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; left: 0; }
         
-        .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; }
+        .insert-btn { 
+    width: 3.75rem; 
+    height: 2rem; 
+    background: #444; 
+    border: 0.0625rem solid #666; 
+    color: #fff; 
+    margin-bottom: 0.625rem; 
+    border-radius: 0.25rem; 
+    cursor: pointer; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    font-size: 1.2rem; 
+    font-weight: bold;
+    flex-shrink: 0; /* Add this to prevent the "bounce" */
+}
+
+        
+        .btn-teal { background: #008080 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
+        .btn-blue { background: #0056b3 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
+        .color-swatch { width: 1.5rem; height: 1.5rem; border: 1px solid #666; cursor: pointer; border-radius: 2px; }
+        #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.5rem; margin: 0 0.6rem; }
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 1.5625rem; top: 0.75rem; color: #fff; font-size: 1rem; font-weight: 800; }
-
-        #input-pill { position: absolute; top: calc(3rem + 1px); left: 50%; transform: translateX(-50%); width: 85%; max-width: 550px; background: #222; border: 1px solid #444; border-radius: 4px; display: none; align-items: center; justify-content: center; padding: 0 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 1002; }
-        #pill-editable { color: white; width: 100%; font-size: 0.85rem; outline: none; text-align: center; font-family: 'Courier New', monospace; padding: 4px 0; }
     </style>
 </head>
 <body>
@@ -63,26 +77,24 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.95</div>
+        <div class="version-status">v4.3.92</div>
     </div>
-    <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
-    <div id="frame-wrapper"><iframe id="preview-frame"></iframe></div>
+    <div id="sticky-toolbar">
+        <div id="toolbar-content"></div>
+        <div id="input-pill">
+            <span id="pill-editable" contenteditable="true" spellcheck="false" oninput="syncRealTime()"></span>
+        </div>
+    </div>
+    <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
 </div>
 
-<div id="input-pill"><span id="pill-editable" contenteditable="true"></span></div>
-
 <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
-<input type="file" id="input-camera" style="display:none" accept="image/*" capture="environment" onchange="handleGalleryFiles(this.files)">
-<input type="file" id="input-gallery" style="display:none" accept="image/*" multiple onchange="handleGalleryFiles(this.files)">
-<input type="file" id="input-files" style="display:none" accept="image/*" multiple onchange="handleGalleryFiles(this.files)">
-
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
     const frame = document.getElementById('preview-frame');
     const toolbarContent = document.getElementById('toolbar-content');
     const wrapper = document.getElementById('frame-wrapper');
     let selectedEl = null; let currentMode = 'iphone'; let isResizing = false;
-    let currentTargetSlot = null;
+    let activePillMode = null;
 
     async function init() {
         const resp = await fetch('template.html');
@@ -91,47 +103,21 @@
             <style>
                 html, body { height: auto; min-height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
                 #editor-root { width: 100%; display: flex; flex-direction: column; padding-bottom: 250px; }
-                .editable { position: relative; min-height: 1.2em; cursor: pointer; outline: none; }
+                .editable { position: relative; min-height: 1.2em; cursor: pointer; outline: none; box-sizing: border-box; }
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
-                
-                /* Layout Container Logic */
-                .block_container { display: flex; flex-wrap: wrap; align-items: center; width: 100%; min-height: 2rem; }
+                h2, h3, p { display: block !important; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
+                .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; }
+                .block_container { display: flex; flex-wrap: wrap; align-items: center; width: 100%; min-height: 2rem; box-sizing: border-box; padding: 0px; }
                 .block_image { position: relative; display: inline-block; flex-shrink: 0; }
                 .block_image img { width: 100%; display: block; pointer-events: none; }
-                .div-other-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-
-                /* Gallery: 3 Columns Desktop, 2 Columns Mobile */
-                .photo_gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 100%; margin: 20px 0; }
-                @media (max-width: 768px) { .photo_gallery { grid-template-columns: repeat(2, 1fr); } }
-                
-                /* Masonry: 3 Columns Desktop, 2 Columns Mobile */
-                .photo_gallery.masonry-mode { display: block; column-gap: 15px; column-count: 3; }
-                @media (max-width: 768px) { .photo_gallery.masonry-mode { column-count: 2; } }
-
-                .gallery-item { position: relative; background: #fff; border-radius: 6px; overflow: hidden; aspect-ratio: 1/1; border: 1px solid #ddd; }
-                .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
-                .masonry-mode .gallery-item { display: inline-block; width: 100%; aspect-ratio: auto; margin-bottom: 15px; }
-                .masonry-mode .gallery-item img { height: auto; object-fit: contain; }
-
-                /* Gallery Controls */
-                .sentry-layer { position: absolute; inset: 0; z-index: 20; background: transparent; }
-                .gallery-item.active .sentry-layer { z-index: -1; }
-                .pan-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.25); color: white; font-size: 50px; opacity: 0; transition: 0.2s; cursor: ns-resize; z-index: 5; }
-                .gallery-item.active .pan-overlay { opacity: 1; }
-                .item-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; opacity: 0; z-index: 30; }
-                .gallery-item.active .item-actions { opacity: 1; }
-                .action-btn { width: 32px; height: 32px; background: rgba(0,0,0,0.8); color: white; border: none; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-
-                .choice-menu { position: absolute; inset: 0; background: rgba(255,255,255,0.98); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; z-index: 100; opacity: 0; pointer-events: none; }
-                .gallery-item.menu-open .choice-menu { opacity: 1; pointer-events: auto; }
-                .choice-btn { width: 85%; padding: 8px; border: none; background: #3498db; color: white; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 10px; }
-
-                .gallery-empty-slot { border: 2px dashed #bbb; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #eee; }
-                .gallery-empty-slot::before { content: '+'; font-size: 40px; color: #aaa; }
-
-                /* Baseline Resizer */
+                .div-other-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 1.2em; }
+                .block_spacer { height: 1.5rem !important; width: 100%; border-bottom: none; }
                 .resize-handle { width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; }
                 .resize-handle::before { content: "\\f337"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px; }
+                
+                /* Gallery Placeholder */
+                .photo_gallery { width: 100%; margin-bottom: 20px; }
+                .photo_gallery iframe { width: 100%; height: 500px; border: 1px dashed #ccc; }
             </style>
             <script>
                 const observer = new ResizeObserver(entries => {
@@ -143,13 +129,13 @@
                         if (!img) continue;
                         const factor = parseFloat(img.getAttribute('data-scale-factor') || '1.0');
                         if (width <= 744) {
-                            div.style.flexDirection = 'column';
-                            img.style.width = (width * factor) + 'px';
+                            div.style.flexDirection = 'column'; div.style.justifyContent = 'center';
+                            img.style.width = (width * factor) + 'px'; img.style.margin = '0 auto';
                             if(other) other.style.width = '100%';
                         } else {
-                            div.style.flexDirection = 'row';
+                            div.style.flexDirection = 'row'; div.style.justifyContent = 'flex-start';
                             const baseW = width * 0.618;
-                            img.style.width = (baseW * factor) + 'px';
+                            img.style.width = (baseW * factor) + 'px'; img.style.margin = '0';
                             if(other) other.style.width = 'auto';
                         }
                     }
@@ -163,148 +149,190 @@
             frame.contentWindow.initDivLogic();
             frame.contentDocument.addEventListener('mousedown', (e) => { 
                 if (isResizing) return;
-                const galleryItem = e.target.closest('.gallery-item');
-                if (galleryItem) { selectElement(galleryItem); return; }
-                const el = e.target.closest('.editable') || e.target.closest('.div-other-wrapper > *') || e.target.closest('.block_spacer'); 
-                if (el) selectElement(el); else { deselectAll(); closeAllGalleryUI(); }
+                const el = e.target.closest('.editable') || e.target.closest('.div-other-wrapper > *') || e.target.closest('.block_spacer') || e.target.closest('.photo_gallery'); 
+                if (el && el === selectedEl && (el.contentEditable === "true")) return;
+                if (el) selectElement(el); else deselectAll(); 
             });
             setDevice('iphone');
-            setupPanning();
         };
     }
 
     function selectElement(el) {
         const doc = frame.contentDocument; doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
-        if(selectedEl) selectedEl.classList.remove('selected-item', 'active');
+        if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el; selectedEl.classList.add('selected-item');
         if (el.classList.contains('block_image')) addResizeHandle(el);
-        if (el.classList.contains('gallery-item')) el.classList.add('active');
-        renderToolbar();
+        renderToolbar(); 
+        if(el.contentEditable === "true") el.focus();
     }
 
     function renderToolbar() {
         if (!selectedEl) return;
         toolbarContent.style.visibility = 'visible';
-        let html = '';
-        const isGallery = selectedEl.classList.contains('gallery-item');
+        const inDiv = selectedEl.closest('.block_container');
+        const isBtn = selectedEl.classList.contains('block_button_container');
         const isImg = selectedEl.classList.contains('block_image');
-        
-        if (isGallery) {
-            const gallery = selectedEl.closest('.photo_gallery');
-            const isMasonry = gallery.classList.contains('masonry-mode');
-            html += `<div class="switch-container"><span>SQR</span><label class="switch"><input type="checkbox" ${isMasonry ? 'checked' : ''} onchange="parent.toggleMasonry(this)"><span class="slider"></span></label><span>MSN</span></div>`;
+        const isSpacer = selectedEl.classList.contains('block_spacer');
+        const isDiv = selectedEl.classList.contains('block_container');
+        const isGallery = selectedEl.classList.contains('photo_gallery');
+        let html = '';
+        if (isDiv) {
+            html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
+        } else if (isBtn) {
+            html += `<button class="tool-btn btn-teal" onclick="openPill('text')">TEXT</button><button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>`;
         } else if (isImg) {
-            html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`;
+            html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button><button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>`;
+        } else if (isSpacer) {
+            html += `<button class="tool-btn" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
+        } else if (selectedEl.contentEditable === "true") {
+            html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
         }
-        
+        if (!inDiv && !isDiv && !isSpacer && !isGallery) {
+            html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
+        }
         html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
         toolbarContent.innerHTML = html;
     }
 
-    // --- GALLERY ---
-    function insertGallery() {
+    function insertElement(type, data) {
         const doc = frame.contentDocument;
-        const gallery = doc.createElement('div');
-        gallery.className = 'photo_gallery';
-        gallery.appendChild(createSlot());
-        doc.getElementById('editor-root').appendChild(gallery);
-        Sortable.create(gallery, { animation: 150, handle: '.drag-handle', filter: '.gallery-empty-slot' });
-    }
-
-    function createSlot() {
-        const slot = frame.contentDocument.createElement('div');
-        slot.className = 'gallery-item gallery-empty-slot';
-        slot.onclick = (e) => { e.stopPropagation(); closeAllGalleryUI(); slot.classList.add('menu-open'); };
-        slot.innerHTML = `<div class="choice-menu">
-            <button class="choice-btn" onclick="parent.triggerPick('input-camera', event)">CAMERA</button>
-            <button class="choice-btn" onclick="parent.triggerPick('input-gallery', event)">PHOTOS</button>
-            <button class="choice-btn" onclick="parent.triggerPick('input-files', event)">FILES</button>
-        </div>`;
-        return slot;
-    }
-
-    function triggerPick(id, e) { e.stopPropagation(); currentTargetSlot = e.target.closest('.gallery-item'); document.getElementById(id).click(); closeAllGalleryUI(); }
-
-    async function handleGalleryFiles(files) {
-        if (!files.length || !currentTargetSlot) return;
-        const gallery = currentTargetSlot.parentElement;
-        for (let file of files) {
-            const reader = new FileReader();
-            await new Promise(res => {
-                reader.onload = (e) => {
-                    const slot = (file === files[0]) ? currentTargetSlot : frame.contentDocument.createElement('div');
-                    if (file !== files[0]) slot.className = 'gallery-item';
-                    fillSlot(slot, e.target.result);
-                    if (file !== files[0]) gallery.insertBefore(slot, gallery.lastElementChild);
-                    res();
-                };
-                reader.readAsDataURL(file);
-            });
+        const root = doc.getElementById('editor-root');
+        
+        if (type === 'photo_gallery') {
+            const el = doc.createElement('div');
+            el.className = 'photo_gallery';
+            el.innerHTML = '<iframe></iframe>';
+            selectedEl && selectedEl.parentNode === root ? selectedEl.after(el) : root.appendChild(el);
+            setTimeout(() => selectElement(el), 150);
+            return;
         }
-        if (!gallery.lastElementChild.classList.contains('gallery-empty-slot')) gallery.appendChild(createSlot());
+
+        const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
+        const el = doc.createElement(tagMap[type] || 'div');
+        el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
+        if(type === 'block_image') { 
+            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
+            el.contentEditable = "false"; el.style.width = "200px"; el.setAttribute('data-scale-factor', '1.0');
+        } else if(type === 'block_button') { 
+            el.innerHTML = `<a href=\"#\" class=\"block_button\" onclick=\"return false;\">FIND OUT MORE</a>`; el.contentEditable = "false"; 
+        } else if(type === 'block_spacer' || type === 'block_container') { el.contentEditable = "false"; }
+        else { el.innerText = ""; el.setAttribute('data-placeholder', 'Type here...'); el.contentEditable = "true"; }
+
+        const targetDiv = selectedEl ? selectedEl.closest('.block_container') : null;
+        if (targetDiv) {
+            if (type === 'block_image' && !targetDiv.querySelector('.block_image')) targetDiv.prepend(el);
+            else if (type !== 'block_image') {
+                let wrap = targetDiv.querySelector('.div-other-wrapper');
+                if (!wrap) { wrap = doc.createElement('div'); wrap.className = 'div-other-wrapper'; targetDiv.appendChild(wrap); }
+                wrap.appendChild(el);
+            }
+        } else if (type === 'block_container') { root.appendChild(el); frame.contentWindow.initDivLogic(); }
+        else { selectedEl && selectedEl.parentNode === root ? selectedEl.after(el) : root.appendChild(el); }
+        setTimeout(() => selectElement(el), 150);
     }
 
-    function fillSlot(slot, src) {
-        slot.classList.remove('gallery-empty-slot', 'menu-open');
-        slot.innerHTML = `
-            <div class="sentry-layer" onclick="parent.selectElement(this.parentElement)"></div>
-            <img src="${src}" style="object-position: center 50%;">
-            <div class="pan-overlay" onmousedown="parent.beginPan(event)"><i class="fa-solid fa-arrows-up-down"></i></div>
-            <div class="item-actions">
-                <button class="action-btn drag-handle"><i class="fa-solid fa-arrows-up-down-left-right"></i></button>
-                <button class="action-btn" onclick="parent.triggerPick('input-gallery', event)"><i class="fa-solid fa-sync"></i></button>
-                <button class="action-btn" onclick="parent.deleteElement()"><i class="fa-solid fa-trash"></i></button>
-            </div>`;
+    function setDevice(type) {
+        currentMode = type; document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`btn-${type}`).classList.add('active');
+        const widths = { 'desktop': 1200, 'android': 448, 'iphone': 393 };
+        const scaleFactor = Math.min(wrapper.offsetWidth / widths[type], 1);
+        frame.style.width = widths[type] + 'px'; frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
+        frame.style.transform = `scale(${scaleFactor})`;
+        frame.style.left = (scaleFactor < 1) ? '0px' : ((wrapper.offsetWidth - widths[type]) / 2) + 'px';
     }
 
-    function toggleMasonry(input) { if(selectedEl) selectedEl.closest('.photo_gallery').classList.toggle('masonry-mode', input.checked); }
-    function closeAllGalleryUI() { frame.contentDocument.querySelectorAll('.gallery-item').forEach(i => i.classList.remove('menu-open', 'active')); }
-
-    // --- PANNING ---
-    let isPanning = false, startY, startPos, activeImg;
-    function beginPan(e) {
-        if (selectedEl.closest('.photo_gallery').classList.contains('masonry-mode')) return;
-        e.preventDefault(); e.stopPropagation();
-        isPanning = true; activeImg = e.target.closest('.gallery-item').querySelector('img');
-        startY = e.clientY; startPos = parseFloat(activeImg.style.objectPosition.split(' ')[1]) || 50;
-    }
-    function setupPanning() {
-        const move = (e) => { if (isPanning && activeImg) activeImg.style.objectPosition = `center ${Math.max(0, Math.min(100, startPos + (startY - e.clientY) * 0.4))}%`; };
-        const end = () => { isPanning = false; activeImg = null; };
-        window.addEventListener('mousemove', move); window.addEventListener('mouseup', end);
+    function deselectAll() { 
+        if (selectedEl) selectedEl.classList.remove('selected-item'); 
+        selectedEl = null; toolbarContent.style.visibility = 'hidden'; 
+        document.getElementById('input-pill').style.display = 'none'; activePillMode = null;
     }
 
-    // --- BASELINE TOOLS ---
+    function deleteElement() { if(selectedEl) { const p = selectedEl.parentElement; selectedEl.remove(); if (p && p.classList.contains('div-other-wrapper') && p.children.length === 0) p.remove(); deselectAll(); } }
+    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+    function handleImageUpload(i) { if(i.files[0]) { const r = new FileReader(); r.onload = e => { if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result; else insertElement('block_image', e.target.result); i.value = ''; }; r.readAsDataURL(i.files[0]); } }
+    function setAlign(pos) { if (selectedEl && !selectedEl.closest('.block_container')) { selectedEl.style.textAlign = pos; if(selectedEl.classList.contains('block_image')) { selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block'; selectedEl.style.margin = pos === 'center' ? '0 auto' : '0'; } } }
+    function centerItem() { setAlign('center'); }
+
+    // Pill sync and other functions strictly preserved
+    function openPill(mode) {
+        if (!selectedEl) return;
+        const pill = document.getElementById('input-pill');
+        const editable = document.getElementById('pill-editable');
+        const btnLink = selectedEl.querySelector('a');
+        if (!btnLink) return;
+        activePillMode = mode;
+        pill.style.display = 'flex';
+        editable.innerText = (mode === 'text') ? btnLink.innerText : (btnLink.getAttribute('href') || '');
+        setTimeout(() => { editable.focus(); document.execCommand('selectAll', false, null); }, 50);
+    }
+    function syncRealTime() {
+        if (!selectedEl || !activePillMode) return;
+        const editable = document.getElementById('pill-editable');
+        const btnLink = selectedEl.querySelector('a');
+        if (!btnLink) return;
+        const val = editable.innerText;
+        if (activePillMode === 'text') { btnLink.innerText = val.toUpperCase(); } 
+        else { btnLink.setAttribute('href', val); }
+    }
     function addResizeHandle(el) {
         const handle = frame.contentDocument.createElement('div');
         handle.className = 'resize-handle';
-        handle.onmousedown = (e) => {
-            e.preventDefault(); isResizing = true;
-            const startX = e.clientX, startW = el.offsetWidth;
+        const inDiv = el.closest('.block_container');
+        const startResize = (e) => {
+            e.preventDefault(); e.stopPropagation();
+            isResizing = true;
+            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const startW = el.offsetWidth;
             const widths = { 'desktop': 1200, 'android': 448, 'iphone': 393 };
             const scale = wrapper.offsetWidth / widths[currentMode];
-            const move = (mE) => {
-                let newW = startW + (mE.clientX - startX) / scale;
-                el.style.width = Math.max(40, newW) + 'px';
+            const onMove = (mE) => {
+                const curX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
+                let newW = startW + (curX - startX) / scale;
+                if (inDiv) {
+                    const parentW = inDiv.offsetWidth;
+                    const baseW = (parentW > 744) ? parentW * 0.618 : parentW;
+                    if (newW > baseW) newW = baseW;
+                    el.setAttribute('data-scale-factor', (newW / baseW).toFixed(4));
+                }
+                if (newW > 40) el.style.width = newW + 'px';
             };
-            const up = () => { isResizing = false; window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
-            window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+            const onUp = () => {
+                isResizing = false;
+                frame.contentDocument.removeEventListener('mousemove', onMove);
+                frame.contentDocument.removeEventListener('mouseup', onUp);
+                frame.contentDocument.removeEventListener('touchmove', onMove);
+                frame.contentDocument.removeEventListener('touchend', onUp);
+            };
+            frame.contentDocument.addEventListener('mousemove', onMove);
+            frame.contentDocument.addEventListener('mouseup', onUp);
+            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
+            frame.contentDocument.addEventListener('touchend', onUp);
         };
+        handle.addEventListener('mousedown', startResize);
+        handle.addEventListener('touchstart', startResize, {passive: false});
         el.appendChild(handle);
     }
-
-    function insertElement(type) { if (type === 'photo_gallery') insertGallery(); else /* baseline insert logic */; }
-    function setDevice(type) {
-        currentMode = type;
-        const widths = { 'desktop': 1200, 'android': 448, 'iphone': 393 };
-        const scale = Math.min(wrapper.offsetWidth / widths[type], 1);
-        frame.style.width = widths[type] + 'px'; frame.style.transform = `scale(${scale})`;
+    function fitToWidth() {
+        if (!selectedEl) return;
+        const inDiv = selectedEl.closest('.block_container');
+        if (inDiv) selectedEl.setAttribute('data-scale-factor', '1.0');
+        else { selectedEl.style.width = '100%'; selectedEl.style.display = 'block'; selectedEl.style.margin = '0 auto'; }
     }
-    function deleteElement() { if(selectedEl) { selectedEl.remove(); deselectAll(); } }
-    function deselectAll() { if(selectedEl) selectedEl.classList.remove('selected-item', 'active'); selectedEl = null; toolbarContent.style.visibility = 'hidden'; }
-    function triggerImageUpload() { document.getElementById('image-upload').click(); }
-    function handleImageUpload(i) { /* baseline image logic */ }
-    function exportHTML() { deselectAll(); /* baseline export logic */ }
-
+    function toggleSpacerLine() {
+        if (!selectedEl) return;
+        const currentLine = selectedEl.style.borderBottom;
+        selectedEl.style.borderBottom = (currentLine === 'none' || !currentLine) ? '1px solid #eee' : 'none';
+    }
+    function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
+    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
+    function exportHTML() {
+        deselectAll(); const doc = frame.contentDocument.cloneNode(true);
+        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        doc.querySelectorAll('.editable').forEach(e => { e.classList.remove('selected-item', 'editable'); e.removeAttribute('contenteditable'); });
+        const blob = new Blob([doc.documentElement.outerHTML], {type: 'text/html'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index.html'; a.click();
+    }
     window.onload = init;
 </script>
+</body>
+</html>
