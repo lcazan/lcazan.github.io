@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.4.5</title>
+    <title>Snoozing Builder | v4.3.92</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -16,21 +16,41 @@
 
         #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100%; overflow: hidden; position: relative; }
         #header-area { background: #222; border-bottom: 0.0625rem solid #000; height: 3.125rem; display: flex; align-items: center; justify-content: center; z-index: 1001; }
+        
         #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 0.0625rem solid #000; z-index: 1001; position: relative; }
         
         #input-pill {
-            position: absolute; top: calc(3rem + 1px); left: 50%; transform: translateX(-50%);
-            width: 85%; max-width: 550px; background: #222; border: 1px solid #444; border-radius: 4px; 
-            display: none; align-items: center; justify-content: center; padding: 0 15px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 1002;
+            position: absolute; 
+            top: calc(3rem + 1px); /* 1px below the 3rem toolbar */
+            left: 50%; transform: translateX(-50%);
+            width: 85%; max-width: 550px; 
+            background: #222;
+            border: 1px solid #444; border-radius: 4px; 
+            display: none; align-items: center; justify-content: center; 
+            padding: 0 15px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            z-index: 1002;
         }
-        #pill-editable { color: white; width: 100%; font-size: 0.85rem; outline: none; text-align: center; font-family: 'Courier New', monospace; line-height: 1.2; padding: 4px 0; }
+        #pill-editable { 
+            color: white; width: 100%; font-size: 0.85rem; outline: none; 
+            text-align: center; font-family: 'Courier New', monospace;
+            line-height: 1.2; /* Height is 1.2* text height */
+            padding: 4px 0;
+        }
 
         #frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; }
         #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; left: 0; }
         
         .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; }
         .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; font-size: 1.1rem; }
+        
+        .btn-teal { background: #008080 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
+        .btn-blue { background: #0056b3 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
+
+        .color-swatch { width: 1.5rem; height: 1.5rem; border: 1px solid #666; cursor: pointer; border-radius: 2px; }
+        #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
+        .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.5rem; margin: 0 0.6rem; }
+        .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 1.5625rem; top: 0.75rem; color: #fff; font-size: 1rem; font-weight: 800; }
     </style>
 </head>
@@ -43,7 +63,6 @@
     <button class="insert-btn" onclick="insertElement('block_heading')">T<sub>2</sub></button>
     <button class="insert-btn" onclick="insertElement('block_text')">T<sub>3</sub></button>
     <button class="insert-btn" onclick="insertElement('block_button')"><span>Btn</span></button>
-    <button class="insert-btn" onclick="insertElement('photo_gallery')"><i class="fa-solid fa-table-cells"></i></button>
     <button class="insert-btn" onclick="insertElement('block_spacer')"><i class="fa-solid fa-arrows-up-down"></i></button>
     <div class="export-wrap"><button class="export-btn" onclick="exportHTML()"><i class="fa-solid fa-download"></i></button></div>
 </div>
@@ -55,21 +74,27 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.4.5</div>
+        <div class="version-status">v4.3.92</div>
     </div>
-    <div id="sticky-toolbar"><div id="toolbar-content"></div><div id="input-pill"></div></div>
-    <div id="frame-wrapper"><iframe id="preview-frame" name="preview-frame" scrolling="yes"></iframe></div>
+    <div id="sticky-toolbar">
+        <div id="toolbar-content"></div>
+        <div id="input-pill">
+            <span id="pill-editable" contenteditable="true" spellcheck="false" oninput="syncRealTime()"></span>
+        </div>
+    </div>
+    <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
 </div>
 
 <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
 </body>
 </html>
+
 <script>
     const frame = document.getElementById('preview-frame');
     const toolbarContent = document.getElementById('toolbar-content');
     const wrapper = document.getElementById('frame-wrapper');
     let selectedEl = null; let currentMode = 'iphone'; let isResizing = false;
-    let activeGalleryItem = null;
+    let activePillMode = null;
 
     async function init() {
         const resp = await fetch('template.html');
@@ -80,156 +105,215 @@
                 #editor-root { width: 100%; display: flex; flex-direction: column; padding-bottom: 250px; }
                 .editable { position: relative; min-height: 1.2em; cursor: pointer; outline: none; box-sizing: border-box; }
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
+                h2, h3, p { display: block !important; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
+                .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; }
                 
-                /* [LOCK: BASELINE v4.3.92 STYLES] */
-                .block_container { display: flex; flex-wrap: wrap; align-items: center; width: 100%; min-height: 2rem; box-sizing: border-box; }
-                .block_image { position: relative; display: inline-block; flex-shrink: 0; cursor: pointer; }
+                .block_container { 
+                    display: flex; flex-wrap: wrap; align-items: center; 
+                    width: 100%; min-height: 2rem; box-sizing: border-box; padding: 0px;
+                }
+                .block_image { position: relative; display: inline-block; flex-shrink: 0; }
                 .block_image img { width: 100%; display: block; pointer-events: none; }
-                .div-other-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+                .div-other-wrapper {
+                    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 1.2em;
+                }
+                .block_spacer { height: 1.5rem !important; width: 100%; border-bottom: none; }
                 .resize-handle { width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; }
                 .resize-handle::before { content: "\\f337"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px; }
-
-                /* [GALLERY GRID] */
-                .photo_gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; width: 100%; padding: 40px 0 0 0; margin: 20px 0; }
-                .gallery-item { position: relative; aspect-ratio: 1/1; background: #f4f4f4; cursor: pointer; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-                .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
-                .gallery-empty-slot::before { content: '+'; font-size: 80px; color: #bbb; }
-                .selected-gallery-sub { outline: 4px solid #0056b3 !important; outline-offset: -4px; z-index: 5; }
-
-                /* [LIGHTBOX CSS - ALWAYS PRESENT] */
-                #lb-m { display: none; position: fixed; z-index: 10000; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; cursor: pointer; }
-                #lb-m img { max-width: 90%; max-height: 90%; border: 2px solid #fff; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
             </style>
             <script>
-                /* [SILENT LIGHTBOX - WAKES UP ONLY ON EXPORT] */
-                window.addEventListener('load', () => {
-                    if (window.name !== 'preview-frame') {
-                        const m = document.getElementById('lb-m'), i = document.getElementById('lb-i');
-                        document.querySelectorAll('.gallery-item img').forEach(img => {
-                            img.onclick = () => { i.src = img.src; m.style.display = 'flex'; };
-                        });
-                        m.onclick = () => m.style.display = 'none';
-                    }
-                });
-
-                /* [BASELINE RESIZE OBSERVER] */
-                const obs = new ResizeObserver(ents => {
-                    for (let e of ents) {
-                        const d = e.target; const w = e.contentRect.width;
-                        const img = d.querySelector('.block_image');
+                const observer = new ResizeObserver(entries => {
+                    for (let entry of entries) {
+                        const div = entry.target;
+                        const width = entry.contentRect.width;
+                        const img = div.querySelector('.block_image');
+                        const other = div.querySelector('.div-other-wrapper');
                         if (!img) continue;
-                        const f = parseFloat(img.getAttribute('data-scale-factor') || '1.0');
-                        if (w <= 744) { d.style.flexDirection = 'column'; img.style.width = (w * f) + 'px'; }
-                        else { d.style.flexDirection = 'row'; img.style.width = ((w * 0.618) * f) + 'px'; }
+                        const factor = parseFloat(img.getAttribute('data-scale-factor') || '1.0');
+                        if (width <= 744) {
+                            div.style.flexDirection = 'column'; div.style.justifyContent = 'center';
+                            img.style.width = (width * factor) + 'px'; img.style.margin = '0 auto';
+                            if(other) other.style.width = '100%';
+                        } else {
+                            div.style.flexDirection = 'row'; div.style.justifyContent = 'flex-start';
+                            const baseW = width * 0.618;
+                            img.style.width = (baseW * factor) + 'px'; img.style.margin = '0';
+                            if(other) other.style.width = 'auto';
+                        }
                     }
                 });
-                window.initDivLogic = () => { document.querySelectorAll('.block_container').forEach(d => obs.observe(d)); };
+                window.initDivLogic = () => { document.querySelectorAll('.block_container').forEach(d => observer.observe(d)); };
             <\/script>
-            <link rel="stylesheet" href="styles.css"></head>`)
-            .replace('</body>', '<div id="lb-m"><img id="lb-i"></div></body>');
+            <link rel="stylesheet" href="styles.css"></head>`);
         
         frame.srcdoc = html.replace(/<div class=\"content-container\">([\s\S]*?)<\/div>/, '<div class=\"content-container\" id=\"editor-root\">$1</div>');
         frame.onload = () => {
             frame.contentWindow.initDivLogic();
             frame.contentDocument.addEventListener('mousedown', (e) => { 
                 if (isResizing) return;
-                const gs = e.target.closest('.gallery-item');
-                const el = e.target.closest('.editable') || e.target.closest('.div-other-wrapper > *') || e.target.closest('.photo_gallery'); 
-                if (gs) { selectGalleryItem(gs); return; }
+                const el = e.target.closest('.editable') || e.target.closest('.div-other-wrapper > *') || e.target.closest('.block_spacer'); 
+                if (el && el === selectedEl && (el.contentEditable === "true")) return;
                 if (el) selectElement(el); else deselectAll(); 
             });
             setDevice('iphone');
         };
     }
 
-    /* [RESTORED v4.3.92 SELECTION & IMAGE LOGIC] */
     function selectElement(el) {
         const doc = frame.contentDocument; doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
-        if(selectedEl) selectedEl.classList.remove('selected-item');
-        if(activeGalleryItem) activeGalleryItem.classList.remove('selected-gallery-sub');
+        if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el; selectedEl.classList.add('selected-item');
         if (el.classList.contains('block_image')) addResizeHandle(el);
-        renderToolbar();
-    }
-
-    function selectGalleryItem(subEl) {
-        deselectAll(); activeGalleryItem = subEl; activeGalleryItem.classList.add('selected-gallery-sub');
-        selectedEl = subEl.closest('.photo_gallery'); selectedEl.classList.add('selected-item');
-        renderToolbar();
-        if (subEl.classList.contains('gallery-empty-slot')) triggerImageUpload();
+        renderToolbar(); 
+        if(el.contentEditable === "true") el.focus();
     }
 
     function renderToolbar() {
         if (!selectedEl) return;
         toolbarContent.style.visibility = 'visible';
+        const inDiv = selectedEl.closest('.block_container');
+        const isBtn = selectedEl.classList.contains('block_button_container');
+        const isImg = selectedEl.classList.contains('block_image');
+        const isSpacer = selectedEl.classList.contains('block_spacer');
+        const isDiv = selectedEl.classList.contains('block_container');
         let html = '';
-        if (activeGalleryItem && !activeGalleryItem.classList.contains('gallery-empty-slot')) {
-            html += `<button class="tool-btn btn-blue" onclick="triggerImageUpload()">CHANGE</button>`;
+        if (isDiv) {
+            html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
+        } else if (isBtn) {
+            html += `<button class="tool-btn btn-teal" onclick="openPill('text')">TEXT</button>`;
+            html += `<button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>`;
+        } else if (isImg) {
+            html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`;
+            html += `<button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>`;
+        } else if (isSpacer) {
+            html += `<button class="tool-btn" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
+        } else if (selectedEl.contentEditable === "true") {
+            html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
+        }
+        if (!inDiv && !isDiv && !isSpacer) {
+            html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
         }
         html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
         toolbarContent.innerHTML = html;
     }
 
-    function triggerImageUpload() { document.getElementById('image-upload').click(); }
-    function handleImageUpload(i) {
-        if(i.files[0]) {
-            const r = new FileReader();
-            r.onload = e => {
-                if (activeGalleryItem) {
-                    const isNew = activeGalleryItem.classList.contains('gallery-empty-slot');
-                    activeGalleryItem.classList.remove('gallery-empty-slot');
-                    activeGalleryItem.innerHTML = `<img src="${e.target.result}">`;
-                    if (isNew) {
-                        const ns = frame.contentDocument.createElement('div');
-                        ns.className = 'gallery-item gallery-empty-slot';
-                        selectedEl.appendChild(ns);
-                    }
-                } else if (selectedEl && selectedEl.classList.contains('block_image')) {
-                    selectedEl.querySelector('img').src = e.target.result;
-                } else {
-                    insertElement('block_image', e.target.result);
-                }
-                i.value = '';
-            };
-            r.readAsDataURL(i.files[0]);
-        }
+    function openPill(mode) {
+        if (!selectedEl) return;
+        const pill = document.getElementById('input-pill');
+        const editable = document.getElementById('pill-editable');
+        const btnLink = selectedEl.querySelector('a');
+        if (!btnLink) return;
+
+        activePillMode = mode;
+        pill.style.display = 'flex';
+        editable.innerText = (mode === 'text') ? btnLink.innerText : (btnLink.getAttribute('href') || '');
+
+        setTimeout(() => {
+            editable.focus();
+            document.execCommand('selectAll', false, null);
+        }, 50);
     }
 
-    function insertElement(type, data) {
-        const doc = frame.contentDocument; const root = doc.getElementById('editor-root'); let el;
-        if (type === 'photo_gallery') {
-            el = doc.createElement('div'); el.className = 'photo_gallery';
-            el.innerHTML = `<div class="gallery-item gallery-empty-slot"></div>`;
+    function syncRealTime() {
+        if (!selectedEl || !activePillMode) return;
+        const editable = document.getElementById('pill-editable');
+        const btnLink = selectedEl.querySelector('a');
+        if (!btnLink) return;
+        
+        const val = editable.innerText;
+        if (activePillMode === 'text') {
+            btnLink.innerText = val.toUpperCase();
         } else {
-            const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
-            el = doc.createElement(tagMap[type] || 'div');
-            el.className = `editable ${type}`;
-            if(type === 'block_image') { 
-                el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
-                el.style.width = "200px"; el.setAttribute('data-scale-factor', '1.0');
-            } else { el.contentEditable = "true"; }
+            btnLink.setAttribute('href', val);
         }
-        root.appendChild(el);
-        setTimeout(() => selectElement(el), 150);
-    }
-
-    function exportHTML() {
-        deselectAll(); const doc = frame.contentDocument.cloneNode(true);
-        doc.querySelectorAll('.selected-item, .gallery-empty-slot, .resize-handle').forEach(e => e.remove());
-        doc.querySelectorAll('.editable').forEach(e => { e.classList.remove('editable'); e.removeAttribute('contenteditable'); });
-        const blob = new Blob([doc.documentElement.outerHTML], {type: 'text/html'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index.html'; a.click();
-    }
-
-    function deleteElement() { 
-        if(activeGalleryItem) { activeGalleryItem.remove(); activeGalleryItem = null; renderToolbar(); }
-        else if(selectedEl) { selectedEl.remove(); deselectAll(); } 
     }
 
     function deselectAll() { 
         if (selectedEl) selectedEl.classList.remove('selected-item'); 
-        if (activeGalleryItem) activeGalleryItem.classList.remove('selected-gallery-sub');
-        selectedEl = null; activeGalleryItem = null; toolbarContent.style.visibility = 'hidden'; 
+        selectedEl = null; 
+        toolbarContent.style.visibility = 'hidden'; 
+        document.getElementById('input-pill').style.display = 'none'; 
+        activePillMode = null;
+    }
+
+    function addResizeHandle(el) {
+        const handle = frame.contentDocument.createElement('div');
+        handle.className = 'resize-handle';
+        const inDiv = el.closest('.block_container');
+        const startResize = (e) => {
+            e.preventDefault(); e.stopPropagation();
+            isResizing = true;
+            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const startW = el.offsetWidth;
+            const widths = { 'desktop': 1200, 'android': 448, 'iphone': 393 };
+            const scale = wrapper.offsetWidth / widths[currentMode];
+            const onMove = (mE) => {
+                const curX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
+                let newW = startW + (curX - startX) / scale;
+                if (inDiv) {
+                    const parentW = inDiv.offsetWidth;
+                    const baseW = (parentW > 744) ? parentW * 0.618 : parentW;
+                    if (newW > baseW) newW = baseW;
+                    el.setAttribute('data-scale-factor', (newW / baseW).toFixed(4));
+                }
+                if (newW > 40) el.style.width = newW + 'px';
+            };
+            const onUp = () => {
+                isResizing = false;
+                frame.contentDocument.removeEventListener('mousemove', onMove);
+                frame.contentDocument.removeEventListener('mouseup', onUp);
+                frame.contentDocument.removeEventListener('touchmove', onMove);
+                frame.contentDocument.removeEventListener('touchend', onUp);
+            };
+            frame.contentDocument.addEventListener('mousemove', onMove);
+            frame.contentDocument.addEventListener('mouseup', onUp);
+            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
+            frame.contentDocument.addEventListener('touchend', onUp);
+        };
+        handle.addEventListener('mousedown', startResize);
+        handle.addEventListener('touchstart', startResize, {passive: false});
+        el.appendChild(handle);
+    }
+
+    function fitToWidth() {
+        if (!selectedEl) return;
+        const inDiv = selectedEl.closest('.block_container');
+        if (inDiv) selectedEl.setAttribute('data-scale-factor', '1.0');
+        else { selectedEl.style.width = '100%'; selectedEl.style.display = 'block'; selectedEl.style.margin = '0 auto'; }
+    }
+
+    function toggleSpacerLine() {
+        if (!selectedEl) return;
+        const currentLine = selectedEl.style.borderBottom;
+        selectedEl.style.borderBottom = (currentLine === 'none' || !currentLine) ? '1px solid #eee' : 'none';
+    }
+
+    function insertElement(type, data) {
+        const doc = frame.contentDocument;
+        const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
+        const el = doc.createElement(tagMap[type] || 'div');
+        el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
+        if(type === 'block_image') { 
+            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
+            el.contentEditable = "false"; el.style.width = "200px"; el.setAttribute('data-scale-factor', '1.0');
+        } else if(type === 'block_button') { 
+            el.innerHTML = `<a href=\"#\" class=\"block_button\" onclick=\"return false;\">FIND OUT MORE</a>`; 
+            el.contentEditable = "false"; 
+        } else if(type === 'block_spacer' || type === 'block_container') { el.contentEditable = "false"; }
+        else { el.innerText = ""; el.setAttribute('data-placeholder', 'Type here...'); el.contentEditable = "true"; }
+
+        const root = doc.getElementById('editor-root');
+        const targetDiv = selectedEl ? selectedEl.closest('.block_container') : null;
+        if (targetDiv) {
+            if (type === 'block_image' && !targetDiv.querySelector('.block_image')) targetDiv.prepend(el);
+            else if (type !== 'block_image') {
+                let wrap = targetDiv.querySelector('.div-other-wrapper');
+                if (!wrap) { wrap = doc.createElement('div'); wrap.className = 'div-other-wrapper'; targetDiv.appendChild(wrap); }
+                wrap.appendChild(el);
+            }
+        } else if (type === 'block_container') { root.appendChild(el); frame.contentWindow.initDivLogic(); }
+        else { selectedEl && selectedEl.parentNode === root ? selectedEl.after(el) : root.appendChild(el); }
+        setTimeout(() => selectElement(el), 150);
     }
 
     function setDevice(type) {
@@ -241,17 +325,20 @@
         frame.style.left = (scaleFactor < 1) ? '0px' : ((wrapper.offsetWidth - widths[type]) / 2) + 'px';
     }
 
-    function addResizeHandle(el) {
-        const h = document.createElement('div'); h.className = 'resize-handle'; el.appendChild(h);
-        h.addEventListener('mousedown', e => {
-            e.preventDefault(); e.stopPropagation(); isResizing = true;
-            const startX = e.clientX; const startW = el.offsetWidth;
-            const onMove = e => { el.style.width = (startW + (e.clientX - startX)) + 'px'; };
-            const onUp = () => { isResizing = false; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-            window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
-        });
+    function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
+    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
+    function deleteElement() { if(selectedEl) { const p = selectedEl.parentElement; selectedEl.remove(); if (p && p.classList.contains('div-other-wrapper') && p.children.length === 0) p.remove(); deselectAll(); } }
+    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+    function handleImageUpload(i) { if(i.files[0]) { const r = new FileReader(); r.onload = e => { if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result; else insertElement('block_image', e.target.result); i.value = ''; }; r.readAsDataURL(i.files[0]); } }
+    function setAlign(pos) { if (selectedEl && !selectedEl.closest('.block_container')) { selectedEl.style.textAlign = pos; if(selectedEl.classList.contains('block_image')) { selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block'; selectedEl.style.margin = pos === 'center' ? '0 auto' : '0'; } } }
+    function centerItem() { setAlign('center'); }
+    
+    function exportHTML() {
+        deselectAll(); const doc = frame.contentDocument.cloneNode(true);
+        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        doc.querySelectorAll('.editable').forEach(e => { e.classList.remove('selected-item', 'editable'); e.removeAttribute('contenteditable'); });
+        const blob = new Blob([doc.documentElement.outerHTML], {type: 'text/html'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index.html'; a.click();
     }
     window.onload = init;
 </script>
-
-
