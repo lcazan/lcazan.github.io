@@ -100,7 +100,7 @@
     let selectedEl = null; let currentMode = 'iphone'; let isResizing = false;
     let activePillMode = null;
 
-    // Gallery Variables
+    // Gallery state variables
     let currentTargetSlot = null;
     let isPanning = false, startY, startPos, activeImg;
 
@@ -116,6 +116,23 @@
                 h2, h3, p { display: block !important; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
                 .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; }
                 
+                /* Gallery Grid Styles */
+                .photo_gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 100%; margin: 20px 0; }
+                .gallery-item { position: relative; background: #fff; border-radius: 6px; overflow: hidden; aspect-ratio: 1/1; border: 1px solid #ddd; width: 100%; }
+                .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+                .sentry-layer { position: absolute; inset: 0; z-index: 20; background: transparent; }
+                .gallery-item.active .sentry-layer { z-index: -1; }
+                .pan-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.25); color: white; font-size: 30px; opacity: 0; transition: 0.2s; cursor: ns-resize; z-index: 5; }
+                .gallery-item.active .pan-overlay { opacity: 1; }
+                .item-actions { position: absolute; top: 5px; right: 5px; display: flex; gap: 4px; opacity: 0; z-index: 10; transition: 0.2s; }
+                .gallery-item.active .item-actions { opacity: 1; }
+                .action-btn { width: 30px; height: 30px; background: rgba(0,0,0,0.8); color: white; border: none; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; }
+                .choice-menu { position: absolute; inset: 0; background: rgba(255,255,255,0.98); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 8px; z-index: 100; opacity: 0; pointer-events: none; }
+                .gallery-item.menu-open .choice-menu { opacity: 1; pointer-events: auto; }
+                .choice-btn { width: 85%; padding: 8px; border: none; background: #3498db; color: white; border-radius: 4px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 10px; }
+                .gallery-empty-slot { border: 2px dashed #bbb; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #eee; min-height: 100px; }
+                .gallery-empty-slot::before { content: '+'; font-size: 40px; color: #aaa; }
+
                 .block_container { 
                     display: flex; flex-wrap: wrap; align-items: center; 
                     width: 100%; min-height: 2rem; box-sizing: border-box; padding: 0px;
@@ -128,23 +145,6 @@
                 .block_spacer { height: 1.5rem !important; width: 100%; border-bottom: none; }
                 .resize-handle { width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; }
                 .resize-handle::before { content: "\\f337"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px; }
-
-                /* Integrated Gallery Styles */
-                .photo_gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 100%; margin-bottom: 20px; }
-                .gallery-item { position: relative; background: #fff; border-radius: 6px; overflow: hidden; aspect-ratio: 1/1; border: 1px solid #ddd; width: 100%; }
-                .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
-                .sentry-layer { position: absolute; inset: 0; z-index: 20; background: transparent; }
-                .gallery-item.active .sentry-layer { z-index: -1; }
-                .pan-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.25); color: white; font-size: 50px; opacity: 0; transition: 0.2s; cursor: ns-resize; z-index: 5; }
-                .gallery-item.active .pan-overlay { opacity: 1; }
-                .item-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; opacity: 0; z-index: 10; transition: 0.2s; }
-                .gallery-item.active .item-actions { opacity: 1; }
-                .action-btn { width: 36px; height: 36px; background: rgba(0,0,0,0.8); color: white; border: none; border-radius: 5px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-                .choice-menu { position: absolute; inset: 0; background: rgba(255,255,255,0.98); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; z-index: 100; opacity: 0; pointer-events: none; }
-                .gallery-item.menu-open .choice-menu { opacity: 1; pointer-events: auto; }
-                .choice-btn { width: 80%; padding: 10px; border: none; background: #3498db; color: white; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-                .gallery-empty-slot { border: 2px dashed #bbb; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #eee; }
-                .gallery-empty-slot::before { content: '+'; font-size: 50px; color: #aaa; }
             </style>
             <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"><\/script>
             <script>
@@ -169,7 +169,7 @@
                     }
                 });
                 window.initDivLogic = () => { document.querySelectorAll('.block_container').forEach(d => observer.observe(d)); };
-                window.initSortableGallery = (el) => { Sortable.create(el, { animation: 150, handle: '.drag-handle', filter: '.gallery-empty-slot' }); };
+                window.initGallerySort = (el) => { Sortable.create(el, { animation: 150, handle: '.drag-handle', filter: '.gallery-empty-slot' }); };
             <\/script>
             <link rel="stylesheet" href="styles.css"></head>`);
         
@@ -179,7 +179,7 @@
             setupPanningListeners();
             frame.contentDocument.addEventListener('mousedown', (e) => { 
                 if (isResizing) return;
-                const el = e.target.closest('.editable') || e.target.closest('.div-other-wrapper > *') || e.target.closest('.block_spacer'); 
+                const el = e.target.closest('.editable') || e.target.closest('.div-other-wrapper > *') || e.target.closest('.block_spacer') || e.target.closest('.photo_gallery'); 
                 if (el && el === selectedEl && (el.contentEditable === "true")) return;
                 if (el) selectElement(el); else { deselectAll(); closeAllGalleryUI(); }
             });
@@ -187,7 +187,7 @@
         };
     }
 
-    // Gallery Slot Management Functions
+    // --- GALLERY MANAGEMENT FUNCTIONS ---
     function createNewSlot() {
         const doc = frame.contentDocument;
         const slot = doc.createElement('div');
@@ -199,13 +199,13 @@
 
     function addGalleryMenu(slot) {
         slot.innerHTML += `<div class="choice-menu">
-            <button class="choice-btn" onclick="parent.triggerPick('input-camera', event)"><i class="fa-solid fa-camera"></i> CAMERA</button>
-            <button class="choice-btn" onclick="parent.triggerPick('input-gallery', event)"><i class="fa-solid fa-images"></i> PHOTOS</button>
-            <button class="choice-btn" onclick="parent.triggerPick('input-files', event)"><i class="fa-solid fa-folder-open"></i> FILES</button>
+            <button class="choice-btn" onclick="parent.triggerGalleryPick('input-camera', event)"><i class="fa-solid fa-camera"></i> CAMERA</button>
+            <button class="choice-btn" onclick="parent.triggerGalleryPick('input-gallery', event)"><i class="fa-solid fa-images"></i> PHOTOS</button>
+            <button class="choice-btn" onclick="parent.triggerGalleryPick('input-files', event)"><i class="fa-solid fa-folder-open"></i> FILES</button>
         </div>`;
     }
 
-    function triggerPick(id, e) {
+    function triggerGalleryPick(id, e) {
         e.stopPropagation();
         currentTargetSlot = frame.contentDocument.querySelector('.menu-open');
         document.getElementById(id).click();
@@ -242,7 +242,7 @@
             </div>
             <div class="item-actions">
                 <button class="action-btn drag-handle"><i class="fa-solid fa-arrows-up-down-left-right"></i></button>
-                <button class="action-btn" onclick="event.stopPropagation(); this.closest('.gallery-item').classList.add('menu-open')"><i class="fa-solid fa-sync"></i></button>
+                <button class="action-btn" onclick="event.stopPropagation(); parent.closeAllGalleryUI(); this.closest('.gallery-item').classList.add('menu-open')"><i class="fa-solid fa-sync"></i></button>
                 <button class="action-btn" onclick="event.stopPropagation(); this.closest('.gallery-item').remove()"><i class="fa-solid fa-trash"></i></button>
             </div>`;
         addGalleryMenu(slot);
@@ -274,7 +274,45 @@
         frame.contentDocument.querySelectorAll('.gallery-item').forEach(i => i.classList.remove('menu-open', 'active'));
     }
 
-    // Surgical Update to insertElement
+    // --- CORE BUILDER FUNCTIONS ---
+    function selectElement(el) {
+        const doc = frame.contentDocument; doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
+        selectedEl = el; selectedEl.classList.add('selected-item');
+        if (el.classList.contains('block_image')) addResizeHandle(el);
+        renderToolbar(); 
+        if(el.contentEditable === "true") el.focus();
+    }
+
+    function renderToolbar() {
+        if (!selectedEl) return;
+        toolbarContent.style.visibility = 'visible';
+        const inDiv = selectedEl.closest('.block_container');
+        const isBtn = selectedEl.classList.contains('block_button_container');
+        const isImg = selectedEl.classList.contains('block_image');
+        const isSpacer = selectedEl.classList.contains('block_spacer');
+        const isDiv = selectedEl.classList.contains('block_container');
+        let html = '';
+        if (isDiv) {
+            html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
+        } else if (isBtn) {
+            html += `<button class="tool-btn btn-teal" onclick="openPill('text')">TEXT</button>`;
+            html += `<button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>`;
+        } else if (isImg) {
+            html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>`;
+            html += `<button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>`;
+        } else if (isSpacer) {
+            html += `<button class="tool-btn" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
+        } else if (selectedEl.contentEditable === "true") {
+            html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
+        }
+        if (!inDiv && !isDiv && !isSpacer) {
+            html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
+        }
+        html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
+        toolbarContent.innerHTML = html;
+    }
+
     function insertElement(type, data) {
         const doc = frame.contentDocument;
         const root = doc.getElementById('editor-root');
@@ -284,7 +322,7 @@
             gallery.className = 'photo_gallery';
             gallery.appendChild(createNewSlot());
             root.appendChild(gallery);
-            frame.contentWindow.initSortableGallery(gallery);
+            frame.contentWindow.initGallerySort(gallery);
             return;
         }
 
@@ -313,7 +351,59 @@
         setTimeout(() => selectElement(el), 150);
     }
 
-    // ... (Remainder of baseline functions: selectElement, renderToolbar, setDevice, deleteElement, etc. remain unchanged) ...
+    // Other baseline functions remain exactly as provided in the baseline snippet
+    function setDevice(type) {
+        currentMode = type; document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-${type}`).classList.add('active');
+        const widths = { 'desktop': 1200, 'android': 448, 'iphone': 393 };
+        const scaleFactor = Math.min(wrapper.offsetWidth / widths[type], 1);
+        frame.style.width = widths[type] + 'px'; frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
+        frame.style.transform = `scale(${scaleFactor})`;
+        frame.style.left = (scaleFactor < 1) ? '0px' : ((wrapper.offsetWidth - widths[type]) / 2) + 'px';
+    }
+
+    function openPill(mode) {
+        if (!selectedEl) return;
+        const pill = document.getElementById('input-pill');
+        const editable = document.getElementById('pill-editable');
+        const btnLink = selectedEl.querySelector('a');
+        if (!btnLink) return;
+        activePillMode = mode;
+        pill.style.display = 'flex';
+        editable.innerText = (mode === 'text') ? btnLink.innerText : (btnLink.getAttribute('href') || '');
+        setTimeout(() => { editable.focus(); document.execCommand('selectAll', false, null); }, 50);
+    }
+
+    function syncRealTime() {
+        if (!selectedEl || !activePillMode) return;
+        const editable = document.getElementById('pill-editable');
+        const btnLink = selectedEl.querySelector('a');
+        if (!btnLink) return;
+        const val = editable.innerText;
+        if (activePillMode === 'text') btnLink.innerText = val.toUpperCase();
+        else btnLink.setAttribute('href', val);
+    }
+
+    function deselectAll() { 
+        if (selectedEl) selectedEl.classList.remove('selected-item'); 
+        selectedEl = null; toolbarContent.style.visibility = 'hidden'; 
+        document.getElementById('input-pill').style.display = 'none'; activePillMode = null;
+    }
+
+    function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
+    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
+    function deleteElement() { if(selectedEl) { const p = selectedEl.parentElement; selectedEl.remove(); if (p && p.classList.contains('div-other-wrapper') && p.children.length === 0) p.remove(); deselectAll(); } }
+    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+    function handleImageUpload(i) { if(i.files[0]) { const r = new FileReader(); r.onload = e => { if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result; else insertElement('block_image', e.target.result); i.value = ''; }; r.readAsDataURL(i.files[0]); } }
+    function setAlign(pos) { if (selectedEl && !selectedEl.closest('.block_container')) { selectedEl.style.textAlign = pos; if(selectedEl.classList.contains('block_image')) { selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block'; selectedEl.style.margin = pos === 'center' ? '0 auto' : '0'; } } }
+    function centerItem() { setAlign('center'); }
+
+    function exportHTML() {
+        deselectAll(); const doc = frame.contentDocument.cloneNode(true);
+        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        doc.querySelectorAll('.editable').forEach(e => { e.classList.remove('selected-item', 'editable'); e.removeAttribute('contenteditable'); });
+        const blob = new Blob([doc.documentElement.outerHTML], {type: 'text/html'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index.html'; a.click();
+    }
+
     window.onload = init;
-                </script>
-                
+</script>
