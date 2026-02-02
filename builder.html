@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.4.6</title>
+    <title>Snoozing Builder | v4.4.7</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -18,14 +18,6 @@
         #header-area { background: #222; border-bottom: 0.0625rem solid #000; height: 3.125rem; display: flex; align-items: center; justify-content: center; z-index: 1001; }
         #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 0.0625rem solid #000; z-index: 1001; position: relative; }
         
-        #input-pill {
-            position: absolute; top: calc(3rem + 1px); left: 50%; transform: translateX(-50%);
-            width: 85%; max-width: 550px; background: #222; border: 1px solid #444; border-radius: 4px; 
-            display: none; align-items: center; justify-content: center; padding: 0 15px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 1002;
-        }
-        #pill-editable { color: white; width: 100%; font-size: 0.85rem; outline: none; text-align: center; font-family: 'Courier New', monospace; line-height: 1.2; padding: 4px 0; }
-
         #frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; }
         #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; left: 0; }
         
@@ -41,7 +33,6 @@
     <button class="insert-btn" onclick="insertElement('section_heading')">T<sub>1</sub></button>
     <button class="insert-btn" onclick="insertElement('block_heading')">T<sub>2</sub></button>
     <button class="insert-btn" onclick="insertElement('block_text')">T<sub>3</sub></button>
-    <button class="insert-btn" onclick="insertElement('block_button')"><span>Btn</span></button>
     <button class="insert-btn" onclick="insertElement('photo_gallery')"><i class="fa-solid fa-table-cells"></i></button>
     <button class="insert-btn" onclick="insertElement('block_spacer')"><i class="fa-solid fa-arrows-up-down"></i></button>
     <div class="export-wrap"><button class="export-btn" onclick="exportHTML()"><i class="fa-solid fa-download"></i></button></div>
@@ -53,10 +44,10 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.4.6</div>
+        <div class="version-status">v4.4.7</div>
     </div>
-    <div id="sticky-toolbar"><div id="toolbar-content"></div><div id="input-pill"></div></div>
-    <div id="frame-wrapper"><iframe id="preview-frame" name="preview-frame" scrolling="yes"></iframe></div>
+    <div id="sticky-toolbar"><div id="toolbar-content"></div></div>
+    <div id="frame-wrapper"><iframe id="preview-frame" name="preview-frame"></iframe></div>
 </div>
 <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
 </body>
@@ -65,8 +56,7 @@
     const frame = document.getElementById('preview-frame');
     const toolbarContent = document.getElementById('toolbar-content');
     const wrapper = document.getElementById('frame-wrapper');
-    let selectedEl = null; let currentMode = 'iphone'; let isResizing = false;
-    let activeGalleryItem = null;
+    let selectedEl = null; let activeGalleryItem = null; let isResizing = false;
 
     async function init() {
         const resp = await fetch('template.html');
@@ -79,59 +69,27 @@
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
                 
                 /* [LOCK: v4.3.92 BASELINE STYLES] */
-                .block_container { display: flex; flex-wrap: wrap; align-items: center; width: 100%; min-height: 2rem; box-sizing: border-box; }
-                .block_image { position: relative; display: inline-block; flex-shrink: 0; cursor: pointer; }
+                .block_container { display: flex; flex-wrap: wrap; align-items: center; width: 100%; min-height: 2rem; }
+                .block_image { position: relative; display: inline-block; cursor: pointer; }
                 .block_image img { width: 100%; display: block; pointer-events: none; }
-                .div-other-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-                .resize-handle { width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; }
+                .resize-handle { width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; color: #ebd5c9; display: flex; align-items: center; justify-content: center; }
                 .resize-handle::before { content: "\\f337"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px; }
 
-                /* [PHOTO GALLERY STYLES] */
-                .photo_gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; width: 100%; padding: 40px 0 0 0; margin: 20px 0; }
+                /* [GALLERY GRID STYLES] */
+                .photo_gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; width: 100%; padding: 20px 0; margin: 20px 0; }
                 .gallery-item { position: relative; aspect-ratio: 1/1; background: #f4f4f4; cursor: pointer; display: flex; align-items: center; justify-content: center; overflow: hidden; }
                 .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
                 .gallery-empty-slot::before { content: '+'; font-size: 80px; color: #bbb; }
                 .selected-gallery-sub { outline: 4px solid #0056b3 !important; outline-offset: -4px; z-index: 5; }
-
-                /* [LIGHTBOX STYLES] */
-                #lb-m { display: none; position: fixed; z-index: 10000; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); align-items: center; justify-content: center; cursor: pointer; }
-                #lb-m img { max-width: 90%; max-height: 90%; border: 2px solid #fff; box-shadow: 0 0 30px rgba(0,0,0,1); }
             </style>
-            <script>
-                /* [ORIGINAL LIGHTBOX SCRIPT - INACTIVE IN PREVIEW-FRAME] */
-                window.addEventListener('load', () => {
-                    if (window.name !== 'preview-frame') {
-                        const m = document.getElementById('lb-m'), i = document.getElementById('lb-i');
-                        document.querySelectorAll('.gallery-item img, .block_image img').forEach(img => {
-                            img.onclick = () => { i.src = img.src; m.style.display = 'flex'; };
-                        });
-                        m.onclick = () => m.style.display = 'none';
-                    }
-                });
-
-                /* [BASELINE RESIZE LOGIC] */
-                const obs = new ResizeObserver(ents => {
-                    for (let e of ents) {
-                        const d = e.target; const w = e.contentRect.width;
-                        const img = d.querySelector('.block_image');
-                        if (!img) continue;
-                        const f = parseFloat(img.getAttribute('data-scale-factor') || '1.0');
-                        if (w <= 744) { d.style.flexDirection = 'column'; img.style.width = (w * f) + 'px'; }
-                        else { d.style.flexDirection = 'row'; img.style.width = ((w * 0.618) * f) + 'px'; }
-                    }
-                });
-                window.initDivLogic = () => { document.querySelectorAll('.block_container').forEach(d => obs.observe(d)); };
-            <\/script>
-            <link rel="stylesheet" href="styles.css"></head>`)
-            .replace('</body>', '<div id="lb-m"><img id="lb-i"></div></body>');
+            <link rel="stylesheet" href="styles.css"></head>`);
         
         frame.srcdoc = html.replace(/<div class=\"content-container\">([\s\S]*?)<\/div>/, '<div class=\"content-container\" id=\"editor-root\">$1</div>');
         frame.onload = () => {
-            frame.contentWindow.initDivLogic();
             frame.contentDocument.addEventListener('mousedown', (e) => { 
                 if (isResizing) return;
                 const gs = e.target.closest('.gallery-item');
-                const el = e.target.closest('.editable') || e.target.closest('.div-other-wrapper > *') || e.target.closest('.photo_gallery'); 
+                const el = e.target.closest('.editable') || e.target.closest('.photo_gallery'); 
                 if (gs) { selectGalleryItem(gs); return; }
                 if (el) selectElement(el); else deselectAll(); 
             });
@@ -139,9 +97,8 @@
         };
     }
 
-    /* [RESTORED v4.3.92 SELECTION] */
     function selectElement(el) {
-        const doc = frame.contentDocument; doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        frame.contentDocument.querySelectorAll('.resize-handle').forEach(h => h.remove());
         if(selectedEl) selectedEl.classList.remove('selected-item');
         if(activeGalleryItem) activeGalleryItem.classList.remove('selected-gallery-sub');
         selectedEl = el; selectedEl.classList.add('selected-item');
@@ -203,19 +160,11 @@
             el.className = `editable ${type}`;
             if(type === 'block_image') { 
                 el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
-                el.style.width = "200px"; el.setAttribute('data-scale-factor', '1.0');
+                el.style.width = "200px";
             } else { el.contentEditable = "true"; }
         }
         root.appendChild(el);
         setTimeout(() => selectElement(el), 150);
-    }
-
-    function exportHTML() {
-        deselectAll(); const doc = frame.contentDocument.cloneNode(true);
-        doc.querySelectorAll('.selected-item, .gallery-empty-slot, .resize-handle').forEach(e => e.remove());
-        doc.querySelectorAll('.editable').forEach(e => { e.classList.remove('editable'); e.removeAttribute('contenteditable'); });
-        const blob = new Blob([doc.documentElement.outerHTML], {type: 'text/html'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index.html'; a.click();
     }
 
     function deleteElement() { 
@@ -230,12 +179,10 @@
     }
 
     function setDevice(type) {
-        currentMode = type; document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active')); document.getElementById(`btn-${type}`).classList.add('active');
         const widths = { 'desktop': 1200, 'android': 448, 'iphone': 393 };
         const scaleFactor = Math.min(wrapper.offsetWidth / widths[type], 1);
         frame.style.width = widths[type] + 'px'; frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
         frame.style.transform = `scale(${scaleFactor})`;
-        frame.style.left = (scaleFactor < 1) ? '0px' : ((wrapper.offsetWidth - widths[type]) / 2) + 'px';
     }
 
     function addResizeHandle(el) {
@@ -248,5 +195,13 @@
             window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
         });
     }
+
+    function exportHTML() {
+        deselectAll(); const doc = frame.contentDocument.cloneNode(true);
+        doc.querySelectorAll('.selected-item, .gallery-empty-slot, .resize-handle').forEach(e => e.remove());
+        doc.querySelectorAll('.editable').forEach(e => { e.classList.remove('editable'); e.removeAttribute('contenteditable'); });
+        const blob = new Blob([doc.documentElement.outerHTML], {type: 'text/html'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index.html'; a.click();
+    }
     window.onload = init;
-</script>
+                </script>
