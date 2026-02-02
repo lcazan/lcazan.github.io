@@ -255,7 +255,7 @@ footer {
     text-decoration: none;
     
     /* Colors & Border */
-    color: #151515;            /* Deep black/grey text */
+    color: black; /*#151515;            /* Deep black/grey text */
     background-color: #ffffff; /* White background */
     border: 1.5px solid #151515; /* Thin, sharp black border */
     
