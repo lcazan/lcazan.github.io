@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Gallery Builder v3.8</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <style>
+        /* Force border-box globally to prevent 1px cutoffs */
+        * { box-sizing: border-box !important; }
+
+        body { font-family: 'Segoe UI', sans-serif; padding: 0; background: transparent; margin: 0; }
+        #gallery-container { width: 100%; }
+        
+        .photo_gallery { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 6px; /* Updated gap to 6px */
+            width: 100%; 
+        }
+
+        /* Masonry Support */
+        .photo_gallery.masonry-mode { display: block; column-gap: 6px; width: 100%; column-count: 3; }
+        
+        @media (max-width: 768px) { 
+            .photo_gallery { grid-template-columns: repeat(2, 1fr); } 
+            .photo_gallery.masonry-mode { column-count: 2; }
+        }
+
+        .gallery-item { 
+            position: relative; 
+            background: #fff; 
+            border-radius: 6px; 
+            overflow: hidden; 
+            aspect-ratio: 1/1; 
+            border: 1px solid #ddd; 
+            width: 100%; 
+        }
+
+        .gallery-item img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            display: block; 
+            pointer-events: none; 
+        }
+
+        /* Masonry Item Overrides */
+        .masonry-mode .gallery-item { 
+            display: inline-block; 
+            width: 100%; 
+            aspect-ratio: auto; 
+            margin-bottom: 6px; 
+            vertical-align: top; 
+        }
+        .masonry-mode .gallery-item img { height: auto; object-fit: contain; }
+
+        .sentry-layer { position: absolute; inset: 0; z-index: 20; background: transparent; }
+        .gallery-item.active .sentry-layer { z-index: -1; }
+
+        /* Multi-direction Pan Overlay - Translucent Gray Icon */
+        .pan-overlay { 
+            position: absolute; 
+            inset: 0; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background: rgba(0,0,0,0.25); 
+            color: rgba(255, 255, 255, 0.4); /* Translucent gray */
+            font-size: 50px; 
+            opacity: 0; 
+            transition: 0.2s; 
+            cursor: move; 
+            z-index: 5; 
+        }
+        .gallery-item.active .pan-overlay { opacity: 1; }
+        .masonry-mode .pan-overlay { display: none !important; }
+
+        .item-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; opacity: 0; z-index: 10; transition: 0.2s; }
+        .gallery-item.active .item-actions { opacity: 1; }
+        
+        .action-btn { width: 36px; height: 36px; background: rgba(0,0,0,0.8); color: white; border: none; border-radius: 5px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        
+        .drag-handle { background: #877267; cursor: grab; }
+        .drag-handle:active { cursor: grabbing; }
+
+        .choice-menu { position: absolute; inset: 0; background: rgba(255,255,255,0.98); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; z-index: 100; opacity: 0; pointer-events: none; }
+        .gallery-item.menu-open .choice-menu { opacity: 1; pointer-events: auto; }
+        .choice-btn { width: 80%; padding: 12px; border: none; background: #3498db; color: white; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+        .gallery-empty-slot { border: 2px dashed #bbb; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #eee; }
+        .gallery-empty-slot::before { content: '+'; font-size: 50px; color: #aaa; }
+    </style>
+</head>
+<body>
+    <div id="gallery-container"></div>
+<script>
+    let currentTargetSlot = null;
+    let isPanning = false, activeImg;
+    let startX, startY, startPosX, startPosY; 
+
+    window.toggleMode = function() { 
+        const g = document.querySelector('.photo_gallery');
+        if(g) g.classList.toggle('masonry-mode');
+    };
+
+    function initGallery() {
+        const container = document.getElementById('gallery-container');
+        if (container.querySelector('.photo_gallery')) return;
+        const gallery = document.createElement('div');
+        gallery.className = 'photo_gallery';
+        gallery.appendChild(createNewSlot());
+        container.appendChild(gallery);
+        setupInputs();
+        
+        Sortable.create(gallery, {
+            animation: 150, handle: '.drag-handle', filter: '.gallery-empty-slot',
+            onMove: (evt) => !evt.related.classList.contains('gallery-empty-slot')
+        });
+
+        const onMove = (e) => {
+            if (!isPanning || !activeImg) return;
+            if (e.cancelable) e.preventDefault();
+            
+            const point = e.touches ? e.touches[0] : e;
+            
+            // Speed increased to 0.8 for faster panning
+            let deltaX = (startX - point.clientX) * 0.8;
+            let newPosX = Math.max(0, Math.min(100, startPosX + deltaX));
+            
+            let deltaY = (startY - point.clientY) * 0.8;
+            let newPosY = Math.max(0, Math.min(100, startPosY + deltaY));
+            
+            activeImg.style.objectPosition = `${newPosX}% ${newPosY}%`;
+        };
+
+        const onEnd = () => { isPanning = false; activeImg = null; };
+        window.addEventListener('mousemove', onMove, { passive: false });
+        window.addEventListener('touchmove', onMove, { passive: false });
+        window.addEventListener('mouseup', onEnd);
+        window.addEventListener('touchend', onEnd);
+    }
+
+    function createNewSlot() {
+        const slot = document.createElement('div');
+        slot.className = 'gallery-item gallery-empty-slot';
+        slot.onclick = (e) => { e.stopPropagation(); closeAllUI(); slot.classList.add('menu-open'); };
+        addMenu(slot);
+        return slot;
+    }
+
+    function addMenu(slot) {
+        slot.innerHTML += `<div class="choice-menu">
+            <button class="choice-btn" onclick="triggerPick('input-camera', event)"><i class="fa-solid fa-camera"></i> CAMERA</button>
+            <button class="choice-btn" onclick="triggerPick('input-gallery', event)"><i class="fa-solid fa-images"></i> PHOTOS</button>
+            <button class="choice-btn" onclick="triggerPick('input-files', event)"><i class="fa-solid fa-folder-open"></i> FILES</button>
+        </div>`;
+    }
+
+    function triggerPick(id, e) {
+        e.stopPropagation();
+        currentTargetSlot = e.target.closest('.gallery-item');
+        document.getElementById(id).click();
+        closeAllUI();
+    }
+
+    function setupInputs() {
+        ['input-camera', 'input-gallery', 'input-files'].forEach(id => {
+            const input = document.createElement('input');
+            input.type = 'file'; input.id = id; input.style.display = 'none';
+            if (id === 'input-camera') input.setAttribute('capture', 'environment');
+            input.multiple = true; input.accept = "image/*";
+            input.onchange = (e) => handleFiles(e.target.files);
+            document.body.appendChild(input);
+        });
+    }
+
+    async function handleFiles(files) {
+        if (!files.length || !currentTargetSlot) return;
+        const gallery = currentTargetSlot.parentElement;
+        for (let i = 0; i < files.length; i++) {
+            const reader = new FileReader();
+            const promise = new Promise(res => {
+                reader.onload = (e) => {
+                    const slot = (i === 0) ? currentTargetSlot : document.createElement('div');
+                    if (i > 0) slot.className = 'gallery-item';
+                    fillSlot(slot, e.target.result);
+                    if (i > 0) gallery.insertBefore(slot, gallery.lastElementChild);
+                    res();
+                };
+            });
+            reader.readAsDataURL(files[i]);
+            await promise;
+        }
+        if (!gallery.lastElementChild.classList.contains('gallery-empty-slot')) gallery.appendChild(createNewSlot());
+    }
+
+    function fillSlot(slot, src) {
+        slot.classList.remove('gallery-empty-slot', 'menu-open');
+        slot.innerHTML = `
+            <div class="sentry-layer" onclick="activateSlot(event, this)"></div>
+            <img src="${src}" style="object-position: 50% 50%;">
+            <div class="pan-overlay" onmousedown="beginPan(event)" ontouchstart="beginPan(event)">
+                <i class="fa-solid fa-arrows-up-down-left-right"></i>
+            </div>
+            <div class="item-actions">
+                <button class="action-btn drag-handle"><i class="fa-solid fa-hand"></i></button>
+                <button class="action-btn" onclick="replaceImg(event, this)"><i class="fa-solid fa-sync"></i></button>
+                <button class="action-btn" onclick="deleteImg(event, this)"><i class="fa-solid fa-trash"></i></button>
+            </div>`;
+        addMenu(slot);
+    }
+
+    function activateSlot(e, sentry) { e.stopPropagation(); closeAllUI(); sentry.closest('.gallery-item').classList.add('active'); }
+    
+    function beginPan(e) {
+        if(document.querySelector('.photo_gallery').classList.contains('masonry-mode')) return;
+        e.preventDefault(); e.stopPropagation();
+        isPanning = true;
+        activeImg = e.target.closest('.gallery-item').querySelector('img');
+        const point = e.touches ? e.touches[0] : e;
+        startX = point.clientX;
+        startY = point.clientY;
+        const currentPos = activeImg.style.objectPosition.split(' ');
+        startPosX = parseFloat(currentPos[0]) || 50;
+        startPosY = parseFloat(currentPos[1]) || 50;
+    }
+
+    function replaceImg(e, btn) { e.stopPropagation(); closeAllUI(); currentTargetSlot = btn.closest('.gallery-item'); currentTargetSlot.classList.add('menu-open'); }
+    function deleteImg(e, btn) { e.stopPropagation(); btn.closest('.gallery-item').remove(); }
+    window.closeAllUI = function() { document.querySelectorAll('.gallery-item').forEach(i => i.classList.remove('menu-open', 'active')); };
+    
+    window.onload = initGallery;
+
+    const resizeObserver = new ResizeObserver(() => {
+        const h = document.body.scrollHeight;
+        window.parent.postMessage({ type: 'galleryHeight', height: h }, '*');
+    });
+    resizeObserver.observe(document.body);
+</script>
+</body>
+</html>

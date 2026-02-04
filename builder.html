@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v4.3.92</title>
+    <title>Snoozing Builder | v5.0.0 Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -29,46 +29,49 @@
         #frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; }
         #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; left: 0; }
         
-        .insert-btn { 
-    width: 3.75rem; 
-    height: 2rem; 
-    background: #444; 
-    border: 0.0625rem solid #666; 
-    color: #fff; 
-    margin-bottom: 0.625rem; 
-    border-radius: 0.25rem; 
-    cursor: pointer; 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    font-size: 1.2rem; 
-    font-weight: bold;
-    flex-shrink: 0; /* Add this to prevent the "bounce" */
-}
-
-        
+        .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; flex-shrink: 0; }
+        .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; font-size: 1.1rem; }
         .btn-teal { background: #008080 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
         .btn-blue { background: #0056b3 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
         .color-swatch { width: 1.5rem; height: 1.5rem; border: 1px solid #666; cursor: pointer; border-radius: 2px; }
+        
         #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
         .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.5rem; margin: 0 0.6rem; }
         .device-btn.active { color: var(--brand-pink); }
         .version-status { position: absolute; right: 1.5625rem; top: 0.75rem; color: #fff; font-size: 1rem; font-weight: 800; }
+
+        .gallery-toggle-group { display: flex; align-items: center; gap: 10px; color: white; font-size: 11px; font-weight: 900; margin-right: 12px; }
+        .gallery-toggle-group span.active { color: var(--brand-pink); }
+        .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #444; transition: .4s; border-radius: 18px; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #3498db; }
+        input:checked + .slider:before { transform: translateX(16px); }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <button class="insert-btn" onclick="insertElement('block_container')"><i class="fa-solid fa-square"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_container')">
+        <span style="font-size: 10px; font-weight: bold; color: var(--brand-pink);">&lt;div&gt;</span>
+    </button>
+    
     <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i></button>
     <button class="insert-btn" onclick="insertElement('photo_gallery')"><i class="fa-solid fa-images"></i></button>
     <button class="insert-btn" onclick="insertElement('section_heading')">T<sub>1</sub></button>
     <button class="insert-btn" onclick="insertElement('block_heading')">T<sub>2</sub></button>
     <button class="insert-btn" onclick="insertElement('block_text')">T<sub>3</sub></button>
-    <button class="insert-btn" onclick="insertElement('block_button')"><span>Btn</span></button>
+    
+    <button class="insert-btn" onclick="insertElement('block_button')">
+        <span style="font-size: 10px; font-weight: bold; color: var(--brand-pink); border: 1.5px solid var(--brand-pink); padding: 1px 3px; border-radius: 2px; text-transform: uppercase;">btn</span>
+    </button>
+    
     <button class="insert-btn" onclick="insertElement('block_spacer')"><i class="fa-solid fa-arrows-up-down"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_custom_html')"><i class="fa-solid fa-code"></i></button>
     <div class="export-wrap"><button class="export-btn" onclick="exportHTML()"><i class="fa-solid fa-download"></i></button></div>
 </div>
+
 
 <div id="preview-container">
     <div id="header-area">
@@ -77,7 +80,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v4.3.92</div>
+        <div class="version-status">v5.0.0</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -90,6 +93,26 @@
 
 <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
 <script>
+// builder5.html - Add to main script area
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'galleryHeight') {
+        const doc = frame.contentDocument;
+        // Since the message is relayed by the template, 
+        // we just look for the gallery iframe inside the template.
+        const galleryIframe = doc.querySelector('.photo_gallery iframe');
+        
+        if (galleryIframe) {
+            const newHeight = event.data.height + 'px';
+            // Apply the height to the iframe AND the container
+            galleryIframe.style.height = newHeight;
+            const container = galleryIframe.closest('.photo_gallery');
+            if (container) container.style.height = newHeight;
+            
+            console.log("Builder: Resized gallery to", newHeight);
+        }
+    }
+});
+
     const frame = document.getElementById('preview-frame');
     const toolbarContent = document.getElementById('toolbar-content');
     const wrapper = document.getElementById('frame-wrapper');
@@ -105,6 +128,12 @@
                 #editor-root { width: 100%; display: flex; flex-direction: column; padding-bottom: 250px; }
                 .editable { position: relative; min-height: 1.2em; cursor: pointer; outline: none; box-sizing: border-box; }
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
+                .photo_gallery.selected-item { box-shadow: inset 0 0 0 3px #ebd5c9 !important; outline: none !important; }
+                .block_custom_html { width: 100%; margin-bottom: 20px; position: relative; padding: 0 15px; box-sizing: border-box; }
+                .html-tag { display: inline-block; background: #008080; color: white; padding: 2px 8px; font-size: 10px; font-weight: 900; border-radius: 3px; cursor: pointer; }
+                .html-input-box { display: none; width: 100%; height: 120px; margin-top: 5px; background: #1e1e1e; color: #76e0d3; border: 1px solid #444; font-family: 'Courier New', monospace; font-size: 12px; padding: 10px; box-sizing: border-box; resize: vertical; }
+                .selected-item .html-input-box { display: block; }
+                .html-render-area { width: 100%; margin-top: 5px; min-height: 5px; }
                 h2, h3, p { display: block !important; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
                 .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; }
                 .block_container { display: flex; flex-wrap: wrap; align-items: center; width: 100%; min-height: 2rem; box-sizing: border-box; padding: 0px; }
@@ -114,16 +143,15 @@
                 .block_spacer { height: 1.5rem !important; width: 100%; border-bottom: none; }
                 .resize-handle { width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; }
                 .resize-handle::before { content: "\\f337"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px; }
-                
-                /* Gallery Placeholder */
-                .photo_gallery { width: 100%; margin-bottom: 20px; }
-                .photo_gallery iframe { width: 100%; height: 500px; border: 1px dashed #ccc; }
+                .photo_gallery { width: 100%; margin-bottom: 20px; position: relative; min-height: 180px; box-sizing: border-box; overflow: hidden; padding: 0 0 0 0; }
+                .photo_gallery iframe { width: 100%; height: 100%; border: none; padding: 0 0 0 0; display: block; background: transparent; box-sizing: border-box;}
+                .gallery-sentry { position: absolute; inset: 0; background: transparent; z-index: 10; cursor: pointer; }
+                .selected-item .gallery-sentry { pointer-events: none; }
             </style>
             <script>
                 const observer = new ResizeObserver(entries => {
                     for (let entry of entries) {
-                        const div = entry.target;
-                        const width = entry.contentRect.width;
+                        const div = entry.target; const width = entry.contentRect.width;
                         const img = div.querySelector('.block_image');
                         const other = div.querySelector('.div-other-wrapper');
                         if (!img) continue;
@@ -141,15 +169,30 @@
                     }
                 });
                 window.initDivLogic = () => { document.querySelectorAll('.block_container').forEach(d => observer.observe(d)); };
-            <\/script>
-            <link rel="stylesheet" href="styles.css"></head>`);
+                window.updateHTMLInternal = (textarea) => {
+                    const container = textarea.closest('.block_custom_html');
+                    if (container) container.querySelector('.html-render-area').innerHTML = textarea.value;
+                };
+            <\/script>`);
+// --- ADD THIS INSIDE THE init() FUNCTION ---
+html = html.replace('</body>', `
+    <script>
+        // THE RELAY BRIDGE: Catches message from Gallery, throws it to Builder
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'galleryHeight') {
+                window.parent.postMessage(event.data, '*');
+            }
+        });
+    <\/script>
+</body>`);
+
         
         frame.srcdoc = html.replace(/<div class=\"content-container\">([\s\S]*?)<\/div>/, '<div class=\"content-container\" id=\"editor-root\">$1</div>');
         frame.onload = () => {
             frame.contentWindow.initDivLogic();
             frame.contentDocument.addEventListener('mousedown', (e) => { 
                 if (isResizing) return;
-                const el = e.target.closest('.editable') || e.target.closest('.div-other-wrapper > *') || e.target.closest('.block_spacer') || e.target.closest('.photo_gallery'); 
+                const el = e.target.closest('.gallery-sentry')?.parentElement || e.target.closest('.editable') || e.target.closest('.div-other-wrapper > *') || e.target.closest('.block_spacer') || e.target.closest('.block_container');
                 if (el && el === selectedEl && (el.contentEditable === "true")) return;
                 if (el) selectElement(el); else deselectAll(); 
             });
@@ -158,10 +201,19 @@
     }
 
     function selectElement(el) {
+        if(selectedEl && selectedEl !== el) {
+            if (selectedEl.classList.contains('photo_gallery')) {
+                const iframe = selectedEl.querySelector('iframe');
+                // FIXED: Safety check added here. Prevents crash if iframe is dead.
+                if (iframe && iframe.contentWindow && iframe.contentWindow.closeAllUI) {
+                    iframe.contentWindow.closeAllUI();
+                }
+            }
+            selectedEl.classList.remove('selected-item');
+        }
         const doc = frame.contentDocument; doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
-        if(selectedEl && selectedEl !== el) selectedEl.classList.remove('selected-item');
         selectedEl = el; selectedEl.classList.add('selected-item');
-        if (el.classList.contains('block_image')) addResizeHandle(el);
+        if (selectedEl.classList.contains('block_image')) addResizeHandle(selectedEl);
         renderToolbar(); 
         if(el.contentEditable === "true") el.focus();
     }
@@ -169,14 +221,18 @@
     function renderToolbar() {
         if (!selectedEl) return;
         toolbarContent.style.visibility = 'visible';
-        const inDiv = selectedEl.closest('.block_container');
+        const isGallery = selectedEl.classList.contains('photo_gallery');
         const isBtn = selectedEl.classList.contains('block_button_container');
         const isImg = selectedEl.classList.contains('block_image');
         const isSpacer = selectedEl.classList.contains('block_spacer');
         const isDiv = selectedEl.classList.contains('block_container');
-        const isGallery = selectedEl.classList.contains('photo_gallery');
         let html = '';
-        if (isDiv) {
+        
+        if (isGallery) {
+            const innerG = selectedEl.querySelector('iframe')?.contentDocument?.querySelector('.photo_gallery');
+            const isMasonry = innerG ? innerG.classList.contains('masonry-mode') : false;
+            html += `<div class="gallery-toggle-group"><span class="${!isMasonry ? 'active' : ''}">SQUARE</span><label class="switch"><input type="checkbox" ${isMasonry ? 'checked' : ''} onchange="callGalleryToggle()"><span class="slider"></span></label><span class="${isMasonry ? 'active' : ''}">MASONRY</span></div>`;
+        } else if (isDiv) {
             html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
         } else if (isBtn) {
             html += `<button class="tool-btn btn-teal" onclick="openPill('text')">TEXT</button><button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>`;
@@ -187,6 +243,8 @@
         } else if (selectedEl.contentEditable === "true") {
             html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
         }
+        
+        const inDiv = selectedEl.closest('.block_container');
         if (!inDiv && !isDiv && !isSpacer && !isGallery) {
             html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
         }
@@ -195,26 +253,27 @@
     }
 
     function insertElement(type, data) {
-        const doc = frame.contentDocument;
-        const root = doc.getElementById('editor-root');
-        
+        const doc = frame.contentDocument; const root = doc.getElementById('editor-root');
         if (type === 'photo_gallery') {
-            const el = doc.createElement('div');
-            el.className = 'photo_gallery';
-            el.innerHTML = '<iframe></iframe>';
+            const el = doc.createElement('div'); el.className = 'photo_gallery';
+            el.innerHTML = '<div class="gallery-sentry"></div><iframe src="gallery-component.html" scrolling="no"></iframe>';
             selectedEl && selectedEl.parentNode === root ? selectedEl.after(el) : root.appendChild(el);
-            setTimeout(() => selectElement(el), 150);
-            return;
+            setTimeout(() => selectElement(el), 150); return;
         }
 
         const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
         const el = doc.createElement(tagMap[type] || 'div');
         el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
+        
         if(type === 'block_image') { 
-            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`; 
+            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`;
             el.contentEditable = "false"; el.style.width = "200px"; el.setAttribute('data-scale-factor', '1.0');
         } else if(type === 'block_button') { 
-            el.innerHTML = `<a href=\"#\" class=\"block_button\" onclick=\"return false;\">FIND OUT MORE</a>`; el.contentEditable = "false"; 
+            el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`;
+            el.contentEditable = "false"; 
+        } else if(type === 'block_custom_html') {
+            el.innerHTML = `<span class="html-tag">HTML</span><textarea class="html-input-box" placeholder="Paste HTML here..." oninput="window.parent.updateHTML(this)"></textarea><div class="html-render-area"></div>`;
+            el.contentEditable = "false";
         } else if(type === 'block_spacer' || type === 'block_container') { el.contentEditable = "false"; }
         else { el.innerText = ""; el.setAttribute('data-placeholder', 'Type here...'); el.contentEditable = "true"; }
 
@@ -222,17 +281,19 @@
         if (targetDiv) {
             if (type === 'block_image' && !targetDiv.querySelector('.block_image')) targetDiv.prepend(el);
             else if (type !== 'block_image') {
-                let wrap = targetDiv.querySelector('.div-other-wrapper');
-                if (!wrap) { wrap = doc.createElement('div'); wrap.className = 'div-other-wrapper'; targetDiv.appendChild(wrap); }
-                wrap.appendChild(el);
+                let wrap = targetDiv.querySelector('.div-other-wrapper') || doc.createElement('div');
+                wrap.className = 'div-other-wrapper'; targetDiv.appendChild(wrap); wrap.appendChild(el);
             }
         } else if (type === 'block_container') { root.appendChild(el); frame.contentWindow.initDivLogic(); }
         else { selectedEl && selectedEl.parentNode === root ? selectedEl.after(el) : root.appendChild(el); }
         setTimeout(() => selectElement(el), 150);
     }
 
+    function updateHTML(textarea) { frame.contentWindow.updateHTMLInternal(textarea); }
+
     function setDevice(type) {
-        currentMode = type; document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+        currentMode = type;
+        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(`btn-${type}`).classList.add('active');
         const widths = { 'desktop': 1200, 'android': 448, 'iphone': 393 };
         const scaleFactor = Math.min(wrapper.offsetWidth / widths[type], 1);
@@ -242,8 +303,18 @@
     }
 
     function deselectAll() { 
-        if (selectedEl) selectedEl.classList.remove('selected-item'); 
-        selectedEl = null; toolbarContent.style.visibility = 'hidden'; 
+        if (selectedEl) {
+            if (selectedEl.classList.contains('photo_gallery')) {
+                const iframe = selectedEl.querySelector('iframe');
+                // FIXED: Safety check added here. Fixes "Cannot read properties of null" error on delete.
+                if (iframe && iframe.contentWindow && iframe.contentWindow.closeAllUI) {
+                    iframe.contentWindow.closeAllUI();
+                }
+            }
+            selectedEl.classList.remove('selected-item');
+        }
+        selectedEl = null; 
+        toolbarContent.style.visibility = 'hidden'; 
         document.getElementById('input-pill').style.display = 'none'; activePillMode = null;
     }
 
@@ -253,7 +324,6 @@
     function setAlign(pos) { if (selectedEl && !selectedEl.closest('.block_container')) { selectedEl.style.textAlign = pos; if(selectedEl.classList.contains('block_image')) { selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block'; selectedEl.style.margin = pos === 'center' ? '0 auto' : '0'; } } }
     function centerItem() { setAlign('center'); }
 
-    // Pill sync and other functions strictly preserved
     function openPill(mode) {
         if (!selectedEl) return;
         const pill = document.getElementById('input-pill');
@@ -267,30 +337,25 @@
     }
     function syncRealTime() {
         if (!selectedEl || !activePillMode) return;
-        const editable = document.getElementById('pill-editable');
-        const btnLink = selectedEl.querySelector('a');
-        if (!btnLink) return;
-        const val = editable.innerText;
+        const btnLink = selectedEl.querySelector('a'); if (!btnLink) return;
+        const val = document.getElementById('pill-editable').innerText;
         if (activePillMode === 'text') { btnLink.innerText = val.toUpperCase(); } 
         else { btnLink.setAttribute('href', val); }
     }
+
     function addResizeHandle(el) {
-        const handle = frame.contentDocument.createElement('div');
-        handle.className = 'resize-handle';
+        const handle = frame.contentDocument.createElement('div'); handle.className = 'resize-handle';
         const inDiv = el.closest('.block_container');
         const startResize = (e) => {
-            e.preventDefault(); e.stopPropagation();
-            isResizing = true;
+            e.preventDefault(); e.stopPropagation(); isResizing = true;
             const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             const startW = el.offsetWidth;
-            const widths = { 'desktop': 1200, 'android': 448, 'iphone': 393 };
-            const scale = wrapper.offsetWidth / widths[currentMode];
+            const scale = wrapper.offsetWidth / ({ 'desktop': 1200, 'android': 448, 'iphone': 393 }[currentMode]);
             const onMove = (mE) => {
                 const curX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
                 let newW = startW + (curX - startX) / scale;
                 if (inDiv) {
-                    const parentW = inDiv.offsetWidth;
-                    const baseW = (parentW > 744) ? parentW * 0.618 : parentW;
+                    const parentW = inDiv.offsetWidth; const baseW = (parentW > 744) ? parentW * 0.618 : parentW;
                     if (newW > baseW) newW = baseW;
                     el.setAttribute('data-scale-factor', (newW / baseW).toFixed(4));
                 }
@@ -298,41 +363,27 @@
             };
             const onUp = () => {
                 isResizing = false;
-                frame.contentDocument.removeEventListener('mousemove', onMove);
-                frame.contentDocument.removeEventListener('mouseup', onUp);
-                frame.contentDocument.removeEventListener('touchmove', onMove);
-                frame.contentDocument.removeEventListener('touchend', onUp);
+                frame.contentDocument.removeEventListener('mousemove', onMove); frame.contentDocument.removeEventListener('mouseup', onUp);
+                frame.contentDocument.removeEventListener('touchmove', onMove); frame.contentDocument.removeEventListener('touchend', onUp);
             };
-            frame.contentDocument.addEventListener('mousemove', onMove);
-            frame.contentDocument.addEventListener('mouseup', onUp);
-            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false});
-            frame.contentDocument.addEventListener('touchend', onUp);
+            frame.contentDocument.addEventListener('mousemove', onMove); frame.contentDocument.addEventListener('mouseup', onUp);
+            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false}); frame.contentDocument.addEventListener('touchend', onUp);
         };
-        handle.addEventListener('mousedown', startResize);
-        handle.addEventListener('touchstart', startResize, {passive: false});
+        handle.addEventListener('mousedown', startResize); handle.addEventListener('touchstart', startResize, {passive: false});
         el.appendChild(handle);
     }
-    function fitToWidth() {
-        if (!selectedEl) return;
-        const inDiv = selectedEl.closest('.block_container');
-        if (inDiv) selectedEl.setAttribute('data-scale-factor', '1.0');
-        else { selectedEl.style.width = '100%'; selectedEl.style.display = 'block'; selectedEl.style.margin = '0 auto'; }
-    }
-    function toggleSpacerLine() {
-        if (!selectedEl) return;
-        const currentLine = selectedEl.style.borderBottom;
-        selectedEl.style.borderBottom = (currentLine === 'none' || !currentLine) ? '1px solid #eee' : 'none';
-    }
+    function fitToWidth() { if (!selectedEl) return; const inDiv = selectedEl.closest('.block_container'); if (inDiv) selectedEl.setAttribute('data-scale-factor', '1.0'); else { selectedEl.style.width = '100%'; selectedEl.style.display = 'block'; selectedEl.style.margin = '0 auto'; } }
+    function toggleSpacerLine() { if (!selectedEl) return; const currentLine = selectedEl.style.borderBottom; selectedEl.style.borderBottom = (currentLine === 'none' || !currentLine) ? '1px solid #eee' : 'none'; }
     function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
+    function callGalleryToggle() { const iframe = selectedEl.querySelector('iframe'); if (iframe && iframe.contentWindow.toggleMode) iframe.contentWindow.toggleMode(); setTimeout(renderToolbar, 50); }
+    
     function exportHTML() {
         deselectAll(); const doc = frame.contentDocument.cloneNode(true);
-        doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        doc.querySelectorAll('.resize-handle, .gallery-sentry, .html-tag, .html-input-box').forEach(h => h.remove());
         doc.querySelectorAll('.editable').forEach(e => { e.classList.remove('selected-item', 'editable'); e.removeAttribute('contenteditable'); });
         const blob = new Blob([doc.documentElement.outerHTML], {type: 'text/html'});
         const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index.html'; a.click();
     }
     window.onload = init;
 </script>
-</body>
-</html>
