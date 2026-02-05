@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+    <title>Snoozing Builder | v5.0.1 Fix</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; top: 0; left: 0; background: #111; touch-action: none; }
+        body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
+        
+        #sidebar { width: 4.6875rem; height: 100%; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 0.9375rem 0; border-right: 0.125rem solid #000; flex-shrink: 0; z-index: 1000; }
+        .export-wrap { margin-top: auto; margin-bottom: 60px; }
+        .export-btn { width: 3.75rem; height: 3.75rem; background: var(--brand-pink); border: none; color: #000; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+
+        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100%; overflow: hidden; position: relative; }
+        #header-area { background: #222; border-bottom: 0.0625rem solid #000; height: 3.125rem; display: flex; align-items: center; justify-content: center; z-index: 1001; }
+        #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 0.0625rem solid #000; z-index: 1001; position: relative; }
+        
+        #input-pill {
+            position: absolute; top: calc(3rem + 1px); left: 50%; transform: translateX(-50%);
+            width: 85%; max-width: 550px; background: #222; border: 1px solid #444; border-radius: 4px; 
+            display: none; align-items: center; justify-content: center; padding: 0 15px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 1002;
+        }
+        #pill-editable { color: white; width: 100%; font-size: 0.85rem; outline: none; text-align: center; font-family: 'Courier New', monospace; line-height: 1.2; padding: 4px 0; }
+
+        #frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; }
+        #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; left: 0; }
+        
+        .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; flex-shrink: 0; }
+        .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; font-size: 1.1rem; }
+        .btn-teal { background: #008080 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
+        .btn-blue { background: #0056b3 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
+        .color-swatch { width: 1.5rem; height: 1.5rem; border: 1px solid #666; cursor: pointer; border-radius: 2px; }
+        
+        #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
+        .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.5rem; margin: 0 0.6rem; }
+        .device-btn.active { color: var(--brand-pink); }
+        .version-status { position: absolute; right: 1.5625rem; top: 0.75rem; color: #fff; font-size: 1rem; font-weight: 800; }
+
+        .gallery-toggle-group { display: flex; align-items: center; gap: 10px; color: white; font-size: 11px; font-weight: 900; margin-right: 12px; }
+        .gallery-toggle-group span.active { color: var(--brand-pink); }
+        .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #444; transition: .4s; border-radius: 18px; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #3498db; }
+        input:checked + .slider:before { transform: translateX(16px); }
+    </style>
+</head>
+<body>
+
+<div id="sidebar">
+    <button class="insert-btn" onclick="insertElement('block_container')">
+        <span style="font-size: 10px; font-weight: bold; color: var(--brand-pink);">&lt;div&gt;</span>
+    </button>
+    <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i></button>
+    <button class="insert-btn" onclick="insertElement('photo_gallery')"><i class="fa-solid fa-images"></i></button>
+    <button class="insert-btn" onclick="insertElement('section_heading')">T<sub>1</sub></button>
+    <button class="insert-btn" onclick="insertElement('block_heading')">T<sub>2</sub></button>
+    <button class="insert-btn" onclick="insertElement('block_text')">T<sub>3</sub></button>
+    <button class="insert-btn" onclick="insertElement('block_button')">
+        <span style="font-size: 10px; font-weight: bold; color: var(--brand-pink); border: 1.5px solid var(--brand-pink); padding: 1px 3px; border-radius: 2px; text-transform: uppercase;">btn</span>
+    </button>
+    <button class="insert-btn" onclick="insertElement('block_spacer')"><i class="fa-solid fa-arrows-up-down"></i></button>
+    <button class="insert-btn" onclick="insertElement('block_custom_html')"><i class="fa-solid fa-code"></i></button>
+
+    <div style="margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 10px; padding-bottom: 20px;">
+        <button class="insert-btn" onclick="saveProject()" title="Save Project (Overwrite)" style="background: #2a2a2a; border-color: #555;">
+            <i class="fa-solid fa-file-export" style="color: #4db8ff;"></i>
+        </button>
+        
+        <button class="insert-btn" onclick="loadProject()" title="Load Project" style="background: #2a2a2a; border-color: #555;">
+            <i class="fa-solid fa-file-import" style="color: #2ecc71;"></i>
+        </button>
+
+        <button class="export-btn" onclick="exportHTML()" title="Export Final HTML">
+            <i class="fa-solid fa-download"></i>
+        </button>
+    </div>
+</div>
+
+
+
+<div id="preview-container">
+    <div id="header-area">
+        <div id="device-bar">
+            <button class="device-btn" id="btn-desktop" onclick="setDevice('desktop')"><i class="fa-solid fa-desktop"></i></button>
+            <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
+            <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
+        </div>
+        <div class="version-status">v5.0.1</div>
+    </div>
+    <div id="sticky-toolbar">
+        <div id="toolbar-content"></div>
+        <div id="input-pill">
+            <span id="pill-editable" contenteditable="true" spellcheck="false" oninput="syncRealTime()"></span>
+        </div>
+    </div>
+    <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
+</div>
+
+<input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
+<script>
+window.addEventListener('message', (event) => {
+    if (event.data.type === 'galleryHeight') {
+        const doc = frame.contentDocument;
+        const galleryIframe = doc.querySelector('.photo_gallery iframe');
+        if (galleryIframe) {
+            const newHeight = event.data.height + 'px';
+            galleryIframe.style.height = newHeight;
+            const container = galleryIframe.closest('.photo_gallery');
+            if (container) container.style.height = newHeight;
+            console.log("Builder: Resized gallery to", newHeight);
+        }
+    }
+});
+
+    const frame = document.getElementById('preview-frame');
+    const toolbarContent = document.getElementById('toolbar-content');
+    const wrapper = document.getElementById('frame-wrapper');
+    let selectedEl = null; let currentMode = 'iphone'; let isResizing = false;
+    let activePillMode = null;
+
+    async function init() {
+        const resp = await fetch('template.html');
+        let html = await resp.text();
+        html = html.replace('</head>', `
+            <style>
+                html, body { height: auto; min-height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
+                #editor-root { width: 100%; display: flex; flex-direction: column; padding-bottom: 250px; }
+                .editable { position: relative; min-height: 1.2em; cursor: pointer; outline: none; box-sizing: border-box; }
+                .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
+                .photo_gallery.selected-item { box-shadow: inset 0 0 0 3px #ebd5c9 !important; outline: none !important; }
+                .block_custom_html { width: 100%; margin-bottom: 20px; position: relative; padding: 0 15px; box-sizing: border-box; }
+                .html-tag { display: inline-block; background: #008080; color: white; padding: 2px 8px; font-size: 10px; font-weight: 900; border-radius: 3px; cursor: pointer; }
+                .html-input-box { display: none; width: 100%; height: 120px; margin-top: 5px; background: #1e1e1e; color: #76e0d3; border: 1px solid #444; font-family: 'Courier New', monospace; font-size: 12px; padding: 10px; box-sizing: border-box; resize: vertical; }
+                .selected-item .html-input-box { display: block; }
+                .html-render-area { width: 100%; margin-top: 5px; min-height: 5px; }
+                h2, h3, p { display: block !important; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
+                .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; }
+                .block_container { display: flex; flex-wrap: wrap; align-items: center; width: 100%; min-height: 2rem; box-sizing: border-box; padding: 0px; }
+                .block_image { position: relative; display: inline-block; flex-shrink: 0; }
+                .block_image img { width: 100%; display: block; pointer-events: none; }
+                .div-other-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 1.2em; }
+                .block_spacer { height: 1.5rem !important; width: 100%; border-bottom: none; }
+                .resize-handle { width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; }
+                .resize-handle::before { content: "\\f337"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px; }
+                .photo_gallery { width: 100%; margin-bottom: 20px; position: relative; min-height: 180px; box-sizing: border-box; overflow: hidden; padding: 0 0 0 0; }
+                .photo_gallery iframe { width: 100%; height: 100%; border: none; padding: 0 0 0 0; display: block; background: transparent; box-sizing: border-box;}
+                .gallery-sentry { position: absolute; inset: 0; background: transparent; z-index: 10; cursor: pointer; }
+                .selected-item .gallery-sentry { pointer-events: none; }
+            </style>
+            <script>
+                const observer = new ResizeObserver(entries => {
+                    for (let entry of entries) {
+                        const div = entry.target; const width = entry.contentRect.width;
+                        const img = div.querySelector('.block_image');
+                        const other = div.querySelector('.div-other-wrapper');
+                        if (!img) continue;
+                        const factor = parseFloat(img.getAttribute('data-scale-factor') || '1.0');
+                        if (width <= 744) {
+                            div.style.flexDirection = 'column'; div.style.justifyContent = 'center';
+                            img.style.width = (width * factor) + 'px'; img.style.margin = '0 auto';
+                            if(other) other.style.width = '100%';
+                        } else {
+                            div.style.flexDirection = 'row'; div.style.justifyContent = 'flex-start';
+                            const baseW = width * 0.618;
+                            img.style.width = (baseW * factor) + 'px'; img.style.margin = '0';
+                            if(other) other.style.width = 'auto';
+                        }
+                    }
+                });
+                window.initDivLogic = () => { document.querySelectorAll('.block_container').forEach(d => observer.observe(d)); };
+                window.updateHTMLInternal = (textarea) => {
+                    const container = textarea.closest('.block_custom_html');
+                    if (container) container.querySelector('.html-render-area').innerHTML = textarea.value;
+                };
+            <\/script>`);
+
+html = html.replace('</body>', `
+    <script>
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'galleryHeight') {
+                window.parent.postMessage(event.data, '*');
+            }
+        });
+    <\/script>
+</body>`);
+
+        frame.srcdoc = html.replace(/<div class=\"content-container\">([\s\S]*?)<\/div>/, '<div class=\"content-container\" id=\"editor-root\">$1</div>');
+        frame.onload = () => {
+            frame.contentWindow.initDivLogic();
+            frame.contentDocument.addEventListener('mousedown', (e) => { 
+                if (isResizing) return;
+                const el = e.target.closest('.gallery-sentry')?.parentElement || e.target.closest('.editable') || e.target.closest('.div-other-wrapper > *') || e.target.closest('.block_spacer') || e.target.closest('.block_container');
+                if (el && el === selectedEl && (el.contentEditable === "true")) return;
+                if (el) selectElement(el); else deselectAll(); 
+            });
+            setDevice('iphone');
+        };
+    }
+    function selectElement(el) {
+        if(selectedEl && selectedEl !== el) {
+            if (selectedEl.classList.contains('photo_gallery')) {
+                const iframe = selectedEl.querySelector('iframe');
+                if (iframe && iframe.contentWindow && iframe.contentWindow.closeAllUI) {
+                    iframe.contentWindow.closeAllUI();
+                }
+            }
+            selectedEl.classList.remove('selected-item');
+        }
+        const doc = frame.contentDocument; doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
+        selectedEl = el; selectedEl.classList.add('selected-item');
+        if (selectedEl.classList.contains('block_image')) addResizeHandle(selectedEl);
+        renderToolbar(); 
+        if(el.contentEditable === "true") el.focus();
+    }
+
+    function renderToolbar() {
+        if (!selectedEl) return;
+        toolbarContent.style.visibility = 'visible';
+        const isGallery = selectedEl.classList.contains('photo_gallery');
+        const isBtn = selectedEl.classList.contains('block_button_container');
+        const isImg = selectedEl.classList.contains('block_image');
+        const isSpacer = selectedEl.classList.contains('block_spacer');
+        const isDiv = selectedEl.classList.contains('block_container');
+        let html = '';
+        
+        if (isGallery) {
+            const innerG = selectedEl.querySelector('iframe')?.contentDocument?.querySelector('.photo_gallery');
+            const isMasonry = innerG ? innerG.classList.contains('masonry-mode') : false;
+            html += `<div class="gallery-toggle-group"><span class="${!isMasonry ? 'active' : ''}">SQUARE</span><label class="switch"><input type="checkbox" ${isMasonry ? 'checked' : ''} onchange="callGalleryToggle()"><span class="slider"></span></label><span class="${isMasonry ? 'active' : ''}">MASONRY</span></div>`;
+        } else if (isDiv) {
+            html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
+        } else if (isBtn) {
+            html += `<button class="tool-btn btn-teal" onclick="openPill('text')">TEXT</button><button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>`;
+        } else if (isImg) {
+            html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button><button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>`;
+        } else if (isSpacer) {
+            html += `<button class="tool-btn" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
+        } else if (selectedEl.contentEditable === "true") {
+            html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
+        }
+        
+        const inDiv = selectedEl.closest('.block_container');
+        if (!inDiv && !isDiv && !isSpacer && !isGallery) {
+            html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
+        }
+        html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
+        toolbarContent.innerHTML = html;
+    }
+
+    function insertElement(type, data) {
+        const doc = frame.contentDocument; const root = doc.getElementById('editor-root');
+        if (type === 'photo_gallery') {
+            const el = doc.createElement('div'); el.className = 'photo_gallery';
+            el.innerHTML = '<div class="gallery-sentry"></div><iframe src="gallery-component.html" scrolling="no"></iframe>';
+            selectedEl && selectedEl.parentNode === root ? selectedEl.after(el) : root.appendChild(el);
+            setTimeout(() => selectElement(el), 150); return;
+        }
+
+        const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
+        const el = doc.createElement(tagMap[type] || 'div');
+        el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
+        
+        if(type === 'block_image') { 
+            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`;
+            el.contentEditable = "false"; el.style.width = "200px"; el.setAttribute('data-scale-factor', '1.0');
+        } else if(type === 'block_button') { 
+            el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`;
+            el.contentEditable = "false"; 
+        } else if(type === 'block_custom_html') {
+            el.innerHTML = `<span class="html-tag">HTML</span><textarea class="html-input-box" placeholder="Paste HTML here..." oninput="window.parent.updateHTML(this)"></textarea><div class="html-render-area"></div>`;
+            el.contentEditable = "false";
+        } else if(type === 'block_spacer' || type === 'block_container') { el.contentEditable = "false"; }
+        else { el.innerText = ""; el.setAttribute('data-placeholder', 'Type here...'); el.contentEditable = "true"; }
+
+        const targetDiv = selectedEl ? selectedEl.closest('.block_container') : null;
+        if (targetDiv) {
+            if (type === 'block_image' && !targetDiv.querySelector('.block_image')) targetDiv.prepend(el);
+            else if (type !== 'block_image') {
+                let wrap = targetDiv.querySelector('.div-other-wrapper') || doc.createElement('div');
+                wrap.className = 'div-other-wrapper'; targetDiv.appendChild(wrap); wrap.appendChild(el);
+            }
+        } else if (type === 'block_container') { root.appendChild(el); frame.contentWindow.initDivLogic(); }
+        else { selectedEl && selectedEl.parentNode === root ? selectedEl.after(el) : root.appendChild(el); }
+        setTimeout(() => selectElement(el), 150);
+    }
+
+    function updateHTML(textarea) { frame.contentWindow.updateHTMLInternal(textarea); }
+
+    function setDevice(type) {
+        currentMode = type;
+        document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`btn-${type}`).classList.add('active');
+        const widths = { 'desktop': 1200, 'android': 448, 'iphone': 393 };
+        const scaleFactor = Math.min(wrapper.offsetWidth / widths[type], 1);
+        frame.style.width = widths[type] + 'px'; frame.style.height = (wrapper.offsetHeight / scaleFactor) + 'px';
+        frame.style.transform = `scale(${scaleFactor})`;
+        frame.style.left = (scaleFactor < 1) ? '0px' : ((wrapper.offsetWidth - widths[type]) / 2) + 'px';
+    }
+
+    function deselectAll() { 
+        if (selectedEl) {
+            if (selectedEl.classList.contains('photo_gallery')) {
+                const iframe = selectedEl.querySelector('iframe');
+                if (iframe && iframe.contentWindow && iframe.contentWindow.closeAllUI) {
+                    iframe.contentWindow.closeAllUI();
+                }
+            }
+            selectedEl.classList.remove('selected-item');
+        }
+        selectedEl = null; 
+        toolbarContent.style.visibility = 'hidden'; 
+        document.getElementById('input-pill').style.display = 'none'; activePillMode = null;
+    }
+
+    function deleteElement() { if(selectedEl) { const p = selectedEl.parentElement; selectedEl.remove(); if (p && p.classList.contains('div-other-wrapper') && p.children.length === 0) p.remove(); deselectAll(); } }
+    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+    function handleImageUpload(i) { if(i.files[0]) { const r = new FileReader(); r.onload = e => { if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result; else insertElement('block_image', e.target.result); i.value = ''; }; r.readAsDataURL(i.files[0]); } }
+    function setAlign(pos) { if (selectedEl && !selectedEl.closest('.block_container')) { selectedEl.style.textAlign = pos; if(selectedEl.classList.contains('block_image')) { selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block'; selectedEl.style.margin = pos === 'center' ? '0 auto' : '0'; } } }
+    function centerItem() { setAlign('center'); }
+
+    function openPill(mode) {
+        if (!selectedEl) return;
+        const pill = document.getElementById('input-pill');
+        const editable = document.getElementById('pill-editable');
+        const btnLink = selectedEl.querySelector('a');
+        if (!btnLink) return;
+        activePillMode = mode;
+        pill.style.display = 'flex';
+        editable.innerText = (mode === 'text') ? btnLink.innerText : (btnLink.getAttribute('href') || '');
+        setTimeout(() => { editable.focus(); document.execCommand('selectAll', false, null); }, 50);
+    }
+    function syncRealTime() {
+        if (!selectedEl || !activePillMode) return;
+        const btnLink = selectedEl.querySelector('a'); if (!btnLink) return;
+        const val = document.getElementById('pill-editable').innerText;
+        if (activePillMode === 'text') { btnLink.innerText = val.toUpperCase(); } 
+        else { btnLink.setAttribute('href', val); }
+    }
+
+    function addResizeHandle(el) {
+        const handle = frame.contentDocument.createElement('div'); handle.className = 'resize-handle';
+        const inDiv = el.closest('.block_container');
+        const startResize = (e) => {
+            e.preventDefault(); e.stopPropagation(); isResizing = true;
+            const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const startW = el.offsetWidth;
+            const scale = wrapper.offsetWidth / ({ 'desktop': 1200, 'android': 448, 'iphone': 393 }[currentMode]);
+            const onMove = (mE) => {
+                const curX = mE.type.includes('touch') ? mE.touches[0].clientX : mE.clientX;
+                let newW = startW + (curX - startX) / scale;
+                if (inDiv) {
+                    const parentW = inDiv.offsetWidth; const baseW = (parentW > 744) ? parentW * 0.618 : parentW;
+                    if (newW > baseW) newW = baseW;
+                    el.setAttribute('data-scale-factor', (newW / baseW).toFixed(4));
+                }
+                if (newW > 40) el.style.width = newW + 'px';
+            };
+            const onUp = () => {
+                isResizing = false;
+                frame.contentDocument.removeEventListener('mousemove', onMove); frame.contentDocument.removeEventListener('mouseup', onUp);
+                frame.contentDocument.removeEventListener('touchmove', onMove); frame.contentDocument.removeEventListener('touchend', onUp);
+            };
+            frame.contentDocument.addEventListener('mousemove', onMove); frame.contentDocument.addEventListener('mouseup', onUp);
+            frame.contentDocument.addEventListener('touchmove', onMove, {passive: false}); frame.contentDocument.addEventListener('touchend', onUp);
+        };
+        handle.addEventListener('mousedown', startResize); handle.addEventListener('touchstart', startResize, {passive: false});
+        el.appendChild(handle);
+    }
+    function fitToWidth() { if (!selectedEl) return; const inDiv = selectedEl.closest('.block_container'); if (inDiv) selectedEl.setAttribute('data-scale-factor', '1.0'); else { selectedEl.style.width = '100%'; selectedEl.style.display = 'block'; selectedEl.style.margin = '0 auto'; } }
+    function toggleSpacerLine() { if (!selectedEl) return; const currentLine = selectedEl.style.borderBottom; selectedEl.style.borderBottom = (currentLine === 'none' || !currentLine) ? '1px solid #eee' : 'none'; }
+    function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
+    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
+    function callGalleryToggle() { const iframe = selectedEl.querySelector('iframe'); if (iframe && iframe.contentWindow.toggleMode) iframe.contentWindow.toggleMode(); setTimeout(renderToolbar, 50); }
+    
+            
+    async function exportHTML() {
+        deselectAll();
+        const doc = frame.contentDocument.cloneNode(true);
+
+        // 1. SELECTIVE CLEANING: Only kill UI & Helper elements
+        // We do NOT strip widths/margins from standard content anymore.
+        const uiKillList = [
+            '.resize-handle', '.gallery-sentry', '.html-tag', '.html-input-box',
+            '.choice-btn', '.choice-menu', '.gallery-empty-slot',
+            '.upload-trigger', '.add-item', '.gallery-controls', '.delete-btn', 
+            'input[type="file"]', '.gallery-item label'
+        ];
+        
+        uiKillList.forEach(selector => {
+            doc.querySelectorAll(selector).forEach(el => el.remove());
+        });
+
+        // 2. UNWRAP GALLERIES & TARGETED STRIPPING
+        doc.querySelectorAll('.photo_gallery').forEach((galleryWrapper, index) => {
+            const liveIframes = frame.contentDocument.querySelectorAll('.photo_gallery iframe');
+            const originalIframe = liveIframes[index];
+            
+            if (originalIframe && originalIframe.contentDocument) {
+                const innerDoc = originalIframe.contentDocument;
+                const innerGallery = innerDoc.querySelector('.photo_gallery');
+                
+                if (innerGallery) {
+                    const staticGallery = innerGallery.cloneNode(true);
+                    const galleryStyles = innerDoc.querySelector('style').cloneNode(true);
+                    
+                    // Remove gallery-specific UI inside the clone
+                    staticGallery.querySelectorAll('.upload-trigger, label, input, .gallery-empty-slot').forEach(el => el.remove());
+                    
+                    // RESET STYLES ONLY FOR GALLERY ITEMS
+                    // This allows the gallery to be full-width while other blocks stay as-is
+                    staticGallery.querySelectorAll('.gallery-item, img').forEach((item, i) => {
+                        item.style.width = '100%'; 
+                        item.style.height = 'auto';
+                        item.setAttribute('draggable', 'false');
+                        if(item.classList.contains('gallery-item')) {
+                            item.setAttribute('onclick', 'openModal(' + i + ')');
+                            item.style.cursor = 'pointer';
+                        }
+                    });
+
+                    galleryWrapper.innerHTML = '';
+                    galleryWrapper.appendChild(galleryStyles);
+                    galleryWrapper.appendChild(staticGallery);
+                    
+                    // Force gallery wrapper to fill its parent container
+                    galleryWrapper.style.width = '100%';
+                    galleryWrapper.style.height = 'auto';
+                }
+            }
+        });
+
+        // 3. CLEAN UP EDITABLE ARTIFACTS (WITHOUT STRIPPING STYLES)
+        doc.querySelectorAll('.editable, .block_container').forEach(el => {
+            el.classList.remove('selected-item', 'editable');
+            el.removeAttribute('contenteditable');
+            // NOTE: We no longer set el.style.width = '' here. 
+            // All your manual resizes and paddings stay exactly as they are.
+        });
+
+        // 4. INJECT LIGHTBOX (CSS & JS)
+        const lbStyle = doc.createElement('style');
+        lbStyle.innerHTML = '.modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }' +
+            '.slider-track { display: flex; height: 100%; width: 100%; transition: transform 0.3s ease-out; }' +
+            '.slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }' +
+            '.slide img { max-width: 90%; max-height: 80vh; object-fit: contain; border: 2px solid #fff; }' +
+            '.close-modal { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 40px; cursor: pointer; z-index: 10002; }' +
+            '.counter { position: fixed; top: 25px; left: 25px; color: #fff; font-size: 18px; z-index: 10002; font-weight: bold; }';
+        doc.head.appendChild(lbStyle);
+
+        const modalDiv = doc.createElement('div');
+        modalDiv.id = 'imageModal';
+        modalDiv.className = 'modal';
+        modalDiv.innerHTML = '<div class="counter" id="modalCounter"></div><span class="close-modal" onclick="closeModal()">×</span><div id="sliderTrack" class="slider-track"></div>';
+        doc.body.appendChild(modalDiv);
+
+        const scriptTag = doc.createElement('script');
+        scriptTag.innerHTML = "let currentIndex = 0; function openModal(i){ const imgs=Array.from(document.querySelectorAll('.photo_gallery img')).map(m=>m.src); const t=document.getElementById('sliderTrack'); t.innerHTML=imgs.map(s=>'<div class=\"slide\"><img src=\"'+s+'\"></div>').join(''); currentIndex=i; document.getElementById('imageModal').style.display='block'; updateTrack(); document.body.style.overflow='hidden'; } function closeModal(){ document.getElementById('imageModal').style.display='none'; document.body.style.overflow='auto'; } function updateTrack(){ const t=document.getElementById('sliderTrack'); t.style.transform='translateX('+(-currentIndex*100)+'%)'; document.getElementById('modalCounter').innerText=(currentIndex+1)+' / '+document.querySelectorAll('.photo_gallery img').length; }";
+        doc.body.appendChild(scriptTag);
+
+        // 5. SAVE / DOWNLOAD FALLBACK
+        const finalHtml = doc.documentElement.outerHTML;
+        if (window.showSaveFilePicker) {
+            try {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: 'index.html',
+                    types: [{ description: 'HTML File', accept: {'text/html': ['.html']} }]
+                });
+                const writable = await handle.createWritable();
+                await writable.write(finalHtml);
+                await writable.close();
+                return; 
+            } catch (err) { console.warn('Picker blocked:', err); }
+        }
+
+        const blob = new Blob([finalHtml], {type: 'text/html'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'index.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+                            let projectFolderHandle = null;
+
+    async function saveProject() {
+        const iframeDoc = frame.contentDocument;
+        const editorRoot = iframeDoc.getElementById('editor-root');
+        if (!editorRoot) return alert("Nothing to save.");
+
+        // 1. Pick the Project Folder (Handshake)
+        if (!projectFolderHandle) {
+            try {
+                projectFolderHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+            } catch (err) { return; }
+        }
+
+        // 2. ASK FOR FILENAME (The "Save As" part)
+        let fileName;
+        try {
+            const newFileHandle = await window.showSaveFilePicker({
+                suggestedName: 'project.json',
+                types: [{
+                    description: 'JSON Project',
+                    accept: { 'application/json': ['.json'] },
+                }],
+            });
+            fileName = newFileHandle.name;
+        } catch (err) { return; } // User cancelled
+
+        const clone = editorRoot.cloneNode(true);
+        
+        // Helper: Resize and Save Image directly to /images/
+        const saveImageToFolder = async (imgElement, folderHandle) => {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = async () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    let targetWidth = img.width;
+                    if (targetWidth > 600) {
+                        const ratio = 600 / targetWidth;
+                        canvas.width = 600;
+                        canvas.height = img.height * ratio;
+                    } else {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                    }
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.85));
+                    const imgName = `img_${Date.now()}_${Math.floor(Math.random()*1000)}.jpg`;
+                    
+                    try {
+                        const imagesFolder = await folderHandle.getDirectoryHandle('images', { create: true });
+                        const fileHandle = await imagesFolder.getFileHandle(imgName, { create: true });
+                        const writable = await fileHandle.createWritable();
+                        await writable.write(blob);
+                        await writable.close();
+                        resolve(imgName);
+                    } catch (e) { resolve(null); }
+                };
+                img.src = imgElement.src;
+            });
+        };
+
+        // 3. Process Images
+        const allImgs = clone.querySelectorAll('img');
+        for (let img of allImgs) {
+            const currentSrc = img.getAttribute('src') || "";
+            if (currentSrc.startsWith('data:image')) {
+                const savedName = await saveImageToFolder(img, projectFolderHandle);
+                if (savedName) {
+                    img.src = `images/${savedName}`;
+                    iframeDoc.querySelectorAll('img').forEach(li => { if(li.src === currentSrc) li.src = `images/${savedName}`; });
+                }
+            } else {
+                img.src = `images/${currentSrc.split(/[\\/]/).pop()}`;
+            }
+        }
+
+        // 4. Final Write to the chosen filename
+        try {
+            const jsonFileHandle = await projectFolderHandle.getFileHandle(fileName, { create: true });
+            const writable = await jsonFileHandle.createWritable();
+            await writable.write(JSON.stringify({
+                version: "2.1",
+                lastSaved: new Date().toISOString(),
+                htmlContent: clone.innerHTML
+            }, null, 2));
+            await writable.close();
+            alert("Project saved as: " + fileName);
+        } catch (err) {
+            alert("Save Error: " + err.message);
+        }
+    }
+
+    async function loadProject() {
+        try {
+            const [fileHandle] = await window.showOpenFilePicker({
+                types: [{ description: 'JSON Project', accept: {'application/json': ['.json']} }],
+                multiple: false
+            });
+
+            const file = await fileHandle.getFile();
+            const content = await file.text();
+            const data = JSON.parse(content);
+            
+            // Try to auto-set the folder handle based on where the file came from
+            // Note: Modern browsers require a separate Directory Picker for full folder access
+            if (!projectFolderHandle) {
+                alert("Please select the project folder to enable image management.");
+                projectFolderHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+            }
+
+            const iframeDoc = frame.contentDocument;
+            const editorRoot = iframeDoc.getElementById('editor-root');
+            if (editorRoot) {
+                editorRoot.innerHTML = data.htmlContent;
+                editorRoot.querySelectorAll('.photo_gallery').forEach(gallery => {
+                    const savedNames = gallery.getAttribute('data-saved-images');
+                    if (savedNames) {
+                        const filenames = JSON.parse(savedNames);
+                        const gIframe = gallery.querySelector('iframe');
+                        gIframe.onload = () => {
+                            if (gIframe.contentWindow.loadSavedImages) {
+                                gIframe.contentWindow.loadSavedImages(filenames);
+                            }
+                        };
+                    }
+                });
+                if (frame.contentWindow.initDivLogic) frame.contentWindow.initDivLogic();
+            }
+        } catch (err) { console.log("Load failed."); }
+    }
+
+
+
+    async function loadProject() {
+        try {
+            // We use the directory picker for loading too, so we can lock the images folder immediately
+            projectFolderHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+            
+            const fileHandle = await projectFolderHandle.getFileHandle('project.json');
+            const file = await fileHandle.getFile();
+            const content = await file.text();
+            
+            const data = JSON.parse(content);
+            const iframeDoc = frame.contentDocument;
+            const editorRoot = iframeDoc.getElementById('editor-root');
+            
+            if (editorRoot) {
+                editorRoot.innerHTML = data.htmlContent;
+                editorRoot.querySelectorAll('.photo_gallery').forEach(gallery => {
+                    const savedNames = gallery.getAttribute('data-saved-images');
+                    if (savedNames) {
+                        const filenames = JSON.parse(savedNames);
+                        const gIframe = gallery.querySelector('iframe');
+                        gIframe.onload = () => {
+                            if (gIframe.contentWindow.loadSavedImages) {
+                                gIframe.contentWindow.loadSavedImages(filenames);
+                            }
+                        };
+                    }
+                });
+                if (frame.contentWindow.initDivLogic) frame.contentWindow.initDivLogic();
+            }
+        } catch (err) { alert("Load failed: Ensure you selected the correct project folder."); }
+    }
+
+
+    window.onload = init;
+</script>
+
+
+    
+ 
+
+</body>
+</html>
