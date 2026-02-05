@@ -135,7 +135,7 @@ window.addEventListener('message', (event) => {
                 .editable { position: relative; min-height: 1.2em; cursor: pointer; outline: none; box-sizing: border-box; }
                 .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
                 .photo_gallery.selected-item { box-shadow: inset 0 0 0 3px #ebd5c9 !important; outline: none !important; }
-                .block_custom_html { width: 100%; margin-bottom: 20px; position: relative; padding: 0 15px; box-sizing: border-box; }
+                .block_custom_html { width: 100%; margin-bottom: 20px; position: relative; padding: 0 0; box-sizing: border-box; }
                 .html-tag { display: inline-block; background: #008080; color: white; padding: 2px 8px; font-size: 10px; font-weight: 900; border-radius: 3px; cursor: pointer; }
                 .html-input-box { display: none; width: 100%; height: 120px; margin-top: 5px; background: #1e1e1e; color: #76e0d3; border: 1px solid #444; font-family: 'Courier New', monospace; font-size: 12px; padding: 10px; box-sizing: border-box; resize: vertical; }
                 .selected-item .html-input-box { display: block; }
@@ -291,7 +291,40 @@ html = html.replace('</body>', `
         setTimeout(() => selectElement(el), 150);
     }
 
-    function updateHTML(textarea) { frame.contentWindow.updateHTMLInternal(textarea); }
+    window.updateHTML = function(textarea) {
+    // 1. Get the container (it lives in the iframe, but we can access it here)
+    const container = textarea.closest('.block_custom_html');
+    if (!container) return;
+
+    // 2. Update the visual render area
+    const renderArea = container.querySelector('.html-render-area');
+    renderArea.innerHTML = textarea.value;
+
+    // 3. Force Scripts to Run (Crucial for Elfsight/Instagram)
+    // We get the iframe's document directly from the textarea element
+    const iframeDoc = textarea.ownerDocument; 
+
+    const scripts = renderArea.querySelectorAll("script");
+    scripts.forEach(oldScript => {
+        // Create a brand new script element
+        const newScript = iframeDoc.createElement("script");
+
+        // Copy attributes (like src="elfsight...js")
+        Array.from(oldScript.attributes).forEach(attr => {
+            newScript.setAttribute(attr.name, attr.value);
+        });
+
+        // Copy any inline code
+        newScript.appendChild(iframeDoc.createTextNode(oldScript.innerHTML));
+
+        // Appending to the body forces the browser to execute the script immediately
+        iframeDoc.body.appendChild(newScript);
+
+        // Remove the old "dead" script so we don't have duplicates
+        oldScript.remove();
+    });
+};
+
 
     function setDevice(type) {
         currentMode = type;

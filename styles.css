@@ -52,6 +52,20 @@ body {
     .media-group .block_image { flex-shrink: 0; }
 }
 
+/* Force the wrapper to respect the parent width */
+.instagram-container {
+    width: 100%;
+    max-width: 100%; /* Ensures it never grows wider than the content-container */
+    margin: 0 0;
+    overflow: hidden; /* Prevents horizontal scrollbars if the widget misbehaves */
+}
+
+/* Target the Elfsight div directly */
+.instagram-container div[class*="elfsight-app"] {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
 .heading-wrapper {
     width: 100%;
     display: block;
