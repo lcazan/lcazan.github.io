@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v5.0.0 Fix</title>
+    <title>Snoozing Builder | v5.0.1 Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
@@ -49,6 +49,7 @@
         input:checked + .slider { background-color: #3498db; }
         input:checked + .slider:before { transform: translateX(16px); }
     </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
 
@@ -56,21 +57,32 @@
     <button class="insert-btn" onclick="insertElement('block_container')">
         <span style="font-size: 10px; font-weight: bold; color: var(--brand-pink);">&lt;div&gt;</span>
     </button>
-    
     <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i></button>
     <button class="insert-btn" onclick="insertElement('photo_gallery')"><i class="fa-solid fa-images"></i></button>
     <button class="insert-btn" onclick="insertElement('section_heading')">T<sub>1</sub></button>
     <button class="insert-btn" onclick="insertElement('block_heading')">T<sub>2</sub></button>
     <button class="insert-btn" onclick="insertElement('block_text')">T<sub>3</sub></button>
-    
     <button class="insert-btn" onclick="insertElement('block_button')">
         <span style="font-size: 10px; font-weight: bold; color: var(--brand-pink); border: 1.5px solid var(--brand-pink); padding: 1px 3px; border-radius: 2px; text-transform: uppercase;">btn</span>
     </button>
-    
     <button class="insert-btn" onclick="insertElement('block_spacer')"><i class="fa-solid fa-arrows-up-down"></i></button>
     <button class="insert-btn" onclick="insertElement('block_custom_html')"><i class="fa-solid fa-code"></i></button>
-    <div class="export-wrap"><button class="export-btn" onclick="exportHTML()"><i class="fa-solid fa-download"></i></button></div>
+
+    <div style="margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 10px; padding-bottom: 20px;">
+        <button class="insert-btn" onclick="saveProject()" title="Save Project (Overwrite)" style="background: #2a2a2a; border-color: #555;">
+            <i class="fa-solid fa-file-export" style="color: #4db8ff;"></i>
+        </button>
+        
+        <button class="insert-btn" onclick="loadProject()" title="Load Project" style="background: #2a2a2a; border-color: #555;">
+            <i class="fa-solid fa-file-import" style="color: #2ecc71;"></i>
+        </button>
+
+        <button class="export-btn" onclick="exportHTML()" title="Export Final HTML">
+            <i class="fa-solid fa-download"></i>
+        </button>
+    </div>
 </div>
+
 
 
 <div id="preview-container">
@@ -80,7 +92,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v5.0.0</div>
+        <div class="version-status">v5.0.1</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -93,21 +105,15 @@
 
 <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
 <script>
-// builder5.html - Add to main script area
 window.addEventListener('message', (event) => {
     if (event.data.type === 'galleryHeight') {
         const doc = frame.contentDocument;
-        // Since the message is relayed by the template, 
-        // we just look for the gallery iframe inside the template.
         const galleryIframe = doc.querySelector('.photo_gallery iframe');
-        
         if (galleryIframe) {
             const newHeight = event.data.height + 'px';
-            // Apply the height to the iframe AND the container
             galleryIframe.style.height = newHeight;
             const container = galleryIframe.closest('.photo_gallery');
             if (container) container.style.height = newHeight;
-            
             console.log("Builder: Resized gallery to", newHeight);
         }
     }
@@ -174,10 +180,9 @@ window.addEventListener('message', (event) => {
                     if (container) container.querySelector('.html-render-area').innerHTML = textarea.value;
                 };
             <\/script>`);
-// --- ADD THIS INSIDE THE init() FUNCTION ---
+
 html = html.replace('</body>', `
     <script>
-        // THE RELAY BRIDGE: Catches message from Gallery, throws it to Builder
         window.addEventListener('message', (event) => {
             if (event.data.type === 'galleryHeight') {
                 window.parent.postMessage(event.data, '*');
@@ -186,7 +191,6 @@ html = html.replace('</body>', `
     <\/script>
 </body>`);
 
-        
         frame.srcdoc = html.replace(/<div class=\"content-container\">([\s\S]*?)<\/div>/, '<div class=\"content-container\" id=\"editor-root\">$1</div>');
         frame.onload = () => {
             frame.contentWindow.initDivLogic();
@@ -199,12 +203,10 @@ html = html.replace('</body>', `
             setDevice('iphone');
         };
     }
-
     function selectElement(el) {
         if(selectedEl && selectedEl !== el) {
             if (selectedEl.classList.contains('photo_gallery')) {
                 const iframe = selectedEl.querySelector('iframe');
-                // FIXED: Safety check added here. Prevents crash if iframe is dead.
                 if (iframe && iframe.contentWindow && iframe.contentWindow.closeAllUI) {
                     iframe.contentWindow.closeAllUI();
                 }
@@ -306,7 +308,6 @@ html = html.replace('</body>', `
         if (selectedEl) {
             if (selectedEl.classList.contains('photo_gallery')) {
                 const iframe = selectedEl.querySelector('iframe');
-                // FIXED: Safety check added here. Fixes "Cannot read properties of null" error on delete.
                 if (iframe && iframe.contentWindow && iframe.contentWindow.closeAllUI) {
                     iframe.contentWindow.closeAllUI();
                 }
@@ -378,12 +379,218 @@ html = html.replace('</body>', `
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function callGalleryToggle() { const iframe = selectedEl.querySelector('iframe'); if (iframe && iframe.contentWindow.toggleMode) iframe.contentWindow.toggleMode(); setTimeout(renderToolbar, 50); }
     
-    function exportHTML() {
-        deselectAll(); const doc = frame.contentDocument.cloneNode(true);
-        doc.querySelectorAll('.resize-handle, .gallery-sentry, .html-tag, .html-input-box').forEach(h => h.remove());
-        doc.querySelectorAll('.editable').forEach(e => { e.classList.remove('selected-item', 'editable'); e.removeAttribute('contenteditable'); });
-        const blob = new Blob([doc.documentElement.outerHTML], {type: 'text/html'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index.html'; a.click();
+            
+// --- 1. THE SAVE FUNCTION ---
+async function saveProject() {
+    const iframeDoc = frame.contentDocument;
+    const editorRoot = iframeDoc.getElementById('editor-root');
+    if (!editorRoot) return;
+
+    const zip = new JSZip();
+    const clone = editorRoot.cloneNode(true);
+    const imgFolder = zip.folder("images"); 
+
+    const processImg = async (img) => {
+        const src = img.getAttribute('src') || "";
+        let filename = img.getAttribute('data-filename');
+        if (src.startsWith('blob:') || src.startsWith('data:')) {
+            if (!filename) filename = `img_${Date.now()}_${Math.floor(Math.random()*1000)}.jpg`;
+            const blob = await fetch(src).then(r => r.blob());
+            imgFolder.file(filename, blob);
+            img.setAttribute('data-filename', filename); 
+            return `images/${filename}`;
+        }
+        return src;
+    };
+
+    const imgs = Array.from(clone.querySelectorAll('img:not(.gallery-item img)'));
+    for (let img of imgs) { img.src = await processImg(img); }
+
+    const liveGalleries = iframeDoc.querySelectorAll('.photo_gallery');
+    const clonedGalleries = clone.querySelectorAll('.photo_gallery');
+    for (let i = 0; i < liveGalleries.length; i++) {
+        const gIframe = liveGalleries[i].querySelector('iframe');
+        if (gIframe?.contentDocument) {
+            const gImgs = Array.from(gIframe.contentDocument.querySelectorAll('.gallery-item img'));
+            const savedItems = [];
+            for (let gImg of gImgs) {
+                const path = await processImg(gImg);
+                savedItems.push({ src: path.split('/').pop(), pos: gImg.style.objectPosition || '50% 50%' });
+            }
+            clonedGalleries[i].setAttribute('data-saved-images', JSON.stringify({
+                mode: gIframe.contentDocument.querySelector('.photo_gallery').classList.contains('masonry-mode') ? 'masonry' : 'square',
+                files: savedItems
+            }));
+        }
     }
+
+    zip.file("project.json", JSON.stringify({ version: "2.1", htmlContent: clone.innerHTML }));
+    const content = await zip.generateAsync({type: "blob"});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(content);
+    a.download = "project.msb";
+    a.click();
+}
+
+// --- 2. THE LOAD FUNCTION ---
+async function loadProject() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = ".msb,.zip";
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const zip = await JSZip.loadAsync(file);
+        const data = JSON.parse(await zip.file("project.json").async("string"));
+        const iframeDoc = frame.contentDocument;
+        const editorRoot = iframeDoc.getElementById('editor-root');
+        
+        if (editorRoot) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = data.htmlContent;
+            
+            const allImgs = Array.from(tempDiv.querySelectorAll('img'));
+            for (let img of allImgs) {
+                const path = img.getAttribute('src');
+                const storedName = img.getAttribute('data-filename');
+                if (path && path.startsWith('images/')) {
+                    const name = storedName || path.split('/').pop();
+                    const fileData = await zip.file(`images/${name}`).async("blob");
+                    img.src = URL.createObjectURL(fileData);
+                    img.setAttribute('data-filename', name); 
+                }
+            }
+            editorRoot.innerHTML = tempDiv.innerHTML;
+
+            editorRoot.querySelectorAll('.photo_gallery').forEach(async (gallery) => {
+                const stateJson = gallery.getAttribute('data-saved-images');
+                if (stateJson) {
+                    const state = JSON.parse(stateJson);
+                    const items = [];
+                    for (let fileObj of state.files) {
+                        const fileData = await zip.file(`images/${fileObj.src}`).async("blob");
+                        items.push({ src: URL.createObjectURL(fileData), pos: fileObj.pos, originalName: fileObj.src });
+                    }
+                    const gIframe = gallery.querySelector('iframe');
+                    const inject = () => {
+                        if (gIframe.contentWindow?.loadSavedImages) {
+                            gIframe.contentWindow.loadSavedImages({ mode: state.mode, files: items });
+                        } else { setTimeout(inject, 50); }
+                    };
+                    if (gIframe.contentDocument.readyState === 'complete') inject();
+                    else gIframe.onload = inject;
+                }
+            });
+            if (frame.contentWindow.initDivLogic) frame.contentWindow.initDivLogic();
+        }
+    };
+    input.click();
+}
+
+// --- 3. THE EXPORT FUNCTION (Fixed Menu & Restored Gallery CSS) ---
+async function exportHTML() {
+    const iframeDoc = frame.contentDocument;
+    const clone = iframeDoc.documentElement.cloneNode(true);
+
+    // Remove UI
+    clone.querySelectorAll('.edit-controls, .resizer, .ui-draggable-handle, .hover-overlay').forEach(el => el.remove());
+
+    // Disable editing & Reset Flex for side-by-side
+    clone.querySelectorAll('.block_container').forEach(block => {
+        block.style.flexDirection = ""; 
+        block.setAttribute('contenteditable', 'false');
+    });
+
+    // RESTORED: Gallery Grid Conversion
+    const galleries = clone.querySelectorAll('.photo_gallery');
+    galleries.forEach((gallery, idx) => {
+        const liveG = iframeDoc.querySelectorAll('.photo_gallery')[idx];
+        const gIframe = liveG ? liveG.querySelector('iframe') : null;
+        if (gIframe?.contentDocument) {
+            const innerG = gIframe.contentDocument.querySelector('.photo_gallery');
+            const isMasonry = innerG ? innerG.classList.contains('masonry-mode') : false;
+            const galleryImgs = Array.from(gIframe.contentDocument.querySelectorAll('.gallery-item img'));
+            
+            let html = `<div class="photo_gallery ${isMasonry ? 'masonry-mode' : ''}">`;
+            galleryImgs.forEach(img => {
+                let fname = img.getAttribute('data-filename') || img.src.split('/').pop();
+                if (!fname.includes('.')) fname += '.jpg';
+                html += `<div class="gallery-item"><img src="images/${fname}" style="object-position: ${img.style.objectPosition}; width:100%; height:100%; object-fit:cover; display:block;"></div>`;
+            });
+            html += `</div>`;
+            gallery.outerHTML = html;
+        }
+    });
+
+    // RESTORED: Gallery CSS Injection
+    const styleBlock = iframeDoc.createElement('style');
+    styleBlock.textContent = `
+        .photo_gallery { display: grid; gap: 10px; grid-template-columns: repeat(2, 1fr); width: 100%; margin-bottom: 2rem; }
+        @media (min-width: 768px) { .photo_gallery { grid-template-columns: repeat(3, 1fr); } }
+        .photo_gallery.masonry-mode { display: block; column-count: 2; column-gap: 10px; }
+        @media (min-width: 768px) { .photo_gallery.masonry-mode { column-count: 3; } }
+        .gallery-item { margin-bottom: 10px; break-inside: avoid; aspect-ratio: 1/1; overflow: hidden; background: #eee; }
+        .masonry-mode .gallery-item { aspect-ratio: auto; }
+    `;
+    clone.querySelector('head').appendChild(styleBlock);
+
+    // FIXED: Menu Script with Template IDs
+    const menuScript = iframeDoc.createElement('script');
+    menuScript.textContent = `
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('headerHamburger');
+            const nav = document.getElementById('nav-sidebar');
+            const overlay = document.getElementById('navOverlay');
+            if (btn && nav) {
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    const isOpen = nav.classList.toggle('open');
+                    btn.classList.toggle('active');
+                    if(overlay) overlay.style.display = isOpen ? 'block' : 'none';
+                    document.body.style.overflow = isOpen ? 'hidden' : 'auto';
+                };
+                document.addEventListener('click', (e) => {
+                    if (nav.classList.contains('open') && !nav.contains(e.target) && e.target !== btn) {
+                        nav.classList.remove('open');
+                        btn.classList.remove('active');
+                        if(overlay) overlay.style.display = 'none';
+                        document.body.style.overflow = 'auto';
+                    }
+                });
+            }
+        });
+    `;
+    clone.querySelector('body').appendChild(menuScript);
+
+    // Final Image Paths
+    clone.querySelectorAll('img').forEach(img => {
+        let fn = img.getAttribute('data-filename') || img.src.split('/').pop();
+        if (!fn.includes('.')) fn += '.jpg';
+        img.src = 'images/' + fn;
+    });
+
+    const finalHTML = '<!DOCTYPE html>\n<html lang="en">\n' + clone.innerHTML + '\n</html>';
+    const blob = new Blob([finalHTML], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'index.html';
+    a.click();
+}
+
+
+
+
+
+
+
+
+
     window.onload = init;
 </script>
+
+
+    
+ 
+
+</body>
+</html>
