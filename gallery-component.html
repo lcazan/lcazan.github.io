@@ -166,26 +166,44 @@
     }
 
     function setupInputs() {
-        ['input-camera', 'input-gallery', 'input-files'].forEach(id => {
-            const input = document.createElement('input');
-            input.type = 'file'; input.id = id; input.style.display = 'none';
-            if (id === 'input-camera') input.setAttribute('capture', 'environment');
-            input.multiple = true; input.accept = "image/*";
-            input.onchange = (e) => handleFiles(e.target.files);
-            document.body.appendChild(input);
-        });
-    }
+    ['input-camera', 'input-gallery', 'input-files'].forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'file'; 
+        input.id = id; 
+        input.style.display = 'none';
+        input.multiple = true;
 
+        if (id === 'input-camera') {
+            input.setAttribute('capture', 'environment');
+            input.accept = "image/*";
+        } 
+        else if (id === 'input-gallery') {
+            // Keep this locked to the Photo Library
+            input.accept = "image/*";
+        } 
+        else if (id === 'input-files') {
+            // REMOVE the image restriction to force the File Browser
+            input.accept = "*/*"; 
+        }
+
+        input.onchange = (e) => handleFiles(e.target.files);
+        document.body.appendChild(input);
+    });
+}
+
+
+    // Task 2: Pass file.name to fillSlot
     async function handleFiles(files) {
         if (!files.length || !currentTargetSlot) return;
         const gallery = currentTargetSlot.parentElement;
         for (let i = 0; i < files.length; i++) {
             const reader = new FileReader();
+            const fileName = files[i].name; // Capture filename
             const promise = new Promise(res => {
                 reader.onload = (e) => {
                     const slot = (i === 0) ? currentTargetSlot : document.createElement('div');
                     if (i > 0) slot.className = 'gallery-item';
-                    fillSlot(slot, e.target.result);
+                    fillSlot(slot, e.target.result, fileName); // Pass filename here
                     if (i > 0) gallery.insertBefore(slot, gallery.lastElementChild);
                     res();
                 };
@@ -196,11 +214,14 @@
         if (!gallery.lastElementChild.classList.contains('gallery-empty-slot')) gallery.appendChild(createNewSlot());
     }
 
-    function fillSlot(slot, src) {
+    function fillSlot(slot, src, filename = null) {
         slot.classList.remove('gallery-empty-slot', 'menu-open');
+        slot.classList.add('has-image'); 
+        const finalFilename = filename || src.split('/').pop();
+
         slot.innerHTML = `
             <div class="sentry-layer" onclick="activateSlot(event, this)"></div>
-            <img src="${src}" style="object-position: 50% 50%;">
+            <img src="${src}" data-filename="${finalFilename}" style="object-position: 50% 50%;">
             <div class="pan-overlay" onmousedown="beginPan(event)" ontouchstart="beginPan(event)">
                 <i class="fa-solid fa-arrows-up-down-left-right"></i>
             </div>
@@ -238,6 +259,42 @@
         window.parent.postMessage({ type: 'galleryHeight', height: h }, '*');
     });
     resizeObserver.observe(document.body);
+
+    // Task 3: Support originalName in loader
+    window.loadSavedImages = function(config) {
+        const container = document.getElementById('gallery-container');
+        if (!container || !config) return;
+        
+        container.innerHTML = '';
+        const galleryEl = document.createElement('div');
+        galleryEl.className = 'photo_gallery';
+        if (config.mode === 'masonry') galleryEl.classList.add('masonry-mode');
+        container.appendChild(galleryEl);
+        
+        config.files.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'gallery-item';
+            const src = typeof item === 'object' ? item.src : item;
+            const pos = typeof item === 'object' ? item.pos : '50% 50%';
+            const filename = typeof item === 'object' ? item.originalName : null; // Get originalName
+            
+            fillSlot(div, src, filename); // Pass filename here
+            const img = div.querySelector('img');
+            if (img) img.style.objectPosition = pos;
+            
+            galleryEl.appendChild(div);
+        });
+        
+        galleryEl.appendChild(createNewSlot());
+        
+        Sortable.create(galleryEl, {
+            animation: 150, handle: '.drag-handle', filter: '.gallery-empty-slot',
+            onMove: (evt) => !evt.related.classList.contains('gallery-empty-slot')
+        });
+
+        const h = document.body.scrollHeight;
+        window.parent.postMessage({ type: 'galleryHeight', height: h }, '*');
+    };
 </script>
 </body>
 </html>

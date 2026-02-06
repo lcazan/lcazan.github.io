@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>My Snoozing Baby | Template</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&amp;family=Source+Sans+Pro:wght@300;400;600&amp;display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="msb.css">
+
+            <link rel="stylesheet" href="editor.css">
+            <script>
+                const observer = new ResizeObserver(entries => {
+                    for (let entry of entries) {
+                        const div = entry.target; const width = entry.contentRect.width;
+                        const img = div.querySelector('.block_image');
+                        const other = div.querySelector('.div-other-wrapper');
+                        if (!img) continue;
+                        const factor = parseFloat(img.getAttribute('data-scale-factor') || '1.0');
+                        if (width <= 744) {
+                            div.style.flexDirection = 'column'; div.style.justifyContent = 'center';
+                            img.style.width = (width * factor) + 'px'; img.style.margin = '0 auto';
+                            if(other) other.style.width = '100%';
+                        } else {
+                            div.style.flexDirection = 'row'; div.style.justifyContent = 'flex-start';
+                            const baseW = width * 0.618;
+                            img.style.width = (baseW * factor) + 'px'; img.style.margin = '0';
+                            if(other) other.style.width = 'auto';
+                        }
+                    }
+                });
+                window.initDivLogic = () => { document.querySelectorAll('.block_container').forEach(d => observer.observe(d)); };
+                window.updateHTMLInternal = (textarea) => {
+                    const container = textarea.closest('.block_custom_html');
+                    if (container) container.querySelector('.html-render-area').innerHTML = textarea.value;
+                };
+            </script>
+<style>
+        .block_container { display: flex; width: 100%; box-sizing: border-box; transition: flex-direction 0.3s ease; }
+        .block_image { display: block; height: auto; transition: width 0.3s ease; }
+        .div-other-wrapper { display: flex; flex-direction: column; }
+        .photo_gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; }
+        @media (max-width: 768px) { .photo_gallery { grid-template-columns: repeat(2, 1fr); } }
+    </style><script>function initResponsive(){const obs=new ResizeObserver(entries=>{for(let entry of entries){const div=entry.target;const width=entry.contentRect.width;const img=div.querySelector('.block_image');const other=div.querySelector('.div-other-wrapper');if(!img)continue;const factor=parseFloat(img.getAttribute('data-scale-factor')||'1.0');if(width<=744){div.style.flexDirection='column';div.style.justifyContent='center';img.style.width=(width*factor)+'px';img.style.margin='0 auto';if(other)other.style.width='100%';}else{div.style.flexDirection='row';div.style.justifyContent='flex-start';const baseW=width*0.618;img.style.width=(baseW*factor)+'px';img.style.margin='0';if(other)other.style.width='auto';}}});document.querySelectorAll('.block_container').forEach(d=>obs.observe(d));}window.addEventListener('DOMContentLoaded',initResponsive);</script></head><body>
+
+<header>
+    <div class="header-menu-icon menu-lines" id="headerHamburger" onclick="toggleNav(event)">
+        <div class="line1"></div><div class="line2"></div><div class="line3"></div>
+    </div>
+    <div class="logo">My Snoozing Baby</div>
+</header>
+
+<div id="navOverlay" onclick="toggleNav(event)"></div>
+
+<nav id="nav-sidebar">
+    <div class="sidebar-close-icon menu-lines active" onclick="toggleNav(event)">
+        <div class="line1"></div><div class="line2"></div><div class="line3"></div>
+    </div>
+    <div class="nav-content">
+        <a href="https://mysnoozingbaby.com/">Home</a>
+        <a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">Snoo Smart Sleeper <i class="fa-solid fa-caret-down"></i></a>
+        <div class="sub-nav">
+            <a href="https://mysnoozingbaby.com/snoo-rental">SNOO Rental</a>
+            <a href="https://mysnoozingbaby.com/snoo-cleaning-and-repairs">SNOO Cleaning/Repair</a>
+        </div>
+        <a href="https://mysnoozingbaby.com/baby-gear-rentals">Baby Gear Rentals</a>
+        <a href="https://mysnoozingbaby.com/toddler-party-rentals">Toddler Party Rentals</a>
+        <a href="https://mysnoozingbaby.com/about-us">About Us</a>
+        <a href="https://mysnoozingbaby.com/contact-us">Contact Us</a>
+        <a href="https://mysnoozingbaby.com/faqs">FAQs</a>
+    </div>
+</nav>
+
+<div class="content-container" id="editor-root">
+    <div class="block_container" style="flex-direction: column; justify-content: center; background-color: rgb(250, 246, 243);"><div class="block_image" data-scale-factor="1.0" style="width: 345px; margin: 0px auto;"><img src="images/img_1770260444687_605.jpg" data-filename="img_1770260444687_605.jpg"></div><div class="div-other-wrapper" style="width: 100%;"><h3 class="block_heading" data-placeholder="Type here..."><div>FOR BETTER-SLEEPING BABIES. FOR HAPPIER BABIES.</div></h3></div></div><div class="block_spacer"></div><h2 class="section_heading" data-placeholder="Type here...">Our Services</h2><h3 class="block_heading" data-placeholder="Type here...">SNOO Smart Bassinet Rental</h3><p class="block_text" data-placeholder="Type here...">Let a smart bassinet  do the hard work for you, rocking and calming your baby, while you  enjoy a little bit of rest.</p><div class="block_button_container"><a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a></div><div class="block_spacer"></div><h3 class="block_heading" data-placeholder="Type here...">SNOO deep-cleaning, servicing, and repairs</h3><p class="block_text" data-placeholder="Type here...">In addition to SNOO and other baby gear rental, we offer professional deep-cleaning, servicing, and repairs for your pre-loved SNOO. Just send us a message and we'll take care of the rest!</p><div class="block_button_container"><a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a></div><div class="block_spacer"></div><h3 class="block_heading" data-placeholder="Type here...">Traveling to the DC Metro area?</h3><p class="block_text" data-placeholder="Type here...">Leave the heavy gear at home. We offer premium rentals of cribs, strollers, car seats, and more for families visiting Washington DC or surrounding parts of Virginia and Maryland. Travel light and let us handle the rest.</p><div class="block_button_container"><a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a></div><div class="block_spacer"></div><h2 class="section_heading" data-placeholder="Type here...">Instagram&nbsp;</h2><div class="custom-html-output"><div class="instagram-container">
+        <script src="https://elfsightcdn.com/platform.js" async=""></script>
+        <div class="elfsight-app-5eadd9db-134a-45fa-bb7d-32ad1f117149" data-elfsight-app-lazy=""></div>
+    </div></div><div class="block_spacer"></div><h2 class="section_heading" data-placeholder="Type here...">Photo Gallery&nbsp;</h2><div class="photo_gallery"><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/img_1770342850460_969.jpg" style="width:100%; height:100%; object-fit:cover;"></div><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/img_1770342850464_783.jpg" style="width:100%; height:100%; object-fit:cover;"></div><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/img_1770342850468_668.jpg" style="width:100%; height:100%; object-fit:cover;"></div><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/img_1770342850472_211.jpg" style="width:100%; height:100%; object-fit:cover;"></div><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/img_1770342850476_756.jpg" style="width:100%; height:100%; object-fit:cover;"></div><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/img_1770342850479_310.jpg" style="width:100%; height:100%; object-fit:cover;"></div><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/img_1770342850482_789.jpg" style="width:100%; height:100%; object-fit:cover;"></div><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/img_1770342850486_848.jpg" style="width:100%; height:100%; object-fit:cover;"></div><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/img_1770342850489_146.jpg" style="width:100%; height:100%; object-fit:cover;"></div><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/img_1770342850492_79.jpg" style="width:100%; height:100%; object-fit:cover;"></div><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/img_1770342850494_463.jpg" style="width:100%; height:100%; object-fit:cover;"></div><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/img_1770342850497_478.jpg" style="width:100%; height:100%; object-fit:cover;"></div><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/img_1770342850499_375.jpg" style="width:100%; height:100%; object-fit:cover;"></div><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/img_1770342850502_886.jpg" style="width:100%; height:100%; object-fit:cover;"></div><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/img_1770342850504_392.jpg" style="width:100%; height:100%; object-fit:cover;"></div><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/img_1770342850506_919.jpg" style="width:100%; height:100%; object-fit:cover;"></div><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/img_1770342850510_736.jpg" style="width:100%; height:100%; object-fit:cover;"></div><div class="gallery-item" style="aspect-ratio:1/1; overflow:hidden;"><img src="images/1d7a7bdb-63ed-446c-9ca9-6f0ea616c31d-1_all_14890.jpg" style="width:100%; height:100%; object-fit:cover;"></div></div></div>
+
+<footer>
+    <div class="social-icons">
+        <a href="#"><i class="fa-brands fa-facebook"></i></a>
+        <a href="#"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#"><i class="fa-brands fa-tiktok"></i></a>
+    </div>
+    <span class="copyright-text">Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.</span>
+    <div class="disclaimer">
+        My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.
+    </div>
+</footer>
+
+<script>
+    // Logic remains in JS but controls elements sized by REM in CSS
+    function toggleNav(e) {
+        if(e) e.stopPropagation();
+        const nav = document.getElementById('nav-sidebar');
+        const hamburger = document.getElementById('headerHamburger');
+        
+        const isOpen = nav.classList.toggle('open');
+        hamburger.classList.toggle('active');
+        
+        document.getElementById('navOverlay').style.display = isOpen ? 'block' : 'none';
+        
+        // Locking the body scroll for a better mobile experience
+        document.body.style.overflow = isOpen ? 'hidden' : 'auto';
+    }
+
+    function toggleDropdown(btn) {
+        btn.classList.toggle('active');
+        btn.nextElementSibling.classList.toggle('show');
+    }
+</script>
+
+
+            <script>
+                window.addEventListener('message', (event) => {
+                    if (event.data.type === 'galleryHeight') {
+                        window.parent.postMessage(event.data, '*');
+                    }
+                });
+            </script>
+        
+
+</body>
+</html>
