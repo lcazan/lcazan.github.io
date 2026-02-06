@@ -3,55 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v5.0.1 Fix</title>
+    <title>Snoozing Builder | v5.0.3 Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root { --admin-bg: #1e1e1e; --panel-bg: #2d2d2d; --brand-pink: #ebd5c9; }
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; position: fixed; top: 0; left: 0; background: #111; touch-action: none; }
-        body { display: flex; font-family: 'Source Sans Pro', sans-serif; }
-        
-        #sidebar { width: 4.6875rem; height: 100%; background: var(--panel-bg); display: flex; flex-direction: column; align-items: center; padding: 0.9375rem 0; border-right: 0.125rem solid #000; flex-shrink: 0; z-index: 1000; }
-        .export-wrap { margin-top: auto; margin-bottom: 60px; }
-        .export-btn { width: 3.75rem; height: 3.75rem; background: var(--brand-pink); border: none; color: #000; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
-
-        #preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100%; overflow: hidden; position: relative; }
-        #header-area { background: #222; border-bottom: 0.0625rem solid #000; height: 3.125rem; display: flex; align-items: center; justify-content: center; z-index: 1001; }
-        #sticky-toolbar { height: 3rem; background: #1a1a1a; display: flex; align-items: center; justify-content: center; border-bottom: 0.0625rem solid #000; z-index: 1001; position: relative; }
-        
-        #input-pill {
-            position: absolute; top: calc(3rem + 1px); left: 50%; transform: translateX(-50%);
-            width: 85%; max-width: 550px; background: #222; border: 1px solid #444; border-radius: 4px; 
-            display: none; align-items: center; justify-content: center; padding: 0 15px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 1002;
-        }
-        #pill-editable { color: white; width: 100%; font-size: 0.85rem; outline: none; text-align: center; font-family: 'Courier New', monospace; line-height: 1.2; padding: 4px 0; }
-
-        #frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; }
-        #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; left: 0; }
-        
-        .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; flex-shrink: 0; }
-        .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; font-size: 1.1rem; }
-        .btn-teal { background: #008080 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
-        .btn-blue { background: #0056b3 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
-        .color-swatch { width: 1.5rem; height: 1.5rem; border: 1px solid #666; cursor: pointer; border-radius: 2px; }
-        
-        #toolbar-content { display: flex; gap: 0.5rem; visibility: hidden; align-items: center; height: 100%; }
-        .device-btn { background: transparent; border: none; color: #fff; cursor: pointer; font-size: 1.5rem; margin: 0 0.6rem; }
-        .device-btn.active { color: var(--brand-pink); }
-        .version-status { position: absolute; right: 1.5625rem; top: 0.75rem; color: #fff; font-size: 1rem; font-weight: 800; }
-
-        .gallery-toggle-group { display: flex; align-items: center; gap: 10px; color: white; font-size: 11px; font-weight: 900; margin-right: 12px; }
-        .gallery-toggle-group span.active { color: var(--brand-pink); }
-        .switch { position: relative; display: inline-block; width: 34px; height: 18px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #444; transition: .4s; border-radius: 18px; }
-        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #3498db; }
-        input:checked + .slider:before { transform: translateX(16px); }
-    </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <link rel="stylesheet" href="editor.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
-<body>
+<body class="builder-ui-body">
 
 <div id="sidebar">
     <button class="insert-btn" onclick="insertElement('block_container')">
@@ -83,8 +40,6 @@
     </div>
 </div>
 
-
-
 <div id="preview-container">
     <div id="header-area">
         <div id="device-bar">
@@ -92,7 +47,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v5.0.1</div>
+        <div class="version-status">v5.0.3</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -128,32 +83,10 @@ window.addEventListener('message', (event) => {
     async function init() {
         const resp = await fetch('template.html');
         let html = await resp.text();
+        
+        // Inject Editor CSS and Scripts into the template
         html = html.replace('</head>', `
-            <style>
-                html, body { height: auto; min-height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
-                #editor-root { width: 100%; display: flex; flex-direction: column; padding-bottom: 250px; }
-                .editable { position: relative; min-height: 1.2em; cursor: pointer; outline: none; box-sizing: border-box; }
-                .selected-item { outline: 0.1875rem solid #ebd5c9 !important; }
-                .photo_gallery.selected-item { box-shadow: inset 0 0 0 3px #ebd5c9 !important; outline: none !important; }
-                .block_custom_html { width: 100%; margin-bottom: 20px; position: relative; padding: 0 15px; box-sizing: border-box; }
-                .html-tag { display: inline-block; background: #008080; color: white; padding: 2px 8px; font-size: 10px; font-weight: 900; border-radius: 3px; cursor: pointer; }
-                .html-input-box { display: none; width: 100%; height: 120px; margin-top: 5px; background: #1e1e1e; color: #76e0d3; border: 1px solid #444; font-family: 'Courier New', monospace; font-size: 12px; padding: 10px; box-sizing: border-box; resize: vertical; }
-                .selected-item .html-input-box { display: block; }
-                .html-render-area { width: 100%; margin-top: 5px; min-height: 5px; }
-                h2, h3, p { display: block !important; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
-                .editable:empty::before { content: attr(data-placeholder); color: #888; opacity: 0.6; pointer-events: none; }
-                .block_container { display: flex; flex-wrap: wrap; align-items: center; width: 100%; min-height: 2rem; box-sizing: border-box; padding: 0px; }
-                .block_image { position: relative; display: inline-block; flex-shrink: 0; }
-                .block_image img { width: 100%; display: block; pointer-events: none; }
-                .div-other-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 1.2em; }
-                .block_spacer { height: 1.5rem !important; width: 100%; border-bottom: none; }
-                .resize-handle { width: 44px; height: 44px; position: absolute; right: -2px; bottom: -2px; cursor: nwse-resize; z-index: 9999; display: flex; align-items: center; justify-content: center; color: #ebd5c9; }
-                .resize-handle::before { content: "\\f337"; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 28px; }
-                .photo_gallery { width: 100%; margin-bottom: 20px; position: relative; min-height: 180px; box-sizing: border-box; overflow: hidden; padding: 0 0 0 0; }
-                .photo_gallery iframe { width: 100%; height: 100%; border: none; padding: 0 0 0 0; display: block; background: transparent; box-sizing: border-box;}
-                .gallery-sentry { position: absolute; inset: 0; background: transparent; z-index: 10; cursor: pointer; }
-                .selected-item .gallery-sentry { pointer-events: none; }
-            </style>
+            <link rel="stylesheet" href="editor.css">
             <script>
                 const observer = new ResizeObserver(entries => {
                     for (let entry of entries) {
@@ -181,17 +114,20 @@ window.addEventListener('message', (event) => {
                 };
             <\/script>`);
 
-html = html.replace('</body>', `
-    <script>
-        window.addEventListener('message', (event) => {
-            if (event.data.type === 'galleryHeight') {
-                window.parent.postMessage(event.data, '*');
-            }
-        });
-    <\/script>
-</body>`);
+        html = html.replace('</body>', `
+            <script>
+                window.addEventListener('message', (event) => {
+                    if (event.data.type === 'galleryHeight') {
+                        window.parent.postMessage(event.data, '*');
+                    }
+                });
+            <\/script>
+        </body>`);
 
+        // Inject editor root and class for editor-specific css overrides
+        html = html.replace(/<body([^>]*)>/, '<body$1 class="editor-frame-body">');
         frame.srcdoc = html.replace(/<div class=\"content-container\">([\s\S]*?)<\/div>/, '<div class=\"content-container\" id=\"editor-root\">$1</div>');
+        
         frame.onload = () => {
             frame.contentWindow.initDivLogic();
             frame.contentDocument.addEventListener('mousedown', (e) => { 
@@ -245,7 +181,6 @@ html = html.replace('</body>', `
         } else if (selectedEl.contentEditable === "true") {
             html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
         }
-        
         const inDiv = selectedEl.closest('.block_container');
         if (!inDiv && !isDiv && !isSpacer && !isGallery) {
             html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
@@ -291,7 +226,27 @@ html = html.replace('</body>', `
         setTimeout(() => selectElement(el), 150);
     }
 
-    function updateHTML(textarea) { frame.contentWindow.updateHTMLInternal(textarea); }
+    window.updateHTML = function(textarea) {
+    const container = textarea.closest('.block_custom_html');
+    if (!container) return;
+
+    const renderArea = container.querySelector('.html-render-area');
+    renderArea.innerHTML = textarea.value;
+
+    const iframeDoc = textarea.ownerDocument; 
+
+    const scripts = renderArea.querySelectorAll("script");
+    scripts.forEach(oldScript => {
+        const newScript = iframeDoc.createElement("script");
+        Array.from(oldScript.attributes).forEach(attr => {
+            newScript.setAttribute(attr.name, attr.value);
+        });
+        newScript.appendChild(iframeDoc.createTextNode(oldScript.innerHTML));
+        iframeDoc.body.appendChild(newScript);
+        oldScript.remove();
+    });
+};
+
 
     function setDevice(type) {
         currentMode = type;
@@ -383,6 +338,15 @@ html = html.replace('</body>', `
 // --- 1. THE SAVE FUNCTION ---
 async function saveProject() {
     const iframeDoc = frame.contentDocument;
+    
+    // --- NEW: Sync HTML content to attributes before cloning ---
+    iframeDoc.querySelectorAll('.block_custom_html').forEach(block => {
+        const textarea = block.querySelector('.html-input-box');
+        if (textarea) {
+            block.setAttribute('data-html-code', textarea.value);
+        }
+    });
+
     const editorRoot = iframeDoc.getElementById('editor-root');
     if (!editorRoot) return;
 
@@ -432,6 +396,7 @@ async function saveProject() {
     a.click();
 }
 
+
 // --- 2. THE LOAD FUNCTION ---
 async function loadProject() {
     const input = document.createElement('input');
@@ -462,6 +427,17 @@ async function loadProject() {
             }
             editorRoot.innerHTML = tempDiv.innerHTML;
 
+            // --- NEW: Restore HTML textareas and re-render scripts ---
+            editorRoot.querySelectorAll('.block_custom_html').forEach(block => {
+                const savedCode = block.getAttribute('data-html-code');
+                const textarea = block.querySelector('.html-input-box');
+                if (textarea && savedCode !== null) {
+                    textarea.value = savedCode;
+                    window.updateHTML(textarea); 
+                }
+            });
+
+            // Existing Gallery loading logic
             editorRoot.querySelectorAll('.photo_gallery').forEach(async (gallery) => {
                 const stateJson = gallery.getAttribute('data-saved-images');
                 if (stateJson) {
@@ -487,60 +463,56 @@ async function loadProject() {
     input.click();
 }
 
-// --- 3. THE EXPORT FUNCTION (Fixed Menu & Restored Gallery CSS) ---
-async function exportHTML() {
-    const iframeDoc = frame.contentDocument;
+
+// --- 3. THE EXPORT FUNCTION ---
+function exportHTML() {
+    const iframeDoc = frame.contentDocument || frame.contentWindow.document;
+    const editorRoot = iframeDoc.getElementById('editor-root');
+    if (!editorRoot) return;
+
     const clone = iframeDoc.documentElement.cloneNode(true);
+    
+    // Remove editor-specific CSS file from exported file
+    const editorCssLink = clone.querySelector('link[href="editor.css"]');
+    if (editorCssLink) editorCssLink.remove();
 
-    // Remove UI
-    clone.querySelectorAll('.edit-controls, .resizer, .ui-draggable-handle, .hover-overlay').forEach(el => el.remove());
+    // Remove the body class that handles editor scrolling overrides
+    clone.querySelector('body').classList.remove('editor-frame-body');
 
-    // Disable editing & Reset Flex for side-by-side
-    clone.querySelectorAll('.block_container').forEach(block => {
-        block.style.flexDirection = ""; 
-        block.setAttribute('contenteditable', 'false');
-    });
+    // Structural Fix: Remove the "Editor Root" shell
+    const exportedRoot = clone.querySelector('#editor-root');
+    if (exportedRoot) {
+        exportedRoot.removeAttribute('id');
+        exportedRoot.style.cssText = ''; 
+        exportedRoot.classList.add('content-container'); 
+    }
 
-    // RESTORED: Gallery Grid Conversion
-    const galleries = clone.querySelectorAll('.photo_gallery');
-    galleries.forEach((gallery, idx) => {
-        const liveG = iframeDoc.querySelectorAll('.photo_gallery')[idx];
-        const gIframe = liveG ? liveG.querySelector('iframe') : null;
-        if (gIframe?.contentDocument) {
-            const innerG = gIframe.contentDocument.querySelector('.photo_gallery');
-            const isMasonry = innerG ? innerG.classList.contains('masonry-mode') : false;
-            const galleryImgs = Array.from(gIframe.contentDocument.querySelectorAll('.gallery-item img'));
-            
-            let html = `<div class="photo_gallery ${isMasonry ? 'masonry-mode' : ''}">`;
-            galleryImgs.forEach(img => {
-                let fname = img.getAttribute('data-filename') || img.src.split('/').pop();
-                if (!fname.includes('.')) fname += '.jpg';
-                html += `<div class="gallery-item"><img src="images/${fname}" style="object-position: ${img.style.objectPosition}; width:100%; height:100%; object-fit:cover; display:block;"></div>`;
-            });
-            html += `</div>`;
-            gallery.outerHTML = html;
+    clone.querySelectorAll('.block-controls, .resizer, .html-editor-wrapper, .html-tag, .html-input-box, .resize-handle, .gallery-sentry').forEach(el => el.remove());
+    
+    clone.querySelectorAll('*').forEach(el => {
+        if (el.hasAttribute('contenteditable')) {
+            el.removeAttribute('contenteditable');
         }
     });
 
-    // RESTORED: Gallery CSS Injection
-    const styleBlock = iframeDoc.createElement('style');
-    styleBlock.textContent = `
-        .photo_gallery { display: grid; gap: 10px; grid-template-columns: repeat(2, 1fr); width: 100%; margin-bottom: 2rem; }
-        @media (min-width: 768px) { .photo_gallery { grid-template-columns: repeat(3, 1fr); } }
-        .photo_gallery.masonry-mode { display: block; column-count: 2; column-gap: 10px; }
-        @media (min-width: 768px) { .photo_gallery.masonry-mode { column-count: 3; } }
-        .gallery-item { margin-bottom: 10px; break-inside: avoid; aspect-ratio: 1/1; overflow: hidden; background: #eee; }
-        .masonry-mode .gallery-item { aspect-ratio: auto; }
-    `;
-    clone.querySelector('head').appendChild(styleBlock);
+    clone.querySelectorAll('.editable, .selected-item, .editable-active').forEach(el => {
+        el.removeAttribute('data-placeholder');
+        el.removeAttribute('data-html-code');
+        el.classList.remove('editable', 'selected-item', 'editable-active');
+    });
 
-    // FIXED: Menu Script with Template IDs
+    clone.querySelectorAll('img').forEach(img => {
+        let fn = img.getAttribute('data-filename') || img.src.split('/').pop();
+        if (!fn.includes('.')) fn += '.jpg';
+        img.src = 'images/' + fn;
+    });
+
     const menuScript = iframeDoc.createElement('script');
     menuScript.textContent = `
         document.addEventListener('DOMContentLoaded', () => {
-            const btn = document.getElementById('headerHamburger');
-            const nav = document.getElementById('nav-sidebar');
-            const overlay = document.getElementById('navOverlay');
+            const btn = document.querySelector('.menu-toggle-btn');
+            const nav = document.querySelector('.sidebar-nav');
+            const overlay = document.querySelector('.sidebar-overlay');
             if (btn && nav) {
                 btn.onclick = (e) => {
                     e.stopPropagation();
@@ -549,25 +521,10 @@ async function exportHTML() {
                     if(overlay) overlay.style.display = isOpen ? 'block' : 'none';
                     document.body.style.overflow = isOpen ? 'hidden' : 'auto';
                 };
-                document.addEventListener('click', (e) => {
-                    if (nav.classList.contains('open') && !nav.contains(e.target) && e.target !== btn) {
-                        nav.classList.remove('open');
-                        btn.classList.remove('active');
-                        if(overlay) overlay.style.display = 'none';
-                        document.body.style.overflow = 'auto';
-                    }
-                });
             }
         });
     `;
     clone.querySelector('body').appendChild(menuScript);
-
-    // Final Image Paths
-    clone.querySelectorAll('img').forEach(img => {
-        let fn = img.getAttribute('data-filename') || img.src.split('/').pop();
-        if (!fn.includes('.')) fn += '.jpg';
-        img.src = 'images/' + fn;
-    });
 
     const finalHTML = '<!DOCTYPE html>\n<html lang="en">\n' + clone.innerHTML + '\n</html>';
     const blob = new Blob([finalHTML], { type: 'text/html' });
@@ -577,20 +534,8 @@ async function exportHTML() {
     a.click();
 }
 
-
-
-
-
-
-
-
-
     window.onload = init;
 </script>
-
-
-    
- 
 
 </body>
 </html>
