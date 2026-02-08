@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v5.1.0 Fix</title>
+    <title>Snoozing Builder | v5.1.7 Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="editor.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -111,7 +111,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v5.1.0</div>
+        <div class="version-status">v5.1.7</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -301,11 +301,34 @@ window.addEventListener('message', (event) => {
     function insertElement(type, data) {
         const doc = frame.contentDocument; const root = doc.getElementById('editor-root');
         if (type === 'photo_gallery') {
-            const el = doc.createElement('div'); el.className = 'photo_gallery';
-            el.innerHTML = '<div class="gallery-sentry" "></div><iframe src="gallery-component.html" scrolling="no"></iframe>';
-            selectedEl && selectedEl.parentNode === root ? selectedEl.after(el) : root.appendChild(el);
-            setTimeout(() => selectElement(el), 150); return;
+        const el = doc.createElement('div'); 
+        el.className = 'photo_gallery';
+        
+        // 1. Create and style the Sentry immediately
+        const sentry = doc.createElement('div');
+        sentry.className = 'gallery-sentry';
+        sentry.style.touchAction = 'none'; // Prevents mobile drag conflicts
+        
+        // 2. Create the Iframe
+        const iframe = doc.createElement('iframe');
+        iframe.src = 'gallery-component.html';
+        iframe.setAttribute('scrolling', 'no');
+        
+        // 3. Assemble the component
+        el.appendChild(sentry);
+        el.appendChild(iframe);
+        
+        // 4. Place in document
+        selectedEl && selectedEl.parentNode === root ? selectedEl.after(el) : root.appendChild(el);
+        
+        // 5. Enable builder logic (ResizeObservers, etc.) for the new element
+        if (frame.contentWindow.initDivLogic) {
+            frame.contentWindow.initDivLogic();
         }
+
+        setTimeout(() => selectElement(el), 150); 
+        return;
+    }
 
         const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
         const el = doc.createElement(tagMap[type] || 'div');
@@ -651,10 +674,7 @@ async function masterSave() {
 
 
 
-
-
-
-
+// --- 2. THE LOAD FUNCTION ---
 // --- 2. THE LOAD FUNCTION ---
 async function loadProject() {
     const input = document.createElement('input');
@@ -663,29 +683,38 @@ async function loadProject() {
     input.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
+
         const zip = await JSZip.loadAsync(file);
         const data = JSON.parse(await zip.file("project.json").async("string"));
         const iframeDoc = frame.contentDocument;
         const editorRoot = iframeDoc.getElementById('editor-root');
         
         if (editorRoot) {
+            // 1. CLEAR & RESTORE HTML STRUCTURE
+            editorRoot.innerHTML = ''; // Clear current
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = data.htmlContent;
             
+            // 2. RESTORE STANDARD IMAGES (Non-Gallery)
             const allImgs = Array.from(tempDiv.querySelectorAll('img'));
             for (let img of allImgs) {
                 const path = img.getAttribute('src');
                 const storedName = img.getAttribute('data-filename');
-                if (path && path.startsWith('images/')) {
+                // Only process if it looks like a local image
+                if (path && (path.startsWith('images/') || storedName)) {
                     const name = storedName || path.split('/').pop();
-                    const fileData = await zip.file(`images/${name}`).async("blob");
-                    img.src = URL.createObjectURL(fileData);
-                    img.setAttribute('data-filename', name); 
+                    const entry = zip.file(`images/${name}`);
+                    if (entry) {
+                        const fileData = await entry.async("blob");
+                        img.src = URL.createObjectURL(fileData);
+                        img.setAttribute('data-filename', name); 
+                    }
                 }
             }
+
             editorRoot.innerHTML = tempDiv.innerHTML;
 
-            // --- NEW: Restore HTML textareas and re-render scripts ---
+            // 3. RESTORE CUSTOM HTML BLOCKS
             editorRoot.querySelectorAll('.block_custom_html').forEach(block => {
                 const savedCode = block.getAttribute('data-html-code');
                 const textarea = block.querySelector('.html-input-box');
@@ -695,46 +724,79 @@ async function loadProject() {
                 }
             });
 
+            // 4. RESTORE GALLERIES (The Fix)
+            const placeholders = Array.from(editorRoot.querySelectorAll('.photo_gallery'));
+            
+            for (const placeholder of placeholders) {
+                const stateJson = placeholder.getAttribute('data-saved-images');
+                if (!stateJson) continue;
 
+                // A. Select the placeholder so insertElement knows where to put the new one
+                selectElement(placeholder);
 
-            // Existing Gallery loading logic
-            editorRoot.querySelectorAll('.photo_gallery').forEach(async (gallery) => {
+                // B. Create the new "Live" gallery (Sentry + Iframe + Logic)
+                // This puts the new element immediately AFTER the placeholder
+                insertElement('photo_gallery');
+                
+                // C. CRITICAL FIX: Grab the new element by DOM position, NOT by 'selectedEl'
+                // We cannot use selectedEl because insertElement updates it with a delay (setTimeout)
+                const newGallery = placeholder.nextElementSibling;
 
-    // MOVE THIS INSIDE THE LOOP
-    if (!gallery.querySelector('.gallery-sentry')) {
-        const sentry = document.createElement('div');
-        sentry.className = 'gallery-sentry';
- // --- ADD THESE FOR TESTING ---
-        sentry.style.background = 'yellow';
-        sentry.style.opacity = '0.5'; //
-        // Add this to stop the "drag-and-scroll" bug
-        sentry.style.touchAction = 'none'; 
-        gallery.prepend(sentry);
-        console.log("Gallery Sentry Restored");
-    }
-                const stateJson = gallery.getAttribute('data-saved-images');
-                if (stateJson) {
-                    const state = JSON.parse(stateJson);
-                    const items = [];
-                    for (let fileObj of state.files) {
-                        const fileData = await zip.file(`images/${fileObj.src}`).async("blob");
-                        items.push({ src: URL.createObjectURL(fileData), pos: fileObj.pos, originalName: fileObj.src });
-                    }
-                    const gIframe = gallery.querySelector('iframe');
-                    const inject = () => {
-                        if (gIframe.contentWindow?.loadSavedImages) {
-                            gIframe.contentWindow.loadSavedImages({ mode: state.mode, files: items });
-                        } else { setTimeout(inject, 50); }
-                    };
-                    if (gIframe.contentDocument.readyState === 'complete') inject();
-                    else gIframe.onload = inject;
+                // D. Remove the dead placeholder
+                placeholder.remove();
+
+                if (!newGallery) {
+                    console.error("Gallery insertion failed");
+                    continue;
                 }
-            });
+
+                // E. Transfer State & Hydrate
+                newGallery.setAttribute('data-saved-images', stateJson);
+                const gIframe = newGallery.querySelector('iframe');
+                const state = JSON.parse(stateJson);
+                const items = [];
+
+                // Convert ZIP paths to Blob URLs
+                for (let fileObj of state.files) {
+                    const entry = zip.file(`images/${fileObj.src}`);
+                    if (entry) {
+                        const fileData = await entry.async("blob");
+                        items.push({ 
+                            src: URL.createObjectURL(fileData), 
+                            pos: fileObj.pos, 
+                            originalName: fileObj.src 
+                        });
+                    }
+                }
+
+                // F. The Handshake (Wait for iframe internal script to load)
+                const attemptHydration = () => {
+                    if (gIframe.contentWindow && typeof gIframe.contentWindow.loadSavedImages === 'function') {
+                        gIframe.contentWindow.loadSavedImages({ mode: state.mode, files: items });
+                    } else {
+                        setTimeout(attemptHydration, 50);
+                    }
+                };
+
+                // Start polling only when iframe DOM is technically ready
+                if (gIframe.contentDocument.readyState === 'complete') {
+                    attemptHydration();
+                } else {
+                    gIframe.onload = attemptHydration;
+                }
+            }
+
+            // 5. RE-BIND BUILDER LOGIC
             if (frame.contentWindow.initDivLogic) frame.contentWindow.initDivLogic();
+            deselectAll();
         }
     };
     input.click();
 }
+
+
+
+
 
 
 
