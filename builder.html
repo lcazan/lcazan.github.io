@@ -3,10 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v5.0.7 Fix</title>
+    <title>Snoozing Builder | v5.1.0 Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="editor.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+        /* --- ADDED SETTINGS MODAL STYLES --- */
+        #settings-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 20000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(3px);
+        }
+        .settings-modal {
+            background: #1e1e1e;
+            width: 400px;
+            border-radius: 12px;
+            border: 1px solid #333;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden;
+        }
+        .settings-header {
+            padding: 15px 20px;
+            background: #252525;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .settings-header h3 { margin: 0; font-size: 16px; font-weight: 500; color: #eee; }
+        .close-settings { cursor: pointer; color: #888; font-size: 20px; }
+        .close-settings:hover { color: #fff; }
+        .settings-body { padding: 20px; }
+        .settings-form-group { margin-bottom: 15px; }
+        .settings-form-group label { display: block; font-size: 12px; color: #aaa; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .settings-form-group input, .settings-form-group select {
+            width: 100%;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            padding: 10px;
+            border-radius: 6px;
+            color: white;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .settings-form-group input:focus { border-color: #ff2d55; }
+        .settings-footer { padding: 15px 20px; background: #252525; border-top: 1px solid #333; display: flex; justify-content: flex-end; }
+        .save-settings-btn {
+            background: #ff2d55;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+    </style>
 </head>
 <body class="builder-ui-body">
 
@@ -26,6 +85,10 @@
     <button class="insert-btn" onclick="insertElement('block_custom_html')"><i class="fa-solid fa-code"></i></button>
 
     <div style="margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 10px; padding-bottom: 20px;">
+
+<button class="insert-btn" onclick="toggleSettings()" title="Settings" style="background: #2a2a2a; border-color: #555;">
+            <i class="fa-solid fa-gear" style="color: #95a5a6;"></i>
+        </button>
 
 <button class="insert-btn" onclick="loadProject()" title="Load Project" style="background: #2a2a2a; border-color: #555;">
             <i class="fa-solid fa-file-import" style="color: #2ecc71;"></i>
@@ -48,7 +111,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v5.0.7</div>
+        <div class="version-status">v5.1.0</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -59,8 +122,53 @@
     <div id="frame-wrapper"><iframe id="preview-frame" scrolling="yes"></iframe></div>
 </div>
 
+<div id="settings-overlay" onclick="if(event.target===this) toggleSettings()">
+    <div class="settings-modal">
+        <div class="settings-header">
+            <h3>Project Settings</h3>
+            <span class="close-settings" onclick="toggleSettings()">&times;</span>
+        </div>
+        <div class="settings-body">
+            <div class="settings-section-label">Identity</div>
+            <div class="settings-row">
+                <div class="settings-form-group">
+                    <label>Page Title</label>
+                    <input type="text" id="set-page-title" placeholder="My Awesome Site">
+                </div>
+                <div class="settings-form-group">
+                    <label>Global Favicon</label>
+                    <input type="file" id="favicon-upload" accept="image/x-icon,image/png">
+                </div>
+            </div>
+
+            <div class="settings-section-label">SEO & Analytics</div>
+            <div class="settings-row">
+                <div class="settings-form-group">
+                    <label>Meta Description</label>
+                    <input type="text" id="set-meta-desc" placeholder="Brief site description...">
+                </div>
+                <div class="settings-form-group">
+                    <label>Header Code</label>
+                    <input type="text" id="set-head-code" placeholder="<script>...</script>">
+                </div>
+            </div>
+
+           
+     
+        <div class="settings-footer">
+            <button class="save-settings-btn" onclick="toggleSettings()">Apply Changes</button>
+        </div>
+    </div>
+</div>
+
+
 <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
 <script>
+function toggleSettings() {
+    const overlay = document.getElementById('settings-overlay');
+    const isVisible = overlay.style.display === 'flex';
+    overlay.style.display = isVisible ? 'none' : 'flex';
+}
 window.addEventListener('message', (event) => {
     if (event.data.type === 'galleryHeight') {
         const doc = frame.contentDocument;
@@ -194,7 +302,7 @@ window.addEventListener('message', (event) => {
         const doc = frame.contentDocument; const root = doc.getElementById('editor-root');
         if (type === 'photo_gallery') {
             const el = doc.createElement('div'); el.className = 'photo_gallery';
-            el.innerHTML = '<div class="gallery-sentry"></div><iframe src="gallery-component.html" scrolling="no"></iframe>';
+            el.innerHTML = '<div class="gallery-sentry" "></div><iframe src="gallery-component.html" scrolling="no"></iframe>';
             selectedEl && selectedEl.parentNode === root ? selectedEl.after(el) : root.appendChild(el);
             setTimeout(() => selectElement(el), 150); return;
         }
@@ -587,8 +695,23 @@ async function loadProject() {
                 }
             });
 
+
+
             // Existing Gallery loading logic
             editorRoot.querySelectorAll('.photo_gallery').forEach(async (gallery) => {
+
+    // MOVE THIS INSIDE THE LOOP
+    if (!gallery.querySelector('.gallery-sentry')) {
+        const sentry = document.createElement('div');
+        sentry.className = 'gallery-sentry';
+ // --- ADD THESE FOR TESTING ---
+        sentry.style.background = 'yellow';
+        sentry.style.opacity = '0.5'; //
+        // Add this to stop the "drag-and-scroll" bug
+        sentry.style.touchAction = 'none'; 
+        gallery.prepend(sentry);
+        console.log("Gallery Sentry Restored");
+    }
                 const stateJson = gallery.getAttribute('data-saved-images');
                 if (stateJson) {
                     const state = JSON.parse(stateJson);
