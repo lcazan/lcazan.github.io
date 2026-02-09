@@ -516,12 +516,38 @@ window.addEventListener('message', (event) => {
     function callGalleryToggle() { const iframe = selectedEl.querySelector('iframe'); if (iframe && iframe.contentWindow.toggleMode) iframe.contentWindow.toggleMode(); setTimeout(renderToolbar, 50); }
     
  // --- THE MASTER SAVE FUNCTION ---
+// --- THE MASTER SAVE FUNCTION ---
+// --- THE MASTER SAVE FUNCTION ---
+// --- THE MASTER SAVE FUNCTION ---
 async function masterSave() {
     const iframeDoc = frame.contentDocument;
     const editorRoot = iframeDoc.getElementById('editor-root');
     if (!editorRoot) return;
 
-    // 1. SYNC CUSTOM HTML (Elfsight Fix)
+    // 1. SETTINGS & FAVICON
+    const projectSettings = {
+        title: document.getElementById('set-page-title')?.value || "",
+        metaDesc: document.getElementById('set-meta-desc')?.value || "",
+        headCode: document.getElementById('set-head-code')?.value || "",
+        faviconName: ""
+    };
+
+    const zip = new JSZip();
+    const imgFolder = zip.folder("images");
+
+    const favInput = document.getElementById('favicon-upload');
+    if (favInput) {
+        if (favInput.files[0]) {
+            const favFile = favInput.files[0];
+            projectSettings.faviconName = favFile.name;
+            zip.file(`images/${favFile.name}`, favFile);
+        } else if (favInput.savedBlob && favInput.dataset.savedName) {
+            projectSettings.faviconName = favInput.dataset.savedName;
+            zip.file(`images/${projectSettings.faviconName}`, favInput.savedBlob);
+        }
+    }
+
+    // 2. SYNC CUSTOM HTML
     iframeDoc.querySelectorAll('.block_custom_html').forEach(block => {
         const textarea = block.querySelector('.html-input-box');
         if (textarea) {
@@ -530,9 +556,7 @@ async function masterSave() {
         }
     });
 
-    const zip = new JSZip();
-    const imgFolder = zip.folder("images");
-
+    // 3. IMAGE & ASSET HELPERS
     const addLocalFileToZip = async (fileName) => {
         try {
             const response = await fetch(fileName);
@@ -540,10 +564,9 @@ async function masterSave() {
                 const content = await response.text();
                 zip.file(fileName, content);
             }
-        } catch (e) { console.error(`Failed to bundle ${fileName}:`, e); }
+        } catch (e) { console.error(`Skipped ${fileName}`); }
     };
 
-    // 2. IMAGE EXTRACTION
     const processImg = async (img) => {
         const src = img.getAttribute('src') || "";
         let filename = img.getAttribute('data-filename');
@@ -556,10 +579,10 @@ async function masterSave() {
                 return `images/${filename}`;
             } catch (e) { console.error("Capture failed:", e); }
         }
-        return src;
+        return src.startsWith('images/') ? src : `images/${filename || src.split('/').pop()}`;
     };
 
-    // 3. PREPARE PROJECT JSON
+    // 4. SAVE PROJECT STATE (project.json)
     const projectClone = editorRoot.cloneNode(true);
     const standardImgs = Array.from(projectClone.querySelectorAll('img:not(.gallery-item img)'));
     for (let img of standardImgs) { img.src = await processImg(img); }
@@ -572,11 +595,12 @@ async function masterSave() {
             const gImgs = Array.from(gIframe.contentDocument.querySelectorAll('.gallery-item img'));
             const savedItems = [];
             for (let gImg of gImgs) {
-                const path = await processImg(gImg);
+                const fullPath = await processImg(gImg);
+                const cleanName = fullPath.split('/').pop();
                 savedItems.push({ 
-                    src: path.split('/').pop(), 
+                    src: cleanName, 
                     pos: gImg.style.objectPosition || '50% 50%',
-                    originalName: gImg.getAttribute('data-filename')
+                    originalName: cleanName
                 });
             }
             clonedGalleries[i].setAttribute('data-saved-images', JSON.stringify({
@@ -585,86 +609,93 @@ async function masterSave() {
             }));
         }
     }
-    zip.file("project.json", JSON.stringify({ version: "2.1", htmlContent: projectClone.innerHTML }, null, 2));
+    zip.file("project.json", JSON.stringify({ version: "2.1", settings: projectSettings, htmlContent: projectClone.innerHTML }, null, 2));
 
-    // 4. BUNDLE SUPPORT ASSETS
+    // 5. EXPORT HTML GENERATION
     const supportFiles = ['editor.css', 'msb.css', 'template.html', 'gallery-component.html'];
     for (const file of supportFiles) { await addLocalFileToZip(file); }
 
-    // 5. GENERATE EXPORTED HTML
     const clone = iframeDoc.documentElement.cloneNode(true);
-
-    clone.querySelectorAll('.block_custom_html').forEach(block => {
-        const code = block.getAttribute('data-clean-snippet') || "";
-        const cleanDiv = document.createElement('div');
-        cleanDiv.className = 'custom-html-output';
-        cleanDiv.innerHTML = code;
-        block.replaceWith(cleanDiv);
-    });
-
-    clone.querySelectorAll('[data-origin="dudu"]').forEach(el => el.remove());
-
     const head = clone.querySelector('head');
+    const body = clone.querySelector('body');
+
+    // Clean Body
+    if (body) {
+        body.removeAttribute('class');
+        body.removeAttribute('style');
+    }
+
+    // Apply Settings
+    let titleTag = head.querySelector('title') || document.createElement('title');
+    titleTag.innerText = projectSettings.title || "My Site";
+    if (!head.contains(titleTag)) head.appendChild(titleTag);
+
+    if (projectSettings.metaDesc) {
+        let m = document.createElement('meta'); m.name="description"; m.content=projectSettings.metaDesc; head.appendChild(m);
+    }
+    if (projectSettings.faviconName) {
+        let l = document.createElement('link'); l.rel="icon"; l.href=`images/${projectSettings.faviconName}`; head.appendChild(l);
+    }
+    if (projectSettings.headCode) {
+        const tmp = document.createElement('div'); tmp.innerHTML = projectSettings.headCode;
+        Array.from(tmp.childNodes).forEach(n => head.appendChild(n.cloneNode(true)));
+    }
+
+    // GALLERY RECONSTRUCTION (CSS + HTML)
     const exportStyles = document.createElement('style');
-    exportStyles.textContent = ".block_container { display: flex; width: 100%; box-sizing: border-box; transition: flex-direction 0.3s ease; } .block_image { display: block; height: auto; transition: width 0.3s ease; } .div-other-wrapper { display: flex; flex-direction: column; } .photo_gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; } .photo_gallery.masonry-mode { display: block; column-gap: 6px; width: 100%; column-count: 3; } .masonry-mode .gallery-item { display: inline-block; width: 100%; aspect-ratio: auto; margin-bottom: 6px; vertical-align: top; } @media (max-width: 768px) { .photo_gallery { grid-template-columns: repeat(2, 1fr); } .photo_gallery.masonry-mode { column-count: 2; } }";
+    exportStyles.textContent = `.photo_gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; } .photo_gallery.masonry-mode { display: block; column-count: 3; column-gap: 6px; } .masonry-mode .gallery-item { display: inline-block; width: 100%; margin-bottom: 6px; break-inside: avoid; } .gallery-item img { display: block; width: 100%; height: 100%; object-fit: cover; } .masonry-mode .gallery-item img { height: auto; } @media (max-width: 768px) { .photo_gallery { grid-template-columns: repeat(2, 1fr); } .photo_gallery.masonry-mode { column-count: 2; } }`;
     head.appendChild(exportStyles);
 
-    const exportScript = document.createElement('script');
-    exportScript.textContent = "function initResponsive(){const obs=new ResizeObserver(entries=>{for(let entry of entries){const div=entry.target;const width=entry.contentRect.width;const img=div.querySelector('.block_image');const other=div.querySelector('.div-other-wrapper');if(!img)continue;const factor=parseFloat(img.getAttribute('data-scale-factor')||'1.0');if(width<=744){div.style.flexDirection='column';div.style.justifyContent='center';img.style.width=(width*factor)+'px';img.style.margin='0 auto';if(other)other.style.width='100%';}else{div.style.flexDirection='row';div.style.justifyContent='flex-start';const baseW=width*0.618;img.style.width=(baseW*factor)+'px';img.style.margin='0';if(other)other.style.width='auto';}}});document.querySelectorAll('.block_container').forEach(d=>obs.observe(d));}window.addEventListener('DOMContentLoaded',initResponsive);";
-    head.appendChild(exportScript);
-
-    // MASONRY DETECTION (Fixed Gallery Logic)
     clone.querySelectorAll('.photo_gallery').forEach((gallery, idx) => {
         const liveG = iframeDoc.querySelectorAll('.photo_gallery')[idx];
         const gIframe = liveG?.querySelector('iframe');
         if (gIframe?.contentDocument) {
-            const gDoc = gIframe.contentDocument;
-            const isMasonry = gDoc.querySelector('.photo_gallery').classList.contains('masonry-mode');
-            const imgs = Array.from(gDoc.querySelectorAll('.gallery-item img')).filter(i => i.src && !i.src.includes('placeholder'));
-            
-            let gHtml = '<div class="photo_gallery' + (isMasonry ? ' masonry-mode' : '') + '">';
+            const isMasonry = gIframe.contentDocument.querySelector('.photo_gallery').classList.contains('masonry-mode');
+            const imgs = Array.from(gIframe.contentDocument.querySelectorAll('.gallery-item img')).filter(i => i.src && !i.src.includes('placeholder'));
+            let gHtml = `<div class="photo_gallery ${isMasonry ? 'masonry-mode' : ''}">`;
             imgs.forEach(img => {
                 const fn = img.getAttribute('data-filename') || img.src.split('/').pop();
                 const pan = img.style.objectPosition || "50% 50%";
-                // Maintain aspect ratio for masonry, square for grid
-                const style = isMasonry ? 'width:100%; height:auto; display:block;' : 'width:100%; height:100%; object-fit:cover; display:block;';
-                const wrapperStyle = isMasonry ? '' : 'aspect-ratio:1/1; overflow:hidden;';
-                
-                gHtml += '<div class="gallery-item" style="' + wrapperStyle + '"><img src="images/' + fn + '" style="' + style + ' object-position:' + pan + ';"></div>';
+                gHtml += `<div class="gallery-item"><img src="images/${fn}" style="object-position:${pan};"></div>`;
             });
             gHtml += '</div>';
             gallery.outerHTML = gHtml;
         }
     });
 
-    // Cleanup
-    const garbage = ['.block-controls', '.resizer', '.html-tag', '.html-input-box', '.resize-handle', '.gallery-sentry'];
-    clone.querySelectorAll(garbage.join(',')).forEach(el => el.remove());
+    // CUSTOM HTML OUTPUT
+    clone.querySelectorAll('.block_custom_html').forEach(block => {
+        const code = block.getAttribute('data-clean-snippet') || "";
+        const div = document.createElement('div'); div.className = 'custom-html-output'; div.innerHTML = code;
+        block.replaceWith(div);
+    });
 
-    const clonedBody = clone.querySelector('body');
-    if (clonedBody) {
-        clonedBody.removeAttribute('class');
-        clonedBody.removeAttribute('style');
-    }
+    // --- DEEP CLEAN (Remove Elfsight & Dudu crap) ---
+    const garbage = [
+        '.block-controls', '.resizer', '.html-tag', '.html-input-box', 
+        '.resize-handle', '.gallery-sentry', '[data-origin="dudu"]',
+        'script[src*="elfsight"]', '.eapps-widget' // Remove Elfsight scripts/widgets
+    ];
+    clone.querySelectorAll(garbage.join(',')).forEach(el => el.remove());
 
     clone.querySelectorAll('*').forEach(el => {
         el.removeAttribute('contenteditable');
-        el.removeAttribute('data-clean-snippet');
+        el.removeAttribute('data-origin'); // Remove any leftover origin tags
         el.classList.remove('editable', 'selected-item', 'editable-active');
     });
 
     clone.querySelectorAll('img').forEach(img => {
-        let fn = img.getAttribute('data-filename') || img.src.split('/').pop();
-        if (!fn.includes('.')) fn += '.jpg';
-        img.src = 'images/' + fn;
+        if (!img.closest('.photo_gallery')) {
+            let fn = img.getAttribute('data-filename') || img.src.split('/').pop();
+            img.src = 'images/' + fn;
+        }
     });
 
     zip.file("index.html", '<!DOCTYPE html>\n<html lang="en">\n' + clone.innerHTML + '\n</html>');
-
     const content = await zip.generateAsync({type: "blob"});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(content);
-    a.download = "Master_Package_" + new Date().toISOString().slice(0,10) + ".zip";
+    a.download = "Final_Export.zip";
     a.click();
 }
 
@@ -674,6 +705,8 @@ async function masterSave() {
 
 
 
+
+// --- 2. THE LOAD FUNCTION ---
 // --- 2. THE LOAD FUNCTION ---
 // --- 2. THE LOAD FUNCTION ---
 async function loadProject() {
@@ -690,17 +723,61 @@ async function loadProject() {
         const editorRoot = iframeDoc.getElementById('editor-root');
         
         if (editorRoot) {
-            // 1. CLEAR & RESTORE HTML STRUCTURE
-            editorRoot.innerHTML = ''; // Clear current
+            // --- 1. RESTORE SETTINGS & FAVICON PREVIEW ---
+            if (data.settings) {
+                const titleInput = document.getElementById('set-page-title');
+                const descInput = document.getElementById('set-meta-desc');
+                const headInput = document.getElementById('set-head-code');
+                const favInput = document.getElementById('favicon-upload');
+
+                if (titleInput) titleInput.value = data.settings.title || "";
+                if (descInput) descInput.value = data.settings.metaDesc || "";
+                if (headInput) headInput.value = data.settings.headCode || "";
+
+                if (favInput && data.settings.faviconName) {
+                    const favFile = zip.file(`images/${data.settings.faviconName}`);
+                    if (favFile) {
+                        const blob = await favFile.async("blob");
+                        
+                        // Save the actual data to the input for the next MasterSave
+                        favInput.dataset.savedName = data.settings.faviconName;
+                        favInput.savedBlob = blob; 
+
+                        // Find or Create the 48px preview container
+                        let previewContainer = favInput.parentNode.querySelector('.fav-preview-container');
+                        if (!previewContainer) {
+                            previewContainer = document.createElement('div');
+                            previewContainer.className = 'fav-preview-container';
+                            previewContainer.style.display = 'inline-flex'; 
+                            previewContainer.style.alignItems = 'center';
+                            previewContainer.style.gap = '12px';
+                            previewContainer.style.marginLeft = '15px';
+                            previewContainer.style.verticalAlign = 'middle';
+                            favInput.parentNode.appendChild(previewContainer);
+                        }
+
+                        const previewUrl = URL.createObjectURL(blob);
+                        previewContainer.innerHTML = `
+                            <img src="${previewUrl}" style="width:64px; height:64px; border-radius:6px; border:2px solid #4db8ff; object-fit:contain; background:#111; padding:2px;">
+                            <div style="display:flex; flex-direction:column;">
+                                <span style="font-size:12px; color:#fff; font-weight:bold;">Current Favicon:</span>
+                                <span style="font-size:11px; color:#aaa;">${data.settings.faviconName}</span>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            // --- 2. RESTORE HTML STRUCTURE ---
+            editorRoot.innerHTML = ''; 
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = data.htmlContent;
             
-            // 2. RESTORE STANDARD IMAGES (Non-Gallery)
+            // Re-map standard images from ZIP blobs
             const allImgs = Array.from(tempDiv.querySelectorAll('img'));
             for (let img of allImgs) {
                 const path = img.getAttribute('src');
                 const storedName = img.getAttribute('data-filename');
-                // Only process if it looks like a local image
                 if (path && (path.startsWith('images/') || storedName)) {
                     const name = storedName || path.split('/').pop();
                     const entry = zip.file(`images/${name}`);
@@ -714,49 +791,37 @@ async function loadProject() {
 
             editorRoot.innerHTML = tempDiv.innerHTML;
 
-            // 3. RESTORE CUSTOM HTML BLOCKS
+            // --- 3. RESTORE CUSTOM HTML BLOCKS ---
             editorRoot.querySelectorAll('.block_custom_html').forEach(block => {
                 const savedCode = block.getAttribute('data-html-code');
                 const textarea = block.querySelector('.html-input-box');
                 if (textarea && savedCode !== null) {
                     textarea.value = savedCode;
-                    window.updateHTML(textarea); 
+                    if (window.updateHTML) window.updateHTML(textarea); 
                 }
             });
 
-            // 4. RESTORE GALLERIES (The Fix)
+            // --- 4. RESTORE GALLERIES (Handshake Fix) ---
             const placeholders = Array.from(editorRoot.querySelectorAll('.photo_gallery'));
             
             for (const placeholder of placeholders) {
                 const stateJson = placeholder.getAttribute('data-saved-images');
                 if (!stateJson) continue;
 
-                // A. Select the placeholder so insertElement knows where to put the new one
                 selectElement(placeholder);
-
-                // B. Create the new "Live" gallery (Sentry + Iframe + Logic)
-                // This puts the new element immediately AFTER the placeholder
                 insertElement('photo_gallery');
                 
-                // C. CRITICAL FIX: Grab the new element by DOM position, NOT by 'selectedEl'
-                // We cannot use selectedEl because insertElement updates it with a delay (setTimeout)
                 const newGallery = placeholder.nextElementSibling;
-
-                // D. Remove the dead placeholder
                 placeholder.remove();
 
-                if (!newGallery) {
-                    console.error("Gallery insertion failed");
-                    continue;
-                }
+                if (!newGallery) continue;
 
-                // E. Transfer State & Hydrate
                 newGallery.setAttribute('data-saved-images', stateJson);
                 const gIframe = newGallery.querySelector('iframe');
                 const state = JSON.parse(stateJson);
                 const items = [];
 
-                // Convert ZIP paths to Blob URLs
+                // Re-map gallery images from ZIP blobs
                 for (let fileObj of state.files) {
                     const entry = zip.file(`images/${fileObj.src}`);
                     if (entry) {
@@ -769,7 +834,6 @@ async function loadProject() {
                     }
                 }
 
-                // F. The Handshake (Wait for iframe internal script to load)
                 const attemptHydration = () => {
                     if (gIframe.contentWindow && typeof gIframe.contentWindow.loadSavedImages === 'function') {
                         gIframe.contentWindow.loadSavedImages({ mode: state.mode, files: items });
@@ -778,21 +842,23 @@ async function loadProject() {
                     }
                 };
 
-                // Start polling only when iframe DOM is technically ready
-                if (gIframe.contentDocument.readyState === 'complete') {
+                if (gIframe.contentDocument && gIframe.contentDocument.readyState === 'complete') {
                     attemptHydration();
                 } else {
                     gIframe.onload = attemptHydration;
                 }
             }
 
-            // 5. RE-BIND BUILDER LOGIC
             if (frame.contentWindow.initDivLogic) frame.contentWindow.initDivLogic();
             deselectAll();
         }
     };
     input.click();
 }
+
+
+
+
 
 
 
