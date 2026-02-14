@@ -4,101 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Gallery Builder v5.1.2 | Dragula Edition</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.3/dragula.min.css">
+    
+    <link rel="stylesheet" href="gallery.css">
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.3/dragula.min.js"></script>
-
-    <style>
-        /* Force border-box globally to prevent 1px cutoffs */
-        * { box-sizing: border-box !important; }
-
-        body { 
-            font-family: 'Segoe UI', sans-serif; padding: 0; margin: 0; background: transparent; 
-            overscroll-behavior: none; 
-        }
-
-        /* HARD LOCK: Physically prevents the window from scrolling while dragging */
-        body.sorting-active {
-            overflow: hidden !important;
-            touch-action: none !important;
-            position: fixed; 
-            width: 100%; height: 100%;
-        }
-
-        #gallery-container { width: 100%; }
-        
-        .photo_gallery { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 6px; 
-            width: 100%; 
-        }
-
-        .photo_gallery.masonry-mode { display: block; column-gap: 6px; width: 100%; column-count: 3; }
-        
-        @media (max-width: 768px) { 
-            .photo_gallery { grid-template-columns: repeat(2, 1fr); } 
-            .photo_gallery.masonry-mode { column-count: 2; }
-        }
-
-        .gallery-item { 
-            position: relative; background: #fff; border-radius: 6px; 
-            overflow: hidden; aspect-ratio: 1/1; border: 1px solid #ddd; width: 100%; 
-        }
-
-        .gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
-
-        .masonry-mode .gallery-item { 
-            display: inline-block; width: 100%; aspect-ratio: auto; 
-            margin-bottom: 6px; vertical-align: top; 
-        }
-        .masonry-mode .gallery-item img { height: auto; object-fit: contain; }
-
-        .sentry-layer { position: absolute; inset: 0; z-index: 20; background: transparent; }
-        .gallery-item.active .sentry-layer { z-index: -1; }
-
-        .pan-overlay { 
-            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; 
-            background: rgba(0,0,0,0.25); color: rgba(255, 255, 255, 0.4); 
-            font-size: 50px; opacity: 0; transition: 0.2s; cursor: move; z-index: 5; 
-        }
-        .gallery-item.active .pan-overlay { opacity: 1; }
-        .masonry-mode .pan-overlay { display: none !important; }
-
-        .item-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; opacity: 0; z-index: 10; transition: 0.2s; }
-        .gallery-item.active .item-actions { opacity: 1; }
-        
-        .action-btn { width: 36px; height: 36px; background: rgba(0,0,0,0.8); color: white; border: none; border-radius: 5px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        
-        /* Dragula requires specific touch-action handling */
-        .drag-handle { background: #877267; cursor: grab; touch-action: none !important; }
-
-        /* Dragula Mirror: The "Ghost" following your finger */
-        .gu-mirror {
-            position: fixed !important;
-            margin: 0 !important;
-            z-index: 9999 !important;
-            opacity: 0.8;
-            scale: 1.05;
-            pointer-events: none;
-        }
-
-        .choice-menu { position: absolute; inset: 0; background: rgba(255,255,255,0.98); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; z-index: 100; opacity: 0; pointer-events: none; }
-        .gallery-item.menu-open .choice-menu { opacity: 1; pointer-events: auto; }
-        .choice-btn { width: 80%; padding: 12px; border: none; background: #3498db; color: white; border-radius: 6px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
-
-        .gallery-empty-slot { border: 2px dashed #bbb; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #eee; }
-        .gallery-empty-slot::before { content: '+'; font-size: 50px; color: #aaa; }
-    </style>
 </head>
 <body>
     <div id="gallery-container"></div>
+
 <script>
     let drake = null;
     let currentTargetSlot = null;
     let isPanning = false, activeImg;
     let startX, startY, startPosX, startPosY; 
+
+    // Helper to send height updates to parent
+    const notifyParentHeight = () => {
+        const h = document.body.scrollHeight;
+        window.parent.postMessage({ type: 'galleryHeight', height: h }, '*');
+    };
 
     window.toggleMode = function() { 
         const g = document.querySelector('.photo_gallery');
@@ -108,16 +35,16 @@
     function initGallery() {
         const container = document.getElementById('gallery-container');
         if (container.querySelector('.photo_gallery')) return;
+        
         const gallery = document.createElement('div');
         gallery.className = 'photo_gallery';
         gallery.appendChild(createNewSlot());
         container.appendChild(gallery);
-        setupInputs();
         
-        // Initialize Dragula logic
+        setupInputs();
         setupDragula(gallery);
 
-        // Pan Logic (Unchanged)
+        // Pan Logic
         const onMove = (e) => {
             if (!isPanning || !activeImg) return;
             if (e.cancelable) e.preventDefault();
@@ -127,30 +54,20 @@
             activeImg.style.objectPosition = `${Math.max(0, Math.min(100, startPosX + deltaX))}% ${Math.max(0, Math.min(100, startPosY + deltaY))}%`;
         };
         const onEnd = () => { isPanning = false; activeImg = null; };
+
         window.addEventListener('mousemove', onMove, { passive: false });
         window.addEventListener('touchmove', onMove, { passive: false });
         window.addEventListener('mouseup', onEnd);
         window.addEventListener('touchend', onEnd);
     }
 
-    // Function to handle Dragula Initialization
     function setupDragula(targetContainer) {
         if (drake) drake.destroy();
         
         drake = dragula([targetContainer], {
-            moves: function (el, source, handle) {
-                // Only allow dragging if the user clicks the .drag-handle
-                return handle.classList.contains('drag-handle') || handle.closest('.drag-handle');
-            },
-            accepts: function (el, target, source, sibling) {
-                // Never allow dropping after the "Plus" slot
-                if (sibling && sibling.classList.contains('gallery-empty-slot')) return false;
-                return true;
-            },
-            invalid: function (el, handle) {
-                // Never allow dragging the "Plus" slot itself
-                return el.classList.contains('gallery-empty-slot');
-            }
+            moves: (el, source, handle) => handle.classList.contains('drag-handle') || handle.closest('.drag-handle'),
+            accepts: (el, target, source, sibling) => !sibling?.classList.contains('gallery-empty-slot'),
+            invalid: (el) => el.classList.contains('gallery-empty-slot')
         });
 
         drake.on('drag', () => {
@@ -161,8 +78,7 @@
         drake.on('dragend', () => {
             document.body.classList.remove('sorting-active');
             window.parent.postMessage({ type: 'dragEnd' }, '*');
-            const h = document.body.scrollHeight;
-            window.parent.postMessage({ type: 'galleryHeight', height: h }, '*');
+            notifyParentHeight();
         });
     }
 
@@ -201,7 +117,7 @@
                 input.accept = "image/*";
             } else if (id === 'input-gallery') {
                 input.accept = "image/*";
-            } else if (id === 'input-files') {
+            } else {
                 input.accept = "*/*"; 
             }
             input.onchange = (e) => handleFiles(e.target.files);
@@ -266,14 +182,14 @@
 
     function replaceImg(e, btn) { e.stopPropagation(); closeAllUI(); currentTargetSlot = btn.closest('.gallery-item'); currentTargetSlot.classList.add('menu-open'); }
     function deleteImg(e, btn) { e.stopPropagation(); btn.closest('.gallery-item').remove(); }
-    window.closeAllUI = function() { document.querySelectorAll('.gallery-item').forEach(i => i.classList.remove('menu-open', 'active')); };
+    
+    window.closeAllUI = function() { 
+        document.querySelectorAll('.gallery-item').forEach(i => i.classList.remove('menu-open', 'active')); 
+    };
     
     window.onload = initGallery;
 
-    const resizeObserver = new ResizeObserver(() => {
-        const h = document.body.scrollHeight;
-        window.parent.postMessage({ type: 'galleryHeight', height: h }, '*');
-    });
+    const resizeObserver = new ResizeObserver(notifyParentHeight);
     resizeObserver.observe(document.body);
 
     window.loadSavedImages = function(config) {
@@ -296,17 +212,12 @@
             fillSlot(div, src, filename);
             const img = div.querySelector('img');
             if (img) img.style.objectPosition = pos;
-            
             galleryEl.appendChild(div);
         });
         
         galleryEl.appendChild(createNewSlot());
-        
-        // Re-initialize Dragula for the loaded content
         setupDragula(galleryEl);
-
-        const h = document.body.scrollHeight;
-        window.parent.postMessage({ type: 'galleryHeight', height: h }, '*');
+        notifyParentHeight();
     };
 </script>
 </body>
