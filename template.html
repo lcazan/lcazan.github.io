@@ -39,7 +39,7 @@
     </div>
 </nav>
 
-<div class="content-container">
+<div class="content-container" id="editor-root">
     </div>
 
 <footer>
@@ -55,7 +55,6 @@
 </footer>
 
 <script>
-    // Logic remains in JS but controls elements sized by REM in CSS
     function toggleNav(e) {
         if(e) e.stopPropagation();
         const nav = document.getElementById('nav-sidebar');
@@ -66,7 +65,6 @@
         
         document.getElementById('navOverlay').style.display = isOpen ? 'block' : 'none';
         
-        // Locking the body scroll for a better mobile experience
         document.body.style.overflow = isOpen ? 'hidden' : 'auto';
     }
 
