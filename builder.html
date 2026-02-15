@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v5.2.0 Fix</title>
+    <title>Snoozing Builder | v5.2.5 Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="editor.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -116,7 +116,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v5.2.0</div>
+        <div class="version-status">v5.2.5</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -132,39 +132,45 @@
 <div id="settings-overlay" onclick="if(event.target===this) toggleSettings()">
     <div class="settings-modal">
         <div class="settings-header">
-            <h3>Project Settings</h3>
-            <span class="close-settings" onclick="toggleSettings()">&times;</span>
+            <h3 style="margin:0;">Project Settings</h3>
+            <span style="cursor:pointer; font-size:24px;" onclick="toggleSettings()">&times;</span>
         </div>
         
         <div class="settings-body">
-            <div class="settings-section-label">Identity</div>
-            <div class="settings-row">
-                <div class="settings-form-group">
-                    <label>Page Title</label>
-                    <input type="text" id="set-page-title" placeholder="My Awesome Site">
-                </div>
-                <div class="settings-form-group">
-                    <label>Global Favicon</label>
-                    <input type="file" id="favicon-upload" accept="image/x-icon,image/png">
-                </div>
+            <div class="settings-form-group">
+                <label>Page Title (Browser Tab)</label>
+                <input type="text" id="set-page-title" placeholder="My Snoozing Baby">
             </div>
 
-            <div class="settings-section-label">SEO & Analytics</div>
-            <div class="settings-row">
-                <div class="settings-form-group">
-                    <label>Meta Description</label>
-                    <input type="text" id="set-meta-desc" placeholder="Brief site description...">
-                </div>
-                <div class="settings-form-group">
-                    <label>Header Code</label>
-                    <input type="text" id="set-head-code" placeholder="<script>...</script>">
-                </div>
+            <div class="settings-form-group">
+                <label>Page Name (URL Slug)</label>
+                <input type="text" id="set-page-name" placeholder="snoo-rental">
             </div>
-        </div> <div class="settings-footer">
-            <button class="save-settings-btn" onclick="toggleSettings()">Apply Changes</button>
+
+            <div class="settings-form-group">
+                <label>Meta Description</label>
+                <textarea id="set-meta-desc"></textarea>
+            </div>
+
+            <div class="settings-form-group">
+                <label>Header Scripts</label>
+                <textarea id="set-head-code"></textarea>
+            </div>
+
+            <div class="settings-form-group">
+                <label>Global Favicon</label>
+                <input type="file" id="favicon-upload" accept="image/x-icon,image/png">
+            </div>
+        </div> 
+
+        <div class="settings-footer">
+            <button class="save-settings-btn" onclick="toggleSettings()">Save Changes</button>
         </div>
     </div>
 </div>
+
+
+
 
 <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
 
@@ -395,46 +401,42 @@ window.addEventListener('message', (event) => {
     const renderArea = container.querySelector('.html-render-area');
     const iframeDoc = textarea.ownerDocument; 
 
-    // 1. START THE SECURITY GUARD (Mutation Observer)
-    // This watches the entire document for any new code being injected
+    // 1. THE SECURITY GUARD: Tag everything injected with 'dudu'
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             mutation.addedNodes.forEach((node) => {
-                if (node.nodeType === 1) { // If it's an element (div, script, style)
+                if (node.nodeType === 1) { // Element node
                     node.setAttribute('data-origin', 'dudu');
-                    // Also tag every child inside that element
+                    // Tag all nested children of the new element
                     node.querySelectorAll('*').forEach(child => child.setAttribute('data-origin', 'dudu'));
                 }
             });
         });
     });
 
-    // Watch the Head and the Body for injections
+    // Watch both head and body for any widget "explosions"
     observer.observe(iframeDoc.head, { childList: true });
     observer.observe(iframeDoc.body, { childList: true, subtree: true });
 
-    // 2. RENDER THE USER'S CODE
+    // 2. RENDER THE CODE
     renderArea.innerHTML = textarea.value;
 
-    // 3. EXECUTE SCRIPTS (Standard procedure)
+    // 3. EXECUTE SCRIPTS & TAG THEM
     const scripts = renderArea.querySelectorAll("script");
     scripts.forEach(oldScript => {
         const newScript = iframeDoc.createElement("script");
         Array.from(oldScript.attributes).forEach(attr => {
             newScript.setAttribute(attr.name, attr.value);
         });
-        // Tag the script itself as 'dudu'
-        newScript.setAttribute('data-origin', 'dudu');
+        newScript.setAttribute('data-origin', 'dudu'); // Tag the script itself
         newScript.appendChild(iframeDoc.createTextNode(oldScript.innerHTML));
         iframeDoc.body.appendChild(newScript);
         oldScript.remove();
     });
 
-    // 4. STOP WATCHING after 5 seconds
-    // This gives the widget enough time to "explode" its code onto the page
+    // Keep guard active for 5 seconds to catch delayed widget loads
     setTimeout(() => observer.disconnect(), 5000);
 };
-
 
 
     function setDevice(type) {
@@ -549,6 +551,10 @@ window.addEventListener('message', (event) => {
 // --- THE MASTER SAVE FUNCTION ---
 // --- THE MASTER SAVE FUNCTION ---
 // --- THE MASTER SAVE FUNCTION ---
+
+
+
+
 async function masterSave() {
     const iframeDoc = frame.contentDocument;
     const editorRoot = iframeDoc.getElementById('editor-root');
@@ -557,6 +563,8 @@ async function masterSave() {
     // 1. SETTINGS & FAVICON
     const projectSettings = {
         title: document.getElementById('set-page-title')?.value || "",
+        // MODIFIED: Pulls from Page Name field to drive filename and menu bolding
+        pageID: document.getElementById('set-page-name')?.value.toLowerCase().replace(/\s+/g, '-') || "index",
         metaDesc: document.getElementById('set-meta-desc')?.value || "",
         headCode: document.getElementById('set-head-code')?.value || "",
         faviconName: ""
@@ -649,10 +657,12 @@ async function masterSave() {
     const head = clone.querySelector('head');
     const body = clone.querySelector('body');
 
-    // Clean Body
+    // Clean Body & STAMP PAGE ID
     if (body) {
         body.removeAttribute('class');
         body.removeAttribute('style');
+        // MODIFIED: Uses pageID for auto-highlighting logic
+        body.setAttribute('data-page-id', projectSettings.pageID);
     }
 
     // Apply Settings
@@ -671,7 +681,7 @@ async function masterSave() {
         Array.from(tmp.childNodes).forEach(n => head.appendChild(n.cloneNode(true)));
     }
 
-    // GALLERY RECONSTRUCTION (CSS + HTML) - Modified with Lightbox CSS
+    // GALLERY RECONSTRUCTION
     const exportStyles = document.createElement('style');
     exportStyles.textContent = `
     .photo_gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; } 
@@ -680,8 +690,6 @@ async function masterSave() {
     .gallery-item img { display: block; width: 100%; height: 100%; object-fit: cover; cursor: pointer; } 
     .masonry-mode .gallery-item img { height: auto; } 
     @media (max-width: 768px) { .photo_gallery { grid-template-columns: repeat(2, 1fr); } .photo_gallery.masonry-mode { column-count: 2; } }
-    
-    /* Lightbox Styles */
     .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
     .slider-track { display: flex; height: 100%; width: 100%; }
     .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
@@ -695,9 +703,7 @@ async function masterSave() {
     `;
     head.appendChild(exportStyles);
 
-    // Global variable to store all gallery images for the lightbox script
     let allGalleryImages = [];
-
     clone.querySelectorAll('.photo_gallery').forEach((gallery, idx) => {
         const liveG = iframeDoc.querySelectorAll('.photo_gallery')[idx];
         const gIframe = liveG?.querySelector('iframe');
@@ -708,15 +714,9 @@ async function masterSave() {
             let gHtml = `<div class="photo_gallery ${isMasonry ? 'masonry-mode' : ''}">`;
             imgs.forEach((img) => {
                 const fn = img.getAttribute('data-filename') || img.src.split('/').pop();
-                const cleanName = fn; // Filename for the image array
-                const pan = img.style.objectPosition || "50% 50%";
-                
-                // Add to global array
                 const globalIndex = allGalleryImages.length;
-                allGalleryImages.push(cleanName);
-
-                // Add onclick handler
-                gHtml += `<div class="gallery-item"><img src="images/${fn}" style="object-position:${pan};" onclick="openModal(${globalIndex})"></div>`;
+                allGalleryImages.push(fn);
+                gHtml += `<div class="gallery-item"><img src="images/${fn}" style="object-position:${img.style.objectPosition || "50% 50%"};" onclick="openModal(${globalIndex})"></div>`;
             });
             gHtml += '</div>';
             gallery.outerHTML = gHtml;
@@ -730,17 +730,12 @@ async function masterSave() {
         block.replaceWith(div);
     });
 
-    // --- DEEP CLEAN (Remove Elfsight & Dudu crap) ---
-    const garbage = [
-        '.block-controls', '.resizer', '.html-tag', '.html-input-box', 
-        '.resize-handle', '.gallery-sentry', '[data-origin="dudu"]',
-        'script[src*="elfsight"]', '.eapps-widget' // Remove Elfsight scripts/widgets
-    ];
+    // DEEP CLEAN
+    const garbage = ['.block-controls', '.resizer', '.html-tag', '.html-input-box', '.resize-handle', '.gallery-sentry', '[data-origin="dudu"]', 'script[src*="elfsight"]', '.eapps-widget'];
     clone.querySelectorAll(garbage.join(',')).forEach(el => el.remove());
-
     clone.querySelectorAll('*').forEach(el => {
         el.removeAttribute('contenteditable');
-        el.removeAttribute('data-origin'); // Remove any leftover origin tags
+        el.removeAttribute('data-origin');
         el.classList.remove('editable', 'selected-item', 'editable-active');
     });
 
@@ -751,35 +746,45 @@ async function masterSave() {
         }
     });
 
-    // PREPARE LIGHTBOX HTML & JS
-    // We convert the allGalleryImages array into a JS string array
+    // SCRIPTS (LIGHTBOX + MENU BOLDING)
     const jsGalleryArray = JSON.stringify(allGalleryImages.map(name => `images/${name}`));
+    const lightboxHTML = `<div id="imageModal" class="modal"><div class="counter" id="modalCounter">1 / 0</div><span class="close-modal" onclick="closeModal()">&times;</span><div id="sliderTrack" class="slider-track"></div></div>`;
+    
+    // Auto-Highlight Script added to script bundle
+    const autoHighlightScript = `
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const pageID = document.body.getAttribute('data-page-id');
+        if (!pageID) return;
+        document.querySelectorAll('.nav-content a').forEach(link => {
+            const href = link.getAttribute('href') || "";
+            if (href.toLowerCase().includes(pageID.toLowerCase()) && !link.classList.contains('dropdown-btn')) {
+                link.classList.add('current-page-bold');
+                const parentSubNav = link.closest('.sub-nav');
+                if (parentSubNav) {
+                    parentSubNav.classList.add('show'); parentSubNav.classList.add('active');
+                    const icon = parentSubNav.previousElementSibling.querySelector('i');
+                    if (icon) icon.style.transform = 'rotate(180deg)';
+                }
+            }
+        });
+    });
+    <\/script>`;
 
-    const lightboxHTML = `
-    <div id="imageModal" class="modal">
-        <div class="counter" id="modalCounter">1 / 0</div>
-        <span class="close-modal" onclick="closeModal()">&times;</span>
-        <div id="sliderTrack" class="slider-track"></div>
-    </div>
-    `;
-
-    // --- FIX: Escaped the closing script tag to prevent breaking builder.html ---
     const lightboxScript = `
     <script>
     const galleryItems = ${jsGalleryArray}; 
     let currentIndex = 0, startX = 0, prevTranslate = 0, isDragging = false;
     const VELOCITY = 2500;
-
     function renderLightboxSlides() {
         const track = document.getElementById('sliderTrack');
-        track.innerHTML = ''; // Clear existing
+        track.innerHTML = '';
         galleryItems.forEach((src, index) => {
             const slide = document.createElement('div'); slide.className = 'slide'; 
             slide.innerHTML = '<div class="image-wrapper" data-index="' + index + '"><div class="loader"></div><img data-src="' + src + '"></div>';
             track.appendChild(slide);
         });
     }
-
     function loadImage(index) {
         const slide = document.querySelector('.image-wrapper[data-index="' + index + '"]');
         if (!slide) return;
@@ -789,9 +794,7 @@ async function masterSave() {
             img.onload = () => { img.classList.add('loaded'); if (loader) loader.style.display = 'none'; };
         }
     }
-
     function updateTrackPos(animate) {
-        if (animate === undefined) animate = false;
         const track = document.getElementById('sliderTrack');
         const width = document.getElementById('imageModal').offsetWidth;
         const currentTranslate = currentIndex * -width;
@@ -800,33 +803,21 @@ async function masterSave() {
         track.style.transform = 'translateX(' + currentTranslate + 'px)';
         document.getElementById('modalCounter').innerText = (currentIndex + 1) + ' / ' + galleryItems.length;
     }
-
     function openModal(index) {
-        if (!document.getElementById('sliderTrack').hasChildNodes()) {
-             renderLightboxSlides();
-        }
+        if (!document.getElementById('sliderTrack').hasChildNodes()) renderLightboxSlides();
         currentIndex = index;
         document.getElementById('imageModal').style.display = "block";
         updateTrackPos(false);
         document.body.style.overflow = "hidden";
         loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
     }
-
     function moveSlide(step) {
         currentIndex = Math.max(0, Math.min(currentIndex + step, galleryItems.length - 1));
         updateTrackPos(true);
         loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
     }
-
-    function closeModal() { 
-        document.getElementById('imageModal').style.display = "none";
-        document.body.style.overflow = "auto"; 
-    }
-
-    window.addEventListener('resize', () => {
-        if (document.getElementById('imageModal').style.display === "block") updateTrackPos(false);
-    });
-
+    function closeModal() { document.getElementById('imageModal').style.display = "none"; document.body.style.overflow = "auto"; }
+    window.addEventListener('resize', () => { if (document.getElementById('imageModal').style.display === "block") updateTrackPos(false); });
     const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
     modal.addEventListener('touchstart', e => { isDragging = true; startX = e.touches[0].clientX; track.style.transition = 'none'; });
     modal.addEventListener('touchmove', e => { if (!isDragging) return; track.style.transform = 'translateX(' + (prevTranslate + (e.touches[0].clientX - startX)) + 'px)'; });
@@ -837,13 +828,21 @@ async function masterSave() {
     <\/script>
     `;
 
-    zip.file("index.html", '<!DOCTYPE html>\n<html lang="en">\n' + clone.innerHTML + lightboxHTML + lightboxScript + '\n</html>');
+    // FINAL EXPORT
+    // MODIFIED: Filename is now based on pageID (e.g., snoo-rental.html)
+    zip.file(`${projectSettings.pageID}.html`, '<!DOCTYPE html>\n<html lang="en">\n' + clone.innerHTML + lightboxHTML + lightboxScript + autoHighlightScript + '\n</html>');
     const content = await zip.generateAsync({type: "blob"});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(content);
     a.download = "Final_Export.zip";
     a.click();
 }
+
+
+
+
+
+
 
 
 

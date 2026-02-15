@@ -8,6 +8,23 @@
 
 html { font-size: 16px; }
 
+/* --- ACTIVE PAGE HIGHLIGHTING --- */
+/* Make the selected link bold and apply brand color */
+.nav-content a.current-page-bold { 
+    font-weight: bold !important; 
+    color: var(--icon-brown) !important;
+}
+
+/* Force the sub-menu to stay open if it contains the active page */
+.sub-nav.active { 
+    display: block !important; 
+}
+
+/* Optional: Smooth arrow rotation for opened folders */
+.dropdown-btn i { 
+    transition: transform 0.3s ease; 
+}
+
 body { 
     font-family: 'Source Sans Pro', sans-serif; 
     margin: 0; padding: 0;
@@ -45,7 +62,7 @@ body {
 .div-other-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 1.2em; }
 .block_spacer { height: 1.5rem !important; width: 100%; }
 
-/* --- EXPORTED GALLERY ONLY (Live Site) --- */
+/* --- EXPORTED GALLERY & LIGHTBOX (Live Site) --- */
 .photo-gallery { 
     display: grid; 
     grid-template-columns: repeat(3, 1fr); 
@@ -75,10 +92,22 @@ body {
 }
 
 .photo-gallery-item img { 
-    width: 100%; height: 100%; object-fit: cover; display: block; 
+    width: 100%; height: 100%; object-fit: cover; display: block; cursor: pointer;
 }
 
 .photo-gallery.masonry-mode .photo-gallery-item img { height: auto; }
+
+/* Lightbox Modal Structure */
+.modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
+.slider-track { display: flex; height: 100%; width: 100%; transition: transform 0.4s ease-out; }
+.slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
+.image-wrapper { position: relative; width: 90%; height: 70vh; display: flex; align-items: center; justify-content: center; }
+.slide img { max-width: 100%; max-height: 100%; border: 2px solid #fff; object-fit: contain; opacity: 0; transition: opacity 0.3s ease; }
+.slide img.loaded { opacity: 1; }
+.counter { position: fixed; top: 25px; left: 25px; color: #fff; font-size: 22px; z-index: 10005; font-weight: 600; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+.close-modal { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 40px; cursor: pointer; z-index: 10005; }
+.loader { width: 30px; height: 30px; border: 3px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 1s infinite linear; position: absolute; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* Typography */
 h2, h3, p { display: block; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
@@ -100,88 +129,92 @@ h3 { font-weight: 400; }
     line-height: 1.8; letter-spacing: 0.1rem; margin: 0.625rem auto 1.875rem; text-align: center; 
 }
 
-/* --- Header & Navigation (TRANSFERRED FROM STYLES.CSS) --- */
+/* --- Header & Navigation --- */
 header { 
     display: flex; align-items: center; justify-content: center; 
-    padding: 0.9375rem 0.625rem; /* 15px 10px */
+    padding: 0.9375rem 0.625rem; 
     background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); 
     position: sticky; top: 0; z-index: 8000; 
     border-bottom: 1px solid rgba(0,0,0,0.05); 
-    min-height: 3.75rem;       /* 60px */
-    flex-shrink: 0;           /* Prevents header from being compressed */
+    min-height: 3.75rem;       
+    flex-shrink: 0;           
 }
 
 .logo { 
     font-family: 'Cinzel', serif; 
     font-size: 1.35rem;            
     font-weight: 550;              
-    letter-spacing: 0.05046rem;        /* Increased to match the wider Live look */
+    letter-spacing: 0.05046rem;        
     border: 1px solid var(--text-dark); 
-    padding: 0.266rem 1.012rem;       /* INCREASED: This gives it the 'Live' size */
+    padding: 0.266rem 1.012rem;       
     display: inline-block; 
     white-space: nowrap; 
     user-select: none; 
 }
 
 .header-menu-icon { 
-    position: absolute; top: 50%; left: 1.25rem; /* 20px */
+    position: absolute; top: 50%; left: 1.25rem; 
     transform: translateY(-50%); z-index: 8001; 
-    padding: 0.3125rem;       /* 5px */
+    padding: 0.3125rem;       
     cursor: pointer; 
 }
 .menu-lines div { 
-    width: 1.1875rem;          /* 19px */
-    height: 2px;             /* Kept px for line thinness */
+    width: 1.1875rem;          
+    height: 2px;             
     background-color: var(--icon-brown); 
-    margin: 0.3125rem 0;       /* 5px */
-    transition: 0.2s; 
+    margin: 0.3125rem 0;       
+    transition: 0.2s; /* Instant morphing speed */
 }
 
-.active .line1 { transform: rotate(-45deg) translate(-0.28125rem, 0.3125rem); } /* -4.5px, 5px */
+/* The Hamburger to X Transformation */
+.active .line1 { transform: rotate(-45deg) translate(-0.28125rem, 0.3125rem); } 
 .active .line2 { opacity: 0; }
-.active .line3 { transform: rotate(45deg) translate(-0.28125rem, -0.34375rem); } /* -4.5px, -5.5px */
+.active .line3 { transform: rotate(45deg) translate(-0.28125rem, -0.34375rem); } 
 
-/* --- Sidebar Navigation (TRANSFERRED FROM STYLES.CSS) --- */
+/* --- Sidebar Navigation --- */
 nav#nav-sidebar { 
     position: fixed; top: 0; 
-    left: -21.25rem;           /* -340px */
-    width: 20rem;              /* 320px */
+    left: -21.25rem;           
+    width: 20rem;              
     height: 100%; 
-    background: var(--brand-cream); transition: left 0.2s ease-in-out; z-index: 9000; 
+    background: var(--brand-cream); 
+    transition: left 0.2s ease-in-out; /* Speed requested */
+    z-index: 9000; 
     box-shadow: 4px 0 15px rgba(0,0,0,0.1); 
     display: flex; flex-direction: column; overflow-y: auto; 
 }
 nav#nav-sidebar.open { left: 0; }
 
 .sidebar-close-icon { 
-    position: absolute; top: 1.5625rem; left: 1.25rem; /* 25px 20px */
-    padding: 0.3125rem;       /* 5px */
+    position: absolute; top: 1.5625rem; left: 1.25rem; 
+    padding: 0.3125rem;       
     display: none; z-index: 9001; cursor: pointer; 
 }
 nav#nav-sidebar.open .sidebar-close-icon { display: block; }
 
-.nav-content { padding-top: 6.25rem; padding-bottom: 3.125rem; } /* 100px 50px */
+.nav-content { padding-top: 6.25rem; padding-bottom: 3.125rem; } 
 
 nav#nav-sidebar a { 
-    display: block; padding: 0.9375rem 1.875rem; /* 15px 30px */
+    display: block; padding: 0.9375rem 1.875rem; 
     text-decoration: none; color: var(--text-dark); 
-    font-weight: 400; font-size: 1.125rem; /* 18px */
-    text-transform: uppercase; letter-spacing: 0.0625rem; /* 1px */
+    font-weight: 400; font-size: 1.125rem; 
+    text-transform: uppercase; letter-spacing: 0.0625rem; 
     white-space: nowrap; 
 }
 
-/* --- SUBMENU TOGGLE LOGIC (Corrected) --- */
+/* --- SUBMENU TOGGLE LOGIC --- */
 .sub-nav {
-    display: none; /* Hidden by default */
+    display: none; 
+    transition: 0.2s; /* Speed requested */
 }
 
 .sub-nav.show {
-    display: block !important; /* Instant open when class added */
+    display: block !important; 
 }
 
 .sub-nav a {
-    padding-left: 3.125rem !important; /* 50px */
-    font-size: 1rem !important; /* 16px */
+    padding-left: 3.125rem !important; 
+    font-size: 1rem !important; 
 }
 
 /* --- Footer --- */
