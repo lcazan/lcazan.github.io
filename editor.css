@@ -7,7 +7,7 @@
 
 /* Add this to the CSS that controls the iframe content */
 .block_multi_image:empty {
-    outline: 2px dashed #666;
+    outline: none;
     outline-offset: -4px;
     background: rgba(255, 255, 255, 0.03);
     position: relative;
@@ -20,7 +20,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: #888;
+    color: lightgray;
     font-size: 12px;
     font-family: sans-serif;
     pointer-events: none; /* Allows the click to pass through to the div */
@@ -239,11 +239,11 @@ body.builder-ui-body {
 
 #input-pill {
     position: absolute; top: calc(3rem + 1px); left: 50%; transform: translateX(-50%);
-    width: 85%; max-width: 550px; background: #222; border: 1px solid #444; border-radius: 4px; 
-    display: none; align-items: center; justify-content: center; padding: 0 15px; 
+    width: 85%; max-width: 550px; background: #222; border: 1px solid #444; border-radius: 1px; 
+    display: none; align-items: center;  justify-content: center; padding: 0 15px; text-transform: none;
     box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 1002;
 }
-#pill-editable { color: white; width: 100%; font-size: 0.85rem; outline: none; text-align: center; font-family: 'Courier New', monospace; line-height: 1.2; padding: 4px 0; }
+#pill-editable { color: white; width: 100%; font-size: 0.85rem; outline: none; text-align: center; text-transform: none;  font-family: 'Courier New', monospace; line-height: 1.2; padding: 4px 0; }
 
 #frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; }
 #preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 0; left: 0; }
