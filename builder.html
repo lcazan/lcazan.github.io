@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v5.2.7 Fix</title>
+    <title>Snoozing Builder | v5.2.9 Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="editor.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -116,7 +116,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v5.2.7</div>
+        <div class="version-status">v5.2.9</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -331,16 +331,23 @@ window.addEventListener('message', (event) => {
 }
 
 function applyAndClosePill() {
-    // 1. Force a sync to ensure the text/link is written to the HTML
-    syncRealTime();
+    const editable = document.getElementById('pill-editable');
+    const btnLink = selectedEl ? selectedEl.querySelector('a') : null;
+
+    if (btnLink && activePillMode) {
+        if (activePillMode === 'text') {
+            btnLink.innerText = editable.innerText;
+        } else if (activePillMode === 'link') {
+            btnLink.setAttribute('href', editable.innerText);
+        }
+    }
     
-    // 2. Hide the input pill to show it's "Done"
+    // Hide UI
     document.getElementById('input-pill').style.display = 'none';
     activePillMode = null;
-    
-    // 3. (Optional) Visual confirmation in console
-    console.log("Button changes applied to iframe HTML.");
+    console.log("Applied and Synced.");
 }
+
 
 
         function insertElement(type, data) {
@@ -569,11 +576,21 @@ function applyAndClosePill() {
     function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function callGalleryToggle() { const iframe = selectedEl.querySelector('iframe'); if (iframe && iframe.contentWindow.toggleMode) iframe.contentWindow.toggleMode(); setTimeout(renderToolbar, 50); }
+
+
+
+
     
  // --- THE MASTER SAVE FUNCTION ---
 // --- THE MASTER SAVE FUNCTION ---
 // --- THE MASTER SAVE FUNCTION ---
 // --- THE MASTER SAVE FUNCTION ---
+
+
+
+
+
+
 
 
 
@@ -586,7 +603,6 @@ async function masterSave() {
     // 1. SETTINGS & FAVICON
     const projectSettings = {
         title: document.getElementById('set-page-title')?.value || "",
-        // MODIFIED: Pulls from Page Name field to drive filename and menu bolding
         pageID: document.getElementById('set-page-name')?.value.toLowerCase().replace(/\s+/g, '-') || "index",
         metaDesc: document.getElementById('set-meta-desc')?.value || "",
         headCode: document.getElementById('set-head-code')?.value || "",
@@ -680,11 +696,9 @@ async function masterSave() {
     const head = clone.querySelector('head');
     const body = clone.querySelector('body');
 
-    // Clean Body & STAMP PAGE ID
     if (body) {
         body.removeAttribute('class');
         body.removeAttribute('style');
-        // MODIFIED: Uses pageID for auto-highlighting logic
         body.setAttribute('data-page-id', projectSettings.pageID);
     }
 
@@ -753,13 +767,24 @@ async function masterSave() {
         block.replaceWith(div);
     });
 
-    // DEEP CLEAN
-    const garbage = ['.block-controls', '.resizer', '.html-tag', '.html-input-box', '.resize-handle', '.gallery-sentry', '[data-origin="dudu"]', 'script[src*="elfsight"]', '.eapps-widget'];
+    // DEEP CLEAN (Builder UI removal)
+    const garbage = ['.block-controls', '.resizer', '.html-tag', '.html-input-box', '.resize-handle', '.gallery-sentry', '[data-origin="dudu"]'];
     clone.querySelectorAll(garbage.join(',')).forEach(el => el.remove());
+    
     clone.querySelectorAll('*').forEach(el => {
         el.removeAttribute('contenteditable');
         el.removeAttribute('data-origin');
         el.classList.remove('editable', 'selected-item', 'editable-active');
+        
+        // RE-ENABLE BUTTONS & LINKS (The Fix for clickable buttons)
+        if ((el.tagName === 'A' || el.tagName === 'BUTTON')) {
+            const onClickVal = el.getAttribute('onclick');
+            // Check if it includes "return false" loosely
+            if (onClickVal && onClickVal.includes('return false')) {
+                el.removeAttribute('onclick');
+            }
+            el.removeAttribute('disabled'); 
+        }
     });
 
     clone.querySelectorAll('img').forEach(img => {
@@ -769,11 +794,11 @@ async function masterSave() {
         }
     });
 
-    // SCRIPTS (LIGHTBOX + MENU BOLDING)
+    // SCRIPTS (LIGHTBOX + SIMPLE BOLDING)
     const jsGalleryArray = JSON.stringify(allGalleryImages.map(name => `images/${name}`));
     const lightboxHTML = `<div id="imageModal" class="modal"><div class="counter" id="modalCounter">1 / 0</div><span class="close-modal" onclick="closeModal()">&times;</span><div id="sliderTrack" class="slider-track"></div></div>`;
     
-    // Auto-Highlight Script added to script bundle
+    // UPDATED SCRIPT: Only bolds text. DOES NOT expand menu.
     const autoHighlightScript = `
     <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -783,12 +808,6 @@ async function masterSave() {
             const href = link.getAttribute('href') || "";
             if (href.toLowerCase().includes(pageID.toLowerCase()) && !link.classList.contains('dropdown-btn')) {
                 link.classList.add('current-page-bold');
-                const parentSubNav = link.closest('.sub-nav');
-                if (parentSubNav) {
-                    parentSubNav.classList.add('show'); parentSubNav.classList.add('active');
-                    const icon = parentSubNav.previousElementSibling.querySelector('i');
-                    if (icon) icon.style.transform = 'rotate(180deg)';
-                }
             }
         });
     });
@@ -801,6 +820,7 @@ async function masterSave() {
     const VELOCITY = 2500;
     function renderLightboxSlides() {
         const track = document.getElementById('sliderTrack');
+        if (!track) return;
         track.innerHTML = '';
         galleryItems.forEach((src, index) => {
             const slide = document.createElement('div'); slide.className = 'slide'; 
@@ -819,7 +839,9 @@ async function masterSave() {
     }
     function updateTrackPos(animate) {
         const track = document.getElementById('sliderTrack');
-        const width = document.getElementById('imageModal').offsetWidth;
+        const modal = document.getElementById('imageModal');
+        if (!track || !modal) return;
+        const width = modal.offsetWidth;
         const currentTranslate = currentIndex * -width;
         prevTranslate = currentTranslate;
         track.style.transition = animate ? 'transform ' + (width / VELOCITY) + 's ease-out' : 'none';
@@ -840,19 +862,22 @@ async function masterSave() {
         loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
     }
     function closeModal() { document.getElementById('imageModal').style.display = "none"; document.body.style.overflow = "auto"; }
-    window.addEventListener('resize', () => { if (document.getElementById('imageModal').style.display === "block") updateTrackPos(false); });
-    const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
-    modal.addEventListener('touchstart', e => { isDragging = true; startX = e.touches[0].clientX; track.style.transition = 'none'; });
-    modal.addEventListener('touchmove', e => { if (!isDragging) return; track.style.transform = 'translateX(' + (prevTranslate + (e.touches[0].clientX - startX)) + 'px)'; });
-    modal.addEventListener('touchend', e => { 
-        isDragging = false; const diff = e.changedTouches[0].clientX - startX;
-        if (diff < -50) moveSlide(1); else if (diff > 50) moveSlide(-1); else moveSlide(0);
+    window.addEventListener('resize', () => { if (document.getElementById('imageModal')?.style.display === "block") updateTrackPos(false); });
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
+        if (!modal || !track) return;
+        modal.addEventListener('touchstart', e => { isDragging = true; startX = e.touches[0].clientX; track.style.transition = 'none'; });
+        modal.addEventListener('touchmove', e => { if (!isDragging) return; track.style.transform = 'translateX(' + (prevTranslate + (e.touches[0].clientX - startX)) + 'px)'; });
+        modal.addEventListener('touchend', e => { 
+            isDragging = false; const diff = e.changedTouches[0].clientX - startX;
+            if (diff < -50) moveSlide(1); else if (diff > 50) moveSlide(-1); else moveSlide(0);
+        });
     });
     <\/script>
     `;
 
     // FINAL EXPORT
-    // MODIFIED: Filename is now based on pageID (e.g., snoo-rental.html)
     zip.file(`${projectSettings.pageID}.html`, '<!DOCTYPE html>\n<html lang="en">\n' + clone.innerHTML + lightboxHTML + lightboxScript + autoHighlightScript + '\n</html>');
     const content = await zip.generateAsync({type: "blob"});
     const a = document.createElement('a');
@@ -860,8 +885,6 @@ async function masterSave() {
     a.download = "Final_Export.zip";
     a.click();
 }
-
-
 
 
 
