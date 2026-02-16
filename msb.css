@@ -8,21 +8,32 @@
 
 html { font-size: 16px; }
 
+/* 1. CARET ROTATION SYSTEM */
+/* Make the icon capable of rotating and ensure it animates smoothly */
+.dropdown-btn i {
+    display: inline-block !important; /* Required for transform to work */
+    transition: transform 0.3s ease !important; /* Smooth animation */
+    pointer-events: none; /* Prevents the icon from stealing clicks */
+    margin-left: 8px;
+}
+
+/* 2. Rotate the icon when the parent button is 'active' (user click) or 'show' (auto-highlight) */
+.dropdown-btn.active i,
+.dropdown-btn.show i {
+    transform: rotate(180deg) !important;
+}
+
 /* --- ACTIVE PAGE HIGHLIGHTING --- */
-/* Make the selected link bold and apply brand color */
-.nav-content a.current-page-bold { 
-    font-weight: bold !important; 
-    color: var(--icon-brown) !important;
+/* High-contrast bold for the current page link */
+.current-page-bold { 
+    font-weight: 900 !important; 
+    color: #000 !important;
 }
 
 /* Force the sub-menu to stay open if it contains the active page */
-.sub-nav.active { 
+.sub-nav.active,
+.sub-nav.show { 
     display: block !important; 
-}
-
-/* Optional: Smooth arrow rotation for opened folders */
-.dropdown-btn i { 
-    transition: transform 0.3s ease; 
 }
 
 body { 
@@ -42,11 +53,9 @@ body {
     max-width: 1200px;
     width: 100%;
     margin: 0 auto;
-    background-color: yellow;
     flex: 1 1 auto;           
     display: flex;
     box-sizing: border-box;
-    border: 4px solid purple;
     padding: 2.5rem clamp(1.25rem, 5vw, 5rem);
 }
 
@@ -62,7 +71,7 @@ body {
 .div-other-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 1.2em; }
 .block_spacer { height: 1.5rem !important; width: 100%; }
 
-/* --- EXPORTED GALLERY & LIGHTBOX (Live Site) --- */
+/* --- EXPORTED GALLERY & LIGHTBOX --- */
 .photo-gallery { 
     display: grid; 
     grid-template-columns: repeat(3, 1fr); 
@@ -97,7 +106,6 @@ body {
 
 .photo-gallery.masonry-mode .photo-gallery-item img { height: auto; }
 
-/* Lightbox Modal Structure */
 .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
 .slider-track { display: flex; height: 100%; width: 100%; transition: transform 0.4s ease-out; }
 .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
@@ -163,10 +171,9 @@ header {
     height: 2px;             
     background-color: var(--icon-brown); 
     margin: 0.3125rem 0;       
-    transition: 0.2s; /* Instant morphing speed */
+    transition: 0.2s;
 }
 
-/* The Hamburger to X Transformation */
 .active .line1 { transform: rotate(-45deg) translate(-0.28125rem, 0.3125rem); } 
 .active .line2 { opacity: 0; }
 .active .line3 { transform: rotate(45deg) translate(-0.28125rem, -0.34375rem); } 
@@ -178,7 +185,7 @@ nav#nav-sidebar {
     width: 20rem;              
     height: 100%; 
     background: var(--brand-cream); 
-    transition: left 0.2s ease-in-out; /* Speed requested */
+    transition: left 0.2s ease-in-out; 
     z-index: 9000; 
     box-shadow: 4px 0 15px rgba(0,0,0,0.1); 
     display: flex; flex-direction: column; overflow-y: auto; 
@@ -205,7 +212,6 @@ nav#nav-sidebar a {
 /* --- SUBMENU TOGGLE LOGIC --- */
 .sub-nav {
     display: none; 
-    transition: 0.2s; /* Speed requested */
 }
 
 .sub-nav.show {

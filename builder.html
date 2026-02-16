@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v5.2.5 Fix</title>
+    <title>Snoozing Builder | v5.2.7 Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="editor.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -116,7 +116,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v5.2.5</div>
+        <div class="version-status">v5.2.7</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -295,37 +295,53 @@ window.addEventListener('message', (event) => {
     }
 
     function renderToolbar() {
-        if (!selectedEl) return;
-        toolbarContent.style.visibility = 'visible';
-        const isGallery = selectedEl.classList.contains('photo_gallery');
-        const isBtn = selectedEl.classList.contains('block_button_container');
-        const isImg = selectedEl.classList.contains('block_image');
-        const isSpacer = selectedEl.classList.contains('block_spacer');
-        const isDiv = selectedEl.classList.contains('block_container');
-        let html = '';
-        
-        if (isGallery) {
-            const innerG = selectedEl.querySelector('iframe')?.contentDocument?.querySelector('.photo_gallery');
-            const isMasonry = innerG ? innerG.classList.contains('masonry-mode') : false;
-            html += `<div class="gallery-toggle-group"><span class="${!isMasonry ? 'active' : ''}">SQUARE</span><label class="switch"><input type="checkbox" ${isMasonry ? 'checked' : ''} onchange="callGalleryToggle()"><span class="slider"></span></label><span class="${isMasonry ? 'active' : ''}">MASONRY</span></div>`;
-        } else if (isDiv) {
-            html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
-        } else if (isBtn) {
-            html += `<button class="tool-btn btn-teal" onclick="openPill('text')">TEXT</button><button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>`;
-        } else if (isImg) {
-            html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button><button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>`;
-        } else if (isSpacer) {
-            html += `<button class="tool-btn" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
-        } else if (selectedEl.contentEditable === "true") {
-            html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
-        }
-        const inDiv = selectedEl.closest('.block_container');
-        if (!inDiv && !isDiv && !isSpacer && !isGallery) {
-            html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
-        }
-        html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
-        toolbarContent.innerHTML = html;
+    if (!selectedEl) return;
+    toolbarContent.style.visibility = 'visible';
+    const isGallery = selectedEl.classList.contains('photo_gallery');
+    const isBtn = selectedEl.classList.contains('block_button_container');
+    const isImg = selectedEl.classList.contains('block_image');
+    const isSpacer = selectedEl.classList.contains('block_spacer');
+    const isDiv = selectedEl.classList.contains('block_container');
+    let html = '';
+    
+    if (isGallery) {
+        const innerG = selectedEl.querySelector('iframe')?.contentDocument?.querySelector('.photo_gallery');
+        const isMasonry = innerG ? innerG.classList.contains('masonry-mode') : false;
+        html += `<div class="gallery-toggle-group"><span class="${!isMasonry ? 'active' : ''}">SQUARE</span><label class="switch"><input type="checkbox" ${isMasonry ? 'checked' : ''} onchange="callGalleryToggle()"><span class="slider"></span></label><span class="${isMasonry ? 'active' : ''}">MASONRY</span></div>`;
+    } else if (isDiv) {
+        html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
+    } else if (isBtn) {
+        // --- UPDATED: Added the APPLY button here ---
+        html += `<button class="tool-btn btn-teal" onclick="openPill('text')">TEXT</button>
+                 <button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>
+                 <button class="tool-btn" style="background:#2ecc71; color:black; font-weight:900; font-size:10px;" onclick="applyAndClosePill()">APPLY</button>`;
+    } else if (isImg) {
+        html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button><button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>`;
+    } else if (isSpacer) {
+        html += `<button class="tool-btn" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
+    } else if (selectedEl.contentEditable === "true") {
+        html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
     }
+    const inDiv = selectedEl.closest('.block_container');
+    if (!inDiv && !isDiv && !isSpacer && !isGallery) {
+        html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
+    }
+    html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
+    toolbarContent.innerHTML = html;
+}
+
+function applyAndClosePill() {
+    // 1. Force a sync to ensure the text/link is written to the HTML
+    syncRealTime();
+    
+    // 2. Hide the input pill to show it's "Done"
+    document.getElementById('input-pill').style.display = 'none';
+    activePillMode = null;
+    
+    // 3. (Optional) Visual confirmation in console
+    console.log("Button changes applied to iframe HTML.");
+}
+
 
         function insertElement(type, data) {
         const doc = frame.contentDocument; const root = doc.getElementById('editor-root');
@@ -450,20 +466,27 @@ window.addEventListener('message', (event) => {
         frame.style.left = (scaleFactor < 1) ? '0px' : ((wrapper.offsetWidth - widths[type]) / 2) + 'px';
     }
 
-    function deselectAll() { 
-        if (selectedEl) {
-            if (selectedEl.classList.contains('photo_gallery')) {
-                const iframe = selectedEl.querySelector('iframe');
-                if (iframe && iframe.contentWindow && iframe.contentWindow.closeAllUI) {
-                    iframe.contentWindow.closeAllUI();
-                }
-            }
-            selectedEl.classList.remove('selected-item');
+    function deselectAll() {
+    if (selectedEl) {
+        // --- NEW: Auto-apply button changes when clicking away ---
+        if (selectedEl.classList.contains('block_button_container')) {
+            applyAndClosePill();
         }
-        selectedEl = null; 
-        toolbarContent.style.visibility = 'hidden'; 
-        document.getElementById('input-pill').style.display = 'none'; activePillMode = null;
+
+        if (selectedEl.classList.contains('photo_gallery')) {
+            const iframe = selectedEl.querySelector('iframe');
+            if (iframe && iframe.contentWindow && iframe.contentWindow.closeAllUI) {
+                iframe.contentWindow.closeAllUI();
+            }
+        }
+        selectedEl.classList.remove('selected-item');
     }
+    selectedEl = null;
+    toolbarContent.style.visibility = 'hidden';
+    document.getElementById('input-pill').style.display = 'none';
+    activePillMode = null;
+}
+
 
     function deleteElement() { 
     if(selectedEl) { 
