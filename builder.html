@@ -331,16 +331,23 @@ window.addEventListener('message', (event) => {
 }
 
 function applyAndClosePill() {
-    // 1. Force a sync to ensure the text/link is written to the HTML
-    syncRealTime();
+    const editable = document.getElementById('pill-editable');
+    const btnLink = selectedEl ? selectedEl.querySelector('a') : null;
+
+    if (btnLink && activePillMode) {
+        if (activePillMode === 'text') {
+            btnLink.innerText = editable.innerText;
+        } else if (activePillMode === 'link') {
+            btnLink.setAttribute('href', editable.innerText);
+        }
+    }
     
-    // 2. Hide the input pill to show it's "Done"
+    // Hide UI
     document.getElementById('input-pill').style.display = 'none';
     activePillMode = null;
-    
-    // 3. (Optional) Visual confirmation in console
-    console.log("Button changes applied to iframe HTML.");
+    console.log("Applied and Synced.");
 }
+
 
 
         function insertElement(type, data) {
@@ -569,6 +576,10 @@ function applyAndClosePill() {
     function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function callGalleryToggle() { const iframe = selectedEl.querySelector('iframe'); if (iframe && iframe.contentWindow.toggleMode) iframe.contentWindow.toggleMode(); setTimeout(renderToolbar, 50); }
+
+
+
+
     
  // --- THE MASTER SAVE FUNCTION ---
 // --- THE MASTER SAVE FUNCTION ---
@@ -586,7 +597,6 @@ async function masterSave() {
     // 1. SETTINGS & FAVICON
     const projectSettings = {
         title: document.getElementById('set-page-title')?.value || "",
-        // MODIFIED: Pulls from Page Name field to drive filename and menu bolding
         pageID: document.getElementById('set-page-name')?.value.toLowerCase().replace(/\s+/g, '-') || "index",
         metaDesc: document.getElementById('set-meta-desc')?.value || "",
         headCode: document.getElementById('set-head-code')?.value || "",
@@ -684,7 +694,6 @@ async function masterSave() {
     if (body) {
         body.removeAttribute('class');
         body.removeAttribute('style');
-        // MODIFIED: Uses pageID for auto-highlighting logic
         body.setAttribute('data-page-id', projectSettings.pageID);
     }
 
@@ -762,6 +771,9 @@ async function masterSave() {
         el.classList.remove('editable', 'selected-item', 'editable-active');
     });
 
+    // RE-ENABLE LINKS: Remove the builder's onclick="return false" from all buttons/links
+    clone.querySelectorAll('a').forEach(a => a.removeAttribute('onclick'));
+
     clone.querySelectorAll('img').forEach(img => {
         if (!img.closest('.photo_gallery')) {
             let fn = img.getAttribute('data-filename') || img.src.split('/').pop();
@@ -773,7 +785,6 @@ async function masterSave() {
     const jsGalleryArray = JSON.stringify(allGalleryImages.map(name => `images/${name}`));
     const lightboxHTML = `<div id="imageModal" class="modal"><div class="counter" id="modalCounter">1 / 0</div><span class="close-modal" onclick="closeModal()">&times;</span><div id="sliderTrack" class="slider-track"></div></div>`;
     
-    // Auto-Highlight Script added to script bundle
     const autoHighlightScript = `
     <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -852,7 +863,6 @@ async function masterSave() {
     `;
 
     // FINAL EXPORT
-    // MODIFIED: Filename is now based on pageID (e.g., snoo-rental.html)
     zip.file(`${projectSettings.pageID}.html`, '<!DOCTYPE html>\n<html lang="en">\n' + clone.innerHTML + lightboxHTML + lightboxScript + autoHighlightScript + '\n</html>');
     const content = await zip.generateAsync({type: "blob"});
     const a = document.createElement('a');
@@ -860,6 +870,10 @@ async function masterSave() {
     a.download = "Final_Export.zip";
     a.click();
 }
+
+
+
+
 
 
 
