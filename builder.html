@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v5.2.9 Fix</title>
+    <title>Snoozing Builder | v5.3.0 Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="editor.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -75,6 +75,13 @@
     </button>
     <button class="insert-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-image"></i></button>
     <button class="insert-btn" onclick="insertElement('photo_gallery')"><i class="fa-solid fa-images"></i></button>
+<button class="insert-btn" onclick="insertElement('block_multi_image')" title="Multi-Image Row">
+    <div style="display: flex; gap: 2px; align-items: center; justify-content: center; color: white;">
+        <i class="fa-solid fa-image" style="font-size: 16px;"></i>
+        <i class="fa-solid fa-image" style="font-size: 16px;"></i>
+    </div>
+</button>
+
     <button class="insert-btn" onclick="insertElement('section_heading')">T<sub>1</sub></button>
     <button class="insert-btn" onclick="insertElement('block_heading')">T<sub>2</sub></button>
     <button class="insert-btn" onclick="insertElement('block_text')">T<sub>3</sub></button>
@@ -116,7 +123,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v5.2.9</div>
+        <div class="version-status">v5.3.0</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -193,6 +200,46 @@
 
 
 <script>
+
+function triggerMultiImageAdd() {
+    const input = document.getElementById('image-upload');
+    
+    // Override the default onchange for this specific action
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const doc = frame.contentDocument;
+            const imgSrc = event.target.result;
+            
+            // Create the image wrapper
+            const item = doc.createElement('div');
+            item.className = 'multi-image-item';
+            item.style.height = '100%';
+            item.style.flexShrink = '0';
+            item.innerHTML = `<img src="${imgSrc}" style="height:100%; width:auto; object-fit:contain; display:block; pointer-events:none;">`;
+            
+            // Append to the empty row container
+            selectedEl.appendChild(item);
+            
+            // Clear input for next use
+            input.value = '';
+            
+            // Automatically select the new image
+            setTimeout(() => selectElement(item), 50);
+        };
+        reader.readAsDataURL(file);
+    };
+    
+    input.click();
+}
+
+
+
+
+
 function toggleSettings() {
     const overlay = document.getElementById('settings-overlay');
     const isVisible = overlay.style.display === 'flex';
@@ -265,17 +312,31 @@ window.addEventListener('message', (event) => {
         // Inject editor root and class for editor-specific css overrides
         html = html.replace(/<body([^>]*)>/, '<body$1 class="editor-frame-body">');
         frame.srcdoc = html.replace(/<div class=\"content-container\">([\s\S]*?)<\/div>/, '<div class=\"content-container\" id=\"editor-root\">$1</div>');
+
+
         
         frame.onload = () => {
-            frame.contentWindow.initDivLogic();
-            frame.contentDocument.addEventListener('mousedown', (e) => { 
-                if (isResizing) return;
-                const el = e.target.closest('.gallery-sentry')?.parentElement || e.target.closest('.editable') || e.target.closest('.div-other-wrapper > *') || e.target.closest('.block_spacer') || e.target.closest('.block_container');
-                if (el && el === selectedEl && (el.contentEditable === "true")) return;
-                if (el) selectElement(el); else deselectAll(); 
-            });
-            setDevice('iphone');
-        };
+    frame.contentWindow.initDivLogic();
+    frame.contentDocument.addEventListener('mousedown', (e) => { 
+        if (isResizing) return;
+        
+        // Priority Selection: Check for the small image item BEFORE the large row container
+        const el = e.target.closest('.multi-image-item') || 
+                   e.target.closest('.block_multi_image') || 
+                   e.target.closest('.gallery-sentry')?.parentElement || 
+                   e.target.closest('.editable') || 
+                   e.target.closest('.div-other-wrapper > *') || 
+                   e.target.closest('.block_spacer') || 
+                   e.target.closest('.block_container');
+        
+        if (el && el === selectedEl && (el.contentEditable === "true")) return;
+        if (el) selectElement(el); else deselectAll(); 
+    });
+    setDevice('iphone');
+};
+
+
+
     }
     function selectElement(el) {
         if(selectedEl && selectedEl !== el) {
@@ -290,6 +351,8 @@ window.addEventListener('message', (event) => {
         const doc = frame.contentDocument; doc.querySelectorAll('.resize-handle').forEach(h => h.remove());
         selectedEl = el; selectedEl.classList.add('selected-item');
         if (selectedEl.classList.contains('block_image')) addResizeHandle(selectedEl);
+
+
         renderToolbar(); 
         if(el.contentEditable === "true") el.focus();
     }
@@ -297,38 +360,84 @@ window.addEventListener('message', (event) => {
     function renderToolbar() {
     if (!selectedEl) return;
     toolbarContent.style.visibility = 'visible';
+    
+    // Identity checks
+    const isMultiRow = selectedEl.classList.contains('block_multi_image');
+    const isMultiItem = selectedEl.classList.contains('multi-image-item');
     const isGallery = selectedEl.classList.contains('photo_gallery');
     const isBtn = selectedEl.classList.contains('block_button_container');
     const isImg = selectedEl.classList.contains('block_image');
     const isSpacer = selectedEl.classList.contains('block_spacer');
     const isDiv = selectedEl.classList.contains('block_container');
+    
     let html = '';
     
-    if (isGallery) {
+    // 1. MULTI-IMAGE ITEM (Individual image inside the row)
+    if (isMultiItem) {
+        html += `
+            <button class="tool-btn" onclick="triggerMultiImageAdd()"><i class="fa-solid fa-sync"></i></button>
+            <button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>
+            <button class="tool-btn btn-teal" onclick="openPill('alt')">ALT</button>
+            <button class="tool-btn" style="background:#2ecc71; color:white; font-weight:900; font-size:10px;" onclick="applyAndClosePill()">APPLY</button>
+        `;
+    }
+    // 2. MULTI-IMAGE ROW (The Container)
+    else if (isMultiRow) {
+        html += `<button class="tool-btn" style="background:#2ecc71; color:white; font-weight:900; font-size:10px;" onclick="triggerMultiImageAdd()">+ ADD IMAGE</button>`;
+    } 
+    // 3. PHOTO GALLERY
+    else if (isGallery) {
         const innerG = selectedEl.querySelector('iframe')?.contentDocument?.querySelector('.photo_gallery');
         const isMasonry = innerG ? innerG.classList.contains('masonry-mode') : false;
-        html += `<div class="gallery-toggle-group"><span class="${!isMasonry ? 'active' : ''}">SQUARE</span><label class="switch"><input type="checkbox" ${isMasonry ? 'checked' : ''} onchange="callGalleryToggle()"><span class="slider"></span></label><span class="${isMasonry ? 'active' : ''}">MASONRY</span></div>`;
-    } else if (isDiv) {
+        html += `<div class="gallery-toggle-group">
+                    <span class="${!isMasonry ? 'active' : ''}">SQUARE</span>
+                    <label class="switch">
+                        <input type="checkbox" ${isMasonry ? 'checked' : ''} onchange="callGalleryToggle()">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="${isMasonry ? 'active' : ''}">MASONRY</span>
+                 </div>`;
+    } 
+    // 4. CONTAINER (DIV)
+    else if (isDiv) {
         html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
-    } else if (isBtn) {
-        // --- UPDATED: Added the APPLY button here ---
+    } 
+    // 5. BUTTON BLOCK
+    else if (isBtn) {
         html += `<button class="tool-btn btn-teal" onclick="openPill('text')">TEXT</button>
                  <button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>
                  <button class="tool-btn" style="background:#2ecc71; color:black; font-weight:900; font-size:10px;" onclick="applyAndClosePill()">APPLY</button>`;
-    } else if (isImg) {
-        html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button><button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>`;
-    } else if (isSpacer) {
+    } 
+    // 6. SINGLE IMAGE BLOCK
+    else if (isImg) {
+        html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>
+                 <button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>`;
+    } 
+    // 7. SPACER BLOCK
+    else if (isSpacer) {
         html += `<button class="tool-btn" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
-    } else if (selectedEl.contentEditable === "true") {
+    } 
+    // 8. EDITABLE TEXT
+    else if (selectedEl.contentEditable === "true") {
         html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
     }
+
+    // ALIGNMENT CONTROLS 
+    // (Hidden for MultiRow, MultiItems, Divs, Spacers, and Galleries)
     const inDiv = selectedEl.closest('.block_container');
-    if (!inDiv && !isDiv && !isSpacer && !isGallery) {
-        html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
+    if (!inDiv && !isDiv && !isSpacer && !isGallery && !isMultiRow && !isMultiItem) {
+        html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
+                 <button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
     }
+
+    // GLOBAL DELETE BUTTON
     html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
+    
     toolbarContent.innerHTML = html;
 }
+
+
+
 
 function applyAndClosePill() {
     const editable = document.getElementById('pill-editable');
@@ -352,6 +461,39 @@ function applyAndClosePill() {
 
         function insertElement(type, data) {
         const doc = frame.contentDocument; const root = doc.getElementById('editor-root');
+
+if (type === 'block_multi_image') {
+    const el = doc.createElement('div');
+    el.className = 'block_multi_image';
+    
+    // Added a light dashed border and background for visibility
+    el.style.border = '2px dashed lightgray';
+    el.style.background = 'rgba(255,255,255,0.05)';
+    
+    el.style.display = 'flex';
+    el.style.height = '150px';
+    el.style.gap = '20px';
+    el.style.justifyContent = 'center'; 
+    el.style.alignItems = 'center';
+    el.style.width = '100%';
+    el.style.margin = '20px 0';
+    el.style.cursor = 'pointer';
+    el.style.pointerEvents = 'auto';
+
+    // Placement logic
+    if (selectedEl && selectedEl.parentNode === root) {
+        selectedEl.after(el);
+    } else {
+        root.appendChild(el);
+    }
+    
+    setTimeout(() => selectElement(el), 50);
+    return;
+}
+
+
+
+
         if (type === 'photo_gallery') {
             const el = doc.createElement('div'); 
             el.className = 'photo_gallery';
@@ -523,24 +665,68 @@ function applyAndClosePill() {
     function setAlign(pos) { if (selectedEl && !selectedEl.closest('.block_container')) { selectedEl.style.textAlign = pos; if(selectedEl.classList.contains('block_image')) { selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block'; selectedEl.style.margin = pos === 'center' ? '0 auto' : '0'; } } }
     function centerItem() { setAlign('center'); }
 
+
     function openPill(mode) {
-        if (!selectedEl) return;
-        const pill = document.getElementById('input-pill');
-        const editable = document.getElementById('pill-editable');
+    if (!selectedEl) return;
+    const pill = document.getElementById('input-pill');
+    const editable = document.getElementById('pill-editable');
+    let currentVal = '';
+
+    // Handle Individual Multi-Image Item
+    if (selectedEl.classList.contains('multi-image-item')) {
+        const img = selectedEl.querySelector('img');
+        if (mode === 'link') {
+            currentVal = selectedEl.getAttribute('data-link') || '';
+        } else if (mode === 'alt') {
+            currentVal = img.getAttribute('alt') || '';
+        }
+    } 
+    // Handle Standard Buttons
+    else {
         const btnLink = selectedEl.querySelector('a');
         if (!btnLink) return;
-        activePillMode = mode;
-        pill.style.display = 'flex';
-        editable.innerText = (mode === 'text') ? btnLink.innerText : (btnLink.getAttribute('href') || '');
-        setTimeout(() => { editable.focus(); document.execCommand('selectAll', false, null); }, 50);
+        currentVal = (mode === 'text') ? btnLink.innerText : (btnLink.getAttribute('href') || '');
     }
-    function syncRealTime() {
-        if (!selectedEl || !activePillMode) return;
-        const btnLink = selectedEl.querySelector('a'); if (!btnLink) return;
-        const val = document.getElementById('pill-editable').innerText;
-        if (activePillMode === 'text') { btnLink.innerText = val.toUpperCase(); } 
-        else { btnLink.setAttribute('href', val); }
+
+    activePillMode = mode;
+    pill.style.display = 'flex';
+    editable.innerText = currentVal;
+    
+    setTimeout(() => { 
+        editable.focus(); 
+        document.execCommand('selectAll', false, null); 
+    }, 50);
+}
+
+
+
+function syncRealTime() {
+    if (!selectedEl || !activePillMode) return;
+    const val = document.getElementById('pill-editable').innerText;
+
+    // Sync Individual Multi-Image Item
+    if (selectedEl.classList.contains('multi-image-item')) {
+        const img = selectedEl.querySelector('img');
+        if (activePillMode === 'link') {
+            selectedEl.setAttribute('data-link', val);
+        } else if (activePillMode === 'alt') {
+            img.setAttribute('alt', val);
+        }
+    } 
+    // Sync Standard Buttons
+    else {
+        const btnLink = selectedEl.querySelector('a');
+        if (!btnLink) return;
+        if (activePillMode === 'text') { 
+            btnLink.innerText = val.toUpperCase(); 
+        } else { 
+            btnLink.setAttribute('href', val); 
+        }
     }
+}
+
+
+
 
     function addResizeHandle(el) {
         const handle = frame.contentDocument.createElement('div'); handle.className = 'resize-handle';

@@ -5,6 +5,28 @@
     --brand-pink: #ebd5c9; 
 }
 
+/* Add this to the CSS that controls the iframe content */
+.block_multi_image:empty {
+    outline: 2px dashed #666;
+    outline-offset: -4px;
+    background: rgba(255, 255, 255, 0.03);
+    position: relative;
+    min-height: 100px;
+}
+
+.block_multi_image:empty::before {
+    content: 'Empty Image Row - Click to select & add images';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #888;
+    font-size: 12px;
+    font-family: sans-serif;
+    pointer-events: none; /* Allows the click to pass through to the div */
+}
+
+
 /* NOTE: This body rule applies to the main Builder Window */
 body.builder-ui-body { 
     margin: 0; padding: 0; width: 100%; height: 100%; 
