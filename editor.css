@@ -5,26 +5,33 @@
     --brand-pink: #ebd5c9; 
 }
 
-/* Add this to the CSS that controls the iframe content */
-.block_multi_image:empty {
-    outline: none;
-    outline-offset: -4px;
-    background: rgba(255, 255, 255, 0.03);
-    position: relative;
-    min-height: 100px;
+
+
+.block_multi_image {
+    display: flex !important;
+    width: 100% !important;
+    flex-direction: row !important;
+    justify-content: center; /* Centers the whole group of images/gaps */
+    align-items: center;
+    overflow: hidden;
+    box-sizing: border-box;
+padding-top:20px;
 }
 
-.block_multi_image:empty::before {
-    content: 'Empty Image Row - Click to select & add images';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: lightgray;
-    font-size: 12px;
-    font-family: sans-serif;
-    pointer-events: none; /* Allows the click to pass through to the div */
+.multi-image-item {
+    height: 100%;
+    flex: 0 0 auto;
 }
+
+.multi-image-item img {
+    height: 100%;
+    width: auto;
+    display: block;
+}
+
+
+
+
 
 
 /* NOTE: This body rule applies to the main Builder Window */

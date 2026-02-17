@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v5.3.1 Fix</title>
+    <title>Snoozing Builder | v5.3.2 Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="editor.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -123,7 +123,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v5.3.1</div>
+        <div class="version-status">v5.3.2</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -203,41 +203,221 @@ autocomplete="off"
 
 
 <script>
+function recalculateMultiLimits() {
+    if (!selectedEl || !selectedEl.classList.contains('block_multi_image')) return;
+    
+    const gapSlider = document.getElementById('multi-gap-slider');
+    const sizeSlider = document.getElementById('multi-size-slider');
+    if (!gapSlider || !sizeSlider) return;
 
-function triggerMultiImageAdd() {
+    // Use the viewport width of the iframe/window
+    const containerWidth = selectedEl.offsetWidth; 
+    const images = selectedEl.querySelectorAll('.multi-image-item img');
+    const n = images.length;
+    
+    let sumRatios = 0;
+    images.forEach(img => { sumRatios += (img.naturalWidth / img.naturalHeight || 1); });
+
+    // 1. Max Height in VW
+    const currentGap = parseInt(gapSlider.value);
+    const totalGapPx = n > 1 ? (n - 1) * currentGap : 0;
+    const maxHeightPx = (containerWidth - totalGapPx) / sumRatios;
+    
+    // Convert Max Height to VW units: (px / containerWidth) * 100
+    const maxHeightVw = (maxHeightPx / containerWidth) * 100;
+    sizeSlider.max = maxHeightVw.toFixed(2);
+
+    // 2. Max Gap in PX
+    const currentHeightVw = parseFloat(sizeSlider.value);
+    const currentHeightPx = (currentHeightVw / 100) * containerWidth;
+    const totalImgWidthPx = currentHeightPx * sumRatios;
+    const maxGap = n > 1 ? (containerWidth - totalImgWidthPx) / (n - 1) : 0;
+    gapSlider.max = Math.floor(Math.max(0, maxGap));
+}
+
+function handleMultiSizeChange(val) {
+    if (!selectedEl) return;
+    // Set height as VW so it stays proportional on rotate
+    selectedEl.style.height = val + 'vw';
+    recalculateMultiLimits();
+}
+
+function handleMultiGapChange(val) {
+    if (!selectedEl) return;
+    selectedEl.style.gap = val + 'px';
+    recalculateMultiLimits();
+}
+
+
+
+
+
+
+
+
+function getMultiRowDimensions(row, targetHeight) {
+    const items = row.querySelectorAll('.multi-image-item img');
+    const gap = parseInt(row.style.gap) || 0;
+    let totalWidth = 0;
+
+    items.forEach(img => {
+        // Calculate width based on aspect ratio: (Natural Width / Natural Height) * Target Height
+        const ratio = img.naturalWidth / img.naturalHeight || 1; 
+        totalWidth += (ratio * targetHeight);
+    });
+
+    // Add the gaps between images
+    totalWidth += (items.length - 1) * gap;
+    
+    return totalWidth;
+}
+
+
+
+function handleMultiHeightScale(newHeight) {
+    if (!selectedEl) return;
+    
+    const containerWidth = selectedEl.offsetWidth;
+    const totalNeeded = getMultiRowDimensions(selectedEl, newHeight);
+
+    // BUMP LOGIC: If the combined width exceeds container, cap the height
+    if (totalNeeded > containerWidth) {
+        // This is a simple recursive cap or you can solve for height:
+        // Height = (ContainerWidth - TotalGaps) / Sum(AspectRatios)
+        let sumRatios = 0;
+        selectedEl.querySelectorAll('.multi-image-item img').forEach(img => {
+            sumRatios += (img.naturalWidth / img.naturalHeight || 1);
+        });
+        const gap = parseInt(selectedEl.style.gap) || 0;
+        const count = selectedEl.querySelectorAll('.multi-image-item').length;
+        newHeight = (containerWidth - ((count - 1) * gap)) / sumRatios;
+    }
+
+    selectedEl.style.height = newHeight + 'px';
+    updateMultiRowLimits();
+}
+
+function updateMultiRowLimits() {
+    if (!selectedEl) return;
+    const containerWidth = selectedEl.offsetWidth;
+    const gapSlider = document.getElementById('spacing-range-input');
+    const heightSlider = document.getElementById('height-range-input');
+
+    // Calculate current sum of image widths at current height
+    let sumWidths = 0;
+    let sumRatios = 0;
+    const items = selectedEl.querySelectorAll('.multi-image-item img');
+    items.forEach(img => {
+        const ratio = img.naturalWidth / img.naturalHeight || 1;
+        sumRatios += ratio;
+        sumWidths += (ratio * parseFloat(selectedEl.style.height));
+    });
+
+    // Max Gap = (Container - Sum of widths) / (n-1)
+    if (gapSlider) {
+        const maxGap = items.length > 1 ? (containerWidth - sumWidths) / (items.length - 1) : 0;
+        gapSlider.max = Math.max(0, maxGap);
+    }
+
+    // Max Height = (Container - Total Gaps) / Sum of Ratios
+    if (heightSlider) {
+        const currentGapTotal = (items.length - 1) * (parseInt(selectedEl.style.gap) || 0);
+        const maxHeight = (containerWidth - currentGapTotal) / sumRatios;
+        heightSlider.max = Math.max(32, maxHeight);
+    }
+}
+
+
+
+
+// Controls the constant spacing between images
+function updateMultiRowGap(val) {
+    if (selectedEl && selectedEl.classList.contains('block_multi_image')) {
+        selectedEl.style.gap = val + 'px';
+        // No math needed: Flexbox handles the image shrinking automatically
+    }
+}
+
+// Controls the vertical dimension (Height)
+function updateMultiRowHeight(val) {
+    if (selectedEl && selectedEl.classList.contains('block_multi_image')) {
+        selectedEl.style.height = val + 'px';
+    }
+}
+
+
+// --- NEW: Handle Replacing a Single Image in a Multi-Row ---
+function triggerMultiImageReplace() {
     const input = document.getElementById('image-upload');
     
-    // Override the default onchange for this specific action
     input.onchange = function(e) {
         const file = e.target.files[0];
         if (!file) return;
         
         const reader = new FileReader();
         reader.onload = function(event) {
-            const doc = frame.contentDocument;
-            const imgSrc = event.target.result;
-            
-            // Create the image wrapper
-            const item = doc.createElement('div');
-            item.className = 'multi-image-item';
-            item.style.height = '100%';
-            item.style.flexShrink = '0';
-            item.innerHTML = `<img src="${imgSrc}" style="height:100%; width:auto; object-fit:contain; display:block; pointer-events:none;">`;
-            
-            // Append to the empty row container
-            selectedEl.appendChild(item);
-            
-            // Clear input for next use
+            // Target the currently selected item
+            if (selectedEl && selectedEl.classList.contains('multi-image-item')) {
+                const img = selectedEl.querySelector('img');
+                if (img) img.src = event.target.result;
+            }
             input.value = '';
-            
-            // Automatically select the new image
-            setTimeout(() => selectElement(item), 50);
         };
         reader.readAsDataURL(file);
     };
-    
     input.click();
 }
+
+// --- NEW: Slider Logic ---
+function updateMultiRowGap(val) {
+    if (selectedEl && selectedEl.classList.contains('block_multi_image')) {
+        selectedEl.style.gap = val + 'px';
+    }
+}
+
+function updateMultiRowHeight(val) {
+    if (selectedEl && selectedEl.classList.contains('block_multi_image')) {
+        selectedEl.style.height = val + 'px';
+    }
+}
+
+
+
+
+function triggerMultiImageAdd() {
+    const input = document.getElementById('image-upload');
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const newItem = document.createElement('div');
+            newItem.className = 'multi-image-item';
+            const img = document.createElement('img');
+            img.src = event.target.result;
+            
+            img.onload = function() {
+                newItem.appendChild(img);
+                selectedEl.appendChild(newItem);
+                selectedEl.style.gap = '0px';
+                
+                // Solve for Height (100% width coverage)
+                const sumRatios = Array.from(selectedEl.querySelectorAll('img'))
+                    .reduce((acc, i) => acc + (i.naturalWidth / i.naturalHeight || 1), 0);
+                
+                // Set height to 100 / sumRatios in VW units
+                const idealHeightVw = 100 / sumRatios;
+                selectedEl.style.height = idealHeightVw + 'vw';
+                
+                renderToolbar();
+            };
+        };
+        reader.readAsDataURL(file);
+    };
+    input.click();
+}
+
+
 
 
 
@@ -364,7 +544,6 @@ window.addEventListener('message', (event) => {
     if (!selectedEl) return;
     toolbarContent.style.visibility = 'visible';
     
-    // Identity checks
     const isMultiRow = selectedEl.classList.contains('block_multi_image');
     const isMultiItem = selectedEl.classList.contains('multi-image-item');
     const isGallery = selectedEl.classList.contains('photo_gallery');
@@ -375,69 +554,55 @@ window.addEventListener('message', (event) => {
     
     let html = '';
     
-    // 1. MULTI-IMAGE ITEM (Individual image inside the row)
     if (isMultiItem) {
         html += `
-            <button class="tool-btn" onclick="triggerMultiImageAdd()"><i class="fa-solid fa-sync"></i></button>
+            <button class="tool-btn" onclick="triggerMultiImageReplace()"><i class="fa-solid fa-sync"></i></button>
             <button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>
             <button class="tool-btn btn-teal" onclick="openPill('alt')">ALT</button>
             <button class="tool-btn" style="background:#2ecc71; color:white; font-weight:900; font-size:10px;" onclick="applyAndClosePill()">APPLY</button>
         `;
     }
-    // 2. MULTI-IMAGE ROW (The Container)
     else if (isMultiRow) {
-        html += `<button class="tool-btn" style="background:#2ecc71; color:white; font-weight:900; font-size:10px;" onclick="triggerMultiImageAdd()">+ ADD IMAGE</button>`;
+        // We parse the VW height back to a number for the slider
+        const currentHeightVw = parseFloat(selectedEl.style.height) || 20;
+        const currentGap = parseInt(selectedEl.style.gap) || 0;
+        
+        html += `
+            <div style="display:flex; flex-direction:column; align-items:center; margin-right:8px;">
+                <span style="font-size:8px; color:#aaa; text-transform:uppercase;">Spacing</span>
+                <input type="range" id="multi-gap-slider" min="0" step="1" value="${currentGap}" 
+                    style="width:120px;" oninput="handleMultiGapChange(this.value)">
+            </div>
+
+            <button class="tool-btn" style="background:#2ecc71; color:white; font-weight:900; font-size:10px;" onclick="triggerMultiImageAdd()">+ ADD</button>
+            <button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>
+
+            <div style="display:flex; flex-direction:column; align-items:center; margin-left:8px;">
+                <span style="font-size:8px; color:#aaa; text-transform:uppercase;">Width</span>
+                <input type="range" id="multi-size-slider" min="1" step="0.1" value="${currentHeightVw}" 
+                    style="width:120px;" oninput="handleMultiSizeChange(this.value)">
+            </div>
+        `;
+        setTimeout(recalculateMultiLimits, 10);
     } 
-    // 3. PHOTO GALLERY
-    else if (isGallery) {
-        const innerG = selectedEl.querySelector('iframe')?.contentDocument?.querySelector('.photo_gallery');
-        const isMasonry = innerG ? innerG.classList.contains('masonry-mode') : false;
-        html += `<div class="gallery-toggle-group">
-                    <span class="${!isMasonry ? 'active' : ''}">SQUARE</span>
-                    <label class="switch">
-                        <input type="checkbox" ${isMasonry ? 'checked' : ''} onchange="callGalleryToggle()">
-                        <span class="slider"></span>
-                    </label>
-                    <span class="${isMasonry ? 'active' : ''}">MASONRY</span>
-                 </div>`;
-    } 
-    // 4. CONTAINER (DIV)
-    else if (isDiv) {
-        html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
-    } 
-    // 5. BUTTON BLOCK
-    else if (isBtn) {
-        html += `<button class="tool-btn btn-teal" onclick="openPill('text')">TEXT</button>
-                 <button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>
-                 <button class="tool-btn" style="background:#2ecc71; color:white; font-weight:900; font-size:10px;" onclick="applyAndClosePill()">APPLY</button>`;
-    } 
-    // 6. SINGLE IMAGE BLOCK
+    // ... (Keep existing Gallery, Div, Btn, Img, Spacer logic here) ...
     else if (isImg) {
         html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>
                  <button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>`;
-    } 
-    // 7. SPACER BLOCK
-    else if (isSpacer) {
-        html += `<button class="tool-btn" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
-    } 
-    // 8. EDITABLE TEXT
-    else if (selectedEl.contentEditable === "true") {
-        html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
     }
 
-    // ALIGNMENT CONTROLS 
-    // (Hidden for MultiRow, MultiItems, Divs, Spacers, and Galleries)
-    const inDiv = selectedEl.closest('.block_container');
-    if (!inDiv && !isDiv && !isSpacer && !isGallery && !isMultiRow && !isMultiItem) {
-        html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button>
-                 <button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
+    if (!isMultiRow) {
+        html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
     }
-
-    // GLOBAL DELETE BUTTON
-    html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
     
     toolbarContent.innerHTML = html;
 }
+
+
+
+
+
+
 
 
 
