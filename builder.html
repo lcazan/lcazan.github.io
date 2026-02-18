@@ -153,9 +153,11 @@ autocomplete="off"
             </div>
 
             <div class="settings-form-group">
-                <label>Page Name (URL Slug)</label>
-                <input type="text" id="set-page-name" placeholder="snoo-rental">
-            </div>
+    <label>Page Name (URL Slug)</label>
+    <input type="text" id="set-page-name" placeholder="snoo-rental" 
+           oninput="document.getElementById('preview-frame').contentWindow.postMessage({type: 'updatePageID', newID: this.value}, '*')">
+</div>
+
 
             <div class="settings-form-group">
                 <label>Meta Description</label>
@@ -544,26 +546,28 @@ window.addEventListener('message', (event) => {
     if (!selectedEl) return;
     toolbarContent.style.visibility = 'visible';
     
-    const isMultiRow = selectedEl.classList.contains('block_multi_image');
+    // Identify Element Type
     const isMultiItem = selectedEl.classList.contains('multi-image-item');
+    const isMultiRow = selectedEl.classList.contains('block_multi_image');
     const isGallery = selectedEl.classList.contains('photo_gallery');
     const isBtn = selectedEl.classList.contains('block_button_container');
     const isImg = selectedEl.classList.contains('block_image');
     const isSpacer = selectedEl.classList.contains('block_spacer');
     const isDiv = selectedEl.classList.contains('block_container');
+    const isEditable = selectedEl.contentEditable === "true";
     
     let html = '';
     
+    // --- 1. MULTI-IMAGE TOOLS (From Builder 1) ---
     if (isMultiItem) {
         html += `
-            <button class="tool-btn" onclick="triggerMultiImageReplace()"><i class="fa-solid fa-sync"></i></button>
+            <button class="tool-btn" onclick="triggerMultiImageReplace()" title="Replace Image"><i class="fa-solid fa-sync"></i></button>
             <button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>
             <button class="tool-btn btn-teal" onclick="openPill('alt')">ALT</button>
             <button class="tool-btn" style="background:#2ecc71; color:white; font-weight:900; font-size:10px;" onclick="applyAndClosePill()">APPLY</button>
         `;
     }
     else if (isMultiRow) {
-        // We parse the VW height back to a number for the slider
         const currentHeightVw = parseFloat(selectedEl.style.height) || 20;
         const currentGap = parseInt(selectedEl.style.gap) || 0;
         
@@ -583,20 +587,62 @@ window.addEventListener('message', (event) => {
                     style="width:120px;" oninput="handleMultiSizeChange(this.value)">
             </div>
         `;
+        // Recalculate slider max values after rendering
         setTimeout(recalculateMultiLimits, 10);
     } 
-    // ... (Keep existing Gallery, Div, Btn, Img, Spacer logic here) ...
+    // --- 2. STANDARD TOOLS (Restored from Builder 2) ---
+    else if (isGallery) {
+        const innerG = selectedEl.querySelector('iframe')?.contentDocument?.querySelector('.photo_gallery');
+        const isMasonry = innerG ? innerG.classList.contains('masonry-mode') : false;
+        html += `
+            <div class="gallery-toggle-group">
+                <span class="${!isMasonry ? 'active' : ''}">SQUARE</span>
+                <label class="switch">
+                    <input type="checkbox" ${isMasonry ? 'checked' : ''} onchange="callGalleryToggle()">
+                    <span class="slider"></span>
+                </label>
+                <span class="${isMasonry ? 'active' : ''}">MASONRY</span>
+            </div>
+        `;
+    } 
+    else if (isDiv) {
+        html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
+    } 
+    else if (isBtn) {
+        html += `
+            <button class="tool-btn btn-teal" onclick="openPill('text')">TEXT</button>
+            <button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>
+            <button class="tool-btn" style="background:#2ecc71; color:black; font-weight:900; font-size:10px;" onclick="applyAndClosePill()">APPLY</button>
+        `;
+    } 
     else if (isImg) {
-        html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>
-                 <button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>`;
+        html += `
+            <button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>
+            <button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>
+        `;
+    } 
+    else if (isSpacer) {
+        html += `<button class="tool-btn" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
+    } 
+    else if (isEditable) {
+        html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
     }
 
+    // --- 3. COMMON TOOLS (Align & Delete) ---
+    // Exclude Multi-Image objects from standard alignment tools as they have their own logic
+    const inDiv = selectedEl.closest('.block_container');
+    if (!inDiv && !isDiv && !isSpacer && !isGallery && !isMultiRow && !isMultiItem) {
+        html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
+    }
+
+    // Add Delete button for everyone EXCEPT Multi-Row (it has its own in the middle of sliders)
     if (!isMultiRow) {
         html += `<button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>`;
     }
     
     toolbarContent.innerHTML = html;
 }
+
 
 
 
