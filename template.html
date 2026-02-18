@@ -75,5 +75,57 @@
 
 </script>
 
+
+
+
+<script>
+    /**
+     * Highlights the menu entry that matches the current Page ID.
+     * Logic: 
+     * 1. If ID is "home", "index", or empty -> Bolds "Home"
+     * 2. Otherwise -> Bolds the link text that matches the ID
+     */
+    function syncMenuHighlight() {
+        const rawID = document.body.getAttribute('data-page-id');
+        const pageID = (rawID && rawID.trim() !== "") ? rawID.toLowerCase() : "index";
+        
+        // Remove existing bolding first to avoid duplicates
+        document.querySelectorAll('.nav-content a').forEach(link => {
+            link.classList.remove('current-page-bold');
+        });
+
+        document.querySelectorAll('.nav-content a').forEach(link => {
+            // Skip dropdown parent buttons
+            if (link.classList.contains('dropdown-btn')) return;
+
+            const linkText = link.innerText.trim().toLowerCase();
+            
+            // Match Logic
+            if (pageID === "index" || pageID === "home") {
+                if (linkText === "home") {
+                    link.classList.add('current-page-bold');
+                }
+            } else {
+                // Check for exact text match or hyphenated match (e.g., "Our Services" vs "our-services")
+                if (linkText === pageID || linkText.replace(/\s+/g, '-') === pageID) {
+                    link.classList.add('current-page-bold');
+                }
+            }
+        });
+    }
+
+    // Run on initial load
+    document.addEventListener('DOMContentLoaded', syncMenuHighlight);
+
+    // Listen for messages from the Builder (if you want real-time updates)
+    window.addEventListener('message', (event) => {
+        if (event.data.type === 'updatePageID') {
+            document.body.setAttribute('data-page-id', event.data.newID);
+            syncMenuHighlight();
+        }
+    });
+</script>
+
+
 </body>
 </html>

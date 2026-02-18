@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v5.3.4 Fix</title>
+    <title>Snoozing Builder | v5.3.7 Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="editor.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -123,7 +123,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v5.3.4</div>
+        <div class="version-status">v5.3.7</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -153,9 +153,11 @@ autocomplete="off"
             </div>
 
             <div class="settings-form-group">
-                <label>Page Name (URL Slug)</label>
-                <input type="text" id="set-page-name" placeholder="snoo-rental">
-            </div>
+    <label>Page Name (URL Slug)</label>
+    <input type="text" id="set-page-name" placeholder="snoo-rental" 
+           oninput="document.getElementById('preview-frame').contentWindow.postMessage({type: 'updatePageID', newID: this.value}, '*')">
+</div>
+
 
             <div class="settings-form-group">
                 <label>Meta Description</label>
@@ -540,55 +542,172 @@ window.addEventListener('message', (event) => {
         if(el.contentEditable === "true") el.focus();
     }
 
+
+function resetToolbar() {
+    // 1. Define local references
+    const parentToolbar = toolbarContent.parentElement;
+
+    // 2. RESET STYLES TO STANDARD (Row mode)
+    toolbarContent.style.display = 'flex';
+    toolbarContent.style.flexDirection = 'row';
+    toolbarContent.style.alignItems = 'center';
+    toolbarContent.style.height = '100%'; 
+    
+    if (parentToolbar) {
+        parentToolbar.style.height = '40px'; // Standard height
+    }
+
+    // 3. Return an empty string to start the HTML construction
+    return '';
+}
+
+function renderToolbar() {
+    if (!selectedEl) return;
+    toolbarContent.style.visibility = 'visible';
+    
+    // Identify Element Types
+    const isMultiItem = selectedEl.classList.contains('multi-image-item');
+    const isMultiRow = selectedEl.classList.contains('block_multi_image');
+    // ... (other constants)
+
+    // CALL RESET AND CAPTURE THE EMPTY STRING
+    let html = resetToolbar();
+    
+    // Cache parent reference for specific overrides
+    const parentToolbar = toolbarContent.parentElement;
+
+    if (isMultiItem) {
+        // ... standard tools
+    }
+    else if (isMultiRow) {
+        // OVERRIDE THE RESET specifically for the multi-row stack
+        if (parentToolbar) parentToolbar.style.height = 'auto';
+        toolbarContent.style.flexDirection = 'column';
+        toolbarContent.style.alignItems = 'stretch';
+        toolbarContent.style.height = 'auto';
+
+        // ... rest of your multi-row logic
+    }
+    // ...
+}
+
+
     function renderToolbar() {
     if (!selectedEl) return;
     toolbarContent.style.visibility = 'visible';
     
-    const isMultiRow = selectedEl.classList.contains('block_multi_image');
+    // Identify Element Types
     const isMultiItem = selectedEl.classList.contains('multi-image-item');
-    const isGallery = selectedEl.classList.contains('photo_gallery');
-    const isBtn = selectedEl.classList.contains('block_button_container');
-    const isImg = selectedEl.classList.contains('block_image');
-    const isSpacer = selectedEl.classList.contains('block_spacer');
-    const isDiv = selectedEl.classList.contains('block_container');
+    const isMultiRow  = selectedEl.classList.contains('block_multi_image');
+    const isGallery   = selectedEl.classList.contains('photo_gallery');
+    const isBtn       = selectedEl.classList.contains('block_button_container');
+    const isImg       = selectedEl.classList.contains('block_image');
+    const isSpacer    = selectedEl.classList.contains('block_spacer');
+    const isDiv       = selectedEl.classList.contains('block_container');
+    const isEditable  = selectedEl.contentEditable === "true";
     
-    let html = '';
-    
+    // 1. Initialize logic and clean styles
+    let html = resetToolbar();
+    const parentToolbar = toolbarContent.parentElement;
+
+    // --- 1. MULTI-IMAGE TOOLS ---
     if (isMultiItem) {
         html += `
-            <button class="tool-btn" onclick="triggerMultiImageReplace()"><i class="fa-solid fa-sync"></i></button>
+            <button class="tool-btn" onclick="triggerMultiImageReplace()" title="Replace Image"><i class="fa-solid fa-sync"></i></button>
             <button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>
             <button class="tool-btn btn-teal" onclick="openPill('alt')">ALT</button>
             <button class="tool-btn" style="background:#2ecc71; color:white; font-weight:900; font-size:10px;" onclick="applyAndClosePill()">APPLY</button>
         `;
     }
     else if (isMultiRow) {
-        // We parse the VW height back to a number for the slider
+        // OVERRIDE RESET: Switch to vertical stack for the detailed sliders
+        if (parentToolbar) parentToolbar.style.height = 'auto';
+        toolbarContent.style.flexDirection = 'column';
+        toolbarContent.style.alignItems = 'stretch';
+        toolbarContent.style.height = 'auto';
+
         const currentHeightVw = parseFloat(selectedEl.style.height) || 20;
         const currentGap = parseInt(selectedEl.style.gap) || 0;
+        const currentAspect = selectedEl.getAttribute('data-aspect') || "1";
         
+        let aspectLabel = "SQUARE 1:1";
+        if (currentAspect === "0.618") aspectLabel = "PORTRAIT 0.618";
+        if (currentAspect === "1.618") aspectLabel = "LANDSCAPE 1.618";
+
         html += `
-            <div style="display:flex; flex-direction:column; align-items:center; margin-right:8px;">
-                <span style="font-size:8px; color:#aaa; text-transform:uppercase;">Spacing</span>
-                <input type="range" id="multi-gap-slider" min="0" step="1" value="${currentGap}" 
-                    style="width:120px;" oninput="handleMultiGapChange(this.value)">
-            </div>
-
-            <button class="tool-btn" style="background:#2ecc71; color:white; font-weight:900; font-size:10px;" onclick="triggerMultiImageAdd()">+ ADD</button>
-            <button class="tool-btn" style="color:#ff6b6b" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>
-
-            <div style="display:flex; flex-direction:column; align-items:center; margin-left:8px;">
-                <span style="font-size:8px; color:#aaa; text-transform:uppercase;">Width</span>
-                <input type="range" id="multi-size-slider" min="1" step="0.1" value="${currentHeightVw}" 
-                    style="width:120px;" oninput="handleMultiSizeChange(this.value)">
+            <div style="display:flex; flex-direction:column; gap:10px; padding:12px; width:224px; box-sizing:border-box;">
+                <div style="display:flex; justify-content:center; align-items:center; gap:15px; padding-bottom:8px; border-bottom:1px solid #444;">
+                    <button class="tool-btn" style="background:#2ecc71; color:white; font-weight:900; font-size:10px; margin:0; padding:4px 12px;" onclick="triggerMultiImageAdd()">+ ADD</button>
+                    <button class="tool-btn" style="color:#ff6b6b; background:transparent; margin:0;" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <span style="font-size:8px; color:#aaa; text-transform:uppercase; letter-spacing:0.5px;">Aspect Ratio</span>
+                    <button class="tool-btn" style="width:100%; background:#444; color:white; font-size:10px; margin:0; text-align:center; height:24px;" onclick="cycleAspectRatio()">
+                        ${aspectLabel}
+                    </button>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="font-size:8px; color:#aaa; text-transform:uppercase;">Spacing</span>
+                        <span style="font-size:8px; color:#666;">${currentGap}px</span>
+                    </div>
+                    <input type="range" id="multi-gap-slider" min="0" max="100" step="1" value="${currentGap}" 
+                        style="width:200px; height:4px; cursor:pointer;" oninput="handleMultiGapChange(this.value)">
+                </div>
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span style="font-size:8px; color:#aaa; text-transform:uppercase;">Row Height</span>
+                        <span style="font-size:8px; color:#666;">${currentHeightVw}vw</span>
+                    </div>
+                    <input type="range" id="multi-size-slider" min="5" max="100" step="0.5" value="${currentHeightVw}" 
+                        style="width:200px; height:4px; cursor:pointer;" oninput="handleMultiSizeChange(this.value)">
+                </div>
             </div>
         `;
         setTimeout(recalculateMultiLimits, 10);
     } 
-    // ... (Keep existing Gallery, Div, Btn, Img, Spacer logic here) ...
+    // --- 2. STANDARD TOOLS ---
+    else if (isGallery) {
+        const innerG = selectedEl.querySelector('iframe')?.contentDocument?.querySelector('.photo_gallery');
+        const isMasonry = innerG ? innerG.classList.contains('masonry-mode') : false;
+        html += `
+            <div class="gallery-toggle-group">
+                <span class="${!isMasonry ? 'active' : ''}">SQUARE</span>
+                <label class="switch">
+                    <input type="checkbox" ${isMasonry ? 'checked' : ''} onchange="callGalleryToggle()">
+                    <span class="slider"></span>
+                </label>
+                <span class="${isMasonry ? 'active' : ''}">MASONRY</span>
+            </div>
+        `;
+    } 
+    else if (isDiv) {
+        html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
+    } 
+    else if (isBtn) {
+        html += `
+            <button class="tool-btn btn-teal" onclick="openPill('text')">TEXT</button>
+            <button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>
+            <button class="tool-btn" style="background:#2ecc71; color:black; font-weight:900; font-size:10px;" onclick="applyAndClosePill()">APPLY</button>
+        `;
+    } 
     else if (isImg) {
-        html += `<button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>
-                 <button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>`;
+        html += `
+            <button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>
+            <button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>
+        `;
+    } 
+    else if (isSpacer) {
+        html += `<button class="tool-btn" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
+    } 
+    else if (isEditable) {
+        html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
+    }
+
+    // --- 3. COMMON TOOLS (Align & Delete) ---
+    const inDiv = selectedEl.closest('.block_container');
+    if (!inDiv && !isDiv && !isSpacer && !isGallery && !isMultiRow && !isMultiItem) {
+        html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
     }
 
     if (!isMultiRow) {
@@ -597,6 +716,9 @@ window.addEventListener('message', (event) => {
     
     toolbarContent.innerHTML = html;
 }
+
+
+
 
 
 
@@ -783,8 +905,18 @@ if (type === 'block_multi_image') {
         frame.style.left = (scaleFactor < 1) ? '0px' : ((wrapper.offsetWidth - widths[type]) / 2) + 'px';
     }
 
+
+
     function deselectAll() {
     if (selectedEl) {
+        // --- Check for Multi-Image before wiping the reference ---
+        const isMulti = selectedEl.classList.contains('multi-image-item') || 
+                        selectedEl.classList.contains('block_multi_image');
+
+        if (isMulti) {
+            resetToolbar();
+        }
+
         // --- NEW: Auto-apply button changes when clicking away ---
         if (selectedEl.classList.contains('block_button_container')) {
             applyAndClosePill();
@@ -796,13 +928,18 @@ if (type === 'block_multi_image') {
                 iframe.contentWindow.closeAllUI();
             }
         }
+        
         selectedEl.classList.remove('selected-item');
     }
+
     selectedEl = null;
     toolbarContent.style.visibility = 'hidden';
     document.getElementById('input-pill').style.display = 'none';
     activePillMode = null;
 }
+
+
+
 
 
     function deleteElement() { 
@@ -999,35 +1136,29 @@ async function masterSave() {
     const processImg = async (img) => {
         const src = img.getAttribute('src') || "";
         let filename = img.getAttribute('data-filename');
-        
-        // Handle Blob URLs (The critical fix for "Images not loading")
         if (src.startsWith('blob:') || src.startsWith('data:')) {
             if (!filename) filename = `img_${Date.now()}_${Math.floor(Math.random()*1000)}.jpg`;
             try {
                 const blob = await fetch(src).then(r => r.blob());
                 imgFolder.file(filename, blob);
-                img.setAttribute('data-filename', filename); // Persist filename to LIVE DOM
+                img.setAttribute('data-filename', filename); 
                 return `images/${filename}`;
             } catch (e) { console.error("Capture failed:", e); }
         }
         return filename ? `images/${filename}` : src;
     };
 
-    // 4. PRE-PROCESS LIVE IMAGES (Standard + Multi-Image Objects)
-    // We process these BEFORE cloning to ensure blobs are captured while the session is live.
+    // 4. PRE-PROCESS ALL IMAGES
     const liveStandardImgs = Array.from(iframeDoc.querySelectorAll('img:not(.gallery-item img)'));
     for (let img of liveStandardImgs) { await processImg(img); }
 
-    // 5. CLONE & RESTORE PATHS
+    // 5. PROJECT STATE
     const projectClone = editorRoot.cloneNode(true);
-    
-    // Update the clone's images to use the 'images/' path we just created
     projectClone.querySelectorAll('img:not(.gallery-item img)').forEach(img => {
         const fn = img.getAttribute('data-filename');
         if (fn) img.src = `images/${fn}`;
     });
 
-    // 6. PROCESS GALLERIES (Standard Baseline Logic)
     const liveGalleries = iframeDoc.querySelectorAll('.photo_gallery');
     const clonedGalleries = projectClone.querySelectorAll('.photo_gallery');
     for (let i = 0; i < liveGalleries.length; i++) {
@@ -1050,17 +1181,21 @@ async function masterSave() {
             }));
         }
     }
-    
-    // Save project.json
     zip.file("project.json", JSON.stringify({ version: "2.1", settings: projectSettings, htmlContent: projectClone.innerHTML }, null, 2));
 
-    // 7. EXPORT HTML GENERATION
+    // 6. EXPORT HTML GENERATION
     const supportFiles = ['editor.css', 'msb.css', 'template.html', 'gallery-component.html'];
     for (const file of supportFiles) { await addLocalFileToZip(file); }
 
     const clone = iframeDoc.documentElement.cloneNode(true);
     const head = clone.querySelector('head');
-    
+    const body = clone.querySelector('body');
+    if (body) {
+        body.removeAttribute('class');
+        body.removeAttribute('style');
+        body.setAttribute('data-page-id', projectSettings.pageID);
+    }
+
     // Apply Settings
     let titleTag = head.querySelector('title') || document.createElement('title');
     titleTag.innerText = projectSettings.title || "My Site";
@@ -1077,24 +1212,19 @@ async function masterSave() {
         Array.from(tmp.childNodes).forEach(n => head.appendChild(n.cloneNode(true)));
     }
 
-    // 8. EXPORT CSS (Crucial: Added Multi-Image Layout Support)
+    // Export Specific Styles (Galleries + Multi-Image)
     const exportStyles = document.createElement('style');
     exportStyles.textContent = `
-    /* Gallery Styles */
     .photo_gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; } 
     .photo_gallery.masonry-mode { display: block; column-count: 3; column-gap: 6px; } 
     .masonry-mode .gallery-item { display: inline-block; width: 100%; margin-bottom: 6px; break-inside: avoid; } 
     .gallery-item img { display: block; width: 100%; height: 100%; object-fit: cover; cursor: pointer; } 
     .masonry-mode .gallery-item img { height: auto; } 
-    @media (max-width: 768px) { .photo_gallery { grid-template-columns: repeat(2, 1fr); } .photo_gallery.masonry-mode { column-count: 2; } }
-    
-    /* Multi-Image Object Styles */
     .block_multi_image { display: flex; align-items: center; justify-content: center; width: 100%; overflow: hidden; background: transparent !important; border: none !important; }
     .multi-image-item { flex: 0 0 auto; height: 100%; display: flex; align-items: center; cursor: default !important; border: none !important; background: transparent !important; }
     .multi-image-item a { display: inline-block; height: 100%; text-decoration: none; cursor: pointer; border: none !important; }
     .multi-image-item img { height: 100%; width: auto; display: block; border: none !important; }
-
-    /* Lightbox Styles */
+    @media (max-width: 768px) { .photo_gallery { grid-template-columns: repeat(2, 1fr); } .photo_gallery.masonry-mode { column-count: 2; } }
     .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
     .slider-track { display: flex; height: 100%; width: 100%; }
     .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
@@ -1108,7 +1238,7 @@ async function masterSave() {
     `;
     head.appendChild(exportStyles);
 
-    // 9. GALLERY HTML RECONSTRUCTION
+    // GALLERY RECONSTRUCTION
     let allGalleryImages = [];
     clone.querySelectorAll('.photo_gallery').forEach((gallery, idx) => {
         const liveG = iframeDoc.querySelectorAll('.photo_gallery')[idx];
@@ -1116,7 +1246,6 @@ async function masterSave() {
         if (gIframe?.contentDocument) {
             const isMasonry = gIframe.contentDocument.querySelector('.photo_gallery').classList.contains('masonry-mode');
             const imgs = Array.from(gIframe.contentDocument.querySelectorAll('.gallery-item img')).filter(i => i.src && !i.src.includes('placeholder'));
-            
             let gHtml = `<div class="photo_gallery ${isMasonry ? 'masonry-mode' : ''}">`;
             imgs.forEach((img) => {
                 const fn = img.getAttribute('data-filename') || img.src.split('/').pop();
@@ -1129,14 +1258,14 @@ async function masterSave() {
         }
     });
 
-    // Custom HTML Output
+    // CUSTOM HTML OUTPUT
     clone.querySelectorAll('.block_custom_html').forEach(block => {
         const code = block.getAttribute('data-clean-snippet') || "";
         const div = document.createElement('div'); div.className = 'custom-html-output'; div.innerHTML = code;
         block.replaceWith(div);
     });
 
-    // 10. CLEANUP & LINK WRAPPING
+    // CLEANUP & MULTI-IMAGE LOGIC
     const garbage = ['.block-controls', '.resizer', '.html-tag', '.html-input-box', '.resize-handle', '.gallery-sentry', '[data-origin="dudu"]'];
     clone.querySelectorAll(garbage.join(',')).forEach(el => el.remove());
     
@@ -1145,7 +1274,7 @@ async function masterSave() {
         el.removeAttribute('data-origin');
         el.classList.remove('editable', 'selected-item', 'editable-active');
         
-        // Remove Builder Styles from Multi-Image Container
+        // Remove Builder Styles (Borders/Brill/Cursors)
         if (el.classList.contains('multi-image-item') || el.classList.contains('block_multi_image')) {
             el.style.border = "none";
             el.style.outline = "none";
@@ -1154,51 +1283,49 @@ async function masterSave() {
             el.style.pointerEvents = "auto"; 
         }
 
-        // RE-ENABLE BUTTONS & LINKS
         if ((el.tagName === 'A' || el.tagName === 'BUTTON')) {
             const onClickVal = el.getAttribute('onclick');
-            if (onClickVal && onClickVal.includes('return false')) {
-                el.removeAttribute('onclick');
-            }
+            if (onClickVal && onClickVal.includes('return false')) el.removeAttribute('onclick');
             el.removeAttribute('disabled'); 
         }
     });
 
-    // Wrap Images in Links (The Fix)
     clone.querySelectorAll('img').forEach(img => {
         if (!img.closest('.photo_gallery')) {
             const fn = img.getAttribute('data-filename');
-            if (fn) { img.src = 'images/' + fn; }
+            if (fn) img.src = 'images/' + fn;
 
             const parentItem = img.closest('.multi-image-item');
             let href = img.getAttribute('data-link') || parentItem?.getAttribute('data-link');
-            
-            // Only wrap if it is a valid link
             if (href && href.trim() !== "" && href !== "#" && href !== "undefined") {
-                let validHref = href.replace(';//', '://').trim(); 
                 const anchor = document.createElement('a');
-                anchor.href = validHref;
-                // Optional: anchor.target = "_blank"; 
-                
-                // Wrap ONLY the image
+                anchor.href = href.replace(';//', '://').trim();
                 img.parentNode.insertBefore(anchor, img);
                 anchor.appendChild(img);
             }
         }
     });
 
-    // SCRIPTS (Baseline)
+    // UPDATED HIGHLIGHT SCRIPT: Now uses Label/Text matching
     const jsGalleryArray = JSON.stringify(allGalleryImages.map(name => `images/${name}`));
     const lightboxHTML = `<div id="imageModal" class="modal"><div class="counter" id="modalCounter">1 / 0</div><span class="close-modal" onclick="closeModal()">&times;</span><div id="sliderTrack" class="slider-track"></div></div>`;
     
     const autoHighlightScript = `
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const pageID = document.body.getAttribute('data-page-id');
-        if (!pageID) return;
+        const rawID = document.body.getAttribute('data-page-id');
+        const pageID = (rawID && rawID.trim() !== "") ? rawID.toLowerCase() : "index";
+        
         document.querySelectorAll('.nav-content a').forEach(link => {
-            const href = link.getAttribute('href') || "";
-            if (href.toLowerCase().includes(pageID.toLowerCase()) && !link.classList.contains('dropdown-btn')) {
+            if (link.classList.contains('dropdown-btn')) return;
+            const linkText = link.innerText.trim().toLowerCase();
+            
+            // Logic for Home (index/home/blank)
+            if (pageID === "index" || pageID === "home") {
+                if (linkText === "home") link.classList.add('current-page-bold');
+            } 
+            // Logic for Specific Pages (Label match)
+            else if (linkText === pageID || linkText.replace(/\\s+/g, '-') === pageID) {
                 link.classList.add('current-page-bold');
             }
         });
@@ -1254,7 +1381,7 @@ async function masterSave() {
         loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
     }
     function closeModal() { document.getElementById('imageModal').style.display = "none"; document.body.style.overflow = "auto"; }
-    window.addEventListener('resize', () => { if (document.getElementById('imageModal')?.style.display === "block") updateTrackPos(false); });
+    window.addEventListener('resize', () => { if (document.getElementById('imageModal')?.style.display === \"block\") updateTrackPos(false); });
     
     document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
@@ -1269,7 +1396,6 @@ async function masterSave() {
     <\/script>
     `;
 
-    // FINAL EXPORT
     zip.file(`${projectSettings.pageID}.html`, '<!DOCTYPE html>\n<html lang="en">\n' + clone.innerHTML + lightboxHTML + lightboxScript + autoHighlightScript + '\n</html>');
     const content = await zip.generateAsync({type: "blob"});
     const a = document.createElement('a');
@@ -1277,6 +1403,7 @@ async function masterSave() {
     a.download = "Final_Export.zip";
     a.click();
 }
+
 
 
 

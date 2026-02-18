@@ -7,6 +7,8 @@
 
 
 
+
+
 .block_multi_image {
     display: flex !important;
     width: 100% !important;
@@ -18,16 +20,30 @@
 padding-top:20px;
 }
 
+/* --- FIXED MULTI-IMAGE ITEM --- */
 .multi-image-item {
-    height: 100%;
+    height: 100% !important; /* Forces div to follow the container slider */
     flex: 0 0 auto;
-}
-
-.multi-image-item img {
-    height: 100%;
-    width: auto;
+    background-size: cover;    /* The "Gallery Secret": ensures image fills div without gaps */
+    background-position: 50% 50%; /* Default center */
+    background-repeat: no-repeat;
+    touch-action: none;       /* FREEZES page scrolling on touch/drag */
+    cursor: crosshair;
+    position: relative;
+    overflow: hidden;
     display: block;
 }
+
+/* Hide any legacy img tags that might be causing cropping */
+.multi-image-item img {
+    display: none !important;
+}
+
+
+
+
+
+
 
 
 

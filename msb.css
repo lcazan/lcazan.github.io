@@ -6,6 +6,9 @@
     --text-dark: #151515;
 }
 
+
+
+
 html { font-size: 16px; }
 
 /* 1. CARET ROTATION SYSTEM */
@@ -27,7 +30,7 @@ html { font-size: 16px; }
 /* High-contrast bold for the current page link */
 .current-page-bold { 
     font-weight: 900 !important; 
-    color: #000 !important;
+  
 }
 
 /* Force the sub-menu to stay open if it contains the active page */
