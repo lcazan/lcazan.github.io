@@ -673,7 +673,7 @@ function resetToolbar() {
     let html = resetToolbar();
     const parentToolbar = toolbarContent.parentElement;
 
-    // --- 1. MULTI-IMAGE TOOLS ---
+    // --- 1. MULTI-IMAGE TOOLS (Width-Driven Logic) ---
     if (isMultiItem) {
         html += `
             <button class="tool-btn" onclick="triggerMultiImageReplace()" title="Replace Image"><i class="fa-solid fa-sync"></i></button>
@@ -683,16 +683,18 @@ function resetToolbar() {
         `;
     }
     else if (isMultiRow) {
+        // Apply vertical stack and containment fix
         if (parentToolbar) parentToolbar.style.height = 'auto';
         toolbarContent.style.flexDirection = 'column';
         toolbarContent.style.alignItems = 'stretch';
         toolbarContent.style.height = 'auto';
-        toolbarContent.style.width = '240px'; // Set the container width here instead of inside
+        toolbarContent.style.width = '240px'; 
 
         const items = selectedEl.querySelectorAll('.multi-image-item');
         const n = items.length;
         const slidersDisabled = n === 0 ? 'disabled' : '';
         
+        // Fetch values based on Width logic
         let currentWidthPx = parseFloat(selectedEl.getAttribute('data-desired-w')) || 100;
         const currentGap = parseInt(selectedEl.style.gap) || 0;
         const currentAspect = selectedEl.getAttribute('data-ratio-val') || "1";
@@ -703,7 +705,6 @@ function resetToolbar() {
         if (currentAspect === "0.75")  aspectLabel = "PORTRAIT 3:4";
         if (currentAspect === "1.33")  aspectLabel = "LANDSCAPE 4:3";
 
-        // FIX: Change width:224px to width:100% and ensure padding is accounted for
         html += `
             <div style="display:flex; flex-direction:column; gap:10px; padding:12px; width:100%; box-sizing:border-box;">
                 <div style="display:flex; justify-content:center; align-items:center; gap:15px; padding-bottom:8px; border-bottom:1px solid #444;">
@@ -711,7 +712,7 @@ function resetToolbar() {
                     <button class="tool-btn" style="color:#ff6b6b; background:transparent; margin:0;" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:4px;">
-                    <span style="font-size:8px; color:#aaa; text-transform:uppercase;">Aspect Ratio</span>
+                    <span style="font-size:8px; color:#aaa; text-transform:uppercase; letter-spacing:0.5px;">Aspect Ratio</span>
                     <button class="tool-btn" style="width:100%; background:#444; color:white; font-size:10px; margin:0; text-align:center; height:24px;" 
                         onclick="cycleAspectRatio()" ${slidersDisabled}>
                         ${aspectLabel}
@@ -735,21 +736,52 @@ function resetToolbar() {
                 </div>
             </div>
         `;
-        
         setTimeout(recalculateMultiLimits, 10);
     } 
-    // ... rest of the function (Gallery, Div, Btn, Img, etc.)
-    else if (isGallery) {
-        // ... (existing gallery logic)
+    // --- 2. RESTORED BASELINE STANDARD TOOLS ---
+    else {
+        // Reset toolbar width for standard items
+        toolbarContent.style.width = ''; 
+
+        if (isGallery) {
+            const innerG = selectedEl.querySelector('iframe')?.contentDocument?.querySelector('.photo_gallery');
+            const isMasonry = innerG ? innerG.classList.contains('masonry-mode') : false;
+            html += `
+                <div class="gallery-toggle-group">
+                    <span class="${!isMasonry ? 'active' : ''}">SQUARE</span>
+                    <label class="switch">
+                        <input type="checkbox" ${isMasonry ? 'checked' : ''} onchange="callGalleryToggle()">
+                        <span class="slider"></span>
+                    </label>
+                    <span class="${isMasonry ? 'active' : ''}">MASONRY</span>
+                </div>
+            `;
+        } 
+        else if (isDiv) {
+            html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
+        } 
+        else if (isBtn) {
+            html += `
+                <button class="tool-btn btn-teal" onclick="openPill('text')">TEXT</button>
+                <button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>
+                <button class="tool-btn" style="background:#2ecc71; color:black; font-weight:900; font-size:10px;" onclick="applyAndClosePill()">APPLY</button>
+            `;
+        } 
+        else if (isImg) {
+            html += `
+                <button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>
+                <button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>
+            `;
+        } 
+        else if (isSpacer) {
+            html += `<button class="tool-btn" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
+        } 
+        else if (isEditable) {
+            html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
+        }
     }
 
-    // --- COMMON TOOLS ---
-    // Ensure that if we are NOT in multi-row, we reset the width to default
-    if (!isMultiRow) {
-        toolbarContent.style.width = ''; // Reset to CSS default
-    }
-
-    // (Final check for Align & Delete buttons)
+    // --- 3. RESTORED BASELINE COMMON TOOLS (Align & Delete) ---
     const inDiv = selectedEl.closest('.block_container');
     if (!inDiv && !isDiv && !isSpacer && !isGallery && !isMultiRow && !isMultiItem) {
         html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
