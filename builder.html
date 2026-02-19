@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v5.4.0 Fix</title>
+    <title>Snoozing Builder | v5.4.1 Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="editor.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -123,7 +123,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v5.4.0</div>
+        <div class="version-status">v5.4.1</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -532,9 +532,24 @@ function toggleSettings() {
     const isVisible = overlay.style.display === 'flex';
     overlay.style.display = isVisible ? 'none' : 'flex';
 }
+
+// --- 1. GLOBAL VARIABLE DECLARATIONS ---
+const frame = document.getElementById('preview-frame');
+const toolbarContent = document.getElementById('toolbar-content');
+const wrapper = document.getElementById('frame-wrapper');
+let selectedEl = null; 
+let currentMode = 'iphone'; 
+let isResizing = false;
+let activePillMode = null;
+
+// --- 2. THE CONSOLIDATED MESSAGE LISTENER ---
+// Handles both Photo Gallery and Sandbox (Custom HTML) resizing
 window.addEventListener('message', (event) => {
+    const doc = frame.contentDocument;
+    if (!doc || !event.data) return;
+
+    // Handle Photo Gallery Resizing
     if (event.data.type === 'galleryHeight') {
-        const doc = frame.contentDocument;
         const galleryIframe = doc.querySelector('.photo_gallery iframe');
         if (galleryIframe) {
             const newHeight = event.data.height + 'px';
@@ -544,13 +559,55 @@ window.addEventListener('message', (event) => {
             console.log("Builder: Resized gallery to", newHeight);
         }
     }
+
+    // Handle Sandbox (Custom HTML) Resizing
+    if (event.data.type === 'sandboxHeight') {
+        // Corrected selector syntax: '#' + event.data.id + ' iframe'
+        const sandboxIframe = doc.querySelector('#' + event.data.id + ' iframe');
+        if (sandboxIframe) {
+            const newHeight = event.data.height + 'px';
+            sandboxIframe.style.height = newHeight;
+            
+            const block = sandboxIframe.closest('.block_custom_html');
+            if (block) {
+                block.style.height = 'auto'; // Prevent clipping
+                block.style.minHeight = newHeight;
+            }
+        }
+    }
 });
 
-    const frame = document.getElementById('preview-frame');
-    const toolbarContent = document.getElementById('toolbar-content');
-    const wrapper = document.getElementById('frame-wrapper');
-    let selectedEl = null; let currentMode = 'iphone'; let isResizing = false;
-    let activePillMode = null;
+// --- 3. THE UPDATE FUNCTIONS ---
+function updateSandbox(block) {
+    const textarea = block.querySelector('.html-input-box');
+    const iframe = block.querySelector('.widget-sandbox');
+    const rawCode = textarea.value;
+
+    const heightScript = `
+        <script>
+            const sendHeight = () => {
+                const height = document.documentElement.scrollHeight || document.body.scrollHeight;
+                window.parent.postMessage({
+                    type: 'sandboxHeight',
+                    id: '${block.id}', 
+                    height: height
+                }, '*');
+            };
+            window.addEventListener('load', sendHeight);
+            window.addEventListener('resize', sendHeight);
+            const observer = new MutationObserver(sendHeight);
+            observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+            new ResizeObserver(sendHeight).observe(document.body);
+            let checks = 0;
+            const poll = setInterval(() => {
+                sendHeight();
+                if (checks++ > 10) clearInterval(poll);
+            }, 500);
+        <\/script>
+    `;
+
+    iframe.srcdoc = rawCode + heightScript;
+}
 
 
     async function init() {
@@ -582,7 +639,15 @@ window.addEventListener('message', (event) => {
             window.initDivLogic = () => { document.querySelectorAll('.block_container').forEach(d => observer.observe(d)); };
         <\/script>`);
 
-    html = html.replace('</body>', `<script>window.addEventListener('message', e => { if (e.data.type === 'galleryHeight') window.parent.postMessage(e.data, '*'); });<\/script></body>`);
+    // UPDATED RELAY: Now listens for both galleryHeight and sandboxHeight
+    html = html.replace('</body>', `<script>
+        window.addEventListener('message', e => { 
+            if (e.data.type === 'galleryHeight' || e.data.type === 'sandboxHeight') {
+                window.parent.postMessage(e.data, '*'); 
+            }
+        });
+    <\/script></body>`);
+
     html = html.replace(/<body([^>]*)>/, '<body$1 class="editor-frame-body">');
     frame.srcdoc = html.replace(/<div class=\"content-container\">([\s\S]*?)<\/div>/, '<div class=\"content-container\" id=\"editor-root\">$1</div>');
 
@@ -604,7 +669,6 @@ window.addEventListener('message', (event) => {
             startY = point.clientY;
             pendingSelection = null;
 
-            // 1. HANDLE CHECK (Select Row instantly)
             const handle = e.target.closest('.multi-image-handle');
             if (handle) {
                 e.preventDefault();
@@ -613,16 +677,13 @@ window.addEventListener('message', (event) => {
                 return;
             }
 
-            // 2. IMAGE CHECK (Prep Pan, defer selection)
             const item = e.target.closest('.multi-image-item');
             if (item) {
                 pendingSelection = item;
                 isPanningMulti = true;
                 pannedItem = item;
-                
                 panStartX = point.clientX;
                 panStartY = point.clientY;
-
                 let bgPos = pannedItem.style.backgroundPosition || '50% 50%';
                 if (bgPos === 'center') bgPos = '50% 50%';
                 const posParts = bgPos.split(' ');
@@ -631,7 +692,6 @@ window.addEventListener('message', (event) => {
                 return;
             }
 
-            // 3. BASELINE SELECTION (Queue for later)
             let el = e.target.closest('.gallery-sentry')?.parentElement || 
                      e.target.closest('.editable') || 
                      e.target.closest('.div-other-wrapper > *') || 
@@ -643,12 +703,9 @@ window.addEventListener('message', (event) => {
 
         const moveInteraction = (e) => {
             const point = e.touches ? e.touches[0] : e;
-            
-            // If user moves more than 10px, it's a scroll, not a tap
             if (Math.abs(point.clientX - startX) > 10 || Math.abs(point.clientY - startY) > 10) {
                 isScrolling = true;
             }
-
             if (!isPanningMulti || !pannedItem) return;
             const deltaX = (panStartX - point.clientX) * 0.4; 
             const deltaY = (panStartY - point.clientY) * 0.4;
@@ -658,20 +715,16 @@ window.addEventListener('message', (event) => {
         };
 
         const endInteraction = () => { 
-            // Only select if the user didn't scroll the page
             if (!isScrolling && pendingSelection) {
                 if (pendingSelection === "CLEAR") {
                     deselectAll();
                 } else {
-                    // Don't re-select if we are already editing text inside it
                     if (pendingSelection === selectedEl && (pendingSelection.contentEditable === "true")) {
-                        // Keep focus
                     } else {
                         selectElement(pendingSelection);
                     }
                 }
             }
-
             isPanningMulti = false; 
             pannedItem = null; 
             pendingSelection = null;
@@ -686,6 +739,35 @@ window.addEventListener('message', (event) => {
         setDevice('iphone');
     };
 }
+
+// MAKE SURE YOUR MESSAGE LISTENER LOOKS LIKE THIS OUTSIDE OF INIT():
+window.addEventListener('message', (event) => {
+    const doc = frame.contentDocument;
+    if (!doc) return;
+
+    // Gallery resizing
+    if (event.data.type === 'galleryHeight') {
+        const galleryIframe = doc.querySelector('.photo_gallery iframe');
+        if (galleryIframe) {
+            const newHeight = event.data.height + 'px';
+            galleryIframe.style.height = newHeight;
+            const container = galleryIframe.closest('.photo_gallery');
+            if (container) container.style.height = newHeight;
+        }
+    }
+
+    // Sandbox resizing
+    if (event.data.type === 'sandboxHeight') {
+        const sandboxIframe = doc.querySelector(`#${event.data.id} iframe`);
+        if (sandboxIframe) {
+            const newHeight = event.data.height + 'px';
+            sandboxIframe.style.height = newHeight;
+            // Also expand the parent block container
+            const block = sandboxIframe.closest('.block_custom_html');
+            if (block) block.style.height = 'auto'; 
+        }
+    }
+});
 
  
 

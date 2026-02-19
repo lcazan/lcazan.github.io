@@ -78,13 +78,15 @@ body.builder-ui-body {
    2. CUSTOM BLOCKS (Teal HTML, Gallery, Multi-Image)
    ========================================= */
 
-/* --- CUSTOM HTML BLOCK (FIXED GAPS) --- */
+/* --- CUSTOM HTML BLOCK (FIXED GAPS & EXPANSION) --- */
 .block_custom_html { 
     width: 100%; 
-    margin-bottom: 0px !important; /* Kill the gap to footer */
+    margin-bottom: 0px !important; 
     position: relative; 
     padding: 0 !important; 
-    box-sizing: border-box; 
+    box-sizing: border-box;
+    height: auto !important; /* CRITICAL: Must allow growth */
+    overflow: visible !important;
 }
 
 .custom-html-ui-container { 
@@ -92,7 +94,7 @@ body.builder-ui-body {
     overflow: hidden; 
     background: #1e1e1e; 
     border: 1px solid #333; 
-    margin-bottom: 0px; /* Flush layout */
+    margin-bottom: 0px; 
 }
 
 .custom-html-header { 
@@ -106,7 +108,6 @@ body.builder-ui-body {
     align-items: center; 
 }
 
-/* --- COLLAPSE LOGIC: Header stays, text hides --- */
 .block_custom_html .html-input-box { 
     display: none; 
     width: 100%; 
@@ -127,14 +128,14 @@ body.builder-ui-body {
 
 .activate-btn { background: #fff !important; color: var(--teal-ui) !important; border: none; padding: 2px 8px; border-radius: 3px; font-size: 10px; cursor: pointer; font-weight: bold; }
 
-/* --- IFRAME EXPANSION LOGIC --- */
+/* --- SANDBOX IFRAME EXPANSION LOGIC --- */
 .sandbox-iframe-wrapper { 
     margin-top: 0px; 
     min-height: 5px; 
     border: 1px solid transparent; 
     transition: border 0.3s ease; 
-    overflow: visible; /* Allows iframe to grow the page */
-    height: auto; 
+    overflow: visible !important; 
+    height: auto !important; 
 }
 
 .block_custom_html.selected-item .sandbox-iframe-wrapper { border: 1px solid #444; }
@@ -145,7 +146,8 @@ body.builder-ui-body {
     border: none; 
     display: block; 
     background: transparent;
-    overflow: hidden; /* The iframe itself shouldn't scroll, it should expand */
+    overflow: hidden; /* Prevent internal scrollbars */
+    transition: height 0.2s ease-out; /* Smooth expansion */
 }
 
 /* --- MULTI-IMAGE ROW --- */
@@ -154,16 +156,41 @@ body.builder-ui-body {
 .multi-image-item { flex: 0 0 auto; height: 100%; width: auto; background-size: cover; background-position: center; background-repeat: no-repeat; cursor: pointer; box-sizing: border-box; }
 
 /* --- PHOTO GALLERY --- */
-.photo_gallery { position: relative; width: 100%; margin: 0; }
-.photo_gallery iframe { width: 100%; height: 100%; border: none; display: block; }
+.photo_gallery { 
+    position: relative; 
+    width: 100%; 
+    margin: 0; 
+    height: auto !important; 
+    overflow: visible !important;
+}
+.photo_gallery iframe { 
+    width: 100%; 
+    height: 100%; 
+    border: none; 
+    display: block; 
+    overflow: hidden; 
+}
 .gallery-sentry { position: absolute; inset: 0; background: transparent; z-index: 10; cursor: pointer; touch-action: none; }
 .selected-item .gallery-sentry { pointer-events: none; }
 
 /* =========================================
    3. INTERNAL EDITOR LOGIC
    ========================================= */
-#editor-root { width: 100%; display: flex; flex-direction: column; padding-bottom: 250px; }
-.editor-frame-body { height: auto !important; min-height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
+#editor-root { 
+    width: 100%; 
+    display: flex; 
+    flex-direction: column; 
+    padding-bottom: 100px; /* Reduced from 250px to prevent excessive gap */
+}
+
+.editor-frame-body { 
+    height: auto !important; 
+    min-height: 100%; 
+    margin: 0; 
+    padding: 0; 
+    overflow-x: hidden; 
+}
+
 .editable { position: relative; min-height: 1.2em; cursor: pointer; outline: none; box-sizing: border-box; }
 .selected-item { outline: 0.1875rem solid var(--brand-pink) !important; z-index: 50; }
 .photo_gallery.selected-item { box-shadow: inset 0 0 0 3px var(--brand-pink) !important; outline: none !important; }
