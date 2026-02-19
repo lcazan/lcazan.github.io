@@ -205,6 +205,15 @@ autocomplete="off"
 
 
 <script>
+
+
+let isPanningMulti = false;
+let panStartX = 0, panStartY = 0;
+let bgStartPosX = 50, bgStartPosY = 50;
+let pannedItem = null;
+let isPanImgTag = false;
+
+
 function recalculateMultiLimits() {
     if (!selectedEl) return;
     const items = selectedEl.querySelectorAll('.multi-image-item');
@@ -543,79 +552,149 @@ window.addEventListener('message', (event) => {
     let selectedEl = null; let currentMode = 'iphone'; let isResizing = false;
     let activePillMode = null;
 
+
     async function init() {
-        const resp = await fetch('template.html');
-        let html = await resp.text();
-        
-        // Inject Editor CSS and Scripts into the template
-        html = html.replace('</head>', `
-            <link rel="stylesheet" href="editor.css">
-            <script>
-                const observer = new ResizeObserver(entries => {
-                    for (let entry of entries) {
-                        const div = entry.target; const width = entry.contentRect.width;
-                        const img = div.querySelector('.block_image');
-                        const other = div.querySelector('.div-other-wrapper');
-                        if (!img) continue;
-                        const factor = parseFloat(img.getAttribute('data-scale-factor') || '1.0');
-                        if (width <= 744) {
-                            div.style.flexDirection = 'column'; div.style.justifyContent = 'center';
-                            img.style.width = (width * factor) + 'px'; img.style.margin = '0 auto';
-                            if(other) other.style.width = '100%';
-                        } else {
-                            div.style.flexDirection = 'row'; div.style.justifyContent = 'flex-start';
-                            const baseW = width * 0.618;
-                            img.style.width = (baseW * factor) + 'px'; img.style.margin = '0';
-                            if(other) other.style.width = 'auto';
-                        }
+    const resp = await fetch('template.html');
+    let html = await resp.text();
+    
+    html = html.replace('</head>', `
+        <link rel="stylesheet" href="editor.css">
+        <script>
+            const observer = new ResizeObserver(entries => {
+                for (let entry of entries) {
+                    const div = entry.target; const width = entry.contentRect.width;
+                    const img = div.querySelector('.block_image');
+                    const other = div.querySelector('.div-other-wrapper');
+                    if (!img) continue;
+                    const factor = parseFloat(img.getAttribute('data-scale-factor') || '1.0');
+                    if (width <= 744) {
+                        div.style.flexDirection = 'column'; div.style.justifyContent = 'center';
+                        img.style.width = (width * factor) + 'px'; img.style.margin = '0 auto';
+                        if(other) other.style.width = '100%';
+                    } else {
+                        div.style.flexDirection = 'row'; div.style.justifyContent = 'flex-start';
+                        const baseW = width * 0.618;
+                        img.style.width = (baseW * factor) + 'px'; img.style.margin = '0';
+                        if(other) other.style.width = 'auto';
                     }
-                });
-                window.initDivLogic = () => { document.querySelectorAll('.block_container').forEach(d => observer.observe(d)); };
-                window.updateHTMLInternal = (textarea) => {
-                    const container = textarea.closest('.block_custom_html');
-                    if (container) container.querySelector('.html-render-area').innerHTML = textarea.value;
-                };
-            <\/script>`);
+                }
+            });
+            window.initDivLogic = () => { document.querySelectorAll('.block_container').forEach(d => observer.observe(d)); };
+        <\/script>`);
 
-        html = html.replace('</body>', `
-            <script>
-                window.addEventListener('message', (event) => {
-                    if (event.data.type === 'galleryHeight') {
-                        window.parent.postMessage(event.data, '*');
+    html = html.replace('</body>', `<script>window.addEventListener('message', e => { if (e.data.type === 'galleryHeight') window.parent.postMessage(e.data, '*'); });<\/script></body>`);
+    html = html.replace(/<body([^>]*)>/, '<body$1 class="editor-frame-body">');
+    frame.srcdoc = html.replace(/<div class=\"content-container\">([\s\S]*?)<\/div>/, '<div class=\"content-container\" id=\"editor-root\">$1</div>');
+
+    frame.onload = () => {
+        frame.contentWindow.initDivLogic();
+        const doc = frame.contentDocument;
+
+        // TRACKING VARIABLES
+        let isScrolling = false;
+        let startX = 0, startY = 0;
+        let pendingSelection = null;
+
+        const startInteraction = (e) => { 
+            if (isResizing) return;
+            
+            isScrolling = false;
+            const point = e.touches ? e.touches[0] : e;
+            startX = point.clientX;
+            startY = point.clientY;
+            pendingSelection = null;
+
+            // 1. HANDLE CHECK (Select Row instantly)
+            const handle = e.target.closest('.multi-image-handle');
+            if (handle) {
+                e.preventDefault();
+                e.stopPropagation();
+                selectElement(handle.closest('.block_multi_image'));
+                return;
+            }
+
+            // 2. IMAGE CHECK (Prep Pan, defer selection)
+            const item = e.target.closest('.multi-image-item');
+            if (item) {
+                pendingSelection = item;
+                isPanningMulti = true;
+                pannedItem = item;
+                
+                panStartX = point.clientX;
+                panStartY = point.clientY;
+
+                let bgPos = pannedItem.style.backgroundPosition || '50% 50%';
+                if (bgPos === 'center') bgPos = '50% 50%';
+                const posParts = bgPos.split(' ');
+                bgStartPosX = parseFloat(posParts[0]) || 50;
+                bgStartPosY = parseFloat(posParts[1]) || 50;
+                return;
+            }
+
+            // 3. BASELINE SELECTION (Queue for later)
+            let el = e.target.closest('.gallery-sentry')?.parentElement || 
+                     e.target.closest('.editable') || 
+                     e.target.closest('.div-other-wrapper > *') || 
+                     e.target.closest('.block_spacer') || 
+                     e.target.closest('.block_container');
+            
+            pendingSelection = el ? el : "CLEAR";
+        };
+
+        const moveInteraction = (e) => {
+            const point = e.touches ? e.touches[0] : e;
+            
+            // If user moves more than 10px, it's a scroll, not a tap
+            if (Math.abs(point.clientX - startX) > 10 || Math.abs(point.clientY - startY) > 10) {
+                isScrolling = true;
+            }
+
+            if (!isPanningMulti || !pannedItem) return;
+            const deltaX = (panStartX - point.clientX) * 0.4; 
+            const deltaY = (panStartY - point.clientY) * 0.4;
+            const newX = Math.max(0, Math.min(100, bgStartPosX + deltaX));
+            const newY = Math.max(0, Math.min(100, bgStartPosY + deltaY));
+            pannedItem.style.backgroundPosition = `${newX}% ${newY}%`;
+        };
+
+        const endInteraction = () => { 
+            // Only select if the user didn't scroll the page
+            if (!isScrolling && pendingSelection) {
+                if (pendingSelection === "CLEAR") {
+                    deselectAll();
+                } else {
+                    // Don't re-select if we are already editing text inside it
+                    if (pendingSelection === selectedEl && (pendingSelection.contentEditable === "true")) {
+                        // Keep focus
+                    } else {
+                        selectElement(pendingSelection);
                     }
-                });
-            <\/script>
-        </body>`);
+                }
+            }
 
-        // Inject editor root and class for editor-specific css overrides
-        html = html.replace(/<body([^>]*)>/, '<body$1 class="editor-frame-body">');
-        frame.srcdoc = html.replace(/<div class=\"content-container\">([\s\S]*?)<\/div>/, '<div class=\"content-container\" id=\"editor-root\">$1</div>');
+            isPanningMulti = false; 
+            pannedItem = null; 
+            pendingSelection = null;
+        };
 
+        doc.addEventListener('mousedown', startInteraction);
+        doc.addEventListener('touchstart', startInteraction, { passive: false });
+        doc.addEventListener('mousemove', moveInteraction, { passive: false });
+        doc.addEventListener('touchmove', moveInteraction, { passive: false });
+        doc.addEventListener('mouseup', endInteraction);
+        doc.addEventListener('touchend', endInteraction);
+        setDevice('iphone');
+    };
+}
 
-        
-        frame.onload = () => {
-    frame.contentWindow.initDivLogic();
-    frame.contentDocument.addEventListener('mousedown', (e) => { 
-        if (isResizing) return;
-        
-        // Priority Selection: Check for the small image item BEFORE the large row container
-        const el = e.target.closest('.multi-image-item') || 
-                   e.target.closest('.block_multi_image') || 
-                   e.target.closest('.gallery-sentry')?.parentElement || 
-                   e.target.closest('.editable') || 
-                   e.target.closest('.div-other-wrapper > *') || 
-                   e.target.closest('.block_spacer') || 
-                   e.target.closest('.block_container');
-        
-        if (el && el === selectedEl && (el.contentEditable === "true")) return;
-        if (el) selectElement(el); else deselectAll(); 
-    });
-    setDevice('iphone');
-};
+ 
 
 
 
-    }
+
+
+
+
     function selectElement(el) {
         if(selectedEl && selectedEl !== el) {
             if (selectedEl.classList.contains('photo_gallery')) {
@@ -829,151 +908,166 @@ function applyAndClosePill() {
     console.log("Applied and Synced.");
 }
 
-
-
-        function insertElement(type, data) {
-        const doc = frame.contentDocument; const root = doc.getElementById('editor-root');
-
-if (type === 'block_multi_image') {
-    const el = doc.createElement('div');
-    el.className = 'block_multi_image';
+// This lives in the MAIN builder.html script
+window.updateHTML = function(btn) {
+    // 1. Get the iframe window of the preview
+    const previewWindow = document.getElementById('preview-frame').contentWindow;
     
-    // Added a light dashed border and background for visibility
-    el.style.border = '2px dashed lightgray';
-    el.style.background = 'rgba(255,255,255,0.05)';
-    
-    el.style.display = 'flex';
-    el.style.height = '150px';
-    el.style.gap = '20px';
-    el.style.justifyContent = 'center'; 
-    el.style.alignItems = 'center';
-    el.style.width = '100%';
-    el.style.margin = '20px 0';
-    el.style.cursor = 'pointer';
-    el.style.pointerEvents = 'auto';
+    // 2. Find the textarea and block inside that preview frame
+    const container = btn.closest('.block_custom_html');
+    const textarea = container.querySelector('.html-input-box');
+    const code = textarea.value;
 
-    // Placement logic
-    if (selectedEl && selectedEl.parentNode === root) {
-        selectedEl.after(el);
-    } else {
-        root.appendChild(el);
+    // 3. Find the sandbox iframe (the "Grandchild")
+    const sandboxIframe = container.querySelector('.widget-sandbox');
+    
+    if (sandboxIframe) {
+        const frameDoc = sandboxIframe.contentDocument || sandboxIframe.contentWindow.document;
+        
+        // 4. Inject the user code into the Grandchild
+        frameDoc.open();
+        frameDoc.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body { margin: 0; padding: 0; background: transparent; }
+                    /* Ensure images/videos inside don't overflow */
+                    img, video, iframe { max-width: 100%; }
+                </style>
+            </head>
+            <body>
+                ${code}
+                <script>
+                    // Tell the Parent (the preview-frame) to resize this sandbox
+                    function reportHeight() {
+                        window.parent.postMessage({
+                            type: 'resize-sandbox',
+                            height: document.body.scrollHeight
+                        }, '*');
+                    }
+                    window.onload = reportHeight;
+                    new ResizeObserver(reportHeight).observe(document.body);
+                <\/script>
+            </body>
+            </html>
+        `);
+        frameDoc.close();
     }
+};
+
+
+        
+
+
+
+
+function insertElement(type, data) {
+    const doc = frame.contentDocument; 
+    const root = doc.getElementById('editor-root');
+
+    // 1. MULTI-IMAGE ROW
+    if (type === 'block_multi_image') {
+        const el = doc.createElement('div');
+        el.className = 'block_multi_image';
+        const handle = doc.createElement('div');
+        handle.className = 'multi-image-handle';
+        handle.innerText = 'ROW';
+        el.appendChild(handle);
+        if (selectedEl && selectedEl.parentNode === root) { selectedEl.after(el); } else { root.appendChild(el); }
+        setTimeout(() => selectElement(el), 50);
+        return;
+    }
+
+    // 2. PHOTO GALLERY
+    if (type === 'photo_gallery') {
+        const el = doc.createElement('div'); 
+        el.className = 'photo_gallery';
+        const sentry = doc.createElement('div');
+        sentry.className = 'gallery-sentry';
+        const iframe = doc.createElement('iframe');
+        iframe.src = 'gallery-component.html';
+        iframe.setAttribute('scrolling', 'no');
+        el.appendChild(sentry);
+        el.appendChild(iframe);
+        if (selectedEl && selectedEl.parentNode === root) { selectedEl.after(el); } else { root.appendChild(el); }
+        if (frame.contentWindow.initDivLogic) frame.contentWindow.initDivLogic();
+        setTimeout(() => selectElement(el), 150); 
+        return;
+    }
+
+    // 3. STANDARD ELEMENTS
+    const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
+    const el = doc.createElement(tagMap[type] || 'div');
+    el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
     
-    setTimeout(() => selectElement(el), 50);
-    return;
+    if (type === 'block_image') { 
+        el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`;
+        el.contentEditable = "false"; 
+        el.style.width = "200px"; 
+        el.setAttribute('data-scale-factor', '1.0');
+    } else if (type === 'block_button') { 
+        el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`;
+        el.contentEditable = "false"; 
+    } else if (type === 'block_custom_html') {
+        el.setAttribute('data-html-code', '');
+        el.className = 'editable block_custom_html'; 
+        
+        // This structure maps 1:1 to your editor.css classes:
+        // .custom-html-header -> background: var(--teal-ui)
+        // .activate-btn -> background: #ffffff; color: var(--teal-ui)
+        el.innerHTML = `
+            <div class="custom-html-ui-container" contenteditable="false">
+                <div class="custom-html-header">
+                    <span><i class="fa-solid fa-code"></i> Custom HTML/Widget</span>
+                    <button class="activate-btn" onclick="window.parent.updateHTML(this)">Activate</button>
+                </div>
+                <textarea class="html-input-box" placeholder="Paste your embed code here..." 
+                    oninput="this.closest('.block_custom_html').setAttribute('data-html-code', this.value);"></textarea>
+            </div>
+            <div class="html-render-area"></div> 
+            <div class="sandbox-iframe-wrapper">
+                <iframe class="widget-sandbox" sandbox="allow-scripts allow-popups allow-forms allow-same-origin"></iframe>
+            </div>
+        `;
+        el.contentEditable = "false";
+    } else if (type === 'block_spacer' || type === 'block_container') { 
+        el.contentEditable = "false"; 
+    } else { 
+        el.innerText = ""; 
+        el.setAttribute('data-placeholder', 'Type here...'); 
+        el.contentEditable = "true"; 
+    }
+
+    // 4. INSERTION LOGIC
+    const targetDiv = selectedEl ? selectedEl.closest('.block_container') : null;
+    if (targetDiv) {
+        if (type === 'block_image' && !targetDiv.querySelector('.block_image')) {
+            targetDiv.prepend(el);
+        } else if (type !== 'block_image') {
+            let wrap = targetDiv.querySelector('.div-other-wrapper') || doc.createElement('div');
+            if (!wrap.parentNode) { 
+                wrap.className = 'div-other-wrapper'; 
+                targetDiv.appendChild(wrap); 
+            }
+            wrap.appendChild(el);
+        }
+    } else if (type === 'block_container') { 
+        root.appendChild(el); 
+        if (frame.contentWindow.initDivLogic) frame.contentWindow.initDivLogic(); 
+    } else { 
+        if (selectedEl && selectedEl.parentNode === root) { 
+            selectedEl.after(el); 
+        } else { 
+            root.appendChild(el); 
+        }
+    }
+    setTimeout(() => selectElement(el), 150);
 }
 
 
 
 
-        if (type === 'photo_gallery') {
-            const el = doc.createElement('div'); 
-            el.className = 'photo_gallery';
-            
-            // --- FIX: Constrain the Sentry so it doesn't cover the whole page ---
-            el.style.position = 'relative'; 
-            
-            // 1. Create and style the Sentry immediately
-            const sentry = doc.createElement('div');
-            sentry.className = 'gallery-sentry';
-            sentry.style.touchAction = 'none'; 
-            
-            // 2. Create the Iframe
-            const iframe = doc.createElement('iframe');
-            iframe.src = 'gallery-component.html';
-            iframe.setAttribute('scrolling', 'no');
-            // Ensure iframe fills the constrained container
-            iframe.style.width = '100%'; 
-            iframe.style.height = '100%';
-            
-            // 3. Assemble the component
-            el.appendChild(sentry);
-            el.appendChild(iframe);
-            
-            // 4. Place in document
-            selectedEl && selectedEl.parentNode === root ? selectedEl.after(el) : root.appendChild(el);
-            
-            // 5. Enable builder logic 
-            if (frame.contentWindow.initDivLogic) {
-                frame.contentWindow.initDivLogic();
-            }
-    
-            setTimeout(() => selectElement(el), 150); 
-            return;
-        }
-
-        const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
-        const el = doc.createElement(tagMap[type] || 'div');
-        el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
-        
-        if(type === 'block_image') { 
-            el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`;
-            el.contentEditable = "false"; el.style.width = "200px"; el.setAttribute('data-scale-factor', '1.0');
-        } else if(type === 'block_button') { 
-            el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`;
-            el.contentEditable = "false"; 
-        } else if(type === 'block_custom_html') {
-            el.innerHTML = `<span class="html-tag">HTML</span><textarea class="html-input-box" placeholder="Paste HTML here..." oninput="window.parent.updateHTML(this)"></textarea><div class="html-render-area"></div>`;
-            el.contentEditable = "false";
-        } else if(type === 'block_spacer' || type === 'block_container') { el.contentEditable = "false"; }
-        else { el.innerText = ""; el.setAttribute('data-placeholder', 'Type here...'); el.contentEditable = "true"; }
-
-        const targetDiv = selectedEl ? selectedEl.closest('.block_container') : null;
-        if (targetDiv) {
-            if (type === 'block_image' && !targetDiv.querySelector('.block_image')) targetDiv.prepend(el);
-            else if (type !== 'block_image') {
-                let wrap = targetDiv.querySelector('.div-other-wrapper') || doc.createElement('div');
-                wrap.className = 'div-other-wrapper'; targetDiv.appendChild(wrap); wrap.appendChild(el);
-            }
-        } else if (type === 'block_container') { root.appendChild(el); frame.contentWindow.initDivLogic(); }
-        else { selectedEl && selectedEl.parentNode === root ? selectedEl.after(el) : root.appendChild(el); }
-        setTimeout(() => selectElement(el), 150);
-    }
-
-
-    window.updateHTML = function(textarea) {
-    const container = textarea.closest('.block_custom_html');
-    if (!container) return;
-
-    const renderArea = container.querySelector('.html-render-area');
-    const iframeDoc = textarea.ownerDocument; 
-
-    // 1. THE SECURITY GUARD: Tag everything injected with 'dudu'
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach((mutation) => {
-            mutation.addedNodes.forEach((node) => {
-                if (node.nodeType === 1) { // Element node
-                    node.setAttribute('data-origin', 'dudu');
-                    // Tag all nested children of the new element
-                    node.querySelectorAll('*').forEach(child => child.setAttribute('data-origin', 'dudu'));
-                }
-            });
-        });
-    });
-
-    // Watch both head and body for any widget "explosions"
-    observer.observe(iframeDoc.head, { childList: true });
-    observer.observe(iframeDoc.body, { childList: true, subtree: true });
-
-    // 2. RENDER THE CODE
-    renderArea.innerHTML = textarea.value;
-
-    // 3. EXECUTE SCRIPTS & TAG THEM
-    const scripts = renderArea.querySelectorAll("script");
-    scripts.forEach(oldScript => {
-        const newScript = iframeDoc.createElement("script");
-        Array.from(oldScript.attributes).forEach(attr => {
-            newScript.setAttribute(attr.name, attr.value);
-        });
-        newScript.setAttribute('data-origin', 'dudu'); // Tag the script itself
-        newScript.appendChild(iframeDoc.createTextNode(oldScript.innerHTML));
-        iframeDoc.body.appendChild(newScript);
-        oldScript.remove();
-    });
-
-    // Keep guard active for 5 seconds to catch delayed widget loads
-    setTimeout(() => observer.disconnect(), 5000);
-};
 
 
     function setDevice(type) {
@@ -1347,9 +1441,10 @@ async function masterSave() {
         block.replaceWith(div);
     });
 
-    // CLEANUP & MULTI-IMAGE LOGIC
-    const garbage = ['.block-controls', '.resizer', '.html-tag', '.html-input-box', '.resize-handle', '.gallery-sentry', '[data-origin="dudu"]'];
+        // CLEANUP & MULTI-IMAGE LOGIC
+    const garbage = ['.block-controls', '.resizer', '.html-tag', '.html-input-box', '.resize-handle', '.gallery-sentry', '.multi-image-handle', '[data-origin="dudu"]'];
     clone.querySelectorAll(garbage.join(',')).forEach(el => el.remove());
+
     
     clone.querySelectorAll('*').forEach(el => {
         el.removeAttribute('contenteditable');
@@ -1579,6 +1674,16 @@ async function loadProject() {
             }
             editorRoot.innerHTML = tempDiv.innerHTML;
 
+            // --- NEW: RE-INJECT ROW HANDLES FOR MULTI-IMAGE ---
+            editorRoot.querySelectorAll('.block_multi_image').forEach(row => {
+                if (!row.querySelector('.multi-image-handle')) {
+                    const handle = iframeDoc.createElement('div');
+                    handle.className = 'multi-image-handle';
+                    handle.innerText = 'ROW  ';
+                    row.appendChild(handle);
+                }
+            });
+
             // 3. RESTORE CUSTOM HTML BLOCKS
             editorRoot.querySelectorAll('.block_custom_html').forEach(block => {
                 const savedCode = block.getAttribute('data-html-code');
@@ -1637,6 +1742,7 @@ async function loadProject() {
     };
     input.click();
 }
+
 
 
 

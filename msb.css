@@ -164,17 +164,22 @@ header {
 }
 
 .header-menu-icon { 
-    position: absolute; top: 50%; left: 1.25rem; 
-    transform: translateY(-50%); z-index: 8001; 
+    position: fixed; /* Keep it in place relative to the window */
+    top: 1.7rem;    /* Center it vertically relative to your header height */
+    left: 1.25rem; 
+    z-index: 10000;  /* Higher than sidebar z-index (9000) */
     padding: 0.3125rem;       
     cursor: pointer; 
 }
+
+
 .menu-lines div { 
     width: 1.1875rem;          
-    height: 2px;             
+    height: 2.3333px;             
     background-color: var(--icon-brown); 
     margin: 0.3125rem 0;       
     transition: 0.2s;
+border-radius: 2px; 
 }
 
 .active .line1 { transform: rotate(-45deg) translate(-0.28125rem, 0.3125rem); } 
