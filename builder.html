@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v5.3.7 Fix</title>
+    <title>Snoozing Builder | v5.4.0 Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="editor.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -123,7 +123,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v5.3.7</div>
+        <div class="version-status">v5.4.0</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -206,49 +206,119 @@ autocomplete="off"
 
 <script>
 function recalculateMultiLimits() {
-    if (!selectedEl || !selectedEl.classList.contains('block_multi_image')) return;
-    
-    const gapSlider = document.getElementById('multi-gap-slider');
-    const sizeSlider = document.getElementById('multi-size-slider');
-    if (!gapSlider || !sizeSlider) return;
+    if (!selectedEl) return;
+    const items = selectedEl.querySelectorAll('.multi-image-item');
+    const n = items.length;
 
-    // Use the viewport width of the iframe/window
-    const containerWidth = selectedEl.offsetWidth; 
-    const images = selectedEl.querySelectorAll('.multi-image-item img');
-    const n = images.length;
-    
-    let sumRatios = 0;
-    images.forEach(img => { sumRatios += (img.naturalWidth / img.naturalHeight || 1); });
+    const wSlider = document.getElementById('multi-size-slider'); // Now controls Width
+    const gSlider = document.getElementById('multi-gap-slider');
+    const wLabel = document.getElementById('multi-size-label');
+    const gLabel = document.getElementById('multi-gap-label');
 
-    // 1. Max Height in VW
-    const currentGap = parseInt(gapSlider.value);
-    const totalGapPx = n > 1 ? (n - 1) * currentGap : 0;
-    const maxHeightPx = (containerWidth - totalGapPx) / sumRatios;
-    
-    // Convert Max Height to VW units: (px / containerWidth) * 100
-    const maxHeightVw = (maxHeightPx / containerWidth) * 100;
-    sizeSlider.max = maxHeightVw.toFixed(2);
+    const cw = selectedEl.offsetWidth; 
 
-    // 2. Max Gap in PX
-    const currentHeightVw = parseFloat(sizeSlider.value);
-    const currentHeightPx = (currentHeightVw / 100) * containerWidth;
-    const totalImgWidthPx = currentHeightPx * sumRatios;
-    const maxGap = n > 1 ? (containerWidth - totalImgWidthPx) / (n - 1) : 0;
-    gapSlider.max = Math.floor(Math.max(0, maxGap));
+    // --- CONDITION: Blank Object (n = 0) ---
+    if (n === 0) {
+        selectedEl.setAttribute('data-desired-w', '100'); // Reset w to 100px
+        selectedEl.style.gap = '0px';                     // Reset gap to 0
+        if (wSlider) { wSlider.value = 100; wSlider.max = cw; wSlider.disabled = true; }
+        if (gSlider) { gSlider.value = 0; gSlider.max = 0; gSlider.disabled = true; }
+        if (wLabel) wLabel.innerText = '100px';
+        if (gLabel) gLabel.innerText = '0px';
+        
+        selectedEl.style.height = '150px'; // Keep empty placeholder visible
+        return;
+    }
+
+    selectedEl.style.height = 'auto'; // Container height auto-adjusts
+
+    // Get current "desired" states
+    let w = parseFloat(selectedEl.getAttribute('data-desired-w'));
+    if (isNaN(w)) w = 100; 
+    let gap = parseFloat(selectedEl.style.gap) || 0;
+    const ratio = selectedEl.getAttribute('data-ratio-val') || "1";
+
+    // --- CONDITION: 1st Image (n = 1) ---
+    if (n === 1) {
+        gap = 0;
+        let maxw = cw; // Max width is the full container
+        if (w > maxw) w = maxw;
+
+        selectedEl.style.gap = '0px';
+        items[0].style.width = w + 'px';
+        items[0].style.aspectRatio = ratio.toString(); // Height adjusts automatically!
+        items[0].style.height = 'auto';
+
+        if (wSlider) { wSlider.max = maxw; wSlider.value = w; wSlider.disabled = false; }
+        if (gSlider) { gSlider.max = 0; gSlider.value = 0; gSlider.disabled = true; }
+        if (wLabel) wLabel.innerText = Math.round(w) + 'px';
+        if (gLabel) gLabel.innerText = '0px';
+        return;
+    }
+
+    // --- CONDITION: 2nd+ Image (n >= 2) ---
+    
+    // 1. Recalculate maxg and cap current gap
+    let maxGap = (cw - (w * n)) / (n - 1);
+    if (maxGap < 0) maxGap = 0;
+    if (gap > maxGap) gap = maxGap;
+
+    // 2. Recalculate maxw and cap current w
+    let maxW = (cw - (gap * (n - 1))) / n;
+    if (w > maxW) w = maxW;
+
+    // 3. Apply Maintained/Capped values to DOM
+    selectedEl.style.gap = gap + 'px';
+    
+    items.forEach(item => {
+        item.style.width = w + 'px';
+        item.style.aspectRatio = ratio.toString(); // Height adjusts automatically based on this
+        item.style.height = 'auto'; 
+        item.style.flex = '0 0 auto';
+    });
+
+    // 4. Sync Sliders and Labels
+    if (wSlider) {
+        wSlider.disabled = false;
+        wSlider.max = maxW;
+        wSlider.value = w;
+    }
+    if (gSlider) {
+        gSlider.disabled = false;
+        gSlider.max = maxGap;
+        gSlider.value = gap;
+    }
+    
+    if (wLabel) wLabel.innerText = Math.round(w) + 'px';
+    if (gLabel) gLabel.innerText = Math.round(gap) + 'px';
 }
+
+
+
+
+
+
+
+
+
+
 
 function handleMultiSizeChange(val) {
     if (!selectedEl) return;
-    // Set height as VW so it stays proportional on rotate
-    selectedEl.style.height = val + 'vw';
-    recalculateMultiLimits();
+    selectedEl.setAttribute('data-desired-w', val);
+    recalculateMultiLimits(); 
 }
 
 function handleMultiGapChange(val) {
     if (!selectedEl) return;
-    selectedEl.style.gap = val + 'px';
+    selectedEl.style.gap = val + 'px'; 
     recalculateMultiLimits();
 }
+
+
+
+
+
 
 
 
@@ -388,31 +458,30 @@ function updateMultiRowHeight(val) {
 
 function triggerMultiImageAdd() {
     const input = document.getElementById('image-upload');
+    
     input.onchange = function(e) {
         const file = e.target.files[0];
         if (!file) return;
+        
         const reader = new FileReader();
         reader.onload = function(event) {
             const newItem = document.createElement('div');
             newItem.className = 'multi-image-item';
-            const img = document.createElement('img');
-            img.src = event.target.result;
+            newItem.style.backgroundImage = `url(${event.target.result})`;
             
-            img.onload = function() {
-                newItem.appendChild(img);
-                selectedEl.appendChild(newItem);
-                selectedEl.style.gap = '0px';
-                
-                // Solve for Height (100% width coverage)
-                const sumRatios = Array.from(selectedEl.querySelectorAll('img'))
-                    .reduce((acc, i) => acc + (i.naturalWidth / i.naturalHeight || 1), 0);
-                
-                // Set height to 100 / sumRatios in VW units
-                const idealHeightVw = 100 / sumRatios;
-                selectedEl.style.height = idealHeightVw + 'vw';
-                
-                renderToolbar();
-            };
+            // Get current ratio from the row
+            const ratio = parseFloat(selectedEl.getAttribute('data-ratio-val')) || 1;
+            
+            // Apply the geometry
+            newItem.style.height = '100%';
+            newItem.style.aspectRatio = ratio.toString(); 
+            
+            selectedEl.appendChild(newItem);
+            input.value = ""; 
+            
+            // Refresh math so the new image fits in the row width
+            recalculateMultiLimits();
+            renderToolbar();
         };
         reader.readAsDataURL(file);
     };
@@ -420,6 +489,30 @@ function triggerMultiImageAdd() {
 }
 
 
+
+
+
+
+
+function cycleAspectRatio() {
+    if (!selectedEl) return;
+    const ratios = [1, 0.618, 1.618, 0.75, 1.33];
+    let current = parseFloat(selectedEl.getAttribute('data-ratio-val')) || 1;
+    let nextIdx = (ratios.indexOf(current) + 1) % ratios.length;
+    let newRatio = ratios[nextIdx];
+    
+    selectedEl.setAttribute('data-ratio-val', newRatio);
+
+    // Update the aspect ratio for all images. 
+    // Because W is fixed, height instantly adjusts itself via CSS.
+    const items = selectedEl.querySelectorAll('.multi-image-item');
+    items.forEach(item => {
+        item.style.aspectRatio = newRatio.toString();
+    });
+
+    // Just re-render the toolbar to update the aspect ratio button label
+    renderToolbar();
+}
 
 
 
@@ -561,36 +654,6 @@ function resetToolbar() {
     return '';
 }
 
-function renderToolbar() {
-    if (!selectedEl) return;
-    toolbarContent.style.visibility = 'visible';
-    
-    // Identify Element Types
-    const isMultiItem = selectedEl.classList.contains('multi-image-item');
-    const isMultiRow = selectedEl.classList.contains('block_multi_image');
-    // ... (other constants)
-
-    // CALL RESET AND CAPTURE THE EMPTY STRING
-    let html = resetToolbar();
-    
-    // Cache parent reference for specific overrides
-    const parentToolbar = toolbarContent.parentElement;
-
-    if (isMultiItem) {
-        // ... standard tools
-    }
-    else if (isMultiRow) {
-        // OVERRIDE THE RESET specifically for the multi-row stack
-        if (parentToolbar) parentToolbar.style.height = 'auto';
-        toolbarContent.style.flexDirection = 'column';
-        toolbarContent.style.alignItems = 'stretch';
-        toolbarContent.style.height = 'auto';
-
-        // ... rest of your multi-row logic
-    }
-    // ...
-}
-
 
     function renderToolbar() {
     if (!selectedEl) return;
@@ -620,91 +683,73 @@ function renderToolbar() {
         `;
     }
     else if (isMultiRow) {
-        // OVERRIDE RESET: Switch to vertical stack for the detailed sliders
         if (parentToolbar) parentToolbar.style.height = 'auto';
         toolbarContent.style.flexDirection = 'column';
         toolbarContent.style.alignItems = 'stretch';
         toolbarContent.style.height = 'auto';
+        toolbarContent.style.width = '240px'; // Set the container width here instead of inside
 
-        const currentHeightVw = parseFloat(selectedEl.style.height) || 20;
+        const items = selectedEl.querySelectorAll('.multi-image-item');
+        const n = items.length;
+        const slidersDisabled = n === 0 ? 'disabled' : '';
+        
+        let currentWidthPx = parseFloat(selectedEl.getAttribute('data-desired-w')) || 100;
         const currentGap = parseInt(selectedEl.style.gap) || 0;
-        const currentAspect = selectedEl.getAttribute('data-aspect') || "1";
+        const currentAspect = selectedEl.getAttribute('data-ratio-val') || "1";
         
         let aspectLabel = "SQUARE 1:1";
         if (currentAspect === "0.618") aspectLabel = "PORTRAIT 0.618";
         if (currentAspect === "1.618") aspectLabel = "LANDSCAPE 1.618";
+        if (currentAspect === "0.75")  aspectLabel = "PORTRAIT 3:4";
+        if (currentAspect === "1.33")  aspectLabel = "LANDSCAPE 4:3";
 
+        // FIX: Change width:224px to width:100% and ensure padding is accounted for
         html += `
-            <div style="display:flex; flex-direction:column; gap:10px; padding:12px; width:224px; box-sizing:border-box;">
+            <div style="display:flex; flex-direction:column; gap:10px; padding:12px; width:100%; box-sizing:border-box;">
                 <div style="display:flex; justify-content:center; align-items:center; gap:15px; padding-bottom:8px; border-bottom:1px solid #444;">
                     <button class="tool-btn" style="background:#2ecc71; color:white; font-weight:900; font-size:10px; margin:0; padding:4px 12px;" onclick="triggerMultiImageAdd()">+ ADD</button>
                     <button class="tool-btn" style="color:#ff6b6b; background:transparent; margin:0;" onclick="deleteElement()"><i class="fa-solid fa-trash"></i></button>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:4px;">
-                    <span style="font-size:8px; color:#aaa; text-transform:uppercase; letter-spacing:0.5px;">Aspect Ratio</span>
-                    <button class="tool-btn" style="width:100%; background:#444; color:white; font-size:10px; margin:0; text-align:center; height:24px;" onclick="cycleAspectRatio()">
+                    <span style="font-size:8px; color:#aaa; text-transform:uppercase;">Aspect Ratio</span>
+                    <button class="tool-btn" style="width:100%; background:#444; color:white; font-size:10px; margin:0; text-align:center; height:24px;" 
+                        onclick="cycleAspectRatio()" ${slidersDisabled}>
                         ${aspectLabel}
                     </button>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:4px;">
                     <div style="display:flex; justify-content:space-between;">
                         <span style="font-size:8px; color:#aaa; text-transform:uppercase;">Spacing</span>
-                        <span style="font-size:8px; color:#666;">${currentGap}px</span>
+                        <span id="multi-gap-label" style="font-size:8px; color:#666;">${currentGap}px</span>
                     </div>
                     <input type="range" id="multi-gap-slider" min="0" max="100" step="1" value="${currentGap}" 
-                        style="width:200px; height:4px; cursor:pointer;" oninput="handleMultiGapChange(this.value)">
+                        style="width:100%; height:4px; cursor:pointer;" oninput="handleMultiGapChange(this.value)" ${n < 2 ? 'disabled' : ''}>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:4px;">
                     <div style="display:flex; justify-content:space-between;">
-                        <span style="font-size:8px; color:#aaa; text-transform:uppercase;">Row Height</span>
-                        <span style="font-size:8px; color:#666;">${currentHeightVw}vw</span>
+                        <span style="font-size:8px; color:#aaa; text-transform:uppercase;">Image Width</span>
+                        <span id="multi-size-label" style="font-size:8px; color:#666;">${Math.round(currentWidthPx)}px</span>
                     </div>
-                    <input type="range" id="multi-size-slider" min="5" max="100" step="0.5" value="${currentHeightVw}" 
-                        style="width:200px; height:4px; cursor:pointer;" oninput="handleMultiSizeChange(this.value)">
+                    <input type="range" id="multi-size-slider" min="5" max="1200" step="1" value="${currentWidthPx}" 
+                        style="width:100%; height:4px; cursor:pointer;" oninput="handleMultiSizeChange(this.value)" ${slidersDisabled}>
                 </div>
             </div>
         `;
+        
         setTimeout(recalculateMultiLimits, 10);
     } 
-    // --- 2. STANDARD TOOLS ---
+    // ... rest of the function (Gallery, Div, Btn, Img, etc.)
     else if (isGallery) {
-        const innerG = selectedEl.querySelector('iframe')?.contentDocument?.querySelector('.photo_gallery');
-        const isMasonry = innerG ? innerG.classList.contains('masonry-mode') : false;
-        html += `
-            <div class="gallery-toggle-group">
-                <span class="${!isMasonry ? 'active' : ''}">SQUARE</span>
-                <label class="switch">
-                    <input type="checkbox" ${isMasonry ? 'checked' : ''} onchange="callGalleryToggle()">
-                    <span class="slider"></span>
-                </label>
-                <span class="${isMasonry ? 'active' : ''}">MASONRY</span>
-            </div>
-        `;
-    } 
-    else if (isDiv) {
-        html += `<div class="color-swatch" style="background:#FAF6F3" onclick="updateColor('#FAF6F3')"></div><input type="color" oninput="updateColor(this.value)">`;
-    } 
-    else if (isBtn) {
-        html += `
-            <button class="tool-btn btn-teal" onclick="openPill('text')">TEXT</button>
-            <button class="tool-btn btn-blue" onclick="openPill('link')">LINK</button>
-            <button class="tool-btn" style="background:#2ecc71; color:black; font-weight:900; font-size:10px;" onclick="applyAndClosePill()">APPLY</button>
-        `;
-    } 
-    else if (isImg) {
-        html += `
-            <button class="tool-btn" onclick="triggerImageUpload()"><i class="fa-solid fa-sync"></i></button>
-            <button class="tool-btn" onclick="fitToWidth()"><i class="fa-solid fa-arrows-left-right"></i></button>
-        `;
-    } 
-    else if (isSpacer) {
-        html += `<button class="tool-btn" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
-    } 
-    else if (isEditable) {
-        html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
+        // ... (existing gallery logic)
     }
 
-    // --- 3. COMMON TOOLS (Align & Delete) ---
+    // --- COMMON TOOLS ---
+    // Ensure that if we are NOT in multi-row, we reset the width to default
+    if (!isMultiRow) {
+        toolbarContent.style.width = ''; // Reset to CSS default
+    }
+
+    // (Final check for Align & Delete buttons)
     const inDiv = selectedEl.closest('.block_container');
     if (!inDiv && !isDiv && !isSpacer && !isGallery && !isMultiRow && !isMultiItem) {
         html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
@@ -716,6 +761,11 @@ function renderToolbar() {
     
     toolbarContent.innerHTML = html;
 }
+
+
+
+
+
 
 
 

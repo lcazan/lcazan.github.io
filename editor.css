@@ -9,36 +9,35 @@
 
 
 
+
+
+
+
+/* The Container: Now the driver of height */
 .block_multi_image {
-    display: flex !important;
-    width: 100% !important;
-    flex-direction: row !important;
-    justify-content: center; /* Centers the whole group of images/gaps */
-    align-items: center;
-    overflow: hidden;
-    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
 padding-top:20px;
-}
-
-/* --- FIXED MULTI-IMAGE ITEM --- */
-.multi-image-item {
-    height: 100% !important; /* Forces div to follow the container slider */
-    flex: 0 0 auto;
-    background-size: cover;    /* The "Gallery Secret": ensures image fills div without gaps */
-    background-position: 50% 50%; /* Default center */
-    background-repeat: no-repeat;
-    touch-action: none;       /* FREEZES page scrolling on touch/drag */
-    cursor: crosshair;
-    position: relative;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    /* height is set by JS */
     overflow: hidden;
-    display: block;
+    position: relative;
+    box-sizing: border-box;
 }
 
-/* Hide any legacy img tags that might be causing cropping */
-.multi-image-item img {
-    display: none !important;
+/* The Items: Now driven by aspect-ratio */
+.multi-image-item {
+    flex: 0 0 auto;           /* CRITICAL: Prevents stretching/shrinking */
+    height: 100%;             /* Fills the container's height */
+    width: auto;              /* Width is calculated by aspect-ratio */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    box-sizing: border-box;
 }
-
 
 
 
