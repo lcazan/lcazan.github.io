@@ -1,7 +1,7 @@
 {
   "name": "VFD Pro Calculator",
   "short_name": "VFD Pro",
-  "start_url": "index.html",
+  "start_url": "home.html",
   "display": "standalone",
   "background_color": "#050505",
   "theme_color": "#050505",
