@@ -1,7 +1,7 @@
 const CACHE_NAME = 'vfd-v2.6';
 const ASSETS = [
   './',
-  './index.html',
+  './home.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'
