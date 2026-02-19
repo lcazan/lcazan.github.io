@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vfd-v2.6';
+const CACHE_NAME = 'vfd-v3.5';
 const ASSETS = [
   './',
   './home.html',
