@@ -886,7 +886,7 @@ function applyAndClosePill() {
         const el = doc.createElement('div');
         el.className = 'block_multi_image';
         
-        el.style.border = '2px dashed lightgray';
+        el.style.border = 'none';
         el.style.background = 'rgba(255,255,255,0.05)';
         el.style.display = 'flex';
         el.style.height = '150px';
@@ -1579,7 +1579,7 @@ async function loadProject() {
                 if (!row.querySelector('.multi-image-handle')) {
                     const handle = iframeDoc.createElement('div');
                     handle.className = 'multi-image-handle';
-                    handle.innerText = 'ROW';
+                    handle.innerText = 'ROW  ';
                     row.appendChild(handle);
                 }
             });
