@@ -1733,7 +1733,7 @@ async function loadProject() {
                         newBlock.id = savedId;
                         const textarea = newBlock.querySelector('.html-input-box');
                         if (textarea) textarea.value = savedCode || "";
-                        child.remove(); // Remove the dead clone
+                        child.remove(); 
                     }
                 }
                 
@@ -1777,11 +1777,21 @@ async function loadProject() {
             }
 
             if (frame.contentWindow.initDivLogic) frame.contentWindow.initDivLogic();
-            deselectAll();
+            
+            // --- THE SELECTION FIX ---
+            // Wait 300ms for all 'insertElement' timeouts to finish, then strip selection UI
+            setTimeout(() => {
+                editorRoot.querySelectorAll('.selected-item').forEach(el => {
+                    el.classList.remove('selected-item');
+                });
+                editorRoot.querySelectorAll('.resize-handle').forEach(h => h.remove());
+                deselectAll();
+            }, 300);
         }
     };
     input.click();
 }
+
 
 
 
@@ -1942,6 +1952,24 @@ function closeMenuEditor() {
     document.getElementById('menu-editor-overlay').style.display = 'none';
 }
 
+
+
+
+// Deselect when clicking empty space in the Sidebar or Toolbar
+document.addEventListener('click', (e) => {
+    const clickedSidebar = e.target.closest('#sidebar');
+    const clickedHeader = e.target.closest('#header-area');
+    const clickedToolbar = e.target.closest('#sticky-toolbar');
+
+    if (clickedSidebar || clickedHeader || clickedToolbar) {
+        // If the user clicked an actual button, slider, or input, do nothing.
+        if (e.target.closest('button, input, select, .tool-btn, .insert-btn, .device-btn, .color-swatch, .switch')) {
+            return;
+        }
+        // Otherwise, they clicked the empty background space.
+        deselectAll();
+    }
+});
 
    
 window.onload = init;
