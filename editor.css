@@ -22,7 +22,15 @@ body.builder-ui-body {
     padding: 0.9375rem 0; border-right: 0.125rem solid #000; flex-shrink: 0; z-index: 1000; 
 }
 
-#preview-container { flex-grow: 1; display: flex; flex-direction: column; background: #333; height: 100%; overflow: hidden; position: relative; }
+#preview-container { 
+    flex-grow: 1; 
+    display: flex; 
+    flex-direction: column; 
+    background: #333; 
+    height: 100%; 
+    overflow: hidden; 
+    position: relative; 
+}
 
 #header-area { 
     background: #222; border-bottom: 0.0625rem solid #000; 
@@ -61,8 +69,23 @@ body.builder-ui-body {
 
 #pill-editable { color: white; width: 100%; font-size: 0.85rem; outline: none; text-align: center; font-family: 'Courier New', monospace; line-height: 1.2; padding: 4px 0; }
 
-#frame-wrapper { flex-grow: 1; position: relative; background: #333; overflow: hidden; margin-top: 0; }
-#preview-frame { border: none; background: white; transform-origin: top left; position: absolute; top: 3rem; left: 0; }
+#frame-wrapper { 
+    flex-grow: 1; 
+    position: relative; 
+    background: #333; 
+    overflow-y: auto !important; /* Allow the wrapper to scroll as the iframe grows */
+    margin-top: 0; 
+}
+
+#preview-frame { 
+    border: none; 
+    background: white; 
+    transform-origin: top left; 
+    position: absolute; 
+    top: 3rem; 
+    left: 0; 
+    /* Frame height will be controlled by setDevice JS */
+}
 
 /* --- BUTTONS & TOOLS --- */
 .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; flex-shrink: 0; }
@@ -85,8 +108,8 @@ body.builder-ui-body {
     position: relative; 
     padding: 0 !important; 
     box-sizing: border-box;
-    height: auto !important; /* CRITICAL: Must allow growth */
-    overflow: visible !important;
+    height: auto !important; 
+    overflow: visible !important; /* CRITICAL: Must not clip expanded iframe */
 }
 
 .custom-html-ui-container { 
@@ -146,8 +169,8 @@ body.builder-ui-body {
     border: none; 
     display: block; 
     background: transparent;
-    overflow: hidden; /* Prevent internal scrollbars */
-    transition: height 0.2s ease-out; /* Smooth expansion */
+    overflow: hidden; /* Prevent internal scrollbars so it expands instead */
+    transition: height 0.2s ease-out; 
 }
 
 /* --- MULTI-IMAGE ROW --- */
@@ -170,8 +193,22 @@ body.builder-ui-body {
     display: block; 
     overflow: hidden; 
 }
-.gallery-sentry { position: absolute; inset: 0; background: transparent; z-index: 10; cursor: pointer; touch-action: none; }
-.selected-item .gallery-sentry { pointer-events: none; }
+/* Update this in editor.css */
+.gallery-sentry { 
+    position: absolute; 
+    inset: 0; 
+    background: transparent; 
+    z-index: 10; 
+    cursor: pointer; 
+    /* This is the magic line: */
+    touch-action: pan-y !important; 
+}
+
+/* When the gallery is selected, we allow internal interaction */
+.selected-item .gallery-sentry { 
+    pointer-events: none; 
+}
+
 
 /* =========================================
    3. INTERNAL EDITOR LOGIC
@@ -180,15 +217,17 @@ body.builder-ui-body {
     width: 100%; 
     display: flex; 
     flex-direction: column; 
-    padding-bottom: 100px; /* Reduced from 250px to prevent excessive gap */
+    padding-bottom: 200px; /* Spacer for the bottom UI */
+    min-height: 100vh;
 }
 
 .editor-frame-body { 
     height: auto !important; 
-    min-height: 100%; 
+    min-height: 100vh; 
     margin: 0; 
     padding: 0; 
     overflow-x: hidden; 
+    overflow-y: visible !important;
 }
 
 .editable { position: relative; min-height: 1.2em; cursor: pointer; outline: none; box-sizing: border-box; }

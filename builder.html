@@ -581,45 +581,76 @@ window.addEventListener('message', (event) => {
 function updateSandbox(block) {
     const textarea = block.querySelector('.html-input-box');
     const iframe = block.querySelector('.widget-sandbox');
+    if (!textarea || !iframe) return;
+
     const rawCode = textarea.value;
 
+    // We inject a specialized script into the srcdoc to measure content
+    // and report it back to the preview frame (the relay).
     const heightScript = `
         <script>
-            const sendHeight = () => {
-                const height = document.documentElement.scrollHeight || document.body.scrollHeight;
-                window.parent.postMessage({
-                    type: 'sandboxHeight',
-                    id: '${block.id}', 
-                    height: height
-                }, '*');
-            };
-            window.addEventListener('load', sendHeight);
-            window.addEventListener('resize', sendHeight);
-            const observer = new MutationObserver(sendHeight);
-            observer.observe(document.body, { childList: true, subtree: true, attributes: true });
-            new ResizeObserver(sendHeight).observe(document.body);
-            let checks = 0;
-            const poll = setInterval(() => {
-                sendHeight();
-                if (checks++ > 10) clearInterval(poll);
-            }, 500);
+            (function() {
+                const sendHeight = () => {
+                    // Force a layout recalculation
+                    const height = document.documentElement.getBoundingClientRect().height || 
+                                 document.body.scrollHeight || 
+                                 document.documentElement.scrollHeight;
+                    
+                    window.parent.postMessage({
+                        type: 'sandboxHeight',
+                        id: '${block.id}', 
+                        height: Math.ceil(height)
+                    }, '*');
+                };
+
+                // Trigger on all major lifecycle events
+                window.addEventListener('load', sendHeight);
+                window.addEventListener('resize', sendHeight);
+
+                // Watch for DOM changes (elements added/removed)
+                const observer = new MutationObserver(sendHeight);
+                observer.observe(document.body, { 
+                    childList: true, 
+                    subtree: true, 
+                    attributes: true 
+                });
+
+                // Watch for size changes of elements (images loading, etc)
+                if (window.ResizeObserver) {
+                    new ResizeObserver(sendHeight).observe(document.body);
+                }
+
+                // Initial burst polling to catch "lazy" widgets like Elfsight
+                let checks = 0;
+                const poll = setInterval(() => {
+                    sendHeight();
+                    if (checks++ > 20) clearInterval(poll);
+                }, 500);
+
+                // Final safety check at 5 seconds
+                setTimeout(sendHeight, 5000);
+            })();
         <\/script>
     `;
 
+    // Combine user code with our height reporter
     iframe.srcdoc = rawCode + heightScript;
 }
+
 
 
     async function init() {
     const resp = await fetch('template.html');
     let html = await resp.text();
     
+    // 1. Inject Editor Styles and Resize Logic
     html = html.replace('</head>', `
         <link rel="stylesheet" href="editor.css">
         <script>
             const observer = new ResizeObserver(entries => {
                 for (let entry of entries) {
-                    const div = entry.target; const width = entry.contentRect.width;
+                    const div = entry.target; 
+                    const width = entry.contentRect.width;
                     const img = div.querySelector('.block_image');
                     const other = div.querySelector('.div-other-wrapper');
                     if (!img) continue;
@@ -637,25 +668,39 @@ function updateSandbox(block) {
                 }
             });
             window.initDivLogic = () => { document.querySelectorAll('.block_container').forEach(d => observer.observe(d)); };
-        <\/script>`);
+        <\/script>
+    </head>`);
 
-    // UPDATED RELAY: Now listens for both galleryHeight and sandboxHeight
-    html = html.replace('</body>', `<script>
-        window.addEventListener('message', e => { 
-            if (e.data.type === 'galleryHeight' || e.data.type === 'sandboxHeight') {
-                window.parent.postMessage(e.data, '*'); 
-            }
-        });
-    <\/script></body>`);
+    // 2. THE RELAY: Handshake between Sandbox -> Preview -> Builder
+    // Uses a regex to find </body> regardless of case
+    const relayScript = `
+        <script>
+            window.addEventListener('message', e => { 
+                if (e.data && (e.data.type === 'galleryHeight' || e.data.type === 'sandboxHeight')) {
+                    window.parent.postMessage(e.data, '*'); 
+                }
+            });
+        <\/script>
+    `;
+    html = html.replace(/<\/body>/i, relayScript + '</body>');
 
-    html = html.replace(/<body([^>]*)>/, '<body$1 class="editor-frame-body">');
-    frame.srcdoc = html.replace(/<div class=\"content-container\">([\s\S]*?)<\/div>/, '<div class=\"content-container\" id=\"editor-root\">$1</div>');
+    // 3. Setup Editor Root and Body Classes
+    html = html.replace(/<body([^>]*)>/i, '<body$1 class="editor-frame-body">');
+    
+    // Ensure content-container is converted to editor-root for JS targeting
+    html = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
+
+    // 4. Write to Frame
+    frame.srcdoc = html;
 
     frame.onload = () => {
-        frame.contentWindow.initDivLogic();
+        if (typeof frame.contentWindow.initDivLogic === 'function') {
+            frame.contentWindow.initDivLogic();
+        }
+        
         const doc = frame.contentDocument;
 
-        // TRACKING VARIABLES
+        // Interaction State
         let isScrolling = false;
         let startX = 0, startY = 0;
         let pendingSelection = null;
@@ -719,7 +764,8 @@ function updateSandbox(block) {
                 if (pendingSelection === "CLEAR") {
                     deselectAll();
                 } else {
-                    if (pendingSelection === selectedEl && (pendingSelection.contentEditable === "true")) {
+                    if (selectedEl === pendingSelection && pendingSelection.contentEditable === "true") {
+                        // Stay in edit mode
                     } else {
                         selectElement(pendingSelection);
                     }
@@ -730,50 +776,68 @@ function updateSandbox(block) {
             pendingSelection = null;
         };
 
+        // Attach listeners to the newly loaded document
         doc.addEventListener('mousedown', startInteraction);
         doc.addEventListener('touchstart', startInteraction, { passive: false });
         doc.addEventListener('mousemove', moveInteraction, { passive: false });
         doc.addEventListener('touchmove', moveInteraction, { passive: false });
         doc.addEventListener('mouseup', endInteraction);
         doc.addEventListener('touchend', endInteraction);
+        
         setDevice('iphone');
     };
 }
 
+
+
+
 // MAKE SURE YOUR MESSAGE LISTENER LOOKS LIKE THIS OUTSIDE OF INIT():
 window.addEventListener('message', (event) => {
     const doc = frame.contentDocument;
-    if (!doc) return;
+    if (!doc || !event.data) return;
 
-    // Gallery resizing
+    // 1. Gallery Resizing Logic
     if (event.data.type === 'galleryHeight') {
         const galleryIframe = doc.querySelector('.photo_gallery iframe');
         if (galleryIframe) {
             const newHeight = event.data.height + 'px';
-            galleryIframe.style.height = newHeight;
+            galleryIframe.style.setProperty('height', newHeight, 'important');
+            
             const container = galleryIframe.closest('.photo_gallery');
-            if (container) container.style.height = newHeight;
+            if (container) {
+                container.style.setProperty('height', newHeight, 'important');
+            }
         }
     }
 
-    // Sandbox resizing
+    // 2. Sandbox (Custom HTML) Resizing Logic
     if (event.data.type === 'sandboxHeight') {
-        const sandboxIframe = doc.querySelector(`#${event.data.id} iframe`);
+        // Use standard concatenation for the selector to avoid template literal bugs
+        const sandboxIframe = doc.querySelector('#' + event.data.id + ' iframe');
+        
         if (sandboxIframe) {
             const newHeight = event.data.height + 'px';
-            sandboxIframe.style.height = newHeight;
-            // Also expand the parent block container
+            
+            // Resize the iframe itself
+            sandboxIframe.style.setProperty('height', newHeight, 'important');
+            
+            // UNLOCK PARENTS: Find the container and the main block
+            const wrapper = sandboxIframe.closest('.sandbox-iframe-wrapper');
             const block = sandboxIframe.closest('.block_custom_html');
-            if (block) block.style.height = 'auto'; 
+            
+            if (wrapper) {
+                wrapper.style.setProperty('height', 'auto', 'important');
+                wrapper.style.setProperty('min-height', newHeight, 'important');
+            }
+            
+            if (block) {
+                block.style.setProperty('height', 'auto', 'important');
+                block.style.setProperty('min-height', newHeight, 'important');
+                block.style.setProperty('overflow', 'visible', 'important');
+            }
         }
     }
 });
-
- 
-
-
-
-
 
 
 
@@ -1006,14 +1070,14 @@ window.updateHTML = function(btn) {
     if (sandboxIframe) {
         const frameDoc = sandboxIframe.contentDocument || sandboxIframe.contentWindow.document;
         
-        // 4. Inject the user code into the Grandchild
+        // 4. Inject the user code + our robust Height Reporter into the Grandchild
         frameDoc.open();
         frameDoc.write(`
             <!DOCTYPE html>
             <html>
             <head>
                 <style>
-                    body { margin: 0; padding: 0; background: transparent; }
+                    body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
                     /* Ensure images/videos inside don't overflow */
                     img, video, iframe { max-width: 100%; }
                 </style>
@@ -1021,15 +1085,48 @@ window.updateHTML = function(btn) {
             <body>
                 ${code}
                 <script>
-                    // Tell the Parent (the preview-frame) to resize this sandbox
-                    function reportHeight() {
-                        window.parent.postMessage({
-                            type: 'resize-sandbox',
-                            height: document.body.scrollHeight
-                        }, '*');
-                    }
-                    window.onload = reportHeight;
-                    new ResizeObserver(reportHeight).observe(document.body);
+                    (function() {
+                        const sendHeight = () => {
+                            // Force a layout recalculation
+                            const height = document.documentElement.getBoundingClientRect().height || 
+                                         document.body.scrollHeight || 
+                                         document.documentElement.scrollHeight;
+                            
+                            // Send the correctly formatted message with the ID!
+                            window.parent.postMessage({
+                                type: 'sandboxHeight',
+                                id: '${container.id}', 
+                                height: Math.ceil(height)
+                            }, '*');
+                        };
+
+                        // Trigger on all major lifecycle events
+                        window.addEventListener('load', sendHeight);
+                        window.addEventListener('resize', sendHeight);
+
+                        // Watch for DOM changes (elements added/removed by Elfsight)
+                        const observer = new MutationObserver(sendHeight);
+                        observer.observe(document.body, { 
+                            childList: true, 
+                            subtree: true, 
+                            attributes: true 
+                        });
+
+                        // Watch for size changes of elements
+                        if (window.ResizeObserver) {
+                            new ResizeObserver(sendHeight).observe(document.body);
+                        }
+
+                        // Initial burst polling to catch "lazy" widgets
+                        let checks = 0;
+                        const poll = setInterval(() => {
+                            sendHeight();
+                            if (checks++ > 20) clearInterval(poll);
+                        }, 500);
+
+                        // Final safety check
+                        setTimeout(sendHeight, 5000);
+                    })();
                 <\/script>
             </body>
             </html>
@@ -1037,6 +1134,7 @@ window.updateHTML = function(btn) {
         frameDoc.close();
     }
 };
+
 
 
         
@@ -1095,9 +1193,9 @@ function insertElement(type, data) {
         el.setAttribute('data-html-code', '');
         el.className = 'editable block_custom_html'; 
         
-        // This structure maps 1:1 to your editor.css classes:
-        // .custom-html-header -> background: var(--teal-ui)
-        // .activate-btn -> background: #ffffff; color: var(--teal-ui)
+        // --- THE CRITICAL FIX: GENERATE A UNIQUE ID ---
+        el.id = 'custom-html-' + Date.now(); 
+        
         el.innerHTML = `
             <div class="custom-html-ui-container" contenteditable="false">
                 <div class="custom-html-header">
@@ -1146,6 +1244,7 @@ function insertElement(type, data) {
     }
     setTimeout(() => selectElement(el), 150);
 }
+
 
 
 
