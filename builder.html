@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v5.4.3</title>
+    <title>Snoozing Builder | v5.5.0</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="editor.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -123,7 +123,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v5.4.3/div>
+        <div class="version-status">v5.5.0</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -427,27 +427,7 @@ function updateMultiRowHeight(val) {
 }
 
 
-// --- NEW: Handle Replacing a Single Image in a Multi-Row ---
-function triggerMultiImageReplace() {
-    const input = document.getElementById('image-upload');
-    
-    input.onchange = function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            // Target the currently selected item
-            if (selectedEl && selectedEl.classList.contains('multi-image-item')) {
-                const img = selectedEl.querySelector('img');
-                if (img) img.src = event.target.result;
-            }
-            input.value = '';
-        };
-        reader.readAsDataURL(file);
-    };
-    input.click();
-}
+
 
 // --- NEW: Slider Logic ---
 function updateMultiRowGap(val) {
@@ -465,37 +445,71 @@ function updateMultiRowHeight(val) {
 
 
 
+// --- UPDATED: Uses Blobs and IMG tags for high resolution ---
 function triggerMultiImageAdd() {
     const input = document.getElementById('image-upload');
-    
     input.onchange = function(e) {
         const file = e.target.files[0];
         if (!file) return;
         
-        const reader = new FileReader();
-        reader.onload = function(event) {
+        // Match baseline: Use FileReader to create a Base64 data URL
+        const r = new FileReader();
+        r.onload = ev => {
+            const dataUrl = ev.target.result;
             const newItem = document.createElement('div');
             newItem.className = 'multi-image-item';
-            newItem.style.backgroundImage = `url(${event.target.result})`;
             
-            // Get current ratio from the row
+            const img = document.createElement('img');
+            img.src = dataUrl;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            img.style.display = 'block';
+            newItem.appendChild(img);
+            
             const ratio = parseFloat(selectedEl.getAttribute('data-ratio-val')) || 1;
-            
-            // Apply the geometry
             newItem.style.height = '100%';
             newItem.style.aspectRatio = ratio.toString(); 
             
             selectedEl.appendChild(newItem);
             input.value = ""; 
             
-            // Refresh math so the new image fits in the row width
             recalculateMultiLimits();
             renderToolbar();
         };
-        reader.readAsDataURL(file);
+        r.readAsDataURL(file);
     };
     input.click();
 }
+
+function triggerMultiImageReplace() {
+    const input = document.getElementById('image-upload');
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const r = new FileReader();
+        r.onload = ev => {
+            const dataUrl = ev.target.result;
+            if (selectedEl && selectedEl.classList.contains('multi-image-item')) {
+                let img = selectedEl.querySelector('img');
+                if (!img) {
+                    selectedEl.style.backgroundImage = 'none';
+                    img = document.createElement('img');
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    img.style.objectFit = 'cover';
+                    selectedEl.appendChild(img);
+                }
+                img.src = dataUrl;
+            }
+            input.value = '';
+        };
+        r.readAsDataURL(file);
+    };
+    input.click();
+}
+
 
 
 
@@ -1449,12 +1463,18 @@ function syncRealTime() {
 
 
 
+
+
+
 async function masterSave() {
     const iframeDoc = frame.contentDocument;
     const editorRoot = iframeDoc.getElementById('editor-root');
     if (!editorRoot) return;
 
-    // 1. SETTINGS & FAVICON
+    let userFileName = prompt("Enter project name:", "My_Project");
+    if (!userFileName) return;
+    if (!userFileName.endsWith('.zip')) userFileName += ".zip";
+
     const projectSettings = {
         title: document.getElementById('set-page-title')?.value || "",
         pageID: document.getElementById('set-page-name')?.value.toLowerCase().replace(/\s+/g, '-') || "index",
@@ -1464,7 +1484,7 @@ async function masterSave() {
     };
 
     const zip = new JSZip();
-    const imgFolder = zip.folder("images");
+    const imgFolder = zip.folder("images"); // Create the folder immediately
 
     const favInput = document.getElementById('favicon-upload');
     if (favInput && favInput.files[0]) {
@@ -1476,7 +1496,7 @@ async function masterSave() {
         zip.file(`images/${projectSettings.faviconName}`, favInput.savedBlob);
     }
 
-    // 2. SYNC CUSTOM HTML
+    // SYNC CUSTOM HTML
     iframeDoc.querySelectorAll('.block_custom_html').forEach(block => {
         const textarea = block.querySelector('.html-input-box');
         if (textarea) {
@@ -1485,43 +1505,82 @@ async function masterSave() {
         }
     });
 
-    // 3. ASSET HELPERS
     const addLocalFileToZip = async (fileName) => {
         try {
             const response = await fetch(fileName);
-            if (response.ok) {
-                const content = await response.text();
-                zip.file(fileName, content);
-            }
+            if (response.ok) zip.file(fileName, await response.text());
         } catch (e) { console.error(`Skipped ${fileName}`); }
     };
 
+    // --- DIRECT BYTE CONVERTER: 100% Quality, No Canvas, No Fetch Errors ---
     const processImg = async (img) => {
-        const src = img.getAttribute('src') || "";
+        // Fallback checks to ensure we grab the string properly
+        let src = img.getAttribute('src') || img.src || "";
+        src = src.trim();
         let filename = img.getAttribute('data-filename');
+        
         if (src.startsWith('blob:') || src.startsWith('data:')) {
             if (!filename) filename = `img_${Date.now()}_${Math.floor(Math.random()*1000)}.jpg`;
+            if (!filename.toLowerCase().endsWith('.jpg')) filename += '.jpg';
+            
             try {
-                const blob = await fetch(src).then(r => r.blob());
-                imgFolder.file(filename, blob);
+                let finalBlob;
+                
+                if (src.startsWith('data:')) {
+                    // Convert Base64 directly back to raw bytes
+                    const arr = src.split(',');
+                    const mimeMatch = arr[0].match(/:(.*?);/);
+                    const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+                    const bstr = atob(arr[1]);
+                    let n = bstr.length;
+                    const u8arr = new Uint8Array(n);
+                    while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+                    finalBlob = new Blob([u8arr], {type: mime});
+                } else {
+                    // It's a blob (Gallery might still use this)
+                    const response = await fetch(src);
+                    finalBlob = await response.blob();
+                }
+
+                // Actually save the file to the ZIP folder
+                imgFolder.file(filename, finalBlob);
+                
+                // Tag the live image
                 img.setAttribute('data-filename', filename); 
                 return `images/${filename}`;
-            } catch (e) { console.error("Capture failed:", e); }
+            } catch (e) {
+                alert(`CRITICAL ERROR: Failed to process image ${filename}.\nReason: ${e.message}`);
+                console.error(e);
+            }
         }
         return filename ? `images/${filename}` : src;
     };
 
-    // 4. PRE-PROCESS ALL IMAGES
-    const liveStandardImgs = Array.from(iframeDoc.querySelectorAll('img:not(.gallery-item img)'));
-    for (let img of liveStandardImgs) { await processImg(img); }
+    // 1. PROCESS ALL LIVE IMAGES (Explicitly finds standard and Multi-Image)
+    const allLiveImgs = Array.from(iframeDoc.querySelectorAll('img:not(.gallery-item img)'));
+    for (let img of allLiveImgs) { 
+        await processImg(img); 
+    }
 
-    // 5. PROJECT STATE
+    // 2. CREATE PROJECT STATE (project.json)
     const projectClone = editorRoot.cloneNode(true);
+    
+    // RUTHLESS JSON CLEANER: Strip the giant Base64 strings out
     projectClone.querySelectorAll('img:not(.gallery-item img)').forEach(img => {
         const fn = img.getAttribute('data-filename');
-        if (fn) img.src = `images/${fn}`;
+        if (fn) {
+            img.setAttribute('src', `images/${fn}`);
+            img.removeAttribute('data-src'); 
+        } else {
+            // Failsafe: if it's still Base64, nuke it so JSON doesn't bloat
+            const currentSrc = img.getAttribute('src') || "";
+            if (currentSrc.startsWith('data:') || currentSrc.startsWith('blob:')) {
+                img.setAttribute('src', '');
+            }
+        }
     });
 
+    // Gallery processing (Kept exact baseline)
     const liveGalleries = iframeDoc.querySelectorAll('.photo_gallery');
     const clonedGalleries = projectClone.querySelectorAll('.photo_gallery');
     for (let i = 0; i < liveGalleries.length; i++) {
@@ -1544,9 +1603,10 @@ async function masterSave() {
             }));
         }
     }
+    
     zip.file("project.json", JSON.stringify({ version: "2.1", settings: projectSettings, htmlContent: projectClone.innerHTML }, null, 2));
 
-    // 6. EXPORT HTML GENERATION
+    // 3. EXPORT HTML GENERATION
     const supportFiles = ['editor.css', 'msb.css', 'template.html', 'gallery-component.html'];
     for (const file of supportFiles) { await addLocalFileToZip(file); }
 
@@ -1559,7 +1619,6 @@ async function masterSave() {
         body.setAttribute('data-page-id', projectSettings.pageID);
     }
 
-    // Apply Settings
     let titleTag = head.querySelector('title') || document.createElement('title');
     titleTag.innerText = projectSettings.title || "My Site";
     if (!head.contains(titleTag)) head.appendChild(titleTag);
@@ -1575,7 +1634,6 @@ async function masterSave() {
         Array.from(tmp.childNodes).forEach(n => head.appendChild(n.cloneNode(true)));
     }
 
-    // Export Specific Styles (Galleries + Multi-Image)
     const exportStyles = document.createElement('style');
     exportStyles.textContent = `
     .photo_gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; } 
@@ -1601,7 +1659,6 @@ async function masterSave() {
     `;
     head.appendChild(exportStyles);
 
-    // GALLERY RECONSTRUCTION
     let allGalleryImages = [];
     clone.querySelectorAll('.photo_gallery').forEach((gallery, idx) => {
         const liveG = iframeDoc.querySelectorAll('.photo_gallery')[idx];
@@ -1621,32 +1678,22 @@ async function masterSave() {
         }
     });
 
-    // CUSTOM HTML OUTPUT
     clone.querySelectorAll('.block_custom_html').forEach(block => {
-        const code = block.getAttribute('data-clean-snippet') || "";
+        const code = block.getAttribute('data-html-code') || "";
         const div = document.createElement('div'); div.className = 'custom-html-output'; div.innerHTML = code;
         block.replaceWith(div);
     });
 
-        // CLEANUP & MULTI-IMAGE LOGIC
-    const garbage = ['.block-controls', '.resizer', '.html-tag', '.html-input-box', '.resize-handle', '.gallery-sentry', '.multi-image-handle', '[data-origin="dudu"]'];
+    const garbage = ['.block-controls', '.resizer', '.html-tag', '.html-input-box', '.resize-handle', '.gallery-sentry', '.multi-image-handle', '.custom-html-header', '[data-origin="dudu"]'];
     clone.querySelectorAll(garbage.join(',')).forEach(el => el.remove());
 
-    
     clone.querySelectorAll('*').forEach(el => {
         el.removeAttribute('contenteditable');
         el.removeAttribute('data-origin');
         el.classList.remove('editable', 'selected-item', 'editable-active');
-        
-        // Remove Builder Styles (Borders/Brill/Cursors)
         if (el.classList.contains('multi-image-item') || el.classList.contains('block_multi_image')) {
-            el.style.border = "none";
-            el.style.outline = "none";
-            el.style.background = "transparent";
-            el.style.cursor = "default";
-            el.style.pointerEvents = "auto"; 
+            el.style.border = "none"; el.style.outline = "none"; el.style.background = "transparent"; el.style.cursor = "default"; el.style.pointerEvents = "auto"; 
         }
-
         if ((el.tagName === 'A' || el.tagName === 'BUTTON')) {
             const onClickVal = el.getAttribute('onclick');
             if (onClickVal && onClickVal.includes('return false')) el.removeAttribute('onclick');
@@ -1654,10 +1701,11 @@ async function masterSave() {
         }
     });
 
+    // FINAL CLEANUP: Ensure all images correctly point to /images/
     clone.querySelectorAll('img').forEach(img => {
         if (!img.closest('.photo_gallery')) {
             const fn = img.getAttribute('data-filename');
-            if (fn) img.src = 'images/' + fn;
+            if (fn) img.setAttribute('src', `images/${fn}`);
 
             const parentItem = img.closest('.multi-image-item');
             let href = img.getAttribute('data-link') || parentItem?.getAttribute('data-link');
@@ -1670,102 +1718,24 @@ async function masterSave() {
         }
     });
 
-    // UPDATED HIGHLIGHT SCRIPT: Now uses Label/Text matching
     const jsGalleryArray = JSON.stringify(allGalleryImages.map(name => `images/${name}`));
     const lightboxHTML = `<div id="imageModal" class="modal"><div class="counter" id="modalCounter">1 / 0</div><span class="close-modal" onclick="closeModal()">&times;</span><div id="sliderTrack" class="slider-track"></div></div>`;
-    
-    const autoHighlightScript = `
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const rawID = document.body.getAttribute('data-page-id');
-        const pageID = (rawID && rawID.trim() !== "") ? rawID.toLowerCase() : "index";
-        
-        document.querySelectorAll('.nav-content a').forEach(link => {
-            if (link.classList.contains('dropdown-btn')) return;
-            const linkText = link.innerText.trim().toLowerCase();
-            
-            // Logic for Home (index/home/blank)
-            if (pageID === "index" || pageID === "home") {
-                if (linkText === "home") link.classList.add('current-page-bold');
-            } 
-            // Logic for Specific Pages (Label match)
-            else if (linkText === pageID || linkText.replace(/\\s+/g, '-') === pageID) {
-                link.classList.add('current-page-bold');
-            }
-        });
-    });
-    <\/script>`;
-
-    const lightboxScript = `
-    <script>
-    const galleryItems = ${jsGalleryArray}; 
-    let currentIndex = 0, startX = 0, prevTranslate = 0, isDragging = false;
-    const VELOCITY = 2500;
-    function renderLightboxSlides() {
-        const track = document.getElementById('sliderTrack');
-        if (!track) return;
-        track.innerHTML = '';
-        galleryItems.forEach((src, index) => {
-            const slide = document.createElement('div'); slide.className = 'slide'; 
-            slide.innerHTML = '<div class="image-wrapper" data-index="' + index + '"><div class="loader"></div><img data-src="' + src + '"></div>';
-            track.appendChild(slide);
-        });
-    }
-    function loadImage(index) {
-        const slide = document.querySelector('.image-wrapper[data-index="' + index + '"]');
-        if (!slide) return;
-        const img = slide.querySelector('img'), loader = slide.querySelector('.loader');
-        if (img && img.dataset.src) {
-            img.src = img.dataset.src;
-            img.onload = () => { img.classList.add('loaded'); if (loader) loader.style.display = 'none'; };
-        }
-    }
-    function updateTrackPos(animate) {
-        const track = document.getElementById('sliderTrack');
-        const modal = document.getElementById('imageModal');
-        if (!track || !modal) return;
-        const width = modal.offsetWidth;
-        const currentTranslate = currentIndex * -width;
-        prevTranslate = currentTranslate;
-        track.style.transition = animate ? 'transform ' + (width / VELOCITY) + 's ease-out' : 'none';
-        track.style.transform = 'translateX(' + currentTranslate + 'px)';
-        document.getElementById('modalCounter').innerText = (currentIndex + 1) + ' / ' + galleryItems.length;
-    }
-    function openModal(index) {
-        if (!document.getElementById('sliderTrack').hasChildNodes()) renderLightboxSlides();
-        currentIndex = index;
-        document.getElementById('imageModal').style.display = "block";
-        updateTrackPos(false);
-        document.body.style.overflow = "hidden";
-        loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
-    }
-    function moveSlide(step) {
-        currentIndex = Math.max(0, Math.min(currentIndex + step, galleryItems.length - 1));
-        updateTrackPos(true);
-        loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
-    }
-    function closeModal() { document.getElementById('imageModal').style.display = "none"; document.body.style.overflow = "auto"; }
-    window.addEventListener('resize', () => { if (document.getElementById('imageModal')?.style.display === \"block\") updateTrackPos(false); });
-    
-    document.addEventListener('DOMContentLoaded', () => {
-        const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
-        if (!modal || !track) return;
-        modal.addEventListener('touchstart', e => { isDragging = true; startX = e.touches[0].clientX; track.style.transition = 'none'; });
-        modal.addEventListener('touchmove', e => { if (!isDragging) return; track.style.transform = 'translateX(' + (prevTranslate + (e.touches[0].clientX - startX)) + 'px)'; });
-        modal.addEventListener('touchend', e => { 
-            isDragging = false; const diff = e.changedTouches[0].clientX - startX;
-            if (diff < -50) moveSlide(1); else if (diff > 50) moveSlide(-1); else moveSlide(0);
-        });
-    });
-    <\/script>
-    `;
+    const autoHighlightScript = `<script>document.addEventListener('DOMContentLoaded', () => { const rawID = document.body.getAttribute('data-page-id'); const pageID = (rawID && rawID.trim() !== "") ? rawID.toLowerCase() : "index"; document.querySelectorAll('.nav-content a').forEach(link => { if (link.classList.contains('dropdown-btn')) return; const linkText = link.innerText.trim().toLowerCase(); if (pageID === "index" || pageID === "home") { if (linkText === "home") link.classList.add('current-page-bold'); } else if (linkText === pageID || linkText.replace(/\\s+/g, '-') === pageID) { link.classList.add('current-page-bold'); } }); });<\/script>`;
+    const lightboxScript = `<script>const galleryItems = ${jsGalleryArray}; let currentIndex = 0, startX = 0, prevTranslate = 0, isDragging = false; const VELOCITY = 2500; function renderLightboxSlides() { const track = document.getElementById('sliderTrack'); if (!track) return; track.innerHTML = ''; galleryItems.forEach((src, index) => { const slide = document.createElement('div'); slide.className = 'slide'; slide.innerHTML = '<div class="image-wrapper" data-index="' + index + '"><div class="loader"></div><img data-src="' + src + '"></div>'; track.appendChild(slide); }); } function loadImage(index) { const slide = document.querySelector('.image-wrapper[data-index="' + index + '"]'); if (!slide) return; const img = slide.querySelector('img'), loader = slide.querySelector('.loader'); if (img && img.dataset.src) { img.src = img.dataset.src; img.onload = () => { img.classList.add('loaded'); if (loader) loader.style.display = 'none'; }; } } function updateTrackPos(animate) { const track = document.getElementById('sliderTrack'); const modal = document.getElementById('imageModal'); if (!track || !modal) return; const width = modal.offsetWidth; const currentTranslate = currentIndex * -width; prevTranslate = currentTranslate; track.style.transition = animate ? 'transform ' + (width / VELOCITY) + 's ease-out' : 'none'; track.style.transform = 'translateX(' + currentTranslate + 'px)'; document.getElementById('modalCounter').innerText = (currentIndex + 1) + ' / ' + galleryItems.length; } function openModal(index) { if (!document.getElementById('sliderTrack').hasChildNodes()) renderLightboxSlides(); currentIndex = index; document.getElementById('imageModal').style.display = "block"; updateTrackPos(false); document.body.style.overflow = "hidden"; loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1); } function moveSlide(step) { currentIndex = Math.max(0, Math.min(currentIndex + step, galleryItems.length - 1)); updateTrackPos(true); loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1); } function closeModal() { document.getElementById('imageModal').style.display = "none"; document.body.style.overflow = "auto"; } window.addEventListener('resize', () => { if (document.getElementById('imageModal')?.style.display === \"block\") updateTrackPos(false); }); document.addEventListener('DOMContentLoaded', () => { const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack'); if (!modal || !track) return; modal.addEventListener('touchstart', e => { isDragging = true; startX = e.touches[0].clientX; track.style.transition = 'none'; }); modal.addEventListener('touchmove', e => { if (!isDragging) return; track.style.transform = 'translateX(' + (prevTranslate + (e.touches[0].clientX - startX)) + 'px)'; }); modal.addEventListener('touchend', e => { isDragging = false; const diff = e.changedTouches[0].clientX - startX; if (diff < -50) moveSlide(1); else if (diff > 50) moveSlide(-1); else moveSlide(0); }); });<\/script>`;
 
     zip.file(`${projectSettings.pageID}.html`, '<!DOCTYPE html>\n<html lang="en">\n' + clone.innerHTML + lightboxHTML + lightboxScript + autoHighlightScript + '\n</html>');
+    
     const content = await zip.generateAsync({type: "blob"});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(content);
-    a.download = "Final_Export.zip";
+    a.download = userFileName;
     a.click();
+
+    const msg = document.createElement('div');
+    msg.innerHTML = `<i class="fa-solid fa-circle-check"></i> Project Saved & Exported: ${userFileName}`;
+    msg.style.cssText = "position:fixed; bottom:20px; right:20px; background:orange; color:white; padding:12px 20px; border-radius:8px; font-weight:bold; z-index:99999; box-shadow:0 5px 15px rgba(0,0,0,0.3); font-family:sans-serif;";
+    document.body.appendChild(msg);
+    setTimeout(() => msg.remove(), 3000);
 }
 
 
@@ -1779,16 +1749,6 @@ async function masterSave() {
 
 
 
-
-
-
-
-
-
-
-// --- 2. THE LOAD FUNCTION ---
-// --- 2. THE LOAD FUNCTION ---
-// --- 2. THE LOAD FUNCTION ---
 async function loadProject() {
     const input = document.createElement('input');
     input.type = 'file';
@@ -1803,132 +1763,110 @@ async function loadProject() {
         const editorRoot = iframeDoc.getElementById('editor-root');
         
         if (editorRoot) {
-            // 1. RESTORE SETTINGS & FAVICON
+            // Restore Settings
             if (data.settings) {
-                const titleInput = document.getElementById('set-page-title');
-                const descInput = document.getElementById('set-meta-desc');
-                const headInput = document.getElementById('set-head-code');
-                const favInput = document.getElementById('favicon-upload');
-
-                if (titleInput) titleInput.value = data.settings.title || "";
-                if (descInput) descInput.value = data.settings.metaDesc || "";
-                if (headInput) headInput.value = data.settings.headCode || "";
-
-                if (favInput && data.settings.faviconName) {
-                    const favFile = zip.file(`images/${data.settings.faviconName}`);
-                    if (favFile) {
-                        const blob = await favFile.async("blob");
-                        favInput.dataset.savedName = data.settings.faviconName;
-                        favInput.savedBlob = blob; 
-
-                        let previewContainer = favInput.parentNode.querySelector('.fav-preview-container');
-                        if (!previewContainer) {
-                            previewContainer = document.createElement('div');
-                            previewContainer.className = 'fav-preview-container';
-                            previewContainer.style.cssText = 'display:inline-flex; align-items:center; gap:12px; margin-left:15px; vertical-align:middle;';
-                            favInput.parentNode.appendChild(previewContainer);
-                        }
-                        const previewUrl = URL.createObjectURL(blob);
-                        previewContainer.innerHTML = `
-                            <img src="${previewUrl}" style="width:64px; height:64px; border-radius:6px; border:2px solid #4db8ff; object-fit:contain; background:#111; padding:2px;">
-                            <div style="display:flex; flex-direction:column;">
-                                <span style="font-size:12px; color:#fff; font-weight:bold;">Current Favicon:</span>
-                                <span style="font-size:11px; color:#aaa;">${data.settings.faviconName}</span>
-                            </div>
-                        `;
-                    }
-                }
+                document.getElementById('set-page-title').value = data.settings.title || "";
+                document.getElementById('set-meta-desc').value = data.settings.metaDesc || "";
+                document.getElementById('set-head-code').value = data.settings.headCode || "";
             }
 
-            // 2. RESTORE HTML & IMAGES
-            editorRoot.innerHTML = ''; 
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = data.htmlContent;
+            // Temporarily load HTML to iterate children
+            editorRoot.innerHTML = data.htmlContent;
             
-            const allImgs = Array.from(tempDiv.querySelectorAll('img'));
+            // Restore Static Images
+            const allImgs = Array.from(editorRoot.querySelectorAll('img:not(.gallery-item img)'));
             for (let img of allImgs) {
-                const path = img.getAttribute('src');
-                const storedName = img.getAttribute('data-filename');
-                if (path && (path.startsWith('images/') || storedName)) {
-                    const name = storedName || path.split('/').pop();
-                    const entry = zip.file(`images/${name}`);
-                    if (entry) {
-                        const fileData = await entry.async("blob");
-                        img.src = URL.createObjectURL(fileData);
-                        img.setAttribute('data-filename', name); 
-                    }
+                const name = img.getAttribute('data-filename') || img.getAttribute('src')?.split('/').pop();
+                const entry = zip.file(`images/${name}`);
+                if (entry) {
+                    const fileData = await entry.async("blob");
+                    img.src = URL.createObjectURL(fileData);
                 }
             }
-            editorRoot.innerHTML = tempDiv.innerHTML;
 
-            // --- NEW: RE-INJECT ROW HANDLES FOR MULTI-IMAGE ---
-            editorRoot.querySelectorAll('.block_multi_image').forEach(row => {
-                if (!row.querySelector('.multi-image-handle')) {
-                    const handle = iframeDoc.createElement('div');
-                    handle.className = 'multi-image-handle';
-                    handle.innerText = 'ROW  ';
-                    row.appendChild(handle);
-                }
-            });
-
-            // 3. RESTORE CUSTOM HTML BLOCKS
-            editorRoot.querySelectorAll('.block_custom_html').forEach(block => {
-                const savedCode = block.getAttribute('data-html-code');
-                const textarea = block.querySelector('.html-input-box');
-                if (textarea && savedCode !== null) {
-                    textarea.value = savedCode;
-                    if (window.updateHTML) window.updateHTML(textarea); 
-                }
-            });
-
-            // 4. RESTORE GALLERIES (Handshake)
-            const placeholders = Array.from(editorRoot.querySelectorAll('.photo_gallery'));
-            for (const placeholder of placeholders) {
-                const stateJson = placeholder.getAttribute('data-saved-images');
-                if (!stateJson) continue;
-
-                selectElement(placeholder);
-                insertElement('photo_gallery');
+            // SEQUENTIAL REBUILD
+            const children = Array.from(editorRoot.children);
+            for (const child of children) {
                 
-                const newGallery = placeholder.nextElementSibling;
-                placeholder.remove();
-                if (!newGallery) continue;
+                // --- CASE: CUSTOM HTML ---
+                if (child.classList.contains('block_custom_html')) {
+                    const savedCode = child.getAttribute('data-html-code');
+                    const savedId = child.id;
 
-                newGallery.setAttribute('data-saved-images', stateJson);
-                const gIframe = newGallery.querySelector('iframe');
-                const state = JSON.parse(stateJson);
-                const items = [];
-
-                for (let fileObj of state.files) {
-                    const entry = zip.file(`images/${fileObj.src}`);
-                    if (entry) {
-                        const fileData = await entry.async("blob");
-                        items.push({ 
-                            src: URL.createObjectURL(fileData), 
-                            pos: fileObj.pos, 
-                            originalName: fileObj.src 
-                        });
+                    selectedEl = child; 
+                    insertElement('block_custom_html'); 
+                    
+                    const newBlock = child.nextElementSibling;
+                    if (newBlock && newBlock.classList.contains('block_custom_html')) {
+                        newBlock.id = savedId;
+                        const textarea = newBlock.querySelector('.html-input-box');
+                        if (textarea) textarea.value = savedCode || "";
+                        child.remove(); 
                     }
                 }
+                
+                // --- CASE: PHOTO GALLERY ---
+                else if (child.classList.contains('photo_gallery')) {
+                    const stateJson = child.getAttribute('data-saved-images');
+                    if (!stateJson) continue;
 
-                const attemptHydration = () => {
-                    if (gIframe.contentWindow && typeof gIframe.contentWindow.loadSavedImages === 'function') {
-                        gIframe.contentWindow.loadSavedImages({ mode: state.mode, files: items });
-                    } else { setTimeout(attemptHydration, 50); }
-                };
+                    selectedEl = child;
+                    insertElement('photo_gallery');
+                    
+                    const newGallery = child.nextElementSibling;
+                    const state = JSON.parse(stateJson);
+                    const items = [];
+                    for (let f of state.files) {
+                        const entry = zip.file(`images/${f.src}`);
+                        if (entry) {
+                            const b = await entry.async("blob");
+                            items.push({ src: URL.createObjectURL(b), pos: f.pos, originalName: f.src });
+                        }
+                    }
+                    const hydrate = () => {
+                        const gIframe = newGallery?.querySelector('iframe');
+                        if (gIframe?.contentWindow?.loadSavedImages) {
+                            gIframe.contentWindow.loadSavedImages({ mode: state.mode, files: items });
+                        } else { setTimeout(hydrate, 50); }
+                    };
+                    hydrate();
+                    child.remove();
+                }
 
-                if (gIframe.contentDocument && gIframe.contentDocument.readyState === 'complete') {
-                    attemptHydration();
-                } else { gIframe.onload = attemptHydration; }
+                // --- CASE: MULTI-IMAGE HANDLES ---
+                else if (child.classList.contains('block_multi_image')) {
+                    if (!child.querySelector('.multi-image-handle')) {
+                        const handle = iframeDoc.createElement('div');
+                        handle.className = 'multi-image-handle';
+                        handle.innerText = 'ROW  ';
+                        child.appendChild(handle);
+                    }
+                }
             }
 
-            // --- RE-INITIALIZE BUILDER LOGIC ---
             if (frame.contentWindow.initDivLogic) frame.contentWindow.initDivLogic();
-            deselectAll();
+            
+            // --- THE SELECTION FIX ---
+            // Wait 300ms for all 'insertElement' timeouts to finish, then strip selection UI
+            setTimeout(() => {
+                editorRoot.querySelectorAll('.selected-item').forEach(el => {
+                    el.classList.remove('selected-item');
+                });
+                editorRoot.querySelectorAll('.resize-handle').forEach(h => h.remove());
+                deselectAll();
+            }, 300);
         }
     };
     input.click();
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -2082,6 +2020,24 @@ function closeMenuEditor() {
     document.getElementById('menu-editor-overlay').style.display = 'none';
 }
 
+
+
+
+// Deselect when clicking empty space in the Sidebar or Toolbar
+document.addEventListener('click', (e) => {
+    const clickedSidebar = e.target.closest('#sidebar');
+    const clickedHeader = e.target.closest('#header-area');
+    const clickedToolbar = e.target.closest('#sticky-toolbar');
+
+    if (clickedSidebar || clickedHeader || clickedToolbar) {
+        // If the user clicked an actual button, slider, or input, do nothing.
+        if (e.target.closest('button, input, select, .tool-btn, .insert-btn, .device-btn, .color-swatch, .switch')) {
+            return;
+        }
+        // Otherwise, they clicked the empty background space.
+        deselectAll();
+    }
+});
 
    
 window.onload = init;
