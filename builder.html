@@ -123,7 +123,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v5.4.3/div>
+        <div class="version-status">v5.4.3</div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -1454,6 +1454,11 @@ async function masterSave() {
     const editorRoot = iframeDoc.getElementById('editor-root');
     if (!editorRoot) return;
 
+    // --- A. FILENAME PROMPT & NOTIFICATION ---
+    let userFileName = prompt("Enter project name:", "My_Project");
+    if (!userFileName) return;
+    if (!userFileName.endsWith('.msb')) userFileName += ".msb";
+
     // 1. SETTINGS & FAVICON
     const projectSettings = {
         title: document.getElementById('set-page-title')?.value || "",
@@ -1515,7 +1520,7 @@ async function masterSave() {
     const liveStandardImgs = Array.from(iframeDoc.querySelectorAll('img:not(.gallery-item img)'));
     for (let img of liveStandardImgs) { await processImg(img); }
 
-    // 5. PROJECT STATE
+    // 5. PROJECT STATE (.msb file content)
     const projectClone = editorRoot.cloneNode(true);
     projectClone.querySelectorAll('img:not(.gallery-item img)').forEach(img => {
         const fn = img.getAttribute('data-filename');
@@ -1546,7 +1551,7 @@ async function masterSave() {
     }
     zip.file("project.json", JSON.stringify({ version: "2.1", settings: projectSettings, htmlContent: projectClone.innerHTML }, null, 2));
 
-    // 6. EXPORT HTML GENERATION
+    // 6. EXPORT HTML GENERATION (Final Website logic)
     const supportFiles = ['editor.css', 'msb.css', 'template.html', 'gallery-component.html'];
     for (const file of supportFiles) { await addLocalFileToZip(file); }
 
@@ -1575,7 +1580,7 @@ async function masterSave() {
         Array.from(tmp.childNodes).forEach(n => head.appendChild(n.cloneNode(true)));
     }
 
-    // Export Specific Styles (Galleries + Multi-Image)
+    // Export Specific Styles
     const exportStyles = document.createElement('style');
     exportStyles.textContent = `
     .photo_gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; } 
@@ -1621,151 +1626,48 @@ async function masterSave() {
         }
     });
 
-    // CUSTOM HTML OUTPUT
+    // CUSTOM HTML OUTPUT (Fixed: Replced with raw code)
     clone.querySelectorAll('.block_custom_html').forEach(block => {
-        const code = block.getAttribute('data-clean-snippet') || "";
-        const div = document.createElement('div'); div.className = 'custom-html-output'; div.innerHTML = code;
+        const code = block.getAttribute('data-html-code') || "";
+        const div = document.createElement('div'); 
+        div.className = 'custom-html-output'; 
+        div.innerHTML = code;
         block.replaceWith(div);
     });
 
-        // CLEANUP & MULTI-IMAGE LOGIC
-    const garbage = ['.block-controls', '.resizer', '.html-tag', '.html-input-box', '.resize-handle', '.gallery-sentry', '.multi-image-handle', '[data-origin="dudu"]'];
+    // CLEANUP
+    const garbage = ['.block-controls', '.resizer', '.html-tag', '.html-input-box', '.resize-handle', '.gallery-sentry', '.multi-image-handle', '.custom-html-header', '[data-origin="dudu"]'];
     clone.querySelectorAll(garbage.join(',')).forEach(el => el.remove());
 
-    
     clone.querySelectorAll('*').forEach(el => {
         el.removeAttribute('contenteditable');
         el.removeAttribute('data-origin');
         el.classList.remove('editable', 'selected-item', 'editable-active');
-        
-        // Remove Builder Styles (Borders/Brill/Cursors)
         if (el.classList.contains('multi-image-item') || el.classList.contains('block_multi_image')) {
-            el.style.border = "none";
-            el.style.outline = "none";
-            el.style.background = "transparent";
-            el.style.cursor = "default";
-            el.style.pointerEvents = "auto"; 
-        }
-
-        if ((el.tagName === 'A' || el.tagName === 'BUTTON')) {
-            const onClickVal = el.getAttribute('onclick');
-            if (onClickVal && onClickVal.includes('return false')) el.removeAttribute('onclick');
-            el.removeAttribute('disabled'); 
+            el.style.border = "none"; el.style.outline = "none"; el.style.background = "transparent"; el.style.cursor = "default"; el.style.pointerEvents = "auto"; 
         }
     });
 
-    clone.querySelectorAll('img').forEach(img => {
-        if (!img.closest('.photo_gallery')) {
-            const fn = img.getAttribute('data-filename');
-            if (fn) img.src = 'images/' + fn;
-
-            const parentItem = img.closest('.multi-image-item');
-            let href = img.getAttribute('data-link') || parentItem?.getAttribute('data-link');
-            if (href && href.trim() !== "" && href !== "#" && href !== "undefined") {
-                const anchor = document.createElement('a');
-                anchor.href = href.replace(';//', '://').trim();
-                img.parentNode.insertBefore(anchor, img);
-                anchor.appendChild(img);
-            }
-        }
-    });
-
-    // UPDATED HIGHLIGHT SCRIPT: Now uses Label/Text matching
+    // Lightbox + Highlight Scripts logic remains exactly same as baseline...
     const jsGalleryArray = JSON.stringify(allGalleryImages.map(name => `images/${name}`));
     const lightboxHTML = `<div id="imageModal" class="modal"><div class="counter" id="modalCounter">1 / 0</div><span class="close-modal" onclick="closeModal()">&times;</span><div id="sliderTrack" class="slider-track"></div></div>`;
-    
-    const autoHighlightScript = `
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const rawID = document.body.getAttribute('data-page-id');
-        const pageID = (rawID && rawID.trim() !== "") ? rawID.toLowerCase() : "index";
-        
-        document.querySelectorAll('.nav-content a').forEach(link => {
-            if (link.classList.contains('dropdown-btn')) return;
-            const linkText = link.innerText.trim().toLowerCase();
-            
-            // Logic for Home (index/home/blank)
-            if (pageID === "index" || pageID === "home") {
-                if (linkText === "home") link.classList.add('current-page-bold');
-            } 
-            // Logic for Specific Pages (Label match)
-            else if (linkText === pageID || linkText.replace(/\\s+/g, '-') === pageID) {
-                link.classList.add('current-page-bold');
-            }
-        });
-    });
-    <\/script>`;
-
-    const lightboxScript = `
-    <script>
-    const galleryItems = ${jsGalleryArray}; 
-    let currentIndex = 0, startX = 0, prevTranslate = 0, isDragging = false;
-    const VELOCITY = 2500;
-    function renderLightboxSlides() {
-        const track = document.getElementById('sliderTrack');
-        if (!track) return;
-        track.innerHTML = '';
-        galleryItems.forEach((src, index) => {
-            const slide = document.createElement('div'); slide.className = 'slide'; 
-            slide.innerHTML = '<div class="image-wrapper" data-index="' + index + '"><div class="loader"></div><img data-src="' + src + '"></div>';
-            track.appendChild(slide);
-        });
-    }
-    function loadImage(index) {
-        const slide = document.querySelector('.image-wrapper[data-index="' + index + '"]');
-        if (!slide) return;
-        const img = slide.querySelector('img'), loader = slide.querySelector('.loader');
-        if (img && img.dataset.src) {
-            img.src = img.dataset.src;
-            img.onload = () => { img.classList.add('loaded'); if (loader) loader.style.display = 'none'; };
-        }
-    }
-    function updateTrackPos(animate) {
-        const track = document.getElementById('sliderTrack');
-        const modal = document.getElementById('imageModal');
-        if (!track || !modal) return;
-        const width = modal.offsetWidth;
-        const currentTranslate = currentIndex * -width;
-        prevTranslate = currentTranslate;
-        track.style.transition = animate ? 'transform ' + (width / VELOCITY) + 's ease-out' : 'none';
-        track.style.transform = 'translateX(' + currentTranslate + 'px)';
-        document.getElementById('modalCounter').innerText = (currentIndex + 1) + ' / ' + galleryItems.length;
-    }
-    function openModal(index) {
-        if (!document.getElementById('sliderTrack').hasChildNodes()) renderLightboxSlides();
-        currentIndex = index;
-        document.getElementById('imageModal').style.display = "block";
-        updateTrackPos(false);
-        document.body.style.overflow = "hidden";
-        loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
-    }
-    function moveSlide(step) {
-        currentIndex = Math.max(0, Math.min(currentIndex + step, galleryItems.length - 1));
-        updateTrackPos(true);
-        loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
-    }
-    function closeModal() { document.getElementById('imageModal').style.display = "none"; document.body.style.overflow = "auto"; }
-    window.addEventListener('resize', () => { if (document.getElementById('imageModal')?.style.display === \"block\") updateTrackPos(false); });
-    
-    document.addEventListener('DOMContentLoaded', () => {
-        const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
-        if (!modal || !track) return;
-        modal.addEventListener('touchstart', e => { isDragging = true; startX = e.touches[0].clientX; track.style.transition = 'none'; });
-        modal.addEventListener('touchmove', e => { if (!isDragging) return; track.style.transform = 'translateX(' + (prevTranslate + (e.touches[0].clientX - startX)) + 'px)'; });
-        modal.addEventListener('touchend', e => { 
-            isDragging = false; const diff = e.changedTouches[0].clientX - startX;
-            if (diff < -50) moveSlide(1); else if (diff > 50) moveSlide(-1); else moveSlide(0);
-        });
-    });
-    <\/script>
-    `;
+    const autoHighlightScript = `<script>document.addEventListener('DOMContentLoaded', () => { const rawID = document.body.getAttribute('data-page-id'); const pageID = (rawID && rawID.trim() !== "") ? rawID.toLowerCase() : "index"; document.querySelectorAll('.nav-content a').forEach(link => { if (link.classList.contains('dropdown-btn')) return; const linkText = link.innerText.trim().toLowerCase(); if (pageID === "index" || pageID === "home") { if (linkText === "home") link.classList.add('current-page-bold'); } else if (linkText === pageID || linkText.replace(/\\s+/g, '-') === pageID) { link.classList.add('current-page-bold'); } }); });<\/script>`;
+    const lightboxScript = `<script>const galleryItems = ${jsGalleryArray}; let currentIndex = 0, startX = 0, prevTranslate = 0, isDragging = false; const VELOCITY = 2500; function renderLightboxSlides() { const track = document.getElementById('sliderTrack'); if (!track) return; track.innerHTML = ''; galleryItems.forEach((src, index) => { const slide = document.createElement('div'); slide.className = 'slide'; slide.innerHTML = '<div class="image-wrapper" data-index="' + index + '"><div class="loader"></div><img data-src="' + src + '"></div>'; track.appendChild(slide); }); } function loadImage(index) { const slide = document.querySelector('.image-wrapper[data-index="' + index + '"]'); if (!slide) return; const img = slide.querySelector('img'), loader = slide.querySelector('.loader'); if (img && img.dataset.src) { img.src = img.dataset.src; img.onload = () => { img.classList.add('loaded'); if (loader) loader.style.display = 'none'; }; } } function updateTrackPos(animate) { const track = document.getElementById('sliderTrack'); const modal = document.getElementById('imageModal'); if (!track || !modal) return; const width = modal.offsetWidth; const currentTranslate = currentIndex * -width; prevTranslate = currentTranslate; track.style.transition = animate ? 'transform ' + (width / VELOCITY) + 's ease-out' : 'none'; track.style.transform = 'translateX(' + currentTranslate + 'px)'; document.getElementById('modalCounter').innerText = (currentIndex + 1) + ' / ' + galleryItems.length; } function openModal(index) { if (!document.getElementById('sliderTrack').hasChildNodes()) renderLightboxSlides(); currentIndex = index; document.getElementById('imageModal').style.display = "block"; updateTrackPos(false); document.body.style.overflow = "hidden"; loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1); } function moveSlide(step) { currentIndex = Math.max(0, Math.min(currentIndex + step, galleryItems.length - 1)); updateTrackPos(true); loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1); } function closeModal() { document.getElementById('imageModal').style.display = "none"; document.body.style.overflow = "auto"; } window.addEventListener('resize', () => { if (document.getElementById('imageModal')?.style.display === \"block\") updateTrackPos(false); }); document.addEventListener('DOMContentLoaded', () => { const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack'); if (!modal || !track) return; modal.addEventListener('touchstart', e => { isDragging = true; startX = e.touches[0].clientX; track.style.transition = 'none'; }); modal.addEventListener('touchmove', e => { if (!isDragging) return; track.style.transform = 'translateX(' + (prevTranslate + (e.touches[0].clientX - startX)) + 'px)'; }); modal.addEventListener('touchend', e => { isDragging = false; const diff = e.changedTouches[0].clientX - startX; if (diff < -50) moveSlide(1); else if (diff > 50) moveSlide(-1); else moveSlide(0); }); });<\/script>`;
 
     zip.file(`${projectSettings.pageID}.html`, '<!DOCTYPE html>\n<html lang="en">\n' + clone.innerHTML + lightboxHTML + lightboxScript + autoHighlightScript + '\n</html>');
+    
     const content = await zip.generateAsync({type: "blob"});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(content);
-    a.download = "Final_Export.zip";
+    a.download = userFileName;
     a.click();
+
+    // SUCCESS NOTIFICATION
+    const msg = document.createElement('div');
+    msg.innerHTML = `<i class="fa-solid fa-circle-check"></i> Project Saved & Exported: ${userFileName}`;
+    msg.style.cssText = "position:fixed; bottom:20px; right:20px; background:#4db8ff; color:#000; padding:12px 20px; border-radius:8px; font-weight:bold; z-index:99999; box-shadow:0 5px 15px rgba(0,0,0,0.3); font-family:sans-serif;";
+    document.body.appendChild(msg);
+    setTimeout(() => msg.remove(), 3000);
 }
 
 
@@ -1779,16 +1681,6 @@ async function masterSave() {
 
 
 
-
-
-
-
-
-
-
-// --- 2. THE LOAD FUNCTION ---
-// --- 2. THE LOAD FUNCTION ---
-// --- 2. THE LOAD FUNCTION ---
 async function loadProject() {
     const input = document.createElement('input');
     input.type = 'file';
@@ -1803,132 +1695,100 @@ async function loadProject() {
         const editorRoot = iframeDoc.getElementById('editor-root');
         
         if (editorRoot) {
-            // 1. RESTORE SETTINGS & FAVICON
+            // Restore Settings
             if (data.settings) {
-                const titleInput = document.getElementById('set-page-title');
-                const descInput = document.getElementById('set-meta-desc');
-                const headInput = document.getElementById('set-head-code');
-                const favInput = document.getElementById('favicon-upload');
-
-                if (titleInput) titleInput.value = data.settings.title || "";
-                if (descInput) descInput.value = data.settings.metaDesc || "";
-                if (headInput) headInput.value = data.settings.headCode || "";
-
-                if (favInput && data.settings.faviconName) {
-                    const favFile = zip.file(`images/${data.settings.faviconName}`);
-                    if (favFile) {
-                        const blob = await favFile.async("blob");
-                        favInput.dataset.savedName = data.settings.faviconName;
-                        favInput.savedBlob = blob; 
-
-                        let previewContainer = favInput.parentNode.querySelector('.fav-preview-container');
-                        if (!previewContainer) {
-                            previewContainer = document.createElement('div');
-                            previewContainer.className = 'fav-preview-container';
-                            previewContainer.style.cssText = 'display:inline-flex; align-items:center; gap:12px; margin-left:15px; vertical-align:middle;';
-                            favInput.parentNode.appendChild(previewContainer);
-                        }
-                        const previewUrl = URL.createObjectURL(blob);
-                        previewContainer.innerHTML = `
-                            <img src="${previewUrl}" style="width:64px; height:64px; border-radius:6px; border:2px solid #4db8ff; object-fit:contain; background:#111; padding:2px;">
-                            <div style="display:flex; flex-direction:column;">
-                                <span style="font-size:12px; color:#fff; font-weight:bold;">Current Favicon:</span>
-                                <span style="font-size:11px; color:#aaa;">${data.settings.faviconName}</span>
-                            </div>
-                        `;
-                    }
-                }
+                document.getElementById('set-page-title').value = data.settings.title || "";
+                document.getElementById('set-meta-desc').value = data.settings.metaDesc || "";
+                document.getElementById('set-head-code').value = data.settings.headCode || "";
             }
 
-            // 2. RESTORE HTML & IMAGES
-            editorRoot.innerHTML = ''; 
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = data.htmlContent;
+            // Temporarily load HTML to iterate children
+            editorRoot.innerHTML = data.htmlContent;
             
-            const allImgs = Array.from(tempDiv.querySelectorAll('img'));
+            // Restore Static Images
+            const allImgs = Array.from(editorRoot.querySelectorAll('img:not(.gallery-item img)'));
             for (let img of allImgs) {
-                const path = img.getAttribute('src');
-                const storedName = img.getAttribute('data-filename');
-                if (path && (path.startsWith('images/') || storedName)) {
-                    const name = storedName || path.split('/').pop();
-                    const entry = zip.file(`images/${name}`);
-                    if (entry) {
-                        const fileData = await entry.async("blob");
-                        img.src = URL.createObjectURL(fileData);
-                        img.setAttribute('data-filename', name); 
-                    }
+                const name = img.getAttribute('data-filename') || img.getAttribute('src')?.split('/').pop();
+                const entry = zip.file(`images/${name}`);
+                if (entry) {
+                    const fileData = await entry.async("blob");
+                    img.src = URL.createObjectURL(fileData);
                 }
             }
-            editorRoot.innerHTML = tempDiv.innerHTML;
 
-            // --- NEW: RE-INJECT ROW HANDLES FOR MULTI-IMAGE ---
-            editorRoot.querySelectorAll('.block_multi_image').forEach(row => {
-                if (!row.querySelector('.multi-image-handle')) {
-                    const handle = iframeDoc.createElement('div');
-                    handle.className = 'multi-image-handle';
-                    handle.innerText = 'ROW  ';
-                    row.appendChild(handle);
-                }
-            });
-
-            // 3. RESTORE CUSTOM HTML BLOCKS
-            editorRoot.querySelectorAll('.block_custom_html').forEach(block => {
-                const savedCode = block.getAttribute('data-html-code');
-                const textarea = block.querySelector('.html-input-box');
-                if (textarea && savedCode !== null) {
-                    textarea.value = savedCode;
-                    if (window.updateHTML) window.updateHTML(textarea); 
-                }
-            });
-
-            // 4. RESTORE GALLERIES (Handshake)
-            const placeholders = Array.from(editorRoot.querySelectorAll('.photo_gallery'));
-            for (const placeholder of placeholders) {
-                const stateJson = placeholder.getAttribute('data-saved-images');
-                if (!stateJson) continue;
-
-                selectElement(placeholder);
-                insertElement('photo_gallery');
+            // SEQUENTIAL REBUILD
+            const children = Array.from(editorRoot.children);
+            for (const child of children) {
                 
-                const newGallery = placeholder.nextElementSibling;
-                placeholder.remove();
-                if (!newGallery) continue;
+                // --- CASE: CUSTOM HTML ---
+                if (child.classList.contains('block_custom_html')) {
+                    const savedCode = child.getAttribute('data-html-code');
+                    const savedId = child.id;
 
-                newGallery.setAttribute('data-saved-images', stateJson);
-                const gIframe = newGallery.querySelector('iframe');
-                const state = JSON.parse(stateJson);
-                const items = [];
-
-                for (let fileObj of state.files) {
-                    const entry = zip.file(`images/${fileObj.src}`);
-                    if (entry) {
-                        const fileData = await entry.async("blob");
-                        items.push({ 
-                            src: URL.createObjectURL(fileData), 
-                            pos: fileObj.pos, 
-                            originalName: fileObj.src 
-                        });
+                    selectedEl = child; 
+                    insertElement('block_custom_html'); 
+                    
+                    const newBlock = child.nextElementSibling;
+                    if (newBlock && newBlock.classList.contains('block_custom_html')) {
+                        newBlock.id = savedId;
+                        const textarea = newBlock.querySelector('.html-input-box');
+                        if (textarea) textarea.value = savedCode || "";
+                        child.remove(); // Remove the dead clone
                     }
                 }
+                
+                // --- CASE: PHOTO GALLERY ---
+                else if (child.classList.contains('photo_gallery')) {
+                    const stateJson = child.getAttribute('data-saved-images');
+                    if (!stateJson) continue;
 
-                const attemptHydration = () => {
-                    if (gIframe.contentWindow && typeof gIframe.contentWindow.loadSavedImages === 'function') {
-                        gIframe.contentWindow.loadSavedImages({ mode: state.mode, files: items });
-                    } else { setTimeout(attemptHydration, 50); }
-                };
+                    selectedEl = child;
+                    insertElement('photo_gallery');
+                    
+                    const newGallery = child.nextElementSibling;
+                    const state = JSON.parse(stateJson);
+                    const items = [];
+                    for (let f of state.files) {
+                        const entry = zip.file(`images/${f.src}`);
+                        if (entry) {
+                            const b = await entry.async("blob");
+                            items.push({ src: URL.createObjectURL(b), pos: f.pos, originalName: f.src });
+                        }
+                    }
+                    const hydrate = () => {
+                        const gIframe = newGallery?.querySelector('iframe');
+                        if (gIframe?.contentWindow?.loadSavedImages) {
+                            gIframe.contentWindow.loadSavedImages({ mode: state.mode, files: items });
+                        } else { setTimeout(hydrate, 50); }
+                    };
+                    hydrate();
+                    child.remove();
+                }
 
-                if (gIframe.contentDocument && gIframe.contentDocument.readyState === 'complete') {
-                    attemptHydration();
-                } else { gIframe.onload = attemptHydration; }
+                // --- CASE: MULTI-IMAGE HANDLES ---
+                else if (child.classList.contains('block_multi_image')) {
+                    if (!child.querySelector('.multi-image-handle')) {
+                        const handle = iframeDoc.createElement('div');
+                        handle.className = 'multi-image-handle';
+                        handle.innerText = 'ROW  ';
+                        child.appendChild(handle);
+                    }
+                }
             }
 
-            // --- RE-INITIALIZE BUILDER LOGIC ---
             if (frame.contentWindow.initDivLogic) frame.contentWindow.initDivLogic();
             deselectAll();
         }
     };
     input.click();
 }
+
+
+
+
+
+
+
 
 
 
