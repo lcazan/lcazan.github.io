@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v5.4.1 Fix</title>
+    <title>Snoozing Builder | v5.4.3</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="editor.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -123,7 +123,7 @@
             <button class="device-btn" id="btn-android" onclick="setDevice('android')"><i class="fa-solid fa-mobile-screen-button"></i></button>
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
-        <div class="version-status">v5.4.1</div>
+        <div class="version-status">v5.4.3/div>
     </div>
     <div id="sticky-toolbar">
         <div id="toolbar-content"></div>
@@ -672,7 +672,6 @@ function updateSandbox(block) {
     </head>`);
 
     // 2. THE RELAY: Handshake between Sandbox -> Preview -> Builder
-    // Uses a regex to find </body> regardless of case
     const relayScript = `
         <script>
             window.addEventListener('message', e => { 
@@ -686,8 +685,6 @@ function updateSandbox(block) {
 
     // 3. Setup Editor Root and Body Classes
     html = html.replace(/<body([^>]*)>/i, '<body$1 class="editor-frame-body">');
-    
-    // Ensure content-container is converted to editor-root for JS targeting
     html = html.replace(/<div class="content-container">([\s\S]*?)<\/div>/, '<div class="content-container" id="editor-root">$1</div>');
 
     // 4. Write to Frame
@@ -716,8 +713,7 @@ function updateSandbox(block) {
 
             const handle = e.target.closest('.multi-image-handle');
             if (handle) {
-                e.preventDefault();
-                e.stopPropagation();
+                // Drag handles should always trigger selection immediately
                 selectElement(handle.closest('.block_multi_image'));
                 return;
             }
@@ -734,6 +730,7 @@ function updateSandbox(block) {
                 const posParts = bgPos.split(' ');
                 bgStartPosX = parseFloat(posParts[0]) || 50;
                 bgStartPosY = parseFloat(posParts[1]) || 50;
+                // Note: We don't preventDefault yet to allow the browser to detect a scroll
                 return;
             }
 
@@ -748,24 +745,33 @@ function updateSandbox(block) {
 
         const moveInteraction = (e) => {
             const point = e.touches ? e.touches[0] : e;
-            if (Math.abs(point.clientX - startX) > 10 || Math.abs(point.clientY - startY) > 10) {
+            const moveX = Math.abs(point.clientX - startX);
+            const moveY = Math.abs(point.clientY - startY);
+
+            // If the user moves more than 10px, flag it as a scroll
+            if (moveX > 10 || moveY > 10) {
                 isScrolling = true;
             }
-            if (!isPanningMulti || !pannedItem) return;
-            const deltaX = (panStartX - point.clientX) * 0.4; 
-            const deltaY = (panStartY - point.clientY) * 0.4;
-            const newX = Math.max(0, Math.min(100, bgStartPosX + deltaX));
-            const newY = Math.max(0, Math.min(100, bgStartPosY + deltaY));
-            pannedItem.style.backgroundPosition = `${newX}% ${newY}%`;
+
+            // Only proceed with image panning if we AREN'T scrolling the page
+            if (!isScrolling && isPanningMulti && pannedItem) {
+                e.preventDefault(); // Stop the page from moving ONLY when panning an image
+                const deltaX = (panStartX - point.clientX) * 0.4; 
+                const deltaY = (panStartY - point.clientY) * 0.4;
+                const newX = Math.max(0, Math.min(100, bgStartPosX + deltaX));
+                const newY = Math.max(0, Math.min(100, bgStartPosY + deltaY));
+                pannedItem.style.backgroundPosition = `${newX}% ${newY}%`;
+            }
         };
 
-        const endInteraction = () => { 
+        const endInteraction = (e) => { 
+            // Only select or deselect if the user wasn't just scrolling the page
             if (!isScrolling && pendingSelection) {
                 if (pendingSelection === "CLEAR") {
                     deselectAll();
                 } else {
                     if (selectedEl === pendingSelection && pendingSelection.contentEditable === "true") {
-                        // Stay in edit mode
+                        // Maintain focus for text editing
                     } else {
                         selectElement(pendingSelection);
                     }
@@ -776,9 +782,9 @@ function updateSandbox(block) {
             pendingSelection = null;
         };
 
-        // Attach listeners to the newly loaded document
+        // Attach listeners
         doc.addEventListener('mousedown', startInteraction);
-        doc.addEventListener('touchstart', startInteraction, { passive: false });
+        doc.addEventListener('touchstart', startInteraction, { passive: true }); // passive: true helps scrolling speed
         doc.addEventListener('mousemove', moveInteraction, { passive: false });
         doc.addEventListener('touchmove', moveInteraction, { passive: false });
         doc.addEventListener('mouseup', endInteraction);
