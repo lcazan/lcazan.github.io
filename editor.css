@@ -19,7 +19,56 @@ body.builder-ui-body {
 #sidebar { 
     width: 4.6875rem; height: 100%; background: var(--panel-bg); 
     display: flex; flex-direction: column; align-items: center; 
-    padding: 0.9375rem 0; border-right: 0.125rem solid #000; flex-shrink: 0; z-index: 1000; 
+    padding: 0.9375rem 0; border-right: 0.125rem solid #000; flex-shrink: 0; 
+    z-index: 1000; /* Higher than toolbar */
+    overflow: visible !important; 
+}
+
+/* --- SIDEBAR FLYOUT MENUS (Mobile Optimized) --- */
+.sidebar-flyout-group {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.flyout-panel {
+    position: absolute;
+    left: 100%; 
+    top: -5px;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    background: var(--panel-bg);
+    padding: 8px;
+    border-radius: 0 8px 8px 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-10px);
+    transition: opacity 0.1s ease, transform 0.1s ease;
+    z-index: 20000; /* Absolute highest to clear all toolbars */
+    box-shadow: 10px 0 20px rgba(0,0,0,0.5);
+    border: 1px solid #444;
+    border-left: none;
+}
+
+.flyout-panel.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+}
+
+.flyout-panel .insert-btn {
+    margin-bottom: 0;
+    background: #333;
+    border-color: #555;
+    width: 3.5rem;
+}
+
+.sidebar-flyout-group .fa-caret-right {
+    font-size: 10px;
+    margin-left: 6px;
+    color: #888;
 }
 
 #preview-container { 
@@ -35,7 +84,8 @@ body.builder-ui-body {
 #header-area { 
     background: #222; border-bottom: 0.0625rem solid #000; 
     height: 3.125rem; display: flex; align-items: center; 
-    justify-content: center; position: relative; z-index: 1005; 
+    justify-content: center; position: relative; 
+    z-index: 1005; /* Keeps device switcher on top */
 }
 
 /* --- FIXED DEVICE SWITCHER --- */
@@ -57,14 +107,17 @@ body.builder-ui-body {
 #sticky-toolbar { 
     height: 3rem; background: #1a1a1a; display: flex; align-items: center; 
     justify-content: center; border-bottom: 0.0625rem solid #000; 
-    z-index: 1001; position: absolute; top: 3.125rem; left: 0; width: 100%; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    position: absolute; top: 3.125rem; left: 0; width: 100%; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    z-index: 101; /* Lowered so sidebar flyouts can pass over it */
 }
 
 #input-pill {
     position: absolute; top: 3rem; left: 50%; transform: translateX(-50%);
     width: 85%; max-width: 550px; background: #222; border: 1px solid #444; 
     border-radius: 1px; display: none; align-items: center; justify-content: center; 
-    padding: 0 15px; text-transform: none; box-shadow: 0 10px 20px rgba(0,0,0,0.5); z-index: 1002;
+    padding: 0 15px; text-transform: none; box-shadow: 0 10px 20px rgba(0,0,0,0.5); 
+    z-index: 1002;
 }
 
 #pill-editable { color: white; width: 100%; font-size: 0.85rem; outline: none; text-align: center; font-family: 'Courier New', monospace; line-height: 1.2; padding: 4px 0; }
@@ -73,7 +126,7 @@ body.builder-ui-body {
     flex-grow: 1; 
     position: relative; 
     background: #333; 
-    overflow-y: auto !important; /* Allow the wrapper to scroll as the iframe grows */
+    overflow-y: auto !important;
     margin-top: 0; 
 }
 
@@ -84,7 +137,6 @@ body.builder-ui-body {
     position: absolute; 
     top: 3rem; 
     left: 0; 
-    /* Frame height will be controlled by setDevice JS */
 }
 
 /* --- BUTTONS & TOOLS --- */
@@ -101,7 +153,7 @@ body.builder-ui-body {
    2. CUSTOM BLOCKS (Teal HTML, Gallery, Multi-Image)
    ========================================= */
 
-/* --- CUSTOM HTML BLOCK (FIXED GAPS & EXPANSION) --- */
+/* --- CUSTOM HTML BLOCK --- */
 .block_custom_html { 
     width: 100%; 
     margin-bottom: 0px !important; 
@@ -109,7 +161,7 @@ body.builder-ui-body {
     padding: 0 !important; 
     box-sizing: border-box;
     height: auto !important; 
-    overflow: visible !important; /* CRITICAL: Must not clip expanded iframe */
+    overflow: visible !important;
 }
 
 .custom-html-ui-container { 
@@ -169,7 +221,7 @@ body.builder-ui-body {
     border: none; 
     display: block; 
     background: transparent;
-    overflow: hidden; /* Prevent internal scrollbars so it expands instead */
+    overflow: hidden; 
     transition: height 0.2s ease-out; 
 }
 
@@ -193,18 +245,15 @@ body.builder-ui-body {
     display: block; 
     overflow: hidden; 
 }
-/* Update this in editor.css */
 .gallery-sentry { 
     position: absolute; 
     inset: 0; 
     background: transparent; 
     z-index: 10; 
     cursor: pointer; 
-    /* This is the magic line: */
     touch-action: pan-y !important; 
 }
 
-/* When the gallery is selected, we allow internal interaction */
 .selected-item .gallery-sentry { 
     pointer-events: none; 
 }
@@ -217,7 +266,7 @@ body.builder-ui-body {
     width: 100%; 
     display: flex; 
     flex-direction: column; 
-    padding-bottom: 200px; /* Spacer for the bottom UI */
+    padding-bottom: 200px; 
     min-height: 100vh;
 }
 
