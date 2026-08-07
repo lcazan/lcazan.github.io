@@ -134,6 +134,11 @@
     // Application State
     // ============================================================
     let entryArr = [], cursorIdx = 0, lastAnswer = 0, shiftMode = false;
+    // The exact expression string that was attempted right before a failed calculation
+    // overwrote the entry line with "ERROR" - lets a following backspace restore it
+    // instead of just nibbling at the literal "ERROR" text. Cleared as soon as the user
+    // does anything else that changes the entry line, so it only applies right after an error.
+    let preErrorEntry = null;
     let sciMode = localStorage.getItem('vfdSciMode') === 'true';
     let stickyMemory = localStorage.getItem('vfdStickyMemory') || "0";
     let historyIndex = -1, fullHistory = JSON.parse(localStorage.getItem('vfdHistory')) || [];
@@ -172,15 +177,15 @@
         let whole = Math.floor(absVal);
         let frac = absVal - whole;
         let rawNum = frac * 16, roundedNum = Math.round(rawNum);
-        let diffInches = absVal - (whole + (roundedNum / 16));
-        let diffMm = diffInches * 25.4;
-        let indicator = "";
-        if (Math.abs(diffMm) > 0.005) { indicator = (diffMm > 0 ? "+" : "") + diffMm.toFixed(2) + "mm"; }
         let finalWhole = (roundedNum === 16) ? whole + 1 : whole;
         let finalNum = (roundedNum === 16 || roundedNum === 0) ? 0 : roundedNum;
         const gcd = (a, b) => b ? gcd(b, a % b) : a;
-        let fractionStr = (finalNum === 0) ? sign + finalWhole.toString() : 
+        let fractionStr = (finalNum === 0) ? sign + finalWhole.toString() :
             sign + (finalWhole > 0 ? finalWhole + " " : "") + (finalNum/gcd(finalNum, 16)) + "/" + (16/gcd(finalNum, 16));
+        // Decimal equivalent of the fraction just calculated (not of the original input),
+        // rounded to 3 places, shown alongside it for reference.
+        let decimalEquivalent = (sign === "-" ? -1 : 1) * (finalWhole + finalNum / 16);
+        let indicator = decimalEquivalent.toFixed(3);
         return { res: fractionStr, ind: indicator, raw: val };
     }
 
@@ -293,12 +298,25 @@
     
             function parseTerm() {
                 let node = parseUnary();
-                while (peek().type === 'OP' && (peek().op === '*' || peek().op === '/')) {
-                    const op = next().op;
-                    const right = parseUnary();
-                    node = { type: 'BIN', op, left: node, right };
+                while (true) {
+                    if (peek().type === 'OP' && (peek().op === '*' || peek().op === '/')) {
+                        const op = next().op;
+                        const right = parseUnary();
+                        node = { type: 'BIN', op, left: node, right };
+                    } else if (startsImplicitFactor(peek())) {
+                        // Implicit multiplication: "2π", "2(3+4)", "3ANS", "(1+2)(3+4)", "2SIN(30)".
+                        // Binds at the same precedence as explicit '*' (so "2+3(4)" = 2+3*4 = 14,
+                        // and "2π^2" = 2*(π^2), matching ordinary math convention).
+                        const right = parseUnary();
+                        node = { type: 'BIN', op: '*', left: node, right };
+                    } else break;
                 }
                 return node;
+            }
+
+            function startsImplicitFactor(t) {
+                return t.type === 'NUM' || t.type === 'CONST_PI' || t.type === 'CONST_E' ||
+                       t.type === 'CONST_ANS' || t.type === 'LPAREN' || t.type === 'FUNC';
             }
     
             function parseUnary() {
@@ -515,13 +533,21 @@
                 entryArr.splice(0, 0, ...v.toString().split(''));
                 cursorIdx = entryArr.length;
                 shiftMode = false;
+                preErrorEntry = null;
             } else solve();
         } else if (val === 'ac') {
             if (shiftMode) { fullHistory = []; localStorage.removeItem('vfdHistory'); historyContainer.innerHTML = ''; lastAnswer = 0; }
             entryArr = []; cursorIdx = 0; historyIndex = -1; shiftMode = false;
+            preErrorEntry = null;
         } else if (val === 'del') {
             if (historyIndex !== -1) { historyIndex = -1; items.forEach(it => it.classList.remove('selected')); }
-            if (cursorIdx > 0) { entryArr.splice(cursorIdx - 1, 1); cursorIdx--; }
+            if (preErrorEntry) {
+                // Right after a failed calculation: restore the expression as it was
+                // before '=' was pressed, instead of deleting from the literal "ERROR" text.
+                entryArr = preErrorEntry.split('');
+                cursorIdx = entryArr.length;
+                preErrorEntry = null;
+            } else if (cursorIdx > 0) { entryArr.splice(cursorIdx - 1, 1); cursorIdx--; }
         }
         else if (val === 'recip' || val === 'n16') {
             let overrideVal = null;
@@ -534,6 +560,7 @@
         }
         else {
             if (historyIndex !== -1) { historyIndex = -1; items.forEach(it => it.classList.remove('selected')); }
+            preErrorEntry = null;
             if (val === '-' && entryArr.length === 4 && entryArr.join('') === 'ANS-') {
                 // second '-' right after the auto-inserted "ANS-": strip ANS, leave a bare negative sign
                 entryArr = ['-']; cursorIdx = 1;
@@ -556,10 +583,11 @@
         const result = CalcEngine.evaluate(e, { ans: lastAnswer });
         if (result.ok) {
             lastAnswer = result.value;
-            fullHistory.push({ expr: e, res: lastAnswer, ind: "" });
+            fullHistory.push({ expr: e, res: lastAnswer });
             localStorage.setItem('vfdHistory', JSON.stringify(fullHistory));
             initHistory(); entryArr = []; cursorIdx = 0;
         } else {
+            preErrorEntry = e;
             entryArr = ['E','R','R','O','R']; cursorIdx = 5;
             showNotif(humanizeCalcError(result.error));
         }
@@ -575,6 +603,7 @@
             localStorage.setItem('vfdHistory', JSON.stringify(fullHistory));
             initHistory(); entryArr = []; cursorIdx = 0;
         } else {
+            preErrorEntry = e;
             entryArr = ['E','R','R','O','R']; cursorIdx = 5;
             showNotif(humanizeCalcError(result.error));
         }
@@ -586,10 +615,11 @@
         const result = CalcEngine.evaluate(e, { ans: lastAnswer });
         if (result.ok && result.value !== 0) {
             lastAnswer = 1 / result.value;
-            fullHistory.push({ expr: `1/(${e})`, res: lastAnswer, ind: "" });
+            fullHistory.push({ expr: `1/(${e})`, res: lastAnswer });
             localStorage.setItem('vfdHistory', JSON.stringify(fullHistory));
             initHistory(); entryArr = []; cursorIdx = 0;
         } else {
+            preErrorEntry = e;
             entryArr = ['E','R','R','O','R']; cursorIdx = 5;
             showNotif(result.ok ? 'DIV BY ZERO' : humanizeCalcError(result.error));
         }
