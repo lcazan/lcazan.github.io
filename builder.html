@@ -585,6 +585,15 @@ let currentMode = 'iphone';
 let isResizing = false;
 let activePillMode = null;
 
+// --- JSON SOURCE OF TRUTH (Phase 1: text blocks only) ---
+// project.blocks is a flat, ordered array mirroring the page's top-to-bottom
+// layout. Array order = page order. Right now only type:"text" blocks
+// (section_heading / block_heading / block_text) are read from or written to
+// this array. Every other block type (image, gallery, multi-image, container,
+// button, spacer, custom html) still uses the old direct-DOM behavior and is
+// NOT tracked here — this is intentional for this testing phase.
+let project = { blocks: [] };
+
 // --- 2. THE CONSOLIDATED MESSAGE LISTENER ---
 // Handles both Photo Gallery and Sandbox (Custom HTML) resizing
 window.addEventListener('message', (event) => {
@@ -1051,6 +1060,20 @@ function resetToolbar() {
             html += `<button class="tool-btn" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
         } 
         else if (isEditable) {
+            // For text blocks specifically (not other contentEditable cases),
+            // show T1/T2/T3 heading-level buttons with the active one
+            // highlighted, in addition to the existing Bold button.
+            const variant = selectedEl.classList.contains('section_heading') ? 'section_heading' :
+                             selectedEl.classList.contains('block_heading') ? 'block_heading' :
+                             selectedEl.classList.contains('block_text') ? 'block_text' : null;
+            if (variant) {
+                const active = 'background:var(--brand-pink); color:#000;';
+                html += `
+                    <button class="tool-btn" style="font-size:10px; font-weight:900; ${variant === 'section_heading' ? active : ''}" onclick="changeTextVariant('section_heading')">T1</button>
+                    <button class="tool-btn" style="font-size:10px; font-weight:900; ${variant === 'block_heading' ? active : ''}" onclick="changeTextVariant('block_heading')">T2</button>
+                    <button class="tool-btn" style="font-size:10px; font-weight:900; ${variant === 'block_text' ? active : ''}" onclick="changeTextVariant('block_text')">T3</button>
+                `;
+            }
             html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
         }
     }
@@ -1287,6 +1310,11 @@ function insertElement(type, data) {
         el.innerText = ""; 
         el.setAttribute('data-placeholder', 'Type here...'); 
         el.contentEditable = "true"; 
+        // Tag this new text block with a stable ID so commitTextBlock() can
+        // later find and update its entry in project.blocks.
+        if (type === 'section_heading' || type === 'block_heading' || type === 'block_text') {
+            el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
+        }
     }
 
     // 4. INSERTION LOGIC (Using the protected safeReferenceEl)
@@ -1317,6 +1345,95 @@ function insertElement(type, data) {
     }
     
     setTimeout(() => selectElement(el), 150);
+}
+
+// Rebuilds #editor-root FROM project.blocks, and only from project.blocks.
+// This wipes whatever is currently in the DOM and redraws purely off the
+// data. Any element inserted through a non-migrated button (image, gallery,
+// div, etc.) is not in project.blocks, so it will disappear the next time
+// this runs — that's expected for this testing phase.
+function renderPage() {
+    const doc = frame.contentDocument;
+    const root = doc.getElementById('editor-root');
+    if (!root) return;
+
+    root.innerHTML = '';
+
+    project.blocks.forEach(block => {
+        if (block.type === 'text') {
+            const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
+            const el = doc.createElement(tagMap[block.variant] || 'p');
+            el.className = `editable ${block.variant}`;
+            el.contentEditable = "true";
+            el.setAttribute('data-placeholder', 'Type here...');
+            el.setAttribute('data-block-id', block.id);
+            el.innerHTML = block.contentHTML;
+            if (block.align) el.style.textAlign = block.align;
+            root.appendChild(el);
+        }
+        // Other block types are not yet part of project.blocks — nothing to
+        // render for them here yet.
+    });
+}
+
+// Reads a text block's current content and formatting straight from the DOM
+// and writes it into project.blocks — updating the existing entry if this
+// block was already saved (matched by data-block-id), or appending a new
+// entry if this is its first save. Finishes by calling renderPage() so the
+// screen becomes a pure reflection of the data again.
+function commitTextBlock(el) {
+    const variant = el.classList.contains('section_heading') ? 'section_heading' :
+                    el.classList.contains('block_heading') ? 'block_heading' :
+                    'block_text';
+
+    let blockId = el.getAttribute('data-block-id');
+    if (!blockId) {
+        blockId = 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    }
+
+    const blockData = {
+        id: blockId,
+        type: 'text',
+        variant: variant,
+        contentHTML: el.innerHTML,
+        align: el.style.textAlign || ''
+    };
+
+    const existingIndex = project.blocks.findIndex(b => b.id === blockId);
+    if (existingIndex !== -1) {
+        project.blocks[existingIndex] = blockData; // update in place, order unchanged
+    } else {
+        project.blocks.push(blockData); // new block, added at the end
+    }
+
+    renderPage();
+}
+
+// Switches a text block between T1 (section_heading/h2), T2 (block_heading/h3),
+// and T3 (block_text/p). Since the tag itself changes, this rebuilds the
+// element with the new tag, carries over its current content and alignment,
+// and re-selects it so the toolbar reflects the new variant immediately.
+function changeTextVariant(newVariant) {
+    if (!selectedEl) return;
+    const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
+    const newTag = tagMap[newVariant];
+    if (!newTag) return;
+
+    const doc = frame.contentDocument;
+    const newEl = doc.createElement(newTag);
+    newEl.className = `editable ${newVariant}`;
+    newEl.contentEditable = "true";
+    newEl.setAttribute('data-placeholder', 'Type here...');
+    const existingId = selectedEl.getAttribute('data-block-id');
+    if (existingId) newEl.setAttribute('data-block-id', existingId);
+    newEl.innerHTML = selectedEl.innerHTML;
+    newEl.style.textAlign = selectedEl.style.textAlign || '';
+
+    selectedEl.replaceWith(newEl);
+    selectedEl = newEl;
+    selectedEl.classList.add('selected-item');
+
+    renderToolbar();
 }
 
 
@@ -1359,6 +1476,18 @@ function insertElement(type, data) {
                 iframe.contentWindow.closeAllUI();
             }
         }
+
+        // --- JSON SOURCE OF TRUTH: commit text blocks on click-away ---
+        // If the block being deselected is a text block, save its final
+        // content/formatting into project.blocks and re-render the page from
+        // that data. Other block types aren't tracked yet, so nothing
+        // happens for them here.
+        const isTextBlock = selectedEl.classList.contains('section_heading') ||
+                             selectedEl.classList.contains('block_heading') ||
+                             selectedEl.classList.contains('block_text');
+        if (isTextBlock) {
+            commitTextBlock(selectedEl);
+        }
         
         selectedEl.classList.remove('selected-item');
     }
@@ -1381,6 +1510,12 @@ function insertElement(type, data) {
         // 1. Check if we are deleting a Custom HTML block
         const isHTMLBlock = selectedEl.classList.contains('block_custom_html');
 
+        // --- JSON SOURCE OF TRUTH: flag text blocks for removal from project.blocks ---
+        const isTextBlock = selectedEl.classList.contains('section_heading') ||
+                             selectedEl.classList.contains('block_heading') ||
+                             selectedEl.classList.contains('block_text');
+        const blockId = selectedEl.getAttribute('data-block-id');
+
         // 2. Remove the block itself
         selectedEl.remove(); 
         if (p && p.classList.contains('div-other-wrapper') && p.children.length === 0) p.remove(); 
@@ -1392,7 +1527,16 @@ function insertElement(type, data) {
             console.log("Widget infection obliterated.");
         }
 
+        // Remove from project.blocks so it doesn't come back on next render.
+        if (isTextBlock && blockId) {
+            project.blocks = project.blocks.filter(b => b.id !== blockId);
+        }
+
+        // Clear selectedEl BEFORE deselectAll() so it doesn't try to
+        // re-commit a block we just deleted.
+        selectedEl = null;
         deselectAll(); 
+        if (isTextBlock) renderPage();
     } 
 }
 
