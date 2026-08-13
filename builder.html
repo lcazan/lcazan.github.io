@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v5.5.1</title>
+    <title>Snoozing Builder | v5.5.2</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="editor.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -1126,85 +1126,14 @@ function applyAndClosePill() {
     console.log("Applied and Synced.");
 }
 
-// This lives in the MAIN builder.html script
+// This lives in the MAIN builder.html script.
+// The actual sandbox-writing logic now lives in activateCustomHtml() (shared
+// with renderPage(), so a re-render can re-activate a saved widget without
+// requiring another click here). This function just locates the container
+// and delegates to it.
 window.updateHTML = function(btn) {
-    // 1. Get the iframe window of the preview
-    const previewWindow = document.getElementById('preview-frame').contentWindow;
-    
-    // 2. Find the textarea and block inside that preview frame
     const container = btn.closest('.block_custom_html');
-    const textarea = container.querySelector('.html-input-box');
-    const code = textarea.value;
-
-    // 3. Find the sandbox iframe (the "Grandchild")
-    const sandboxIframe = container.querySelector('.widget-sandbox');
-    
-    if (sandboxIframe) {
-        const frameDoc = sandboxIframe.contentDocument || sandboxIframe.contentWindow.document;
-        
-        // 4. Inject the user code + our robust Height Reporter into the Grandchild
-        frameDoc.open();
-        frameDoc.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <style>
-                    body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
-                    /* Ensure images/videos inside don't overflow */
-                    img, video, iframe { max-width: 100%; }
-                </style>
-            </head>
-            <body>
-                ${code}
-                <script>
-                    (function() {
-                        const sendHeight = () => {
-                            // Force a layout recalculation
-                            const height = document.documentElement.getBoundingClientRect().height || 
-                                         document.body.scrollHeight || 
-                                         document.documentElement.scrollHeight;
-                            
-                            // Send the correctly formatted message with the ID!
-                            window.parent.postMessage({
-                                type: 'sandboxHeight',
-                                id: '${container.id}', 
-                                height: Math.ceil(height)
-                            }, '*');
-                        };
-
-                        // Trigger on all major lifecycle events
-                        window.addEventListener('load', sendHeight);
-                        window.addEventListener('resize', sendHeight);
-
-                        // Watch for DOM changes (elements added/removed by Elfsight)
-                        const observer = new MutationObserver(sendHeight);
-                        observer.observe(document.body, { 
-                            childList: true, 
-                            subtree: true, 
-                            attributes: true 
-                        });
-
-                        // Watch for size changes of elements
-                        if (window.ResizeObserver) {
-                            new ResizeObserver(sendHeight).observe(document.body);
-                        }
-
-                        // Initial burst polling to catch "lazy" widgets
-                        let checks = 0;
-                        const poll = setInterval(() => {
-                            sendHeight();
-                            if (checks++ > 20) clearInterval(poll);
-                        }, 500);
-
-                        // Final safety check
-                        setTimeout(sendHeight, 5000);
-                    })();
-                <\/script>
-            </body>
-            </html>
-        `);
-        frameDoc.close();
-    }
+    activateCustomHtml(container);
 };
 
 
@@ -1285,10 +1214,16 @@ function insertElement(type, data) {
     } else if (type === 'block_button') { 
         el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`;
         el.contentEditable = "false"; 
+        // Tag with a stable ID so commitButtonBlock() can find/update its
+        // entry in project.blocks.
+        el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
     } else if (type === 'block_custom_html') {
         el.setAttribute('data-html-code', '');
         el.className = 'editable block_custom_html'; 
         el.id = 'custom-html-' + Date.now(); 
+        // Tag with a stable ID so commitCustomHtmlBlock() can find/update its
+        // entry in project.blocks.
+        el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
         el.innerHTML = `
             <div class="custom-html-ui-container" contenteditable="false">
                 <div class="custom-html-header">
@@ -1304,7 +1239,12 @@ function insertElement(type, data) {
             </div>
         `;
         el.contentEditable = "false";
-    } else if (type === 'block_spacer' || type === 'block_container') { 
+    } else if (type === 'block_spacer') {
+        el.contentEditable = "false"; 
+        // Tag with a stable ID so commitSpacerBlock() can find/update its
+        // entry in project.blocks.
+        el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
+    } else if (type === 'block_container') { 
         el.contentEditable = "false"; 
     } else { 
         el.innerText = ""; 
@@ -1371,8 +1311,63 @@ function renderPage() {
             if (block.align) el.style.textAlign = block.align;
             root.appendChild(el);
         }
-        // Other block types are not yet part of project.blocks — nothing to
-        // render for them here yet.
+        else if (block.type === 'spacer') {
+            // Spacer has no content to type — its only property is whether
+            // the divider line is shown, toggled via toggleSpacerLine().
+            const el = doc.createElement('div');
+            el.className = 'editable block_spacer';
+            el.contentEditable = "false";
+            el.setAttribute('data-block-id', block.id);
+            el.style.borderBottom = block.showLine ? '1px solid #eee' : 'none';
+            root.appendChild(el);
+        }
+        else if (block.type === 'button') {
+            // Button label/link are edited via the floating input pill
+            // (openPill/syncRealTime/applyAndClosePill), which already syncs
+            // live into the DOM anchor — we just rebuild that anchor from
+            // the saved label/href here.
+            const el = doc.createElement('div');
+            el.className = 'editable block_button_container';
+            el.contentEditable = "false";
+            el.setAttribute('data-block-id', block.id);
+            el.innerHTML = `<a href="${block.href}" class="block_button" onclick="return false;">${block.label}</a>`;
+            if (block.align) el.style.textAlign = block.align;
+            root.appendChild(el);
+        }
+        else if (block.type === 'customHtml') {
+            // Rebuild the same structure insertElement() creates (header,
+            // textarea, sandbox iframe), restore the saved code into the
+            // textarea via .value (not innerHTML, to avoid breaking on code
+            // containing "</textarea>"), then re-activate the sandbox so the
+            // widget displays immediately without needing another click on
+            // Activate.
+            const el = doc.createElement('div');
+            el.className = 'editable block_custom_html';
+            el.contentEditable = "false";
+            el.id = 'customhtml_' + block.id;
+            el.setAttribute('data-block-id', block.id);
+            el.setAttribute('data-html-code', block.code || '');
+            el.innerHTML = `
+                <div class="custom-html-ui-container" contenteditable="false">
+                    <div class="custom-html-header">
+                        <span><i class="fa-solid fa-code"></i> Custom HTML/Widget</span>
+                        <button class="activate-btn" onclick="window.parent.updateHTML(this)">Activate</button>
+                    </div>
+                    <textarea class="html-input-box" placeholder="Paste your embed code here..." 
+                        oninput="this.closest('.block_custom_html').setAttribute('data-html-code', this.value);"></textarea>
+                </div>
+                <div class="html-render-area"></div> 
+                <div class="sandbox-iframe-wrapper">
+                    <iframe class="widget-sandbox" sandbox="allow-scripts allow-popups allow-forms allow-same-origin"></iframe>
+                </div>
+            `;
+            root.appendChild(el);
+            const textarea = el.querySelector('.html-input-box');
+            if (textarea) textarea.value = block.code || '';
+            if (block.code) activateCustomHtml(el);
+        }
+        // Other block types (image, gallery, multi-image, container) are not
+        // yet part of project.blocks — nothing to render for them here yet.
     });
 }
 
@@ -1436,6 +1431,148 @@ function changeTextVariant(newVariant) {
     renderToolbar();
 }
 
+// Reads a spacer block's current line-visibility state (set via
+// toggleSpacerLine()) and writes it into project.blocks.
+function commitSpacerBlock(el) {
+    let blockId = el.getAttribute('data-block-id');
+    if (!blockId) {
+        blockId = 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    }
+
+    const blockData = {
+        id: blockId,
+        type: 'spacer',
+        showLine: !!(el.style.borderBottom && el.style.borderBottom !== 'none')
+    };
+
+    const existingIndex = project.blocks.findIndex(b => b.id === blockId);
+    if (existingIndex !== -1) {
+        project.blocks[existingIndex] = blockData;
+    } else {
+        project.blocks.push(blockData);
+    }
+
+    renderPage();
+}
+
+// Reads a button block's current label, link, and alignment straight from
+// the DOM (already synced live by openPill/syncRealTime/applyAndClosePill)
+// and writes it into project.blocks.
+function commitButtonBlock(el) {
+    let blockId = el.getAttribute('data-block-id');
+    if (!blockId) {
+        blockId = 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    }
+
+    const link = el.querySelector('a');
+    const blockData = {
+        id: blockId,
+        type: 'button',
+        label: link ? link.innerText : 'FIND OUT MORE',
+        href: link ? (link.getAttribute('href') || '#') : '#',
+        align: el.style.textAlign || ''
+    };
+
+    const existingIndex = project.blocks.findIndex(b => b.id === blockId);
+    if (existingIndex !== -1) {
+        project.blocks[existingIndex] = blockData;
+    } else {
+        project.blocks.push(blockData);
+    }
+
+    renderPage();
+}
+
+// Reads a custom-html block's current code (already synced live into
+// data-html-code by the textarea's oninput handler) and writes it into
+// project.blocks.
+function commitCustomHtmlBlock(el) {
+    let blockId = el.getAttribute('data-block-id');
+    if (!blockId) {
+        blockId = 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+    }
+
+    const textarea = el.querySelector('.html-input-box');
+    const code = textarea ? textarea.value : (el.getAttribute('data-html-code') || '');
+
+    const blockData = {
+        id: blockId,
+        type: 'customHtml',
+        code: code
+    };
+
+    const existingIndex = project.blocks.findIndex(b => b.id === blockId);
+    if (existingIndex !== -1) {
+        project.blocks[existingIndex] = blockData;
+    } else {
+        project.blocks.push(blockData);
+    }
+
+    renderPage();
+}
+
+// Pushes a custom-html block's code into its sandboxed iframe, wiring up the
+// same height-reporting script as before. Used by both the Activate button
+// (via window.updateHTML) and by renderPage() when redrawing a customHtml
+// block that already has saved code, so the widget displays immediately
+// after a re-render without requiring the user to press Activate again.
+function activateCustomHtml(container) {
+    const textarea = container.querySelector('.html-input-box');
+    const code = textarea ? textarea.value : (container.getAttribute('data-html-code') || '');
+
+    const sandboxIframe = container.querySelector('.widget-sandbox');
+    if (!sandboxIframe) return;
+
+    const frameDoc = sandboxIframe.contentDocument || sandboxIframe.contentWindow.document;
+    frameDoc.open();
+    frameDoc.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+                img, video, iframe { max-width: 100%; }
+            </style>
+        </head>
+        <body>
+            ${code}
+            <script>
+                (function() {
+                    const sendHeight = () => {
+                        const height = document.documentElement.getBoundingClientRect().height || 
+                                     document.body.scrollHeight || 
+                                     document.documentElement.scrollHeight;
+                        window.parent.postMessage({
+                            type: 'sandboxHeight',
+                            id: '${container.id}', 
+                            height: Math.ceil(height)
+                        }, '*');
+                    };
+                    window.addEventListener('load', sendHeight);
+                    window.addEventListener('resize', sendHeight);
+                    const observer = new MutationObserver(sendHeight);
+                    observer.observe(document.body, { 
+                        childList: true, 
+                        subtree: true, 
+                        attributes: true 
+                    });
+                    if (window.ResizeObserver) {
+                        new ResizeObserver(sendHeight).observe(document.body);
+                    }
+                    let checks = 0;
+                    const poll = setInterval(() => {
+                        sendHeight();
+                        if (checks++ > 20) clearInterval(poll);
+                    }, 500);
+                    setTimeout(sendHeight, 5000);
+                })();
+            <\/script>
+        </body>
+        </html>
+    `);
+    frameDoc.close();
+}
+
 
 
 
@@ -1477,16 +1614,28 @@ function changeTextVariant(newVariant) {
             }
         }
 
-        // --- JSON SOURCE OF TRUTH: commit text blocks on click-away ---
-        // If the block being deselected is a text block, save its final
-        // content/formatting into project.blocks and re-render the page from
-        // that data. Other block types aren't tracked yet, so nothing
-        // happens for them here.
+        // --- JSON SOURCE OF TRUTH: commit block data on click-away ---
+        // Each migrated block type (text, spacer, button, customHtml) gets
+        // its final state read from the DOM and written into project.blocks
+        // here, followed by a re-render so the screen reflects the data
+        // exactly. Note: for buttons, applyAndClosePill() above has already
+        // synced the label/href into the DOM, so commitButtonBlock() reads
+        // the up-to-date anchor.
         const isTextBlock = selectedEl.classList.contains('section_heading') ||
                              selectedEl.classList.contains('block_heading') ||
                              selectedEl.classList.contains('block_text');
+        const isSpacerBlock = selectedEl.classList.contains('block_spacer');
+        const isButtonBlock = selectedEl.classList.contains('block_button_container');
+        const isCustomHtmlBlock = selectedEl.classList.contains('block_custom_html');
+
         if (isTextBlock) {
             commitTextBlock(selectedEl);
+        } else if (isSpacerBlock) {
+            commitSpacerBlock(selectedEl);
+        } else if (isButtonBlock) {
+            commitButtonBlock(selectedEl);
+        } else if (isCustomHtmlBlock) {
+            commitCustomHtmlBlock(selectedEl);
         }
         
         selectedEl.classList.remove('selected-item');
@@ -1510,10 +1659,13 @@ function changeTextVariant(newVariant) {
         // 1. Check if we are deleting a Custom HTML block
         const isHTMLBlock = selectedEl.classList.contains('block_custom_html');
 
-        // --- JSON SOURCE OF TRUTH: flag text blocks for removal from project.blocks ---
-        const isTextBlock = selectedEl.classList.contains('section_heading') ||
-                             selectedEl.classList.contains('block_heading') ||
-                             selectedEl.classList.contains('block_text');
+        // --- JSON SOURCE OF TRUTH: flag migrated blocks for removal from project.blocks ---
+        const isMigratedBlock = selectedEl.classList.contains('section_heading') ||
+                                 selectedEl.classList.contains('block_heading') ||
+                                 selectedEl.classList.contains('block_text') ||
+                                 selectedEl.classList.contains('block_spacer') ||
+                                 selectedEl.classList.contains('block_button_container') ||
+                                 selectedEl.classList.contains('block_custom_html');
         const blockId = selectedEl.getAttribute('data-block-id');
 
         // 2. Remove the block itself
@@ -1528,7 +1680,7 @@ function changeTextVariant(newVariant) {
         }
 
         // Remove from project.blocks so it doesn't come back on next render.
-        if (isTextBlock && blockId) {
+        if (isMigratedBlock && blockId) {
             project.blocks = project.blocks.filter(b => b.id !== blockId);
         }
 
@@ -1536,7 +1688,7 @@ function changeTextVariant(newVariant) {
         // re-commit a block we just deleted.
         selectedEl = null;
         deselectAll(); 
-        if (isTextBlock) renderPage();
+        if (isMigratedBlock) renderPage();
     } 
 }
 
