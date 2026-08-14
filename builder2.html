@@ -766,7 +766,22 @@ let project = {
                 class: 'logo'
             }
         },
-        menu: null,
+        // Same shape the menu editor's own working list (menuData) already
+        // uses: { label, url, children }. Seeded to match template.html's
+        // current static nav-sidebar content, so nothing changes visually
+        // on first load — see renderMenu() for how this gets applied.
+        menu: [
+            { label: 'Home', url: 'https://mysnoozingbaby.com/', children: [] },
+            { label: 'Snoo Smart Sleeper', url: '#', children: [
+                { label: 'SNOO Rental', url: 'https://mysnoozingbaby.com/snoo-rental' },
+                { label: 'SNOO Cleaning/Repair', url: 'https://mysnoozingbaby.com/snoo-cleaning-and-repairs' }
+            ] },
+            { label: 'Baby Gear Rentals', url: 'https://mysnoozingbaby.com/baby-gear-rentals', children: [] },
+            { label: 'Toddler Party Rentals', url: 'https://mysnoozingbaby.com/toddler-party-rentals', children: [] },
+            { label: 'About Us', url: 'https://mysnoozingbaby.com/about-us', children: [] },
+            { label: 'Contact Us', url: 'https://mysnoozingbaby.com/contact-us', children: [] },
+            { label: 'FAQs', url: 'https://mysnoozingbaby.com/faqs', children: [] }
+        ],
         blocks: []
     },
     footer: {}
@@ -1571,6 +1586,13 @@ function renderPage() {
         logoEl.textContent = project.body.header.logo.text || '';
     }
 
+    // --- MENU ---
+    // Also lives outside #editor-root (it's the fixed nav-sidebar in
+    // template.html), synced from project.body.menu the same way the logo
+    // is above. See renderMenu() — same markup/expand-collapse behavior,
+    // just JSON-driven now.
+    renderMenu();
+
     root.innerHTML = '';
 
     project.body.blocks.forEach(block => {
@@ -1647,7 +1669,7 @@ function renderPage() {
             el.contentEditable = "false";
             el.setAttribute('data-block-id', block.id);
             el.setAttribute('data-scale-factor', block.scaleFactor || '1.0');
-            el.style.width = block.width || '200px';
+            el.style.width = (block.width || 200) + 'px';
             el.innerHTML = `<img src="${block.src}">`;
             const img = el.querySelector('img');
             if (block.alt && img) img.setAttribute('alt', block.alt);
@@ -1996,7 +2018,7 @@ function saveImageBlock(el) {
         id: blockId,
         type: 'image',
         src: img ? img.getAttribute('src') : '',
-        width: el.style.width || '200px',
+        width: parseFloat(el.style.width) || 200,
         scaleFactor: el.getAttribute('data-scale-factor') || '1.0',
         align: el.style.textAlign || '',
         link: el.getAttribute('data-link') || '',
@@ -2993,33 +3015,10 @@ let menuData = [];
 let expandedKey = null; 
 
 function openMenuEditor() {
-    const frame = document.getElementById('preview-frame');
-    const doc = frame.contentDocument || frame.contentWindow.document;
-    const navContent = doc.querySelector('.nav-content');
-    
-    if (!navContent) return;
-
-    // Reset data and parse from the live preview
-    menuData = [];
-    const children = Array.from(navContent.children);
-    
-    for (let i = 0; i < children.length; i++) {
-        const el = children[i];
-        if (el.tagName === 'A' && el.classList.contains('dropdown-btn')) {
-            const nextEl = children[i + 1];
-            let subItems = [];
-            if (nextEl && nextEl.classList.contains('sub-nav')) {
-                subItems = Array.from(nextEl.querySelectorAll('a')).map(link => ({
-                    label: link.innerText.replace('▼', '').trim(),
-                    url: link.getAttribute('href') || '#'
-                }));
-                i++; 
-            }
-            menuData.push({ label: el.innerText.replace('▼', '').trim(), url: '#', children: subItems });
-        } else if (el.tagName === 'A' && !el.closest('.sub-nav')) {
-            menuData.push({ label: el.innerText.trim(), url: el.getAttribute('href') || '#', children: [] });
-        }
-    }
+    // Deep copy so in-progress edits only live in menuData until Save is
+    // pressed — closing without saving (or reopening later) just re-derives
+    // menuData fresh from project.body.menu, discarding anything unsaved.
+    menuData = JSON.parse(JSON.stringify(project.body.menu || []));
 
     expandedKey = null; 
     renderMenuEditor();
@@ -3105,13 +3104,22 @@ function addMenuItem() {
     renderMenuEditor();
 }
 
-function saveMenuChanges() {
-    const frame = document.getElementById('preview-frame');
-    const doc = frame.contentDocument || frame.contentWindow.document;
+// Builds the nav-sidebar's menu HTML from project.body.menu and writes it
+// into the live page. This is the exact same HTML-generation logic
+// saveMenuChanges() always used — factored out so it can also run as part
+// of the normal render pipeline (renderPage()), keeping the on-page menu in
+// sync with the JSON any time the page re-renders, not just right after the
+// menu editor's Save button is pressed. The markup shape and expand/
+// collapse behavior (toggleDropdown, sub-nav classes, etc.) are completely
+// untouched — this only changes where the data comes from.
+function renderMenu() {
+    const doc = frame.contentDocument;
+    if (!doc) return;
     const navContent = doc.querySelector('.nav-content');
-    
+    if (!navContent) return;
+
     let html = '';
-    menuData.forEach(item => {
+    (project.body.menu || []).forEach(item => {
         if (!item.children || item.children.length === 0) {
             html += `<a href="${item.url}">${item.label}</a>\n`;
         } else {
@@ -3125,6 +3133,14 @@ function saveMenuChanges() {
     });
 
     navContent.innerHTML = html;
+}
+
+function saveMenuChanges() {
+    // JSON SOURCE OF TRUTH: menuData (the editor's working copy) becomes
+    // the real project.body.menu here — deep-copied so later in-editor
+    // edits can't accidentally alias back into the saved data.
+    project.body.menu = JSON.parse(JSON.stringify(menuData));
+    renderMenu();
     closeMenuEditor();
 }
 
