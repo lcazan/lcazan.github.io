@@ -1065,6 +1065,13 @@ function updateSandbox(block) {
         // very first load, not just after the user's first edit triggers a
         // render.
         renderPage();
+
+        // The menu is synced separately, once, here — NOT from inside
+        // renderPage() itself. See the note in renderPage() for why: a
+        // destructive rebuild on every click-to-empty-space would wipe out
+        // an expanded dropdown's .active/.show state the instant after
+        // toggleDropdown() set it.
+        renderMenu();
     };
 }
 
@@ -1586,12 +1593,16 @@ function renderPage() {
         logoEl.textContent = project.body.header.logo.text || '';
     }
 
-    // --- MENU ---
-    // Also lives outside #editor-root (it's the fixed nav-sidebar in
-    // template.html), synced from project.body.menu the same way the logo
-    // is above. See renderMenu() — same markup/expand-collapse behavior,
-    // just JSON-driven now.
-    renderMenu();
+    // NOTE: the menu (nav-sidebar) is deliberately NOT re-synced here.
+    // renderMenu() does a destructive innerHTML rebuild of .nav-content,
+    // which would wipe out the .active/.show classes toggleDropdown() adds
+    // when a submenu is expanded — and since renderPage() runs on every
+    // click to empty space (including clicks on the menu itself, which
+    // isn't part of #editor-root), that made dropdowns appear to do
+    // nothing: they'd open and get rebuilt-away almost instantly. renderMenu()
+    // is only called from saveMenuChanges() (after an actual edit) and once
+    // on initial load (see frame.onload) — never from the general render
+    // cycle.
 
     root.innerHTML = '';
 
