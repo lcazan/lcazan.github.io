@@ -1669,7 +1669,7 @@ function renderPage() {
             el.contentEditable = "false";
             el.setAttribute('data-block-id', block.id);
             el.setAttribute('data-scale-factor', block.scaleFactor || '1.0');
-            el.style.width = (block.width || 200) + 'px';
+            el.style.width = block.width || '200px';
             el.innerHTML = `<img src="${block.src}">`;
             const img = el.querySelector('img');
             if (block.alt && img) img.setAttribute('alt', block.alt);
@@ -2018,7 +2018,7 @@ function saveImageBlock(el) {
         id: blockId,
         type: 'image',
         src: img ? img.getAttribute('src') : '',
-        width: parseFloat(el.style.width) || 200,
+        width: el.style.width || '200px',
         scaleFactor: el.getAttribute('data-scale-factor') || '1.0',
         align: el.style.textAlign || '',
         link: el.getAttribute('data-link') || '',
