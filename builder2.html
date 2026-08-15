@@ -259,6 +259,18 @@ autocomplete="off"
 
 
 
+<div id="project-picker-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:30000; align-items:center; justify-content:center;">
+    <div class="settings-modal" style="width:min(420px, 90vw);">
+        <div class="settings-header">
+            <h3 style="margin:0;">My Snoozing Baby Builder</h3>
+        </div>
+        <div class="settings-body" id="project-picker-body">
+        </div>
+    </div>
+</div>
+
+
+
 <div id="settings-overlay" onclick="if(event.target===this) toggleSettings()">
     <div class="settings-modal">
         <div class="settings-header">
@@ -731,10 +743,23 @@ let currentMode = 'iphone';
 let isResizing = false;
 let activePillMode = null;
 
+// --- FILE SYSTEM ACCESS: project folder handles ---
+// projectDirHandle is the picked/remembered project folder itself (holds
+// <project name>.json and the images/ subfolder). imagesDirHandle is that
+// images/ subfolder, created on first setup. Both are null until a project
+// has actually been opened via the startup picker (see startupCheck()).
+let projectDirHandle = null;
+let imagesDirHandle = null;
+
 // --- JSON SOURCE OF TRUTH ---
 // The project's overall shape:
 //
 //   Project
+//   ├── meta    — { name, nextImageNumber }. name is used for the
+//   │             <name>.json filename; nextImageNumber is an
+//   │             ever-incrementing counter used to name image files
+//   │             (1.png, 2.jpg, ...) — never reused, even after a delete,
+//   │             so a stale reference can never collide with a new image.
 //   ├── head    — shared/template-controlled (meta tags etc.), not yet part
 //   │             of the editable block system. Reserved for later (Project
 //   │             Settings).
@@ -758,6 +783,10 @@ let activePillMode = null;
 //                 part of the editable block system. Reserved for later
 //                 (Project Settings).
 let project = {
+    meta: {
+        name: '',
+        nextImageNumber: 1
+    },
     head: {},
     body: {
         header: {
@@ -892,27 +921,37 @@ function updateSandbox(block) {
     html = html.replace('</head>', `
         <link rel="stylesheet" href="editor.css">
         <script>
+            // Recalculates a container div's image width/layout from its
+            // current size and the image's data-scale-factor. Factored out
+            // (rather than living only inside the ResizeObserver callback)
+            // so it can also be triggered on demand — e.g. by fitToWidth()
+            // in builder.html's main script — since changing
+            // data-scale-factor alone doesn't change the container's actual
+            // size, so it never fires the ResizeObserver by itself.
+            function applyDivImageLayout(div) {
+                const width = div.offsetWidth;
+                const img = div.querySelector('.block_image');
+                const other = div.querySelector('.div-other-wrapper');
+                if (!img) return;
+                const factor = parseFloat(img.getAttribute('data-scale-factor') || '1.0');
+                if (width <= 744) {
+                    div.style.flexDirection = 'column'; div.style.justifyContent = 'center';
+                    img.style.width = (width * factor) + 'px'; img.style.margin = '0 auto';
+                    if(other) other.style.width = '100%';
+                } else {
+                    div.style.flexDirection = 'row'; div.style.justifyContent = 'flex-start';
+                    const baseW = width * 0.618;
+                    img.style.width = (baseW * factor) + 'px'; img.style.margin = '0';
+                    if(other) other.style.width = 'auto';
+                }
+            }
             const observer = new ResizeObserver(entries => {
                 for (let entry of entries) {
-                    const div = entry.target; 
-                    const width = entry.contentRect.width;
-                    const img = div.querySelector('.block_image');
-                    const other = div.querySelector('.div-other-wrapper');
-                    if (!img) continue;
-                    const factor = parseFloat(img.getAttribute('data-scale-factor') || '1.0');
-                    if (width <= 744) {
-                        div.style.flexDirection = 'column'; div.style.justifyContent = 'center';
-                        img.style.width = (width * factor) + 'px'; img.style.margin = '0 auto';
-                        if(other) other.style.width = '100%';
-                    } else {
-                        div.style.flexDirection = 'row'; div.style.justifyContent = 'flex-start';
-                        const baseW = width * 0.618;
-                        img.style.width = (baseW * factor) + 'px'; img.style.margin = '0';
-                        if(other) other.style.width = 'auto';
-                    }
+                    applyDivImageLayout(entry.target);
                 }
             });
             window.initDivLogic = () => { document.querySelectorAll('.block_container').forEach(d => observer.observe(d)); };
+            window.applyDivImageLayout = applyDivImageLayout;
         <\/script>
     </head>`);
 
@@ -2584,7 +2623,25 @@ function syncRealTime() {
         handle.addEventListener('mousedown', startResize); handle.addEventListener('touchstart', startResize, {passive: false});
         el.appendChild(handle);
     }
-    function fitToWidth() { if (!selectedEl) return; const inDiv = selectedEl.closest('.block_container'); if (inDiv) selectedEl.setAttribute('data-scale-factor', '1.0'); else { selectedEl.style.width = '100%'; selectedEl.style.display = 'block'; selectedEl.style.margin = '0 auto'; } }
+    function fitToWidth() {
+        if (!selectedEl) return;
+        const inDiv = selectedEl.closest('.block_container');
+        if (inDiv) {
+            selectedEl.setAttribute('data-scale-factor', '1.0');
+            // Apply immediately — data-scale-factor changes don't change the
+            // container's own size, so they never trigger the
+            // ResizeObserver on their own. Without this, the new width
+            // wouldn't show until something else happened to cause a
+            // resize/re-render (e.g. clicking away).
+            if (frame.contentWindow.applyDivImageLayout) {
+                frame.contentWindow.applyDivImageLayout(inDiv);
+            }
+        } else {
+            selectedEl.style.width = '100%';
+            selectedEl.style.display = 'block';
+            selectedEl.style.margin = '0 auto';
+        }
+    }
     function toggleSpacerLine() { if (!selectedEl) return; const currentLine = selectedEl.style.borderBottom; selectedEl.style.borderBottom = (currentLine === 'none' || !currentLine) ? '1px solid #eee' : 'none'; }
     function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
@@ -3375,8 +3432,262 @@ document.addEventListener('click', (e) => {
 });
 
 
-   
-window.onload = init;
+// ==========================================================
+// PROJECT STARTUP: New Project / Continue Project
+// ==========================================================
+// Everything below gates the existing init() (which loads template.html
+// into the preview iframe and sets up all the interaction listeners) behind
+// picking or remembering a real project folder via the File System Access
+// API. init() itself is untouched — it's just no longer called directly on
+// window.onload; it's called once a projectDirHandle (and imagesDirHandle)
+// are ready, either from a fresh "New Project" pick or a remembered/browsed
+// "Continue Project".
+
+const PROJECTS_DB_NAME = 'msb_builder_db';
+const PROJECTS_STORE = 'recentProjects';
+
+function openProjectsDB() {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(PROJECTS_DB_NAME, 1);
+        req.onupgradeneeded = () => {
+            req.result.createObjectStore(PROJECTS_STORE, { keyPath: 'name' });
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function saveRecentProject(name, dirHandle) {
+    const db = await openProjectsDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(PROJECTS_STORE, 'readwrite');
+        tx.objectStore(PROJECTS_STORE).put({ name: name, dirHandle: dirHandle, lastOpened: Date.now() });
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+    });
+}
+
+async function getRecentProjects() {
+    const db = await openProjectsDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(PROJECTS_STORE, 'readonly');
+        const req = tx.objectStore(PROJECTS_STORE).getAll();
+        req.onsuccess = () => resolve((req.result || []).sort((a, b) => b.lastOpened - a.lastOpened));
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function getRecentProjectByName(name) {
+    const db = await openProjectsDB();
+    return new Promise((resolve, reject) => {
+        const tx = db.transaction(PROJECTS_STORE, 'readonly');
+        const req = tx.objectStore(PROJECTS_STORE).get(name);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+// Entry point (replaces window.onload = init directly). Feature-detects the
+// File System Access API — this builder can't function without it (every
+// image and the project file itself now live on real disk), so on browsers
+// that don't support it (Safari, Firefox, non-Chromium mobile) this blocks
+// with a clear message rather than loading a broken editor.
+function startupCheck() {
+    if (!('showDirectoryPicker' in window)) {
+        document.body.innerHTML = `
+            <div style="display:flex; align-items:center; justify-content:center; height:100vh; background:#111; color:#eee; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; text-align:center; padding:30px; box-sizing:border-box;">
+                <div style="max-width:420px;">
+                    <h2 style="color:#ff6b6b; margin-bottom:12px;">Browser Not Supported</h2>
+                    <p style="line-height:1.6; color:#ccc;">My Snoozing Baby Builder needs direct folder access on your device, which this browser doesn't provide.</p>
+                    <p style="line-height:1.6; color:#ccc;">Please open this page in <strong>Chrome or Edge</strong> (desktop, or Chrome on Android) to continue.</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    document.getElementById('project-picker-overlay').style.display = 'flex';
+    showProjectPickerChoice();
+}
+
+function showProjectPickerChoice() {
+    const body = document.getElementById('project-picker-body');
+    body.innerHTML = `
+        <p style="color:#aaa; font-size:13px; margin-bottom:20px;">Choose how you'd like to start.</p>
+        <button class="save-settings-btn" style="width:100%; margin-bottom:10px; box-sizing:border-box;" onclick="showNewProjectForm()">+ New Project</button>
+        <button class="save-settings-btn" style="width:100%; background:#444; box-sizing:border-box;" onclick="showContinueProjectList()">Continue a Project</button>
+    `;
+}
+
+function showNewProjectForm() {
+    pendingNewProjectDirHandle = null;
+    const body = document.getElementById('project-picker-body');
+    body.innerHTML = `
+        <div class="settings-form-group">
+            <label>Project Name</label>
+            <input type="text" id="new-project-name" placeholder="My Snoozing Baby Site" oninput="checkNewProjectReady()">
+        </div>
+        <div class="settings-form-group">
+            <label>Project Folder</label>
+            <button class="save-settings-btn" style="width:100%; background:#444; box-sizing:border-box;" onclick="pickNewProjectFolder()">Choose Folder…</button>
+            <div id="new-project-folder-status" style="margin-top:8px; font-size:12px; color:#888;">No folder selected yet.</div>
+        </div>
+        <button class="save-settings-btn" id="new-project-confirm-btn" style="width:100%; margin-top:15px; box-sizing:border-box;" disabled onclick="confirmNewProject()">Create Project</button>
+        <button class="save-settings-btn" style="width:100%; background:transparent; color:#888; margin-top:8px; box-sizing:border-box;" onclick="showProjectPickerChoice()">Back</button>
+    `;
+}
+
+let pendingNewProjectDirHandle = null;
+
+async function pickNewProjectFolder() {
+    try {
+        pendingNewProjectDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        document.getElementById('new-project-folder-status').textContent = 'Selected: ' + pendingNewProjectDirHandle.name;
+        checkNewProjectReady();
+    } catch (err) {
+        // User cancelled the picker — not worth surfacing as an error.
+    }
+}
+
+function checkNewProjectReady() {
+    const nameInput = document.getElementById('new-project-name');
+    const btn = document.getElementById('new-project-confirm-btn');
+    if (!nameInput || !btn) return;
+    btn.disabled = !(nameInput.value.trim() && pendingNewProjectDirHandle);
+}
+
+async function confirmNewProject() {
+    const name = document.getElementById('new-project-name').value.trim();
+    if (!name || !pendingNewProjectDirHandle) return;
+
+    projectDirHandle = pendingNewProjectDirHandle;
+    imagesDirHandle = await projectDirHandle.getDirectoryHandle('images', { create: true });
+
+    project.meta.name = name;
+    project.meta.nextImageNumber = 1;
+
+    await saveRecentProject(name, projectDirHandle);
+
+    document.getElementById('project-picker-overlay').style.display = 'none';
+    init();
+}
+
+async function showContinueProjectList() {
+    const body = document.getElementById('project-picker-body');
+    body.innerHTML = `<p style="color:#888; font-size:13px;">Loading recent projects…</p>`;
+
+    let recents = [];
+    try {
+        recents = await getRecentProjects();
+    } catch (err) {
+        recents = [];
+    }
+
+    let listHtml = '';
+    if (recents.length === 0) {
+        listHtml = `<p style="color:#888; font-size:13px;">No remembered projects yet on this device.</p>`;
+    } else {
+        listHtml = recents.map(r => `
+            <button class="save-settings-btn" style="width:100%; background:#444; margin-bottom:8px; text-align:left; box-sizing:border-box;" onclick="continueRecentProject('${r.name.replace(/'/g, "\\'")}')">
+                ${r.name}
+            </button>
+        `).join('');
+    }
+
+    body.innerHTML = `
+        ${listHtml}
+        <button class="save-settings-btn" style="width:100%; background:#333; margin-top:10px; box-sizing:border-box;" onclick="browseForProjectFolder()">Browse for a Folder…</button>
+        <button class="save-settings-btn" style="width:100%; background:transparent; color:#888; margin-top:8px; box-sizing:border-box;" onclick="showProjectPickerChoice()">Back</button>
+    `;
+}
+
+async function continueRecentProject(name) {
+    let record;
+    try {
+        record = await getRecentProjectByName(name);
+    } catch (err) {
+        alert('Could not read remembered projects on this device.');
+        return;
+    }
+    if (!record) {
+        alert('Could not find that project — it may have been removed. Try "Browse for a Folder…" instead.');
+        return;
+    }
+
+    let perm;
+    try {
+        perm = await record.dirHandle.requestPermission({ mode: 'readwrite' });
+    } catch (err) {
+        alert('Could not re-access that folder. Try "Browse for a Folder…" instead.');
+        return;
+    }
+    if (perm !== 'granted') {
+        alert('Permission was not granted for that folder.');
+        return;
+    }
+
+    await loadProjectFromDirHandle(record.dirHandle, record.name);
+}
+
+async function browseForProjectFolder() {
+    let dirHandle;
+    try {
+        dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    } catch (err) {
+        return; // cancelled
+    }
+
+    // Look for a project .json file directly inside the chosen folder to
+    // determine the project name — this builder keeps one project per
+    // folder, so the first .json found is the project file.
+    let jsonFileName = null;
+    for await (const [entryName, handle] of dirHandle.entries()) {
+        if (handle.kind === 'file' && entryName.toLowerCase().endsWith('.json')) {
+            jsonFileName = entryName;
+            break;
+        }
+    }
+    if (!jsonFileName) {
+        alert('No project file (.json) was found in that folder.');
+        return;
+    }
+
+    const name = jsonFileName.replace(/\.json$/i, '');
+    try {
+        await saveRecentProject(name, dirHandle);
+    } catch (err) {
+        // Non-fatal — remembering it for next time is a convenience, not a
+        // requirement for opening it right now.
+    }
+
+    await loadProjectFromDirHandle(dirHandle, name);
+}
+
+async function loadProjectFromDirHandle(dirHandle, name) {
+    projectDirHandle = dirHandle;
+    imagesDirHandle = await projectDirHandle.getDirectoryHandle('images', { create: true });
+
+    let loaded;
+    try {
+        const fileHandle = await projectDirHandle.getFileHandle(name + '.json');
+        const file = await fileHandle.getFile();
+        const text = await file.text();
+        loaded = JSON.parse(text);
+    } catch (err) {
+        alert('Could not read/parse ' + name + '.json from that folder.');
+        return;
+    }
+
+    project = loaded;
+    if (!project.meta) project.meta = { name: name, nextImageNumber: 1 };
+
+    document.getElementById('project-picker-overlay').style.display = 'none';
+    init();
+    // renderPage()/renderMenu() already run once frame.onload fires at the
+    // end of init(), so the loaded blocks/menu/header display automatically
+    // once the iframe finishes loading — no extra render call needed here.
+}
+
+window.onload = startupCheck;
 
 </script>
 
