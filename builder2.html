@@ -6,7 +6,6 @@
     <title>Snoozing Builder | v5.5.1</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="editor.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
         /* --- ADDED SETTINGS MODAL STYLES --- */
         #settings-overlay {
@@ -226,10 +225,10 @@
         <button class="insert-btn" onclick="toggleSettings()" title="Settings" style="background: #2a2a2a; border-color: #555;">
             <i class="fa-solid fa-gear" style="color: #95a5a6;"></i>
         </button>
-        <button class="insert-btn" onclick="loadProject()" title="Load Project" style="background: #2a2a2a; border-color: #555;">
+        <button class="insert-btn" onclick="openProjectPicker()" title="Switch Project" style="background: #2a2a2a; border-color: #555;">
             <i class="fa-solid fa-file-import" style="color: #2ecc71;"></i>
         </button>
-        <button class="insert-btn" onclick="masterSave()" title="Save Project" style="background: #2a2a2a; border-color: #555;">
+        <button class="insert-btn" onclick="saveProjectToFolder()" title="Save Project" style="background: #2a2a2a; border-color: #555;">
             <i class="fa-solid fa-file-export" style="color: #4db8ff;"></i>
         </button>
     </div>
@@ -263,6 +262,7 @@ autocomplete="off"
     <div class="settings-modal" style="width:min(420px, 90vw);">
         <div class="settings-header">
             <h3 style="margin:0;">My Snoozing Baby Builder</h3>
+            <span id="project-picker-close" style="display:none; cursor:pointer; font-size:24px; color:#888;" onclick="closeProjectPicker()">&times;</span>
         </div>
         <div class="settings-body" id="project-picker-body">
         </div>
@@ -625,74 +625,71 @@ function updateMultiRowHeight(val) {
 // --- UPDATED: Uses Blobs and IMG tags for high resolution ---
 function triggerMultiImageAdd() {
     const input = document.getElementById('image-upload');
-    input.onchange = function(e) {
+    input.onchange = async function(e) {
         const file = e.target.files[0];
         if (!file) return;
-        
-        // Match baseline: Use FileReader to create a Base64 data URL
-        const r = new FileReader();
-        r.onload = ev => {
-            const dataUrl = ev.target.result;
-            const newItem = document.createElement('div');
-            newItem.className = 'multi-image-item';
-            
-            const img = document.createElement('img');
-            img.src = dataUrl;
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'cover';
-            img.style.display = 'block';
-            newItem.appendChild(img);
 
-            // Pan handle — same pattern as gallery-component.html's
-            // .pan-overlay: a permanent, centered overlay icon, shown via
-            // CSS on hover/selection, that starts the pan gesture itself
-            // (see startInteraction()'s .multi-image-pan-overlay check) so
-            // it's distinct from tapping the item to select it.
-            const panOverlay = document.createElement('div');
-            panOverlay.className = 'multi-image-pan-overlay';
-            panOverlay.innerHTML = '<i class="fa-solid fa-arrows-up-down-left-right"></i>';
-            newItem.appendChild(panOverlay);
-            
-            const ratio = parseFloat(selectedEl.getAttribute('data-ratio-val')) || 1;
-            newItem.style.height = '100%';
-            newItem.style.aspectRatio = ratio.toString(); 
-            
-            selectedEl.appendChild(newItem);
-            input.value = ""; 
-            
-            recalculateMultiLimits();
-            renderToolbar();
-        };
-        r.readAsDataURL(file);
+        const src = await saveImageToProject(file);
+
+        const newItem = document.createElement('div');
+        newItem.className = 'multi-image-item';
+        newItem.setAttribute('data-permanent-src', src);
+
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        img.style.display = 'block';
+        newItem.appendChild(img);
+
+        // Pan handle — same pattern as gallery-component.html's
+        // .pan-overlay: a permanent, centered overlay icon, shown via
+        // CSS on hover/selection, that starts the pan gesture itself
+        // (see startInteraction()'s .multi-image-pan-overlay check) so
+        // it's distinct from tapping the item to select it.
+        const panOverlay = document.createElement('div');
+        panOverlay.className = 'multi-image-pan-overlay';
+        panOverlay.innerHTML = '<i class="fa-solid fa-arrows-up-down-left-right"></i>';
+        newItem.appendChild(panOverlay);
+
+        const ratio = parseFloat(selectedEl.getAttribute('data-ratio-val')) || 1;
+        newItem.style.height = '100%';
+        newItem.style.aspectRatio = ratio.toString();
+
+        selectedEl.appendChild(newItem);
+        input.value = "";
+
+        recalculateMultiLimits();
+        renderToolbar();
     };
     input.click();
 }
 
 function triggerMultiImageReplace() {
     const input = document.getElementById('image-upload');
-    input.onchange = function(e) {
+    input.onchange = async function(e) {
         const file = e.target.files[0];
         if (!file) return;
-        
-        const r = new FileReader();
-        r.onload = ev => {
-            const dataUrl = ev.target.result;
-            if (selectedEl && selectedEl.classList.contains('multi-image-item')) {
-                let img = selectedEl.querySelector('img');
-                if (!img) {
-                    selectedEl.style.backgroundImage = 'none';
-                    img = document.createElement('img');
-                    img.style.width = '100%';
-                    img.style.height = '100%';
-                    img.style.objectFit = 'cover';
-                    selectedEl.appendChild(img);
-                }
-                img.src = dataUrl;
+
+        if (selectedEl && selectedEl.classList.contains('multi-image-item')) {
+            // Always a fresh, unique path (see saveImageToProject) — the
+            // old file is left in place on disk, just no longer referenced.
+            const src = await saveImageToProject(file);
+            selectedEl.setAttribute('data-permanent-src', src);
+
+            let img = selectedEl.querySelector('img');
+            if (!img) {
+                selectedEl.style.backgroundImage = 'none';
+                img = document.createElement('img');
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                selectedEl.appendChild(img);
             }
-            input.value = '';
-        };
-        r.readAsDataURL(file);
+            img.src = URL.createObjectURL(file);
+        }
+        input.value = '';
     };
     input.click();
 }
@@ -815,6 +812,71 @@ let project = {
     },
     footer: {}
 };
+
+// ==========================================================
+// CENTRAL IMAGE STORAGE
+// ==========================================================
+// The ONLY place in the whole app that writes an image file to disk.
+// Every image-bearing block type (single image, div image, multi-image,
+// gallery) funnels through saveImageToProject() — no per-component
+// filesystem logic anywhere else, including gallery-component.html, which
+// requests saves/reads through a postMessage bridge to here (see the
+// saveImageRequest/resolveImageRequest handler below, and the relay added
+// to the preview iframe's injected script in init()).
+
+// Saves `file` into the project's images/ folder under a brand-new, unique
+// filename (e.g. "images/image-007.jpg") and returns that permanent,
+// project-relative path — safe to store in JSON (never base64 or a blob:
+// URL). Every call always gets a fresh filename, even when the user is
+// "replacing" an image on an existing block — the old file is simply left
+// unreferenced on disk rather than overwritten, so an in-progress write
+// can never collide with or clobber a different image.
+async function saveImageToProject(file) {
+    if (!imagesDirHandle) {
+        throw new Error('No project folder is open.');
+    }
+    const num = project.meta.nextImageNumber++;
+    const extMatch = /\.([a-zA-Z0-9]+)$/.exec(file.name || '');
+    const ext = extMatch ? extMatch[1].toLowerCase() : 'png';
+    const filename = 'image-' + String(num).padStart(3, '0') + '.' + ext;
+
+    const fileHandle = await imagesDirHandle.getFileHandle(filename, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(file);
+    await writable.close();
+
+    return 'images/' + filename;
+}
+
+// Reads a permanently-stored project image back off disk as a File (a
+// File is also a Blob), given its project-relative path (e.g.
+// "images/image-007.jpg").
+async function getProjectImageBlob(path) {
+    if (!imagesDirHandle) {
+        throw new Error('No project folder is open.');
+    }
+    const filename = (path || '').split('/').pop();
+    if (!filename) throw new Error('Empty image path.');
+    const fileHandle = await imagesDirHandle.getFileHandle(filename);
+    return await fileHandle.getFile();
+}
+
+// Convenience wrapper for render paths that live in this SAME window
+// (single image, div image, multi-image) — they can resolve a stored path
+// directly into a displayable blob: URL without needing the postMessage
+// bridge the nested gallery iframe requires. Used because srcdoc-loaded
+// iframe content has no real base URL that could resolve a relative
+// images/... path against the actual project folder on disk.
+async function resolveImagePath(path) {
+    if (!path) return '';
+    try {
+        const blob = await getProjectImageBlob(path);
+        return URL.createObjectURL(blob);
+    } catch (err) {
+        console.error('Could not resolve image path', path, err);
+        return '';
+    }
+}
 
 // --- 2. THE CONSOLIDATED MESSAGE LISTENER ---
 // Handles both Photo Gallery and Sandbox (Custom HTML) resizing
@@ -959,8 +1021,18 @@ function updateSandbox(block) {
     const relayScript = `
         <script>
             window.addEventListener('message', e => { 
-                if (e.data && (e.data.type === 'galleryHeight' || e.data.type === 'sandboxHeight')) {
+                // Requests travel UP: gallery iframe -> here -> builder.html
+                if (e.data && (e.data.type === 'galleryHeight' || e.data.type === 'sandboxHeight' || e.data.type === 'saveImageRequest' || e.data.type === 'resolveImageRequest')) {
                     window.parent.postMessage(e.data, '*'); 
+                }
+                // Responses travel DOWN: builder.html -> here -> gallery iframe.
+                // Broadcast to every gallery iframe present — only the one
+                // with a matching pending requestId acts on it, so this is
+                // safe even with multiple galleries on the page.
+                if (e.data && (e.data.type === 'saveImageResponse' || e.data.type === 'resolveImageResponse')) {
+                    document.querySelectorAll('.photo_gallery iframe').forEach(f => {
+                        if (f.contentWindow) f.contentWindow.postMessage(e.data, '*');
+                    });
                 }
             });
         <\/script>
@@ -1162,6 +1234,41 @@ window.addEventListener('message', (event) => {
                 block.style.setProperty('overflow', 'visible', 'important');
             }
         }
+    }
+});
+
+// --- IMAGE STORAGE BRIDGE: gallery-component.html <-> builder.html ---
+// The gallery lives in a NESTED iframe (builder.html -> preview iframe ->
+// gallery iframe) and has no direct access to imagesDirHandle, matching the
+// rule that builder.html is the ONLY thing that touches the filesystem.
+// Requests travel up through the preview iframe's relay (see the
+// relayScript addition in init()) and arrive here; responses are sent back
+// via event.source, which the relay then forwards back down to every
+// gallery iframe (only the one with the matching pending requestId acts on
+// it — see gallery-component.html's own listener).
+window.addEventListener('message', async (event) => {
+    if (!event.data || !event.source) return;
+
+    if (event.data.type === 'saveImageRequest') {
+        const { requestId, file } = event.data;
+        try {
+            const src = await saveImageToProject(file);
+            event.source.postMessage({ type: 'saveImageResponse', requestId: requestId, src: src }, '*');
+        } catch (err) {
+            event.source.postMessage({ type: 'saveImageResponse', requestId: requestId, error: (err && err.message) || String(err) }, '*');
+        }
+        return;
+    }
+
+    if (event.data.type === 'resolveImageRequest') {
+        const { requestId, src } = event.data;
+        try {
+            const blob = await getProjectImageBlob(src);
+            event.source.postMessage({ type: 'resolveImageResponse', requestId: requestId, blob: blob }, '*');
+        } catch (err) {
+            event.source.postMessage({ type: 'resolveImageResponse', requestId: requestId, error: (err && err.message) || String(err) }, '*');
+        }
+        return;
     }
 });
 
@@ -1501,10 +1608,12 @@ function insertElement(type, data) {
     el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
     
     if (type === 'block_image') { 
-        el.innerHTML = `<img src="${data || 'https://via.placeholder.com/400x200'}">`;
+        const previewUrl = (data && data.previewUrl) ? data.previewUrl : 'https://via.placeholder.com/400x200';
+        el.innerHTML = `<img src="${previewUrl}">`;
         el.contentEditable = "false"; 
         el.style.width = "200px"; 
         el.setAttribute('data-scale-factor', '1.0');
+        if (data && data.src) el.setAttribute('data-permanent-src', data.src);
         // Tag with a stable ID so saveImageBlock() can find/update its
         // entry in project.body.blocks.
         el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
@@ -1719,8 +1828,9 @@ function renderPage() {
             el.contentEditable = "false";
             el.setAttribute('data-block-id', block.id);
             el.setAttribute('data-scale-factor', block.scaleFactor || '1.0');
+            if (block.src) el.setAttribute('data-permanent-src', block.src);
             el.style.width = block.width || '200px';
-            el.innerHTML = `<img src="${block.src}">`;
+            el.innerHTML = `<img>`;
             const img = el.querySelector('img');
             if (block.alt && img) img.setAttribute('alt', block.alt);
             if (block.link) el.setAttribute('data-link', block.link);
@@ -1730,6 +1840,13 @@ function renderPage() {
                 el.style.margin = block.align === 'center' ? '0 auto' : '0';
             }
             root.appendChild(el);
+            // Resolve the on-disk file to a displayable blob URL
+            // asynchronously — srcdoc-loaded iframe content has no real
+            // base URL that could resolve a relative images/... path
+            // against the actual project folder on disk.
+            if (block.src) {
+                resolveImagePath(block.src).then(url => { if (url) img.src = url; });
+            }
         }
         else if (block.type === 'multiImage') {
             const el = doc.createElement('div');
@@ -1747,8 +1864,8 @@ function renderPage() {
             (block.items || []).forEach(itemData => {
                 const item = doc.createElement('div');
                 item.className = 'multi-image-item';
+                if (itemData.src) item.setAttribute('data-permanent-src', itemData.src);
                 const img = doc.createElement('img');
-                img.src = itemData.src;
                 img.style.width = '100%';
                 img.style.height = '100%';
                 img.style.objectFit = 'cover';
@@ -1767,6 +1884,10 @@ function renderPage() {
                 if (itemData.link) item.setAttribute('data-link', itemData.link);
                 item.style.aspectRatio = (block.aspectRatio || '1').toString();
                 el.appendChild(item);
+
+                if (itemData.src) {
+                    resolveImagePath(itemData.src).then(url => { if (url) img.src = url; });
+                }
             });
 
             root.appendChild(el);
@@ -1792,9 +1913,7 @@ function renderPage() {
 
             // The gallery lives in its own nested iframe with its own
             // script (gallery-component.html) — wait for it to finish
-            // loading and expose loadSavedImages before hydrating, same
-            // retry-poll pattern already used by loadProject() for the
-            // same reason.
+            // loading and expose loadSavedImages before hydrating.
             if (block.images && block.images.length) {
                 const hydrate = () => {
                     if (iframe.contentWindow && iframe.contentWindow.loadSavedImages) {
@@ -1821,15 +1940,19 @@ function renderPage() {
                 imgWrapper.className = 'editable block_image';
                 imgWrapper.contentEditable = "false";
                 imgWrapper.setAttribute('data-scale-factor', block.image.scaleFactor || '1.0');
+                if (block.image.src) imgWrapper.setAttribute('data-permanent-src', block.image.src);
                 // Initial width — the ResizeObserver set up by initDivLogic()
                 // recalculates this proportionally once it observes the
                 // container, same as insertElement()'s original default.
                 imgWrapper.style.width = '200px';
-                imgWrapper.innerHTML = `<img src="${block.image.src}">`;
+                imgWrapper.innerHTML = `<img>`;
                 const innerImg = imgWrapper.querySelector('img');
                 if (block.image.alt && innerImg) innerImg.setAttribute('alt', block.image.alt);
                 if (block.image.link) imgWrapper.setAttribute('data-link', block.image.link);
                 el.appendChild(imgWrapper);
+                if (block.image.src) {
+                    resolveImagePath(block.image.src).then(url => { if (url) innerImg.src = url; });
+                }
             }
 
             if (block.children && block.children.length) {
@@ -2051,11 +2174,10 @@ function activateCustomHtml(container) {
 }
 
 // Reads a single image block's current src, width, scale-factor, and
-// alignment straight from the DOM and writes it into project.body.blocks. Does
-// NOT render. Note: there's no real "filename" concept in the editor today
-// — actual filenames are only generated later, at Save/Export time, from
-// this raw image data. So this tracks the image's data (src) directly,
-// leaving filename generation exactly where it already lives (masterSave).
+// alignment straight from the DOM and writes it into project.body.blocks.
+// Does NOT render. "src" is the permanent project-relative path (e.g.
+// "images/image-003.jpg") already written to disk via saveImageToProject()
+// — see data-permanent-src.
 function saveImageBlock(el) {
     let blockId = el.getAttribute('data-block-id');
     if (!blockId) {
@@ -2067,7 +2189,7 @@ function saveImageBlock(el) {
     const blockData = {
         id: blockId,
         type: 'image',
-        src: img ? img.getAttribute('src') : '',
+        src: el.getAttribute('data-permanent-src') || '',
         width: el.style.width || '200px',
         scaleFactor: el.getAttribute('data-scale-factor') || '1.0',
         align: el.style.textAlign || '',
@@ -2096,7 +2218,7 @@ function saveMultiImageBlock(el) {
     const items = Array.from(el.querySelectorAll('.multi-image-item')).map(item => {
         const img = item.querySelector('img');
         return {
-            src: img ? img.getAttribute('src') : '',
+            src: item.getAttribute('data-permanent-src') || '',
             link: item.getAttribute('data-link') || '',
             alt: img ? (img.getAttribute('alt') || '') : '',
             objectPosition: img ? (img.style.objectPosition || '50% 50%') : '50% 50%'
@@ -2122,10 +2244,9 @@ function saveMultiImageBlock(el) {
 
 // Reads a gallery block's current mode (square/masonry) and image order
 // /position straight from its nested iframe's DOM and writes it into
-// project.body.blocks. Does NOT render. Mirrors the same extraction masterSave()
-// already does for export, but keeps raw image data (src) inline rather
-// than converting to a zip filename, consistent with how image/customHtml
-// blocks are saved.
+// project.body.blocks. Does NOT render. Each image's "src" is the
+// permanent project-relative path (e.g. "images/image-003.jpg") already
+// written to disk via saveImageToProject() — see data-permanent-src.
 function saveGalleryBlock(el) {
     let blockId = el.getAttribute('data-block-id');
     if (!blockId) {
@@ -2142,7 +2263,7 @@ function saveGalleryBlock(el) {
             mode = galleryRoot.classList.contains('masonry-mode') ? 'masonry' : 'square';
             const imgs = Array.from(gIframe.contentDocument.querySelectorAll('.gallery-item img'));
             images = imgs.map(img => ({
-                src: img.getAttribute('src') || '',
+                src: img.getAttribute('data-permanent-src') || '',
                 pos: img.style.objectPosition || '50% 50%',
                 originalName: img.getAttribute('data-filename') || ''
             }));
@@ -2278,7 +2399,7 @@ function saveContainerBlock(el) {
     if (imgWrapper) {
         const img = imgWrapper.querySelector('img');
         image = {
-            src: img ? img.getAttribute('src') : '',
+            src: imgWrapper.getAttribute('data-permanent-src') || '',
             scaleFactor: imgWrapper.getAttribute('data-scale-factor') || '1.0',
             link: imgWrapper.getAttribute('data-link') || '',
             alt: img ? (img.getAttribute('alt') || '') : ''
@@ -2499,7 +2620,24 @@ function saveSelectedBlock(el) {
 }
 
     function triggerImageUpload() { document.getElementById('image-upload').click(); }
-    function handleImageUpload(i) { if(i.files[0]) { const r = new FileReader(); r.onload = e => { if (selectedEl && selectedEl.classList.contains('block_image')) selectedEl.querySelector('img').src = e.target.result; else insertElement('block_image', e.target.result); i.value = ''; }; r.readAsDataURL(i.files[0]); } }
+    async function handleImageUpload(i) {
+        const file = i.files[0];
+        if (!file) return;
+
+        const src = await saveImageToProject(file);
+        const previewUrl = URL.createObjectURL(file);
+
+        if (selectedEl && selectedEl.classList.contains('block_image')) {
+            // Replace: point at the newly-saved file (always a fresh,
+            // unique path per saveImageToProject() — the old file is left
+            // in place on disk, just no longer referenced).
+            selectedEl.setAttribute('data-permanent-src', src);
+            selectedEl.querySelector('img').src = previewUrl;
+        } else {
+            insertElement('block_image', { previewUrl: previewUrl, src: src });
+        }
+        i.value = '';
+    }
     function setAlign(pos) { if (selectedEl && !selectedEl.closest('.block_container')) { selectedEl.style.textAlign = pos; if(selectedEl.classList.contains('block_image')) { selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block'; selectedEl.style.margin = pos === 'center' ? '0 auto' : '0'; } } }
     function centerItem() { setAlign('center'); }
 
@@ -2646,435 +2784,6 @@ function syncRealTime() {
     function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function callGalleryToggle() { const iframe = selectedEl.querySelector('iframe'); if (iframe && iframe.contentWindow.toggleMode) iframe.contentWindow.toggleMode(); setTimeout(renderToolbar, 50); }
-
-
-
-
-    
- // --- THE MASTER SAVE FUNCTION ---
-// --- THE MASTER SAVE FUNCTION ---
-// --- THE MASTER SAVE FUNCTION ---
-// --- THE MASTER SAVE FUNCTION ---
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function masterSave() {
-    const iframeDoc = frame.contentDocument;
-    const editorRoot = iframeDoc.getElementById('editor-root');
-    if (!editorRoot) return;
-
-    let userFileName = prompt("Enter project name:", "My_Project");
-    if (!userFileName) return;
-    if (!userFileName.endsWith('.zip')) userFileName += ".zip";
-
-    const projectSettings = {
-        title: document.getElementById('set-page-title')?.value || "",
-        pageID: document.getElementById('set-page-name')?.value.toLowerCase().replace(/\s+/g, '-') || "index",
-        metaDesc: document.getElementById('set-meta-desc')?.value || "",
-        headCode: document.getElementById('set-head-code')?.value || "",
-        faviconName: ""
-    };
-
-    const zip = new JSZip();
-    const imgFolder = zip.folder("images"); // Create the folder immediately
-
-    const favInput = document.getElementById('favicon-upload');
-    if (favInput && favInput.files[0]) {
-        const favFile = favInput.files[0];
-        projectSettings.faviconName = favFile.name;
-        zip.file(`images/${favFile.name}`, favFile);
-    } else if (favInput?.savedBlob && favInput.dataset.savedName) {
-        projectSettings.faviconName = favInput.dataset.savedName;
-        zip.file(`images/${projectSettings.faviconName}`, favInput.savedBlob);
-    }
-
-    // SYNC CUSTOM HTML
-    iframeDoc.querySelectorAll('.block_custom_html').forEach(block => {
-        const textarea = block.querySelector('.html-input-box');
-        if (textarea) {
-            block.setAttribute('data-clean-snippet', textarea.value);
-            block.setAttribute('data-html-code', textarea.value); 
-        }
-    });
-
-    const addLocalFileToZip = async (fileName) => {
-        try {
-            const response = await fetch(fileName);
-            if (response.ok) zip.file(fileName, await response.text());
-        } catch (e) { console.error(`Skipped ${fileName}`); }
-    };
-
-    // --- DIRECT BYTE CONVERTER: 100% Quality, No Canvas, No Fetch Errors ---
-    const processImg = async (img) => {
-        // Fallback checks to ensure we grab the string properly
-        let src = img.getAttribute('src') || img.src || "";
-        src = src.trim();
-        let filename = img.getAttribute('data-filename');
-        
-        if (src.startsWith('blob:') || src.startsWith('data:')) {
-            if (!filename) filename = `img_${Date.now()}_${Math.floor(Math.random()*1000)}.jpg`;
-            if (!filename.toLowerCase().endsWith('.jpg')) filename += '.jpg';
-            
-            try {
-                let finalBlob;
-                
-                if (src.startsWith('data:')) {
-                    // Convert Base64 directly back to raw bytes
-                    const arr = src.split(',');
-                    const mimeMatch = arr[0].match(/:(.*?);/);
-                    const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-                    const bstr = atob(arr[1]);
-                    let n = bstr.length;
-                    const u8arr = new Uint8Array(n);
-                    while(n--){ u8arr[n] = bstr.charCodeAt(n); }
-                    finalBlob = new Blob([u8arr], {type: mime});
-                } else {
-                    // It's a blob (Gallery might still use this)
-                    const response = await fetch(src);
-                    finalBlob = await response.blob();
-                }
-
-                // Actually save the file to the ZIP folder
-                imgFolder.file(filename, finalBlob);
-                
-                // Tag the live image
-                img.setAttribute('data-filename', filename); 
-                return `images/${filename}`;
-            } catch (e) {
-                alert(`CRITICAL ERROR: Failed to process image ${filename}.\nReason: ${e.message}`);
-                console.error(e);
-            }
-        }
-        return filename ? `images/${filename}` : src;
-    };
-
-    // 1. PROCESS ALL LIVE IMAGES (Explicitly finds standard and Multi-Image)
-    const allLiveImgs = Array.from(iframeDoc.querySelectorAll('img:not(.gallery-item img)'));
-    for (let img of allLiveImgs) { 
-        await processImg(img); 
-    }
-
-    // 2. CREATE PROJECT STATE (project.json)
-    const projectClone = editorRoot.cloneNode(true);
-    
-    // RUTHLESS JSON CLEANER: Strip the giant Base64 strings out
-    projectClone.querySelectorAll('img:not(.gallery-item img)').forEach(img => {
-        const fn = img.getAttribute('data-filename');
-        if (fn) {
-            img.setAttribute('src', `images/${fn}`);
-            img.removeAttribute('data-src'); 
-        } else {
-            // Failsafe: if it's still Base64, nuke it so JSON doesn't bloat
-            const currentSrc = img.getAttribute('src') || "";
-            if (currentSrc.startsWith('data:') || currentSrc.startsWith('blob:')) {
-                img.setAttribute('src', '');
-            }
-        }
-    });
-
-    // Gallery processing (Kept exact baseline)
-    const liveGalleries = iframeDoc.querySelectorAll('.photo_gallery');
-    const clonedGalleries = projectClone.querySelectorAll('.photo_gallery');
-    for (let i = 0; i < liveGalleries.length; i++) {
-        const gIframe = liveGalleries[i].querySelector('iframe');
-        if (gIframe?.contentDocument) {
-            const gImgs = Array.from(gIframe.contentDocument.querySelectorAll('.gallery-item img'));
-            const savedItems = [];
-            for (let gImg of gImgs) {
-                const fullPath = await processImg(gImg);
-                const cleanName = fullPath.split('/').pop();
-                savedItems.push({ 
-                    src: cleanName, 
-                    pos: gImg.style.objectPosition || '50% 50%',
-                    originalName: cleanName
-                });
-            }
-            clonedGalleries[i].setAttribute('data-saved-images', JSON.stringify({
-                mode: gIframe.contentDocument.querySelector('.photo_gallery').classList.contains('masonry-mode') ? 'masonry' : 'square',
-                files: savedItems
-            }));
-        }
-    }
-    
-    zip.file("project.json", JSON.stringify({ version: "2.1", settings: projectSettings, htmlContent: projectClone.innerHTML }, null, 2));
-
-    // 3. EXPORT HTML GENERATION
-    const supportFiles = ['editor.css', 'msb.css', 'template.html', 'gallery-component.html'];
-    for (const file of supportFiles) { await addLocalFileToZip(file); }
-
-    const clone = iframeDoc.documentElement.cloneNode(true);
-    const head = clone.querySelector('head');
-    const body = clone.querySelector('body');
-    if (body) {
-        body.removeAttribute('class');
-        body.removeAttribute('style');
-        body.setAttribute('data-page-id', projectSettings.pageID);
-    }
-
-    let titleTag = head.querySelector('title') || document.createElement('title');
-    titleTag.innerText = projectSettings.title || "My Site";
-    if (!head.contains(titleTag)) head.appendChild(titleTag);
-
-    if (projectSettings.metaDesc) {
-        let m = document.createElement('meta'); m.name="description"; m.content=projectSettings.metaDesc; head.appendChild(m);
-    }
-    if (projectSettings.faviconName) {
-        let l = document.createElement('link'); l.rel="icon"; l.href=`images/${projectSettings.faviconName}`; head.appendChild(l);
-    }
-    if (projectSettings.headCode) {
-        const tmp = document.createElement('div'); tmp.innerHTML = projectSettings.headCode;
-        Array.from(tmp.childNodes).forEach(n => head.appendChild(n.cloneNode(true)));
-    }
-
-    const exportStyles = document.createElement('style');
-    exportStyles.textContent = `
-    .photo_gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; width: 100%; } 
-    .photo_gallery.masonry-mode { display: block; column-count: 3; column-gap: 6px; } 
-    .masonry-mode .gallery-item { display: inline-block; width: 100%; margin-bottom: 6px; break-inside: avoid; } 
-    .gallery-item img { display: block; width: 100%; height: 100%; object-fit: cover; cursor: pointer; } 
-    .masonry-mode .gallery-item img { height: auto; } 
-    .block_multi_image { display: flex; align-items: center; justify-content: center; width: 100%; overflow: hidden; background: transparent !important; border: none !important; }
-    .multi-image-item { flex: 0 0 auto; height: 100%; display: flex; align-items: center; cursor: default !important; border: none !important; background: transparent !important; }
-    .multi-image-item a { display: inline-block; height: 100%; text-decoration: none; cursor: pointer; border: none !important; }
-    .multi-image-item img { height: 100%; width: auto; display: block; border: none !important; }
-    @media (max-width: 768px) { .photo_gallery { grid-template-columns: repeat(2, 1fr); } .photo_gallery.masonry-mode { column-count: 2; } }
-    .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: #000; overflow: hidden; touch-action: none; }
-    .slider-track { display: flex; height: 100%; width: 100%; }
-    .slide { min-width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
-    .image-wrapper { position: relative; width: 90%; height: 70vh; display: flex; align-items: center; justify-content: center; }
-    .slide img { max-width: 100%; max-height: 100%; border: 2px solid #fff; object-fit: contain; opacity: 0; transition: opacity 0.3s ease; }
-    .slide img.loaded { opacity: 1; }
-    .counter { position: fixed; top: 25px; left: 25px; color: #fff; font-size: 22px; z-index: 10005; pointer-events: none; font-weight: 600; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
-    .close-modal { position: absolute; top: 20px; right: 25px; color: #fff; font-size: 40px; cursor: pointer; z-index: 10005; }
-    .loader { width: 30px; height: 30px; border: 3px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 1s infinite linear; position: absolute; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    `;
-    head.appendChild(exportStyles);
-
-    let allGalleryImages = [];
-    clone.querySelectorAll('.photo_gallery').forEach((gallery, idx) => {
-        const liveG = iframeDoc.querySelectorAll('.photo_gallery')[idx];
-        const gIframe = liveG?.querySelector('iframe');
-        if (gIframe?.contentDocument) {
-            const isMasonry = gIframe.contentDocument.querySelector('.photo_gallery').classList.contains('masonry-mode');
-            const imgs = Array.from(gIframe.contentDocument.querySelectorAll('.gallery-item img')).filter(i => i.src && !i.src.includes('placeholder'));
-            let gHtml = `<div class="photo_gallery ${isMasonry ? 'masonry-mode' : ''}">`;
-            imgs.forEach((img) => {
-                const fn = img.getAttribute('data-filename') || img.src.split('/').pop();
-                const globalIndex = allGalleryImages.length;
-                allGalleryImages.push(fn);
-                gHtml += `<div class="gallery-item"><img src="images/${fn}" style="object-position:${img.style.objectPosition || "50% 50%"};" onclick="openModal(${globalIndex})"></div>`;
-            });
-            gHtml += '</div>';
-            gallery.outerHTML = gHtml;
-        }
-    });
-
-    clone.querySelectorAll('.block_custom_html').forEach(block => {
-        const code = block.getAttribute('data-html-code') || "";
-        const div = document.createElement('div'); div.className = 'custom-html-output'; div.innerHTML = code;
-        block.replaceWith(div);
-    });
-
-    const garbage = ['.block-controls', '.resizer', '.html-tag', '.html-input-box', '.resize-handle', '.gallery-sentry', '.multi-image-handle', '.custom-html-header', '[data-origin="dudu"]'];
-    clone.querySelectorAll(garbage.join(',')).forEach(el => el.remove());
-
-    clone.querySelectorAll('*').forEach(el => {
-        el.removeAttribute('contenteditable');
-        el.removeAttribute('data-origin');
-        el.classList.remove('editable', 'selected-item', 'editable-active');
-        if (el.classList.contains('multi-image-item') || el.classList.contains('block_multi_image')) {
-            el.style.border = "none"; el.style.outline = "none"; el.style.background = "transparent"; el.style.cursor = "default"; el.style.pointerEvents = "auto"; 
-        }
-        if ((el.tagName === 'A' || el.tagName === 'BUTTON')) {
-            const onClickVal = el.getAttribute('onclick');
-            if (onClickVal && onClickVal.includes('return false')) el.removeAttribute('onclick');
-            el.removeAttribute('disabled'); 
-        }
-    });
-
-    // FINAL CLEANUP: Ensure all images correctly point to /images/
-    clone.querySelectorAll('img').forEach(img => {
-        if (!img.closest('.photo_gallery')) {
-            const fn = img.getAttribute('data-filename');
-            if (fn) img.setAttribute('src', `images/${fn}`);
-
-            const parentItem = img.closest('.multi-image-item');
-            let href = img.getAttribute('data-link') || parentItem?.getAttribute('data-link');
-            if (href && href.trim() !== "" && href !== "#" && href !== "undefined") {
-                const anchor = document.createElement('a');
-                anchor.href = href.replace(';//', '://').trim();
-                img.parentNode.insertBefore(anchor, img);
-                anchor.appendChild(img);
-            }
-        }
-    });
-
-    const jsGalleryArray = JSON.stringify(allGalleryImages.map(name => `images/${name}`));
-    const lightboxHTML = `<div id="imageModal" class="modal"><div class="counter" id="modalCounter">1 / 0</div><span class="close-modal" onclick="closeModal()">&times;</span><div id="sliderTrack" class="slider-track"></div></div>`;
-    const autoHighlightScript = `<script>document.addEventListener('DOMContentLoaded', () => { const rawID = document.body.getAttribute('data-page-id'); const pageID = (rawID && rawID.trim() !== "") ? rawID.toLowerCase() : "index"; document.querySelectorAll('.nav-content a').forEach(link => { if (link.classList.contains('dropdown-btn')) return; const linkText = link.innerText.trim().toLowerCase(); if (pageID === "index" || pageID === "home") { if (linkText === "home") link.classList.add('current-page-bold'); } else if (linkText === pageID || linkText.replace(/\\s+/g, '-') === pageID) { link.classList.add('current-page-bold'); } }); });<\/script>`;
-    const lightboxScript = `<script>const galleryItems = ${jsGalleryArray}; let currentIndex = 0, startX = 0, prevTranslate = 0, isDragging = false; const VELOCITY = 2500; function renderLightboxSlides() { const track = document.getElementById('sliderTrack'); if (!track) return; track.innerHTML = ''; galleryItems.forEach((src, index) => { const slide = document.createElement('div'); slide.className = 'slide'; slide.innerHTML = '<div class="image-wrapper" data-index="' + index + '"><div class="loader"></div><img data-src="' + src + '"></div>'; track.appendChild(slide); }); } function loadImage(index) { const slide = document.querySelector('.image-wrapper[data-index="' + index + '"]'); if (!slide) return; const img = slide.querySelector('img'), loader = slide.querySelector('.loader'); if (img && img.dataset.src) { img.src = img.dataset.src; img.onload = () => { img.classList.add('loaded'); if (loader) loader.style.display = 'none'; }; } } function updateTrackPos(animate) { const track = document.getElementById('sliderTrack'); const modal = document.getElementById('imageModal'); if (!track || !modal) return; const width = modal.offsetWidth; const currentTranslate = currentIndex * -width; prevTranslate = currentTranslate; track.style.transition = animate ? 'transform ' + (width / VELOCITY) + 's ease-out' : 'none'; track.style.transform = 'translateX(' + currentTranslate + 'px)'; document.getElementById('modalCounter').innerText = (currentIndex + 1) + ' / ' + galleryItems.length; } function openModal(index) { if (!document.getElementById('sliderTrack').hasChildNodes()) renderLightboxSlides(); currentIndex = index; document.getElementById('imageModal').style.display = "block"; updateTrackPos(false); document.body.style.overflow = "hidden"; loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1); } function moveSlide(step) { currentIndex = Math.max(0, Math.min(currentIndex + step, galleryItems.length - 1)); updateTrackPos(true); loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1); } function closeModal() { document.getElementById('imageModal').style.display = "none"; document.body.style.overflow = "auto"; } window.addEventListener('resize', () => { if (document.getElementById('imageModal')?.style.display === \"block\") updateTrackPos(false); }); document.addEventListener('DOMContentLoaded', () => { const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack'); if (!modal || !track) return; modal.addEventListener('touchstart', e => { isDragging = true; startX = e.touches[0].clientX; track.style.transition = 'none'; }); modal.addEventListener('touchmove', e => { if (!isDragging) return; track.style.transform = 'translateX(' + (prevTranslate + (e.touches[0].clientX - startX)) + 'px)'; }); modal.addEventListener('touchend', e => { isDragging = false; const diff = e.changedTouches[0].clientX - startX; if (diff < -50) moveSlide(1); else if (diff > 50) moveSlide(-1); else moveSlide(0); }); });<\/script>`;
-
-    zip.file(`${projectSettings.pageID}.html`, '<!DOCTYPE html>\n<html lang="en">\n' + clone.innerHTML + lightboxHTML + lightboxScript + autoHighlightScript + '\n</html>');
-    
-    const content = await zip.generateAsync({type: "blob"});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(content);
-    a.download = userFileName;
-    a.click();
-
-    const msg = document.createElement('div');
-    msg.innerHTML = `<i class="fa-solid fa-circle-check"></i> Project Saved & Exported: ${userFileName}`;
-    msg.style.cssText = "position:fixed; bottom:20px; right:20px; background:orange; color:white; padding:12px 20px; border-radius:8px; font-weight:bold; z-index:99999; box-shadow:0 5px 15px rgba(0,0,0,0.3); font-family:sans-serif;";
-    document.body.appendChild(msg);
-    setTimeout(() => msg.remove(), 3000);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-async function loadProject() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = ".msb,.zip";
-    input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const zip = await JSZip.loadAsync(file);
-        const data = JSON.parse(await zip.file("project.json").async("string"));
-        const iframeDoc = frame.contentDocument;
-        const editorRoot = iframeDoc.getElementById('editor-root');
-        
-        if (editorRoot) {
-            // Restore Settings
-            if (data.settings) {
-                document.getElementById('set-page-title').value = data.settings.title || "";
-                document.getElementById('set-meta-desc').value = data.settings.metaDesc || "";
-                document.getElementById('set-head-code').value = data.settings.headCode || "";
-            }
-
-            // Temporarily load HTML to iterate children
-            editorRoot.innerHTML = data.htmlContent;
-            
-            // Restore Static Images
-            const allImgs = Array.from(editorRoot.querySelectorAll('img:not(.gallery-item img)'));
-            for (let img of allImgs) {
-                const name = img.getAttribute('data-filename') || img.getAttribute('src')?.split('/').pop();
-                const entry = zip.file(`images/${name}`);
-                if (entry) {
-                    const fileData = await entry.async("blob");
-                    img.src = URL.createObjectURL(fileData);
-                }
-            }
-
-            // SEQUENTIAL REBUILD
-            const children = Array.from(editorRoot.children);
-            for (const child of children) {
-                
-                // --- CASE: CUSTOM HTML ---
-                if (child.classList.contains('block_custom_html')) {
-                    const savedCode = child.getAttribute('data-html-code');
-                    const savedId = child.id;
-
-                    selectedEl = child; 
-                    insertElement('block_custom_html'); 
-                    
-                    const newBlock = child.nextElementSibling;
-                    if (newBlock && newBlock.classList.contains('block_custom_html')) {
-                        newBlock.id = savedId;
-                        const textarea = newBlock.querySelector('.html-input-box');
-                        if (textarea) textarea.value = savedCode || "";
-                        child.remove(); 
-                    }
-                }
-                
-                // --- CASE: PHOTO GALLERY ---
-                else if (child.classList.contains('photo_gallery')) {
-                    const stateJson = child.getAttribute('data-saved-images');
-                    if (!stateJson) continue;
-
-                    selectedEl = child;
-                    insertElement('photo_gallery');
-                    
-                    const newGallery = child.nextElementSibling;
-                    const state = JSON.parse(stateJson);
-                    const items = [];
-                    for (let f of state.files) {
-                        const entry = zip.file(`images/${f.src}`);
-                        if (entry) {
-                            const b = await entry.async("blob");
-                            items.push({ src: URL.createObjectURL(b), pos: f.pos, originalName: f.src });
-                        }
-                    }
-                    const hydrate = () => {
-                        const gIframe = newGallery?.querySelector('iframe');
-                        if (gIframe?.contentWindow?.loadSavedImages) {
-                            gIframe.contentWindow.loadSavedImages({ mode: state.mode, files: items });
-                        } else { setTimeout(hydrate, 50); }
-                    };
-                    hydrate();
-                    child.remove();
-                }
-
-                // --- CASE: MULTI-IMAGE HANDLES ---
-                else if (child.classList.contains('block_multi_image')) {
-                    if (!child.querySelector('.multi-image-handle')) {
-                        const handle = iframeDoc.createElement('div');
-                        handle.className = 'multi-image-handle';
-                        handle.innerText = 'ROW  ';
-                        child.appendChild(handle);
-                    }
-                }
-            }
-
-            if (frame.contentWindow.initDivLogic) frame.contentWindow.initDivLogic();
-            
-            // --- THE SELECTION FIX ---
-            // Wait 300ms for all 'insertElement' timeouts to finish, then strip selection UI
-            setTimeout(() => {
-                editorRoot.querySelectorAll('.selected-item').forEach(el => {
-                    el.classList.remove('selected-item');
-                });
-                editorRoot.querySelectorAll('.resize-handle').forEach(h => h.remove());
-                deselectAll();
-            }, 300);
-        }
-    };
-    input.click();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // --- MENU EDITOR LOGIC ---
@@ -3507,6 +3216,57 @@ function startupCheck() {
     }
     document.getElementById('project-picker-overlay').style.display = 'flex';
     showProjectPickerChoice();
+}
+
+// Re-opens the same New/Continue picker mid-session (the sidebar's "Switch
+// Project" button) — lets the user open a different project without
+// reloading the page. Reuses the exact same flow as the initial startup.
+// Unlike the mandatory startup gate, this shows a close (×) button, since
+// there's already an open project to safely return to.
+function openProjectPicker() {
+    document.getElementById('project-picker-overlay').style.display = 'flex';
+    const closeBtn = document.getElementById('project-picker-close');
+    if (closeBtn) closeBtn.style.display = projectDirHandle ? 'inline' : 'none';
+    showProjectPickerChoice();
+}
+
+function closeProjectPicker() {
+    document.getElementById('project-picker-overlay').style.display = 'none';
+}
+
+// Writes the entire project object as JSON to <project.meta.name>.json
+// inside the currently open project folder. This is now the ONLY save
+// mechanism for the project itself — the old zip-based export (masterSave)
+// has been removed entirely. Producing a final, publishable static HTML
+// export remains a separate, not-yet-built feature.
+async function saveProjectToFolder() {
+    if (!projectDirHandle) {
+        alert('No project folder is open.');
+        return;
+    }
+    if (!project.meta || !project.meta.name) {
+        alert('This project has no name set.');
+        return;
+    }
+
+    // Commit whatever's currently selected/being edited first, so the
+    // saved JSON reflects the latest state.
+    if (selectedEl) deselectAll();
+
+    try {
+        const fileHandle = await projectDirHandle.getFileHandle(project.meta.name + '.json', { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(JSON.stringify(project, null, 2));
+        await writable.close();
+
+        const msg = document.createElement('div');
+        msg.innerHTML = `<i class="fa-solid fa-circle-check"></i> Project saved: ${project.meta.name}.json`;
+        msg.style.cssText = "position:fixed; bottom:20px; right:20px; background:#2ecc71; color:white; padding:12px 20px; border-radius:8px; font-weight:bold; z-index:99999; box-shadow:0 5px 15px rgba(0,0,0,0.3); font-family:sans-serif;";
+        document.body.appendChild(msg);
+        setTimeout(() => msg.remove(), 3000);
+    } catch (err) {
+        alert('Could not save project: ' + ((err && err.message) || err));
+    }
 }
 
 function showProjectPickerChoice() {
