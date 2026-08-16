@@ -27,6 +27,47 @@
         window.parent.postMessage({ type: 'galleryHeight', height: h }, '*');
     };
 
+    // --- IMAGE STORAGE BRIDGE ---
+    // This gallery has no filesystem access of its own — builder.html owns
+    // the project's images/ folder. Saving/reading images goes through a
+    // two-hop postMessage bridge: this iframe's immediate parent is the
+    // PREVIEW iframe (template.html), not builder.html itself, so the
+    // preview iframe relays these messages up to (and responses back down
+    // from) builder.html. See the relayScript addition in builder.html's
+    // init(), and its saveImageRequest/resolveImageRequest handler.
+    let pendingImageRequests = {};
+
+    function saveImageViaParent(file) {
+        return new Promise((resolve, reject) => {
+            const requestId = 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+            pendingImageRequests[requestId] = { resolve, reject };
+            window.parent.postMessage({ type: 'saveImageRequest', requestId: requestId, file: file }, '*');
+        });
+    }
+
+    function resolveImageViaParent(src) {
+        return new Promise((resolve, reject) => {
+            const requestId = 'resolve_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+            pendingImageRequests[requestId] = { resolve, reject };
+            window.parent.postMessage({ type: 'resolveImageRequest', requestId: requestId, src: src }, '*');
+        });
+    }
+
+    window.addEventListener('message', (e) => {
+        if (!e.data || !e.data.requestId) return;
+        const pending = pendingImageRequests[e.data.requestId];
+        if (!pending) return;
+        delete pendingImageRequests[e.data.requestId];
+
+        if (e.data.type === 'saveImageResponse') {
+            if (e.data.error) pending.reject(new Error(e.data.error));
+            else pending.resolve(e.data.src);
+        } else if (e.data.type === 'resolveImageResponse') {
+            if (e.data.error) pending.reject(new Error(e.data.error));
+            else pending.resolve(URL.createObjectURL(e.data.blob));
+        }
+    });
+
     window.toggleMode = function() { 
         const g = document.querySelector('.photo_gallery');
         if(g) g.classList.toggle('masonry-mode');
@@ -129,31 +170,35 @@
         if (!files.length || !currentTargetSlot) return;
         const gallery = currentTargetSlot.parentElement;
         for (let i = 0; i < files.length; i++) {
-            const reader = new FileReader();
-            const fileName = files[i].name;
-            const promise = new Promise(res => {
-                reader.onload = (e) => {
-                    const slot = (i === 0) ? currentTargetSlot : document.createElement('div');
-                    if (i > 0) slot.className = 'gallery-item';
-                    fillSlot(slot, e.target.result, fileName);
-                    if (i > 0) gallery.insertBefore(slot, gallery.lastElementChild);
-                    res();
-                };
-            });
-            reader.readAsDataURL(files[i]);
-            await promise;
+            const file = files[i];
+            const fileName = file.name;
+
+            // Ask the top-level builder (which owns the filesystem) to save
+            // this file into the project's images/ folder and hand back its
+            // permanent, project-relative path.
+            const permanentSrc = await saveImageViaParent(file);
+            // A local blob URL is used for immediate display inside this
+            // sandboxed iframe — "images/image-XXX.jpg" isn't directly
+            // resolvable from in here.
+            const previewUrl = URL.createObjectURL(file);
+
+            const slot = (i === 0) ? currentTargetSlot : document.createElement('div');
+            if (i > 0) slot.className = 'gallery-item';
+            fillSlot(slot, previewUrl, fileName, permanentSrc);
+            if (i > 0) gallery.insertBefore(slot, gallery.lastElementChild);
         }
         if (!gallery.lastElementChild.classList.contains('gallery-empty-slot')) gallery.appendChild(createNewSlot());
     }
 
-    function fillSlot(slot, src, filename = null) {
+    function fillSlot(slot, src, filename = null, permanentSrc = null) {
         slot.classList.remove('gallery-empty-slot', 'menu-open');
         slot.classList.add('has-image'); 
         const finalFilename = filename || src.split('/').pop();
+        const permanentAttr = permanentSrc ? ` data-permanent-src="${permanentSrc}"` : '';
 
         slot.innerHTML = `
             <div class="sentry-layer" onclick="activateSlot(event, this)"></div>
-            <img src="${src}" data-filename="${finalFilename}" style="object-position: 50% 50%;">
+            <img src="${src}" data-filename="${finalFilename}"${permanentAttr} style="object-position: 50% 50%;">
             <div class="pan-overlay" onmousedown="beginPan(event)" ontouchstart="beginPan(event)">
                 <i class="fa-solid fa-arrows-up-down-left-right"></i>
             </div>
@@ -208,8 +253,25 @@
             const src = typeof item === 'object' ? item.src : item;
             const pos = typeof item === 'object' ? item.pos : '50% 50%';
             const filename = typeof item === 'object' ? item.originalName : null;
-            
-            fillSlot(div, src, filename);
+
+            if (typeof src === 'string' && src.indexOf('blob:') === 0) {
+                // Legacy path: the old zip-based loadProject() already
+                // produces a directly-usable blob URL from the unzipped
+                // file — no resolution needed, that system is untouched.
+                fillSlot(div, src, filename, null);
+            } else {
+                // Current path: src is a permanent project-relative path
+                // (e.g. "images/image-003.jpg") that needs resolving
+                // through the save/resolve bridge to builder.html.
+                fillSlot(div, '', filename, src);
+                if (src) {
+                    resolveImageViaParent(src).then(url => {
+                        const img = div.querySelector('img');
+                        if (img) img.src = url;
+                    }).catch(err => console.error('Could not resolve gallery image', src, err));
+                }
+            }
+
             const img = div.querySelector('img');
             if (img) img.style.objectPosition = pos;
             galleryEl.appendChild(div);

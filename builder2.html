@@ -630,13 +630,16 @@ function triggerMultiImageAdd() {
         if (!file) return;
 
         const src = await saveImageToProject(file);
+        const previewUrl = URL.createObjectURL(file);
+        // Pre-populate the cache — the next render reuses this instantly.
+        resolvedImageCache.set(src, previewUrl);
 
         const newItem = document.createElement('div');
         newItem.className = 'multi-image-item';
         newItem.setAttribute('data-permanent-src', src);
 
         const img = document.createElement('img');
-        img.src = URL.createObjectURL(file);
+        img.src = previewUrl;
         img.style.width = '100%';
         img.style.height = '100%';
         img.style.objectFit = 'cover';
@@ -676,6 +679,8 @@ function triggerMultiImageReplace() {
             // Always a fresh, unique path (see saveImageToProject) — the
             // old file is left in place on disk, just no longer referenced.
             const src = await saveImageToProject(file);
+            const previewUrl = URL.createObjectURL(file);
+            resolvedImageCache.set(src, previewUrl);
             selectedEl.setAttribute('data-permanent-src', src);
 
             let img = selectedEl.querySelector('img');
@@ -687,7 +692,7 @@ function triggerMultiImageReplace() {
                 img.style.objectFit = 'cover';
                 selectedEl.appendChild(img);
             }
-            img.src = URL.createObjectURL(file);
+            img.src = previewUrl;
         }
         input.value = '';
     };
@@ -848,9 +853,18 @@ async function saveImageToProject(file) {
     return 'images/' + filename;
 }
 
-// Reads a permanently-stored project image back off disk as a File (a
-// File is also a Blob), given its project-relative path (e.g.
-// "images/image-007.jpg").
+// Cache of resolved image blob URLs, keyed by permanent path (e.g.
+// "images/image-003.jpg"). renderPage() rebuilds every block's DOM from
+// scratch on every render — including blocks whose images haven't actually
+// changed — so resolving straight from disk every time meant every image
+// on the page went blank and took a beat to reappear on every single
+// click-away, anywhere on the page. Since paths are never reused
+// (saveImageToProject always mints a fresh filename, even on "replace"), a
+// cached URL for a given path is valid forever — no invalidation needed.
+const resolvedImageCache = new Map();
+
+// Reads a File System handle for `path` and returns a File (a File is also
+// a Blob), given its project-relative path (e.g. "images/image-007.jpg").
 async function getProjectImageBlob(path) {
     if (!imagesDirHandle) {
         throw new Error('No project folder is open.');
@@ -866,16 +880,36 @@ async function getProjectImageBlob(path) {
 // directly into a displayable blob: URL without needing the postMessage
 // bridge the nested gallery iframe requires. Used because srcdoc-loaded
 // iframe content has no real base URL that could resolve a relative
-// images/... path against the actual project folder on disk.
+// images/... path against the actual project folder on disk. Checks the
+// cache first — only ever reads from disk the FIRST time a given path is
+// displayed.
 async function resolveImagePath(path) {
     if (!path) return '';
+    if (resolvedImageCache.has(path)) return resolvedImageCache.get(path);
     try {
         const blob = await getProjectImageBlob(path);
-        return URL.createObjectURL(blob);
+        const url = URL.createObjectURL(blob);
+        resolvedImageCache.set(path, url);
+        return url;
     } catch (err) {
         console.error('Could not resolve image path', path, err);
         return '';
     }
+}
+
+// Applies a resolved image URL to `img` for `path` — synchronously and
+// instantly if already cached (the common case after the very first
+// render), or asynchronously with the usual brief resolve on a genuine
+// cache miss (first time this exact path has ever been displayed this
+// session, e.g. right after loading a project). Use this instead of
+// calling resolveImagePath() + .then() directly at every render call site.
+function applyResolvedImageSrc(img, path) {
+    if (!img || !path) return;
+    if (resolvedImageCache.has(path)) {
+        img.src = resolvedImageCache.get(path);
+        return;
+    }
+    resolveImagePath(path).then(url => { if (url) img.src = url; });
 }
 
 // --- 2. THE CONSOLIDATED MESSAGE LISTENER ---
@@ -1752,6 +1786,19 @@ function renderPage() {
     // on initial load (see frame.onload) — never from the general render
     // cycle.
 
+    // Preserve existing gallery iframes, keyed by block id, before wiping
+    // the DOM. A gallery iframe is expensive to recreate — it reloads
+    // gallery-component.html from scratch and has to re-resolve every
+    // image through the cross-iframe bridge — so an unchanged gallery is
+    // reused as-is rather than torn down and rebuilt on every single
+    // render. Its content is already correct: saveGalleryBlock() reads the
+    // live DOM right before this render runs, so JSON and DOM already
+    // agree.
+    const existingGalleries = new Map();
+    root.querySelectorAll('.photo_gallery[data-block-id]').forEach(g => {
+        existingGalleries.set(g.getAttribute('data-block-id'), g);
+    });
+
     root.innerHTML = '';
 
     project.body.blocks.forEach(block => {
@@ -1840,13 +1887,9 @@ function renderPage() {
                 el.style.margin = block.align === 'center' ? '0 auto' : '0';
             }
             root.appendChild(el);
-            // Resolve the on-disk file to a displayable blob URL
-            // asynchronously — srcdoc-loaded iframe content has no real
-            // base URL that could resolve a relative images/... path
-            // against the actual project folder on disk.
-            if (block.src) {
-                resolveImagePath(block.src).then(url => { if (url) img.src = url; });
-            }
+            // Instant if already cached (the common case); only a genuine
+            // first-time disk read causes a brief resolve delay.
+            applyResolvedImageSrc(img, block.src);
         }
         else if (block.type === 'multiImage') {
             const el = doc.createElement('div');
@@ -1885,9 +1928,7 @@ function renderPage() {
                 item.style.aspectRatio = (block.aspectRatio || '1').toString();
                 el.appendChild(item);
 
-                if (itemData.src) {
-                    resolveImagePath(itemData.src).then(url => { if (url) img.src = url; });
-                }
+                applyResolvedImageSrc(img, itemData.src);
             });
 
             root.appendChild(el);
@@ -1897,6 +1938,14 @@ function renderPage() {
             applyMultiImageLayout(el);
         }
         else if (block.type === 'gallery') {
+            const existingGallery = existingGalleries.get(block.id);
+            if (existingGallery) {
+                // Reuse as-is — already correct, already resolved, no need
+                // to reload gallery-component.html or re-hydrate anything.
+                root.appendChild(existingGallery);
+                return;
+            }
+
             const el = doc.createElement('div');
             el.className = 'photo_gallery';
             el.setAttribute('data-block-id', block.id);
@@ -1913,7 +1962,10 @@ function renderPage() {
 
             // The gallery lives in its own nested iframe with its own
             // script (gallery-component.html) — wait for it to finish
-            // loading and expose loadSavedImages before hydrating.
+            // loading and expose loadSavedImages before hydrating. This
+            // only ever runs the FIRST time a gallery is rendered in this
+            // session (e.g. right after loading a project) — see the reuse
+            // check above.
             if (block.images && block.images.length) {
                 const hydrate = () => {
                     if (iframe.contentWindow && iframe.contentWindow.loadSavedImages) {
@@ -1950,9 +2002,7 @@ function renderPage() {
                 if (block.image.alt && innerImg) innerImg.setAttribute('alt', block.image.alt);
                 if (block.image.link) imgWrapper.setAttribute('data-link', block.image.link);
                 el.appendChild(imgWrapper);
-                if (block.image.src) {
-                    resolveImagePath(block.image.src).then(url => { if (url) innerImg.src = url; });
-                }
+                applyResolvedImageSrc(innerImg, block.image.src);
             }
 
             if (block.children && block.children.length) {
@@ -2611,6 +2661,20 @@ function saveSelectedBlock(el) {
             saveContainerBlock(parentContainer); // persist the container without the deleted child/image
         }
 
+        // Reset the toolbar container's stretched height BEFORE clearing
+        // selectedEl. Multi-image rows/items get a tall, vertically-stacked
+        // toolbar (see renderToolbar()'s isMultiRow branch) — normally
+        // resetToolbar() restores the standard height when deselecting, but
+        // that check lives inside deselectAll() and is gated on selectedEl
+        // still being set, which we're about to null out below. Without
+        // this, deleting a multi-image row/item left the toolbar's dark
+        // background bar behind even though its buttons had disappeared.
+        const wasMulti = selectedEl.classList.contains('multi-image-item') ||
+                          selectedEl.classList.contains('block_multi_image');
+        if (wasMulti) {
+            resetToolbar();
+        }
+
         // Clear selectedEl BEFORE deselectAll() so it doesn't try to
         // re-save a block we just deleted. deselectAll() always renders at
         // the end, so no separate renderPage() call is needed here.
@@ -2626,6 +2690,10 @@ function saveSelectedBlock(el) {
 
         const src = await saveImageToProject(file);
         const previewUrl = URL.createObjectURL(file);
+        // Pre-populate the cache with the URL we already have — the very
+        // next render (e.g. clicking away right after inserting) reuses
+        // this instantly instead of re-reading the file from disk.
+        resolvedImageCache.set(src, previewUrl);
 
         if (selectedEl && selectedEl.classList.contains('block_image')) {
             // Replace: point at the newly-saved file (always a fresh,
