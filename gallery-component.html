@@ -27,12 +27,6 @@
         window.parent.postMessage({ type: 'galleryHeight', height: h }, '*');
     };
 
-    function notifyParentChanged() {
-        const gallery = document.querySelector('.photo_gallery');
-        if (!gallery) return;
-        window.parent.postMessage({ type: 'galleryChanged', blockId: galleryBlockId }, '*');
-    }
-
     // --- IMAGE STORAGE BRIDGE ---
     // This gallery has no filesystem access of its own — builder.html owns
     // the project's images/ folder. Saving/reading images goes through a
@@ -42,13 +36,12 @@
     // from) builder.html. See the relayScript addition in builder.html's
     // init(), and its saveImageRequest/resolveImageRequest handler.
     let pendingImageRequests = {};
-    const galleryBlockId = new URLSearchParams(window.location.search).get('blockId') || '';
 
     function saveImageViaParent(file) {
         return new Promise((resolve, reject) => {
             const requestId = 'img_' + Date.now() + '_' + Math.random().toString(36).slice(2);
             pendingImageRequests[requestId] = { resolve, reject };
-            window.parent.postMessage({ type: 'saveImageRequest', requestId: requestId, file: file, blockId: galleryBlockId }, '*');
+            window.parent.postMessage({ type: 'saveImageRequest', requestId: requestId, file: file }, '*');
         });
     }
 
@@ -77,7 +70,7 @@
 
     window.toggleMode = function() { 
         const g = document.querySelector('.photo_gallery');
-        if(g) { g.classList.toggle('masonry-mode'); notifyParentChanged(); }
+        if(g) g.classList.toggle('masonry-mode');
     };
 
     function initGallery() {
@@ -101,7 +94,7 @@
             let deltaY = (startY - point.clientY) * 0.8;
             activeImg.style.objectPosition = `${Math.max(0, Math.min(100, startPosX + deltaX))}% ${Math.max(0, Math.min(100, startPosY + deltaY))}%`;
         };
-        const onEnd = () => { if (isPanning) notifyParentChanged(); isPanning = false; activeImg = null; };
+        const onEnd = () => { isPanning = false; activeImg = null; };
 
         window.addEventListener('mousemove', onMove, { passive: false });
         window.addEventListener('touchmove', onMove, { passive: false });
@@ -126,7 +119,6 @@
         drake.on('dragend', () => {
             document.body.classList.remove('sorting-active');
             window.parent.postMessage({ type: 'dragEnd' }, '*');
-            notifyParentChanged();
             notifyParentHeight();
         });
     }
@@ -193,7 +185,6 @@
             const slot = (i === 0) ? currentTargetSlot : document.createElement('div');
             if (i > 0) slot.className = 'gallery-item';
             fillSlot(slot, previewUrl, fileName, permanentSrc);
-            notifyParentChanged();
             if (i > 0) gallery.insertBefore(slot, gallery.lastElementChild);
         }
         if (!gallery.lastElementChild.classList.contains('gallery-empty-slot')) gallery.appendChild(createNewSlot());
@@ -235,7 +226,7 @@
     }
 
     function replaceImg(e, btn) { e.stopPropagation(); closeAllUI(); currentTargetSlot = btn.closest('.gallery-item'); currentTargetSlot.classList.add('menu-open'); }
-    function deleteImg(e, btn) { e.stopPropagation(); btn.closest('.gallery-item').remove(); notifyParentChanged(); }
+    function deleteImg(e, btn) { e.stopPropagation(); btn.closest('.gallery-item').remove(); }
     
     window.closeAllUI = function() { 
         document.querySelectorAll('.gallery-item').forEach(i => i.classList.remove('menu-open', 'active')); 
