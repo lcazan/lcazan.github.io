@@ -491,12 +491,14 @@ function recalculateMultiLimits() {
 
 function handleMultiSizeChange(val) {
     if (!selectedEl) return;
+    markBlockDirty();
     selectedEl.setAttribute('data-desired-w', val);
     recalculateMultiLimits(); 
 }
 
 function handleMultiGapChange(val) {
     if (!selectedEl) return;
+    markBlockDirty();
     selectedEl.style.gap = val + 'px'; 
     recalculateMultiLimits();
 }
@@ -534,6 +536,7 @@ function getMultiRowDimensions(row, targetHeight) {
 
 function handleMultiHeightScale(newHeight) {
     if (!selectedEl) return;
+    markBlockDirty();
     
     const containerWidth = selectedEl.offsetWidth;
     const totalNeeded = getMultiRowDimensions(selectedEl, newHeight);
@@ -591,6 +594,7 @@ function updateMultiRowLimits() {
 // Controls the constant spacing between images
 function updateMultiRowGap(val) {
     if (selectedEl && selectedEl.classList.contains('block_multi_image')) {
+        markBlockDirty();
         selectedEl.style.gap = val + 'px';
         // No math needed: Flexbox handles the image shrinking automatically
     }
@@ -599,6 +603,7 @@ function updateMultiRowGap(val) {
 // Controls the vertical dimension (Height)
 function updateMultiRowHeight(val) {
     if (selectedEl && selectedEl.classList.contains('block_multi_image')) {
+        markBlockDirty();
         selectedEl.style.height = val + 'px';
     }
 }
@@ -609,12 +614,14 @@ function updateMultiRowHeight(val) {
 // --- NEW: Slider Logic ---
 function updateMultiRowGap(val) {
     if (selectedEl && selectedEl.classList.contains('block_multi_image')) {
+        markBlockDirty();
         selectedEl.style.gap = val + 'px';
     }
 }
 
 function updateMultiRowHeight(val) {
     if (selectedEl && selectedEl.classList.contains('block_multi_image')) {
+        markBlockDirty();
         selectedEl.style.height = val + 'px';
     }
 }
@@ -630,6 +637,7 @@ function triggerMultiImageAdd() {
         if (!file) return;
 
         const src = await saveImageToProject(file);
+        markBlockDirty();
         const previewUrl = URL.createObjectURL(file);
         // Pre-populate the cache — the next render reuses this instantly.
         resolvedImageCache.set(src, previewUrl);
@@ -679,6 +687,7 @@ function triggerMultiImageReplace() {
             // Always a fresh, unique path (see saveImageToProject) — the
             // old file is left in place on disk, just no longer referenced.
             const src = await saveImageToProject(file);
+            markBlockDirty();
             const previewUrl = URL.createObjectURL(file);
             resolvedImageCache.set(src, previewUrl);
             selectedEl.setAttribute('data-permanent-src', src);
@@ -708,6 +717,7 @@ function triggerMultiImageReplace() {
 
 function cycleAspectRatio() {
     if (!selectedEl) return;
+    markBlockDirty();
     const ratios = [1, 0.618, 1.618, 0.75, 1.33];
     let current = parseFloat(selectedEl.getAttribute('data-ratio-val')) || 1;
     let nextIdx = (ratios.indexOf(current) + 1) % ratios.length;
@@ -744,6 +754,29 @@ let selectedEl = null;
 let currentMode = 'iphone'; 
 let isResizing = false;
 let activePillMode = null;
+
+// Object-level dirty tracking. Selecting an object never marks it dirty;
+// only an actual edit does. Nested children belong to their containing
+// top-level block for persistence/render purposes.
+function getOwningBlockElement(el) {
+    if (!el) return null;
+    const container = el.closest('.block_container');
+    if (container) return container;
+    if (el.classList.contains('multi-image-item')) return el.closest('.block_multi_image');
+    return el.closest('[data-block-id]');
+}
+function markBlockDirty(el = selectedEl) {
+    const owner = getOwningBlockElement(el);
+    if (owner) owner.dataset.dirty = 'true';
+}
+function isBlockDirty(el) {
+    const owner = getOwningBlockElement(el);
+    return !!(owner && owner.dataset.dirty === 'true');
+}
+function clearBlockDirty(el) {
+    const owner = getOwningBlockElement(el);
+    if (owner) owner.dataset.dirty = 'false';
+}
 
 // --- FILE SYSTEM ACCESS: project folder handles ---
 // projectDirHandle is the picked/remembered project folder itself (holds
@@ -918,6 +951,11 @@ window.addEventListener('message', (event) => {
     const doc = frame.contentDocument;
     if (!doc || !event.data) return;
 
+    if (event.data.type === 'galleryChanged') {
+        const gallery = event.data.blockId ? doc.querySelector('.photo_gallery[data-block-id=\"' + CSS.escape(event.data.blockId) + '\"]') : doc.querySelector('.photo_gallery');
+        if (gallery) gallery.dataset.dirty = 'true';
+    }
+
     // Handle Photo Gallery Resizing
     if (event.data.type === 'galleryHeight') {
         const galleryIframe = doc.querySelector('.photo_gallery iframe');
@@ -1056,7 +1094,7 @@ function updateSandbox(block) {
         <script>
             window.addEventListener('message', e => { 
                 // Requests travel UP: gallery iframe -> here -> builder.html
-                if (e.data && (e.data.type === 'galleryHeight' || e.data.type === 'sandboxHeight' || e.data.type === 'saveImageRequest' || e.data.type === 'resolveImageRequest')) {
+                if (e.data && (e.data.type === 'galleryHeight' || e.data.type === 'sandboxHeight' || e.data.type === 'saveImageRequest' || e.data.type === 'resolveImageRequest' || e.data.type === 'galleryChanged')) {
                     window.parent.postMessage(e.data, '*'); 
                 }
                 // Responses travel DOWN: builder.html -> here -> gallery iframe.
@@ -1160,6 +1198,7 @@ function updateSandbox(block) {
             // ambiguous with scrolling), it should never defer to that
             // heuristic.
             if (isPanningMulti && pannedItem) {
+                markBlockDirty(pannedItem);
                 if (e.cancelable) e.preventDefault();
                 const deltaX = (panStartX - point.clientX) * 0.4; 
                 const deltaY = (panStartY - point.clientY) * 0.4;
@@ -1203,6 +1242,11 @@ function updateSandbox(block) {
         doc.addEventListener('touchmove', moveInteraction, { passive: false });
         doc.addEventListener('mouseup', endInteraction);
         doc.addEventListener('touchend', endInteraction);
+
+        doc.addEventListener('input', (e) => {
+            const owner = getOwningBlockElement(e.target);
+            if (owner) owner.dataset.dirty = 'true';
+        });
         
         setDevice('iphone');
 
@@ -1285,6 +1329,7 @@ window.addEventListener('message', async (event) => {
 
     if (event.data.type === 'saveImageRequest') {
         const { requestId, file } = event.data;
+        if (selectedEl && selectedEl.classList.contains('photo_gallery')) selectedEl.dataset.dirty = 'true';
         try {
             const src = await saveImageToProject(file);
             event.source.postMessage({ type: 'saveImageResponse', requestId: requestId, src: src }, '*');
@@ -1315,7 +1360,7 @@ window.addEventListener('message', async (event) => {
             // space). Deliberately does NOT render — rendering is reserved
             // for deselectAll() (empty space), so an in-progress edit on
             // some other part of the page can never get wiped out mid-flow.
-            saveSelectedBlock(selectedEl);
+            commitAndRenderBlock(selectedEl);
 
             if (selectedEl.classList.contains('photo_gallery')) {
                 const iframe = selectedEl.querySelector('iframe');
@@ -1547,7 +1592,7 @@ function applyAndClosePill() {
     // buttons, and openPill()'s guard when switching fields (e.g. TEXT ->
     // LINK) without pressing Apply first. Does NOT render — same reasoning
     // as selectElement()'s switch-away save.
-    if (selectedEl) saveSelectedBlock(selectedEl);
+    if (selectedEl) { markBlockDirty(selectedEl); saveSelectedBlock(selectedEl); }
 
     // Hide UI
     document.getElementById('input-pill').style.display = 'none';
@@ -1621,7 +1666,7 @@ function insertElement(type, data) {
         const sentry = doc.createElement('div');
         sentry.className = 'gallery-sentry';
         const iframe = doc.createElement('iframe');
-        iframe.src = 'gallery-component.html';
+        iframe.src = 'gallery-component.html?blockId=' + encodeURIComponent(block.id);
         iframe.setAttribute('scrolling', 'no');
         el.appendChild(sentry);
         el.appendChild(iframe);
@@ -1671,7 +1716,7 @@ function insertElement(type, data) {
                     <button class="activate-btn" onclick="window.parent.updateHTML(this)">Activate</button>
                 </div>
                 <textarea class="html-input-box" placeholder="Paste your embed code here..." 
-                    oninput="this.closest('.block_custom_html').setAttribute('data-html-code', this.value);"></textarea>
+                    oninput="this.closest('.block_custom_html').setAttribute('data-html-code', this.value); this.closest('.block_custom_html').dataset.dirty='true';"></textarea>
             </div>
             <div class="html-render-area"></div> 
             <div class="sandbox-iframe-wrapper">
@@ -1757,7 +1802,7 @@ function getInsertIndexForNewBlock(el) {
 // data. This is ONLY called from deselectAll() (i.e. when clicking to empty
 // space) — see saveSelectedBlock()/selectElement() for why saving and
 // rendering are deliberately separate steps now.
-function renderPage() {
+function renderPage(onlyBlockId = null) {
     const doc = frame.contentDocument;
     const root = doc.getElementById('editor-root');
     if (!root) return;
@@ -1785,6 +1830,17 @@ function renderPage() {
     // is only called from saveMenuChanges() (after an actual edit) and once
     // on initial load (see frame.onload) — never from the general render
     // cycle.
+
+    // For a normal edit commit, remove only the changed block. Everything
+    // else stays exactly where it is in the DOM.
+    let onlyBlockNextSibling = null;
+    if (onlyBlockId) {
+        const target = root.querySelector(':scope > [data-block-id="' + CSS.escape(onlyBlockId) + '"]');
+        if (target) {
+            onlyBlockNextSibling = target.nextElementSibling;
+            target.remove();
+        }
+    }
 
     // Preserve existing gallery iframes, keyed by block id, so they can be
     // MOVED into their final position rather than destroyed and recreated.
@@ -1822,6 +1878,7 @@ function renderPage() {
     });
 
     project.body.blocks.forEach(block => {
+        if (onlyBlockId && block.id !== onlyBlockId) return;
         if (block.type === 'text') {
             const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
             const el = doc.createElement(tagMap[block.variant] || 'p');
@@ -1974,7 +2031,7 @@ function renderPage() {
             const sentry = doc.createElement('div');
             sentry.className = 'gallery-sentry';
             const iframe = doc.createElement('iframe');
-            iframe.src = 'gallery-component.html';
+            iframe.src = 'gallery-component.html?blockId=' + encodeURIComponent(block.id);
             iframe.setAttribute('scrolling', 'no');
             el.appendChild(sentry);
             el.appendChild(iframe);
@@ -2041,6 +2098,24 @@ function renderPage() {
             if (frame.contentWindow.initDivLogic) frame.contentWindow.initDivLogic();
         }
     });
+
+    if (onlyBlockId) {
+        const rendered = root.querySelector(':scope > [data-block-id="' + CSS.escape(onlyBlockId) + '"]');
+        if (rendered && onlyBlockNextSibling && onlyBlockNextSibling.parentNode === root) {
+            root.insertBefore(rendered, onlyBlockNextSibling);
+        }
+        return rendered;
+    }
+}
+
+function commitAndRenderBlock(el) {
+    const owner = getOwningBlockElement(el);
+    if (!owner || owner.dataset.dirty !== 'true') return;
+    saveSelectedBlock(owner);
+    const blockId = owner.getAttribute('data-block-id');
+    if (!blockId) return;
+    const rendered = renderPage(blockId);
+    if (rendered) rendered.dataset.dirty = 'false';
 }
 
 // Reads a text block's current content and formatting straight from the DOM
@@ -2082,6 +2157,7 @@ function saveTextBlock(el) {
 // and re-selects it so the toolbar reflects the new variant immediately.
 function changeTextVariant(newVariant) {
     if (!selectedEl) return;
+    markBlockDirty();
     const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
     const newTag = tagMap[newVariant];
     if (!newTag) return;
@@ -2593,8 +2669,8 @@ function saveSelectedBlock(el) {
             }
         }
 
-        // --- JSON SOURCE OF TRUTH: save on click-away ---
-        saveSelectedBlock(selectedEl);
+        // Commit and re-render ONLY if this object was actually edited.
+        commitAndRenderBlock(selectedEl);
         
         selectedEl.classList.remove('selected-item');
     }
@@ -2711,6 +2787,7 @@ function saveSelectedBlock(el) {
         if (!file) return;
 
         const src = await saveImageToProject(file);
+        markBlockDirty();
         const previewUrl = URL.createObjectURL(file);
         // Pre-populate the cache with the URL we already have — the very
         // next render (e.g. clicking away right after inserting) reuses
@@ -2728,7 +2805,7 @@ function saveSelectedBlock(el) {
         }
         i.value = '';
     }
-    function setAlign(pos) { if (selectedEl && !selectedEl.closest('.block_container')) { selectedEl.style.textAlign = pos; if(selectedEl.classList.contains('block_image')) { selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block'; selectedEl.style.margin = pos === 'center' ? '0 auto' : '0'; } } }
+    function setAlign(pos) { if (selectedEl && !selectedEl.closest('.block_container')) { markBlockDirty(); selectedEl.style.textAlign = pos; if(selectedEl.classList.contains('block_image')) { selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block'; selectedEl.style.margin = pos === 'center' ? '0 auto' : '0'; } } }
     function centerItem() { setAlign('center'); }
 
 
@@ -2826,7 +2903,7 @@ function syncRealTime() {
         const handle = frame.contentDocument.createElement('div'); handle.className = 'resize-handle';
         const inDiv = el.closest('.block_container');
         const startResize = (e) => {
-            e.preventDefault(); e.stopPropagation(); isResizing = true;
+            e.preventDefault(); e.stopPropagation(); isResizing = true; markBlockDirty(el);
             const startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
             const startW = el.offsetWidth;
             const scale = wrapper.offsetWidth / ({ 'desktop': 1200, 'android': 448, 'iphone': 393 }[currentMode]);
@@ -2853,6 +2930,7 @@ function syncRealTime() {
     }
     function fitToWidth() {
         if (!selectedEl) return;
+        markBlockDirty();
         const inDiv = selectedEl.closest('.block_container');
         if (inDiv) {
             selectedEl.setAttribute('data-scale-factor', '1.0');
@@ -2870,10 +2948,10 @@ function syncRealTime() {
             selectedEl.style.margin = '0 auto';
         }
     }
-    function toggleSpacerLine() { if (!selectedEl) return; const currentLine = selectedEl.style.borderBottom; selectedEl.style.borderBottom = (currentLine === 'none' || !currentLine) ? '1px solid #eee' : 'none'; }
-    function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
-    function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
-    function callGalleryToggle() { const iframe = selectedEl.querySelector('iframe'); if (iframe && iframe.contentWindow.toggleMode) iframe.contentWindow.toggleMode(); setTimeout(renderToolbar, 50); }
+    function toggleSpacerLine() { if (!selectedEl) return; markBlockDirty(); const currentLine = selectedEl.style.borderBottom; selectedEl.style.borderBottom = (currentLine === 'none' || !currentLine) ? '1px solid #eee' : 'none'; }
+    function updateColor(val) { if(selectedEl) { markBlockDirty(); selectedEl.style.backgroundColor = val; } }
+    function execCmd(cmd) { markBlockDirty(); frame.contentDocument.execCommand(cmd, false, null); }
+    function callGalleryToggle() { markBlockDirty(); const iframe = selectedEl.querySelector('iframe'); if (iframe && iframe.contentWindow.toggleMode) iframe.contentWindow.toggleMode(); setTimeout(renderToolbar, 50); }
 
 
 // --- MENU EDITOR LOGIC ---
