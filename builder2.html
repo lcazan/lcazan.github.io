@@ -1786,20 +1786,40 @@ function renderPage() {
     // on initial load (see frame.onload) — never from the general render
     // cycle.
 
-    // Preserve existing gallery iframes, keyed by block id, before wiping
-    // the DOM. A gallery iframe is expensive to recreate — it reloads
-    // gallery-component.html from scratch and has to re-resolve every
-    // image through the cross-iframe bridge — so an unchanged gallery is
-    // reused as-is rather than torn down and rebuilt on every single
-    // render. Its content is already correct: saveGalleryBlock() reads the
-    // live DOM right before this render runs, so JSON and DOM already
-    // agree.
+    // Preserve existing gallery iframes, keyed by block id, so they can be
+    // MOVED into their final position rather than destroyed and recreated.
+    // This is not just a speed optimization — it's a correctness
+    // requirement. Removing an iframe from the document, even for an
+    // instant, even if a JS reference is kept and the exact same node is
+    // re-appended right afterward, causes the browser to unload/reload its
+    // content — wiping out everything inside it (all the images the user
+    // just added). A single atomic appendChild/insertBefore call that
+    // MOVES an already-connected node to a new position does NOT trigger
+    // this (browsers treat that as a reposition, not a removal). So instead
+    // of root.innerHTML = '' (which fully detaches everything, including
+    // galleries, before any node has a chance to be "reused"), this
+    // removes only the children that are NOT being kept, then rebuilds by
+    // appending — moving kept galleries into place instead of recreating
+    // them.
     const existingGalleries = new Map();
-    root.querySelectorAll('.photo_gallery[data-block-id]').forEach(g => {
+    root.querySelectorAll(':scope > .photo_gallery[data-block-id]').forEach(g => {
         existingGalleries.set(g.getAttribute('data-block-id'), g);
     });
 
-    root.innerHTML = '';
+    const galleriesToKeep = new Set();
+    project.body.blocks.forEach(block => {
+        if (block.type === 'gallery' && existingGalleries.has(block.id)) {
+            galleriesToKeep.add(block.id);
+        }
+    });
+
+    Array.from(root.children).forEach(child => {
+        const isKeptGallery = child.classList.contains('photo_gallery') &&
+                               galleriesToKeep.has(child.getAttribute('data-block-id'));
+        if (!isKeptGallery) {
+            child.remove();
+        }
+    });
 
     project.body.blocks.forEach(block => {
         if (block.type === 'text') {
@@ -1940,8 +1960,10 @@ function renderPage() {
         else if (block.type === 'gallery') {
             const existingGallery = existingGalleries.get(block.id);
             if (existingGallery) {
-                // Reuse as-is — already correct, already resolved, no need
-                // to reload gallery-component.html or re-hydrate anything.
+                // This node was never removed from root above (it matched
+                // galleriesToKeep), so this appendChild is a MOVE of an
+                // already-connected node — safe, does not reload the
+                // iframe. Already correct/resolved, no need to hydrate.
                 root.appendChild(existingGallery);
                 return;
             }
