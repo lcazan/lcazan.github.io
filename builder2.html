@@ -6,6 +6,7 @@
     <title>Snoozing Builder | v5.5.1</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="editor.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.3/dragula.min.js"></script>
 <style>
         /* --- ADDED SETTINGS MODAL STYLES --- */
         #settings-overlay {
@@ -317,6 +318,9 @@ autocomplete="off"
 
 
 <input type="file" id="image-upload" style="display:none" accept="image/*" onchange="handleImageUpload(this)">
+<input type="file" id="gallery-input-camera" style="display:none" accept="image/*" capture="environment" multiple onchange="handleGalleryFiles(this.files); this.value='';">
+<input type="file" id="gallery-input-gallery" style="display:none" accept="image/*" multiple onchange="handleGalleryFiles(this.files); this.value='';">
+<input type="file" id="gallery-input-files" style="display:none" accept="*/*" multiple onchange="handleGalleryFiles(this.files); this.value='';">
 
 <div id="menu-editor-overlay">
     <div class="menu-editor-modal">
@@ -700,6 +704,143 @@ function triggerMultiImageReplace() {
 }
 
 
+// ==========================================================
+// GALLERY (embedded directly in the page, no iframe)
+// ==========================================================
+// Previously lived in a nested iframe (gallery-component.html) for style
+// isolation, but that architecture had a persistent bug with no reliable
+// workaround: removing an iframe from the document — even for an instant,
+// even when the exact same node is reattached right afterward — makes the
+// browser unload/reload its content, wiping out everything inside it.
+// Multi-image rows already prove a gallery-like feature (multiple images,
+// drag reorder, pan) works fine living directly in the page, so the
+// gallery now does too. It shares the exact same central image storage as
+// every other image type (saveImageToProject/resolveImagePath/
+// resolvedImageCache) — no postMessage bridge needed anymore.
+// gallery.css (linked into the preview iframe's own head in init()) still
+// provides all the visual styling, using the same class names as before.
+
+let currentGalleryTargetSlot = null; // which .gallery-item is being filled/replaced
+let galleryDrakes = new WeakMap(); // Dragula instance per gallery element
+
+// Builds one filled gallery item's DOM, mirroring gallery-component.html's
+// original fillSlot(). `previewSrc` is what's shown immediately (a blob:
+// URL); `permanentSrc` is the JSON-persisted path.
+function buildGalleryItem(doc, previewSrc, filename, permanentSrc, objectPosition) {
+    const slot = doc.createElement('div');
+    slot.className = 'gallery-item has-image';
+    if (permanentSrc) slot.setAttribute('data-permanent-src', permanentSrc);
+
+    const sentry = doc.createElement('div');
+    sentry.className = 'sentry-layer';
+    slot.appendChild(sentry);
+
+    const img = doc.createElement('img');
+    if (previewSrc) img.src = previewSrc;
+    if (filename) img.setAttribute('data-filename', filename);
+    img.style.objectPosition = objectPosition || '50% 50%';
+    slot.appendChild(img);
+
+    const panOverlay = doc.createElement('div');
+    panOverlay.className = 'pan-overlay';
+    panOverlay.innerHTML = '<i class="fa-solid fa-arrows-up-down-left-right"></i>';
+    slot.appendChild(panOverlay);
+
+    const actions = doc.createElement('div');
+    actions.className = 'item-actions';
+    actions.innerHTML = `
+        <button class="action-btn drag-handle"><i class="fa-solid fa-hand"></i></button>
+        <button class="action-btn" data-gallery-action="replace"><i class="fa-solid fa-sync"></i></button>
+        <button class="action-btn" data-gallery-action="delete"><i class="fa-solid fa-trash"></i></button>
+    `;
+    slot.appendChild(actions);
+
+    addGalleryItemMenu(slot);
+    return slot;
+}
+
+// Builds the trailing empty "add image" slot.
+function buildGalleryEmptySlot(doc) {
+    const slot = doc.createElement('div');
+    slot.className = 'gallery-item gallery-empty-slot';
+    addGalleryItemMenu(slot);
+    return slot;
+}
+
+// The camera/photos/files choice menu, present (but hidden via CSS until
+// .menu-open) on every slot, filled or empty.
+function addGalleryItemMenu(slot) {
+    slot.insertAdjacentHTML('beforeend', `
+        <div class="choice-menu">
+            <button class="choice-btn" data-gallery-pick="camera"><i class="fa-solid fa-camera"></i> CAMERA</button>
+            <button class="choice-btn" data-gallery-pick="gallery"><i class="fa-solid fa-images"></i> PHOTOS</button>
+            <button class="choice-btn" data-gallery-pick="files"><i class="fa-solid fa-folder-open"></i> FILES</button>
+        </div>
+    `);
+}
+
+function closeAllGalleryUI(galleryEl) {
+    if (!galleryEl) return;
+    galleryEl.querySelectorAll('.gallery-item').forEach(i => i.classList.remove('menu-open', 'active'));
+}
+
+// Handles files picked via the choice-menu (camera/photos/files inputs) —
+// saves each through the central image function, then fills/inserts slots.
+async function handleGalleryFiles(files) {
+    if (!files || !files.length || !currentGalleryTargetSlot) return;
+    const doc = frame.contentDocument;
+    const gallery = currentGalleryTargetSlot.closest('.photo_gallery');
+    if (!gallery) return;
+
+    let insertAfter = currentGalleryTargetSlot;
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const src = await saveImageToProject(file);
+        const previewUrl = URL.createObjectURL(file);
+        resolvedImageCache.set(src, previewUrl);
+
+        const newItem = buildGalleryItem(doc, previewUrl, file.name, src, '50% 50%');
+
+        if (i === 0) {
+            insertAfter.replaceWith(newItem);
+        } else {
+            insertAfter.after(newItem);
+        }
+        insertAfter = newItem;
+    }
+
+    // Ensure there's always exactly one trailing empty "add" slot.
+    const lastChild = gallery.lastElementChild;
+    if (!lastChild || !lastChild.classList.contains('gallery-empty-slot')) {
+        gallery.appendChild(buildGalleryEmptySlot(doc));
+    }
+
+    setupGalleryDragula(gallery);
+    currentGalleryTargetSlot = null;
+    saveGalleryBlock(gallery);
+}
+
+// Sets up (or re-sets-up) Dragula drag-reordering scoped to ONE gallery
+// instance. Tracked per-element via a WeakMap so multiple galleries on the
+// same page each get their own independent drake, and re-inserting items
+// doesn't leak old instances.
+function setupGalleryDragula(galleryEl) {
+    if (!galleryEl || typeof dragula !== 'function') return;
+    const existing = galleryDrakes.get(galleryEl);
+    if (existing) existing.destroy();
+
+    const drake = dragula([galleryEl], {
+        moves: (el, source, handle) => handle.classList.contains('drag-handle') || !!handle.closest('.drag-handle'),
+        accepts: (el, target, source, sibling) => !sibling || !sibling.classList.contains('gallery-empty-slot'),
+        invalid: (el) => el.classList.contains('gallery-empty-slot')
+    });
+    drake.on('dragend', () => {
+        saveGalleryBlock(galleryEl);
+    });
+    galleryDrakes.set(galleryEl, drake);
+}
+
+
 
 
 
@@ -823,11 +964,10 @@ let project = {
 // ==========================================================
 // The ONLY place in the whole app that writes an image file to disk.
 // Every image-bearing block type (single image, div image, multi-image,
-// gallery) funnels through saveImageToProject() — no per-component
-// filesystem logic anywhere else, including gallery-component.html, which
-// requests saves/reads through a postMessage bridge to here (see the
-// saveImageRequest/resolveImageRequest handler below, and the relay added
-// to the preview iframe's injected script in init()).
+// gallery) funnels through saveImageToProject() directly — the gallery
+// used to live in a nested iframe and need a postMessage bridge to reach
+// this, but it's embedded directly in the page now (see the GALLERY
+// section below), so it just calls this like everything else.
 
 // Saves `file` into the project's images/ folder under a brand-new, unique
 // filename (e.g. "images/image-007.jpg") and returns that permanent,
@@ -913,22 +1053,12 @@ function applyResolvedImageSrc(img, path) {
 }
 
 // --- 2. THE CONSOLIDATED MESSAGE LISTENER ---
-// Handles both Photo Gallery and Sandbox (Custom HTML) resizing
+// Handles Sandbox (Custom HTML) resizing. Gallery height-reporting is gone
+// — the gallery is embedded directly in the page now, no iframe, so it
+// just participates in normal page layout like everything else.
 window.addEventListener('message', (event) => {
     const doc = frame.contentDocument;
     if (!doc || !event.data) return;
-
-    // Handle Photo Gallery Resizing
-    if (event.data.type === 'galleryHeight') {
-        const galleryIframe = doc.querySelector('.photo_gallery iframe');
-        if (galleryIframe) {
-            const newHeight = event.data.height + 'px';
-            galleryIframe.style.height = newHeight;
-            const container = galleryIframe.closest('.photo_gallery');
-            if (container) container.style.height = newHeight;
-            console.log("Builder: Resized gallery to", newHeight);
-        }
-    }
 
     // Handle Sandbox (Custom HTML) Resizing
     if (event.data.type === 'sandboxHeight') {
@@ -1016,6 +1146,8 @@ function updateSandbox(block) {
     // 1. Inject Editor Styles and Resize Logic
     html = html.replace('</head>', `
         <link rel="stylesheet" href="editor.css">
+        <link rel="stylesheet" href="gallery.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.3/dragula.min.css">
         <script>
             // Recalculates a container div's image width/layout from its
             // current size and the image's data-scale-factor. Factored out
@@ -1055,18 +1187,8 @@ function updateSandbox(block) {
     const relayScript = `
         <script>
             window.addEventListener('message', e => { 
-                // Requests travel UP: gallery iframe -> here -> builder.html
-                if (e.data && (e.data.type === 'galleryHeight' || e.data.type === 'sandboxHeight' || e.data.type === 'saveImageRequest' || e.data.type === 'resolveImageRequest')) {
+                if (e.data && e.data.type === 'sandboxHeight') {
                     window.parent.postMessage(e.data, '*'); 
-                }
-                // Responses travel DOWN: builder.html -> here -> gallery iframe.
-                // Broadcast to every gallery iframe present — only the one
-                // with a matching pending requestId acts on it, so this is
-                // safe even with multiple galleries on the page.
-                if (e.data && (e.data.type === 'saveImageResponse' || e.data.type === 'resolveImageResponse')) {
-                    document.querySelectorAll('.photo_gallery iframe').forEach(f => {
-                        if (f.contentWindow) f.contentWindow.postMessage(e.data, '*');
-                    });
                 }
             });
         <\/script>
@@ -1137,8 +1259,103 @@ function updateSandbox(block) {
                 return;
             }
 
-            let el = e.target.closest('.gallery-sentry')?.parentElement || 
-                     e.target.closest('.editable') || 
+            // --- GALLERY (embedded directly in the page, no iframe) ---
+            // Choice-menu picks (camera/photos/files) — trigger the
+            // matching hidden file input directly.
+            const galleryPick = e.target.closest('[data-gallery-pick]');
+            if (galleryPick) {
+                const slot = galleryPick.closest('.gallery-item');
+                const gallery = slot ? slot.closest('.photo_gallery') : null;
+                if (slot && gallery) {
+                    currentGalleryTargetSlot = slot;
+                    closeAllGalleryUI(gallery);
+                    selectElement(gallery);
+                    const mode = galleryPick.getAttribute('data-gallery-pick');
+                    const inputId = mode === 'camera' ? 'gallery-input-camera' : mode === 'files' ? 'gallery-input-files' : 'gallery-input-gallery';
+                    const input = document.getElementById(inputId);
+                    if (input) input.click();
+                }
+                return;
+            }
+
+            // Item action buttons (replace/delete) — performed directly.
+            const galleryAction = e.target.closest('[data-gallery-action]');
+            if (galleryAction) {
+                const slot = galleryAction.closest('.gallery-item');
+                const gallery = slot ? slot.closest('.photo_gallery') : null;
+                const action = galleryAction.getAttribute('data-gallery-action');
+                if (slot && gallery) {
+                    selectElement(gallery);
+                    if (action === 'replace') {
+                        currentGalleryTargetSlot = slot;
+                        closeAllGalleryUI(gallery);
+                        slot.classList.add('menu-open');
+                    } else if (action === 'delete') {
+                        slot.remove();
+                        saveGalleryBlock(gallery);
+                    }
+                }
+                return;
+            }
+
+            // Drag handle — Dragula listens for this itself; don't treat it
+            // as a selection tap.
+            if (e.target.closest('.drag-handle')) {
+                return;
+            }
+
+            // Pan handle — mirrors the multi-image pan-overlay pattern
+            // (and gallery-component.html's original beginPan()): only the
+            // dedicated overlay starts a pan, and panning is disabled in
+            // masonry mode (masonry items have no fixed aspect ratio to
+            // pan within).
+            const galleryPanOverlay = e.target.closest('.photo_gallery .pan-overlay');
+            if (galleryPanOverlay) {
+                const gItem = galleryPanOverlay.closest('.gallery-item');
+                const gallery = gItem ? gItem.closest('.photo_gallery') : null;
+                const gImg = gItem ? gItem.querySelector('img') : null;
+                if (gItem && gallery && gImg && !gallery.classList.contains('masonry-mode')) {
+                    pendingSelection = gallery;
+                    isPanningMulti = true; // shared pan state machine (see moveInteraction)
+                    pannedItem = gImg;
+                    panStartX = point.clientX;
+                    panStartY = point.clientY;
+                    let gPos = pannedItem.style.objectPosition || '50% 50%';
+                    const gPosParts = gPos.split(' ');
+                    bgStartPosX = parseFloat(gPosParts[0]) || 50;
+                    bgStartPosY = parseFloat(gPosParts[1]) || 50;
+                }
+                return;
+            }
+
+            // Sentry layer (filled items only) — "activates" the item,
+            // showing its overlay UI via CSS, and selects the gallery.
+            const gallerySentry = e.target.closest('.gallery-item .sentry-layer');
+            if (gallerySentry) {
+                const slot = gallerySentry.closest('.gallery-item');
+                const gallery = slot ? slot.closest('.photo_gallery') : null;
+                if (slot && gallery) {
+                    closeAllGalleryUI(gallery);
+                    slot.classList.add('active');
+                    pendingSelection = gallery;
+                }
+                return;
+            }
+
+            // Empty "add" slot — opens its own choice-menu directly (no
+            // sentry layer on empty slots, matching the original design).
+            const galleryEmptySlot = e.target.closest('.gallery-empty-slot');
+            if (galleryEmptySlot) {
+                const gallery = galleryEmptySlot.closest('.photo_gallery');
+                if (gallery) {
+                    closeAllGalleryUI(gallery);
+                    galleryEmptySlot.classList.add('menu-open');
+                    pendingSelection = gallery;
+                }
+                return;
+            }
+
+            let el = e.target.closest('.editable') || 
                      e.target.closest('.div-other-wrapper > *') || 
                      e.target.closest('.block_spacer') || 
                      e.target.closest('.block_container');
@@ -1149,16 +1366,19 @@ function updateSandbox(block) {
         const moveInteraction = (e) => {
             const point = e.touches ? e.touches[0] : e;
 
-            // Panning via the dedicated overlay handle always wins, exactly
-            // like gallery-component.html's onMove — no isScrolling check.
-            // Previously this was gated by the same tap-vs-scroll heuristic
-            // used for general item selection below, so once movement
-            // passed the 10px threshold isScrolling flipped true and
-            // preventDefault() stopped being called — letting the browser's
-            // native scroll take over mid-drag. Since panning is only ever
-            // started by deliberately pressing the pan handle (never
-            // ambiguous with scrolling), it should never defer to that
-            // heuristic.
+            // Panning via the dedicated overlay handle always wins — no
+            // isScrolling check. Previously this was gated by the same
+            // tap-vs-scroll heuristic used for general item selection
+            // below, so once movement passed the 10px threshold isScrolling
+            // flipped true and preventDefault() stopped being called —
+            // letting the browser's native scroll take over mid-drag. Since
+            // panning is only ever started by deliberately pressing the pan
+            // handle (never ambiguous with scrolling), it should never
+            // defer to that heuristic. This same state machine
+            // (isPanningMulti/pannedItem/...) is shared by both multi-image
+            // items and gallery items — only one can ever be panning at a
+            // time, so reusing it avoids a parallel, near-duplicate set of
+            // variables.
             if (isPanningMulti && pannedItem) {
                 if (e.cancelable) e.preventDefault();
                 const deltaX = (panStartX - point.clientX) * 0.4; 
@@ -1228,21 +1448,8 @@ window.addEventListener('message', (event) => {
     const doc = frame.contentDocument;
     if (!doc || !event.data) return;
 
-    // 1. Gallery Resizing Logic
-    if (event.data.type === 'galleryHeight') {
-        const galleryIframe = doc.querySelector('.photo_gallery iframe');
-        if (galleryIframe) {
-            const newHeight = event.data.height + 'px';
-            galleryIframe.style.setProperty('height', newHeight, 'important');
-            
-            const container = galleryIframe.closest('.photo_gallery');
-            if (container) {
-                container.style.setProperty('height', newHeight, 'important');
-            }
-        }
-    }
-
-    // 2. Sandbox (Custom HTML) Resizing Logic
+    // Sandbox (Custom HTML) Resizing Logic — gallery height-reporting is
+    // gone, the gallery is embedded directly now, no iframe.
     if (event.data.type === 'sandboxHeight') {
         // Use standard concatenation for the selector to avoid template literal bugs
         const sandboxIframe = doc.querySelector('#' + event.data.id + ' iframe');
@@ -1271,43 +1478,6 @@ window.addEventListener('message', (event) => {
     }
 });
 
-// --- IMAGE STORAGE BRIDGE: gallery-component.html <-> builder.html ---
-// The gallery lives in a NESTED iframe (builder.html -> preview iframe ->
-// gallery iframe) and has no direct access to imagesDirHandle, matching the
-// rule that builder.html is the ONLY thing that touches the filesystem.
-// Requests travel up through the preview iframe's relay (see the
-// relayScript addition in init()) and arrive here; responses are sent back
-// via event.source, which the relay then forwards back down to every
-// gallery iframe (only the one with the matching pending requestId acts on
-// it — see gallery-component.html's own listener).
-window.addEventListener('message', async (event) => {
-    if (!event.data || !event.source) return;
-
-    if (event.data.type === 'saveImageRequest') {
-        const { requestId, file } = event.data;
-        try {
-            const src = await saveImageToProject(file);
-            event.source.postMessage({ type: 'saveImageResponse', requestId: requestId, src: src }, '*');
-        } catch (err) {
-            event.source.postMessage({ type: 'saveImageResponse', requestId: requestId, error: (err && err.message) || String(err) }, '*');
-        }
-        return;
-    }
-
-    if (event.data.type === 'resolveImageRequest') {
-        const { requestId, src } = event.data;
-        try {
-            const blob = await getProjectImageBlob(src);
-            event.source.postMessage({ type: 'resolveImageResponse', requestId: requestId, blob: blob }, '*');
-        } catch (err) {
-            event.source.postMessage({ type: 'resolveImageResponse', requestId: requestId, error: (err && err.message) || String(err) }, '*');
-        }
-        return;
-    }
-});
-
-
-
     function selectElement(el) {
         if(selectedEl && selectedEl !== el) {
             // --- JSON SOURCE OF TRUTH: save whenever focus moves directly
@@ -1318,10 +1488,7 @@ window.addEventListener('message', async (event) => {
             saveSelectedBlock(selectedEl);
 
             if (selectedEl.classList.contains('photo_gallery')) {
-                const iframe = selectedEl.querySelector('iframe');
-                if (iframe && iframe.contentWindow && iframe.contentWindow.closeAllUI) {
-                    iframe.contentWindow.closeAllUI();
-                }
+                closeAllGalleryUI(selectedEl);
             }
             selectedEl.classList.remove('selected-item');
         }
@@ -1443,8 +1610,7 @@ function resetToolbar() {
         toolbarContent.style.width = ''; 
 
         if (isGallery) {
-            const innerG = selectedEl.querySelector('iframe')?.contentDocument?.querySelector('.photo_gallery');
-            const isMasonry = innerG ? innerG.classList.contains('masonry-mode') : false;
+            const isMasonry = selectedEl.classList.contains('masonry-mode');
             html += `
                 <div class="gallery-toggle-group">
                     <span class="${!isMasonry ? 'active' : ''}">SQUARE</span>
@@ -1614,24 +1780,18 @@ function insertElement(type, data) {
     // 2. PHOTO GALLERY
     if (type === 'photo_gallery') {
         const el = doc.createElement('div'); 
-        el.className = 'photo_gallery';
+        el.className = 'editable photo_gallery';
         // Tag with a stable ID so saveGalleryBlock() can find/update its
         // entry in project.body.blocks.
         el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
-        const sentry = doc.createElement('div');
-        sentry.className = 'gallery-sentry';
-        const iframe = doc.createElement('iframe');
-        iframe.src = 'gallery-component.html';
-        iframe.setAttribute('scrolling', 'no');
-        el.appendChild(sentry);
-        el.appendChild(iframe);
+        el.appendChild(buildGalleryEmptySlot(doc));
         
         if (safeReferenceEl && safeReferenceEl.parentNode === root) { 
             safeReferenceEl.after(el); 
         } else { 
             root.appendChild(el); 
         }
-        if (frame.contentWindow.initDivLogic) frame.contentWindow.initDivLogic();
+        setupGalleryDragula(el);
         setTimeout(() => selectElement(el), 150); 
         return;
     }
@@ -1786,40 +1946,7 @@ function renderPage() {
     // on initial load (see frame.onload) — never from the general render
     // cycle.
 
-    // Preserve existing gallery iframes, keyed by block id, so they can be
-    // MOVED into their final position rather than destroyed and recreated.
-    // This is not just a speed optimization — it's a correctness
-    // requirement. Removing an iframe from the document, even for an
-    // instant, even if a JS reference is kept and the exact same node is
-    // re-appended right afterward, causes the browser to unload/reload its
-    // content — wiping out everything inside it (all the images the user
-    // just added). A single atomic appendChild/insertBefore call that
-    // MOVES an already-connected node to a new position does NOT trigger
-    // this (browsers treat that as a reposition, not a removal). So instead
-    // of root.innerHTML = '' (which fully detaches everything, including
-    // galleries, before any node has a chance to be "reused"), this
-    // removes only the children that are NOT being kept, then rebuilds by
-    // appending — moving kept galleries into place instead of recreating
-    // them.
-    const existingGalleries = new Map();
-    root.querySelectorAll(':scope > .photo_gallery[data-block-id]').forEach(g => {
-        existingGalleries.set(g.getAttribute('data-block-id'), g);
-    });
-
-    const galleriesToKeep = new Set();
-    project.body.blocks.forEach(block => {
-        if (block.type === 'gallery' && existingGalleries.has(block.id)) {
-            galleriesToKeep.add(block.id);
-        }
-    });
-
-    Array.from(root.children).forEach(child => {
-        const isKeptGallery = child.classList.contains('photo_gallery') &&
-                               galleriesToKeep.has(child.getAttribute('data-block-id'));
-        if (!isKeptGallery) {
-            child.remove();
-        }
-    });
+    root.innerHTML = '';
 
     project.body.blocks.forEach(block => {
         if (block.type === 'text') {
@@ -1958,49 +2085,20 @@ function renderPage() {
             applyMultiImageLayout(el);
         }
         else if (block.type === 'gallery') {
-            const existingGallery = existingGalleries.get(block.id);
-            if (existingGallery) {
-                // This node was never removed from root above (it matched
-                // galleriesToKeep), so this appendChild is a MOVE of an
-                // already-connected node — safe, does not reload the
-                // iframe. Already correct/resolved, no need to hydrate.
-                root.appendChild(existingGallery);
-                return;
-            }
-
             const el = doc.createElement('div');
-            el.className = 'photo_gallery';
+            el.className = 'editable photo_gallery' + (block.mode === 'masonry' ? ' masonry-mode' : '');
             el.setAttribute('data-block-id', block.id);
-            const sentry = doc.createElement('div');
-            sentry.className = 'gallery-sentry';
-            const iframe = doc.createElement('iframe');
-            iframe.src = 'gallery-component.html';
-            iframe.setAttribute('scrolling', 'no');
-            el.appendChild(sentry);
-            el.appendChild(iframe);
+
+            (block.images || []).forEach(imgData => {
+                const item = buildGalleryItem(doc, '', imgData.originalName, imgData.src, imgData.pos);
+                el.appendChild(item);
+                const img = item.querySelector('img');
+                applyResolvedImageSrc(img, imgData.src);
+            });
+            el.appendChild(buildGalleryEmptySlot(doc));
+
             root.appendChild(el);
-
-            if (frame.contentWindow.initDivLogic) frame.contentWindow.initDivLogic();
-
-            // The gallery lives in its own nested iframe with its own
-            // script (gallery-component.html) — wait for it to finish
-            // loading and expose loadSavedImages before hydrating. This
-            // only ever runs the FIRST time a gallery is rendered in this
-            // session (e.g. right after loading a project) — see the reuse
-            // check above.
-            if (block.images && block.images.length) {
-                const hydrate = () => {
-                    if (iframe.contentWindow && iframe.contentWindow.loadSavedImages) {
-                        iframe.contentWindow.loadSavedImages({
-                            mode: block.mode,
-                            files: block.images.map(img => ({ src: img.src, pos: img.pos, originalName: img.originalName }))
-                        });
-                    } else {
-                        setTimeout(hydrate, 50);
-                    }
-                };
-                hydrate();
-            }
+            setupGalleryDragula(el);
         }
         else if (block.type === 'container') {
             const el = doc.createElement('div');
@@ -2326,21 +2424,16 @@ function saveGalleryBlock(el) {
         el.setAttribute('data-block-id', blockId);
     }
 
-    const gIframe = el.querySelector('iframe');
-    let mode = 'square';
-    let images = [];
-    if (gIframe && gIframe.contentDocument) {
-        const galleryRoot = gIframe.contentDocument.querySelector('.photo_gallery');
-        if (galleryRoot) {
-            mode = galleryRoot.classList.contains('masonry-mode') ? 'masonry' : 'square';
-            const imgs = Array.from(gIframe.contentDocument.querySelectorAll('.gallery-item img'));
-            images = imgs.map(img => ({
-                src: img.getAttribute('data-permanent-src') || '',
-                pos: img.style.objectPosition || '50% 50%',
-                originalName: img.getAttribute('data-filename') || ''
-            }));
-        }
-    }
+    const mode = el.classList.contains('masonry-mode') ? 'masonry' : 'square';
+    const items = Array.from(el.querySelectorAll('.gallery-item:not(.gallery-empty-slot)'));
+    const images = items.map(item => {
+        const img = item.querySelector('img');
+        return {
+            src: item.getAttribute('data-permanent-src') || '',
+            pos: img ? (img.style.objectPosition || '50% 50%') : '50% 50%',
+            originalName: img ? (img.getAttribute('data-filename') || '') : ''
+        };
+    });
 
     const blockData = {
         id: blockId,
@@ -2569,14 +2662,6 @@ function saveSelectedBlock(el) {
 
 
     function deselectAll() {
-    // A gallery owns a live nested iframe. Its state has just been committed
-    // to project.body.blocks by saveSelectedBlock(), so do not run the global
-    // render cycle when the thing being deselected is a gallery. Re-rendering
-    // the rest of the page is unnecessary here and, more importantly, can
-    // interfere with the gallery iframe while it is still settling after an
-    // edit. Other block types retain the normal render-on-click-away behavior.
-    const wasGallery = !!(selectedEl && selectedEl.classList.contains('photo_gallery'));
-
     if (selectedEl) {
         // --- Check for Multi-Image before wiping the reference ---
         const isMulti = selectedEl.classList.contains('multi-image-item') || 
@@ -2595,10 +2680,7 @@ function saveSelectedBlock(el) {
         }
 
         if (selectedEl.classList.contains('photo_gallery')) {
-            const iframe = selectedEl.querySelector('iframe');
-            if (iframe && iframe.contentWindow && iframe.contentWindow.closeAllUI) {
-                iframe.contentWindow.closeAllUI();
-            }
+            closeAllGalleryUI(selectedEl);
         }
 
         // --- JSON SOURCE OF TRUTH: save on click-away ---
@@ -2612,12 +2694,13 @@ function saveSelectedBlock(el) {
     document.getElementById('input-pill').style.display = 'none';
     activePillMode = null;
 
-    // --- JSON SOURCE OF TRUTH: render at this "empty space" checkpoint ---
-    // Galleries are the one exception: their nested iframe is already the live
-    // editing surface and saveSelectedBlock() has just committed its complete
-    // state into project.body.blocks. Leave that iframe in place instead of
-    // running the global reconciliation immediately after deselection.
-    if (!wasGallery) renderPage();
+    // --- JSON SOURCE OF TRUTH: render only at this "empty space" checkpoint ---
+    // This is the one point where #editor-root gets fully rebuilt from
+    // project.body.blocks, proving the screen is a pure reflection of the data.
+    // Switching focus directly between two objects (selectElement) only
+    // saves — it never rebuilds the DOM — so an in-progress edit elsewhere
+    // on the page is never at risk of being wiped out mid-flow.
+    renderPage();
 }
 
 
@@ -2880,7 +2963,11 @@ function syncRealTime() {
     function toggleSpacerLine() { if (!selectedEl) return; const currentLine = selectedEl.style.borderBottom; selectedEl.style.borderBottom = (currentLine === 'none' || !currentLine) ? '1px solid #eee' : 'none'; }
     function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
-    function callGalleryToggle() { const iframe = selectedEl.querySelector('iframe'); if (iframe && iframe.contentWindow.toggleMode) iframe.contentWindow.toggleMode(); setTimeout(renderToolbar, 50); }
+    function callGalleryToggle() {
+        if (!selectedEl || !selectedEl.classList.contains('photo_gallery')) return;
+        selectedEl.classList.toggle('masonry-mode');
+        setTimeout(renderToolbar, 50);
+    }
 
 
 // --- MENU EDITOR LOGIC ---

@@ -262,31 +262,17 @@ body.builder-ui-body {
 }
 
 /* --- PHOTO GALLERY --- */
+/* Base wrapper sizing/overflow only — the actual grid/item styling
+   (.gallery-item, .choice-menu, .pan-overlay, etc.) comes from gallery.css,
+   now loaded directly into the preview iframe's head alongside this file.
+   The gallery used to be a nested iframe (hence the old iframe/sentry
+   rules here); it's embedded directly in the page now. */
 .photo_gallery { 
     position: relative; 
     width: 100%; 
     margin: 0; 
     height: auto !important; 
     overflow: visible !important;
-}
-.photo_gallery iframe { 
-    width: 100%; 
-    height: 100%; 
-    border: none; 
-    display: block; 
-    overflow: hidden; 
-}
-.gallery-sentry { 
-    position: absolute; 
-    inset: 0; 
-    background: transparent; 
-    z-index: 10; 
-    cursor: pointer; 
-    touch-action: pan-y !important; 
-}
-
-.selected-item .gallery-sentry { 
-    pointer-events: none; 
 }
 
 
