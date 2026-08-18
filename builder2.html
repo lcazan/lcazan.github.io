@@ -784,6 +784,88 @@ function closeAllGalleryUI(galleryEl) {
     galleryEl.querySelectorAll('.gallery-item').forEach(i => i.classList.remove('menu-open', 'active'));
 }
 
+// Handles discrete gallery tap-actions: choice-menu picks (camera/photos/
+// files), item replace/delete, and sentry/empty-slot activation. Bound to
+// a real `click` event (see init()'s frame.onload) rather than routed
+// through startInteraction's touchstart+mousedown — those fire separately
+// and on mobile a single tap generates synthesized mouse events shortly
+// after the touch events, at the same coordinates. Since a menu can appear
+// instantly in response to the touch, the synthesized mouse event could
+// land on a freshly-rendered button and "click" it unintentionally, based
+// on finger position rather than actual intent. A real `click` event is
+// properly de-duplicated by the browser for a single logical tap, so it
+// doesn't have this problem.
+function handleGalleryClick(e) {
+    const galleryPick = e.target.closest('[data-gallery-pick]');
+    if (galleryPick) {
+        const slot = galleryPick.closest('.gallery-item');
+        const gallery = slot ? slot.closest('.photo_gallery') : null;
+        if (slot && gallery) {
+            currentGalleryTargetSlot = slot;
+            closeAllGalleryUI(gallery);
+            selectElement(gallery);
+            const mode = galleryPick.getAttribute('data-gallery-pick');
+            const inputId = mode === 'camera' ? 'gallery-input-camera' : mode === 'files' ? 'gallery-input-files' : 'gallery-input-gallery';
+            const input = document.getElementById(inputId);
+            if (input) input.click();
+        }
+        return;
+    }
+
+    const galleryAction = e.target.closest('[data-gallery-action]');
+    if (galleryAction) {
+        const slot = galleryAction.closest('.gallery-item');
+        const gallery = slot ? slot.closest('.photo_gallery') : null;
+        const action = galleryAction.getAttribute('data-gallery-action');
+        if (slot && gallery) {
+            selectElement(gallery);
+            if (action === 'replace') {
+                currentGalleryTargetSlot = slot;
+                closeAllGalleryUI(gallery);
+                slot.classList.add('menu-open');
+            } else if (action === 'delete') {
+                slot.remove();
+                saveGalleryBlock(gallery);
+            }
+        }
+        return;
+    }
+
+    // Drag handle / pan overlay — handled elsewhere (Dragula itself, and
+    // startInteraction's press-driven pan logic respectively); don't
+    // treat a click on either as a plain activation tap.
+    if (e.target.closest('.drag-handle') || e.target.closest('.pan-overlay')) {
+        return;
+    }
+
+    // Sentry layer (filled items only) — "activates" the item, showing its
+    // overlay UI via CSS, and selects the gallery.
+    const gallerySentry = e.target.closest('.gallery-item .sentry-layer');
+    if (gallerySentry) {
+        const slot = gallerySentry.closest('.gallery-item');
+        const gallery = slot ? slot.closest('.photo_gallery') : null;
+        if (slot && gallery) {
+            closeAllGalleryUI(gallery);
+            slot.classList.add('active');
+            selectElement(gallery);
+        }
+        return;
+    }
+
+    // Empty "add" slot — opens its own choice-menu directly (no sentry
+    // layer on empty slots, matching the original design).
+    const galleryEmptySlot = e.target.closest('.gallery-empty-slot');
+    if (galleryEmptySlot) {
+        const gallery = galleryEmptySlot.closest('.photo_gallery');
+        if (gallery) {
+            closeAllGalleryUI(gallery);
+            galleryEmptySlot.classList.add('menu-open');
+            selectElement(gallery);
+        }
+        return;
+    }
+}
+
 // Handles files picked via the choice-menu (camera/photos/files inputs) —
 // saves each through the central image function, then fills/inserts slots.
 async function handleGalleryFiles(files) {
@@ -1260,43 +1342,21 @@ function updateSandbox(block) {
             }
 
             // --- GALLERY (embedded directly in the page, no iframe) ---
-            // Choice-menu picks (camera/photos/files) — trigger the
-            // matching hidden file input directly.
-            const galleryPick = e.target.closest('[data-gallery-pick]');
-            if (galleryPick) {
-                const slot = galleryPick.closest('.gallery-item');
-                const gallery = slot ? slot.closest('.photo_gallery') : null;
-                if (slot && gallery) {
-                    currentGalleryTargetSlot = slot;
-                    closeAllGalleryUI(gallery);
-                    selectElement(gallery);
-                    const mode = galleryPick.getAttribute('data-gallery-pick');
-                    const inputId = mode === 'camera' ? 'gallery-input-camera' : mode === 'files' ? 'gallery-input-files' : 'gallery-input-gallery';
-                    const input = document.getElementById(inputId);
-                    if (input) input.click();
-                }
-                return;
-            }
-
-            // Item action buttons (replace/delete) — performed directly.
-            const galleryAction = e.target.closest('[data-gallery-action]');
-            if (galleryAction) {
-                const slot = galleryAction.closest('.gallery-item');
-                const gallery = slot ? slot.closest('.photo_gallery') : null;
-                const action = galleryAction.getAttribute('data-gallery-action');
-                if (slot && gallery) {
-                    selectElement(gallery);
-                    if (action === 'replace') {
-                        currentGalleryTargetSlot = slot;
-                        closeAllGalleryUI(gallery);
-                        slot.classList.add('menu-open');
-                    } else if (action === 'delete') {
-                        slot.remove();
-                        saveGalleryBlock(gallery);
-                    }
-                }
-                return;
-            }
+            // Discrete tap-actions (choice-menu picks, item replace/delete,
+            // sentry/empty-slot activation) are handled by a separate,
+            // real `click` listener (see handleGalleryClick, registered
+            // below) — NOT here. touchstart and mousedown both
+            // independently trigger startInteraction, and on mobile a
+            // single tap generates touch events followed by synthesized
+            // mouse events at the same coordinates shortly after; wiring
+            // discrete actions to this handler meant a tap could fire
+            // twice, with the second (synthesized) one landing on whatever
+            // button happened to have just rendered at that position —
+            // causing menus to flash and the wrong choice to fire. A real
+            // `click` event is properly de-duplicated by the browser for a
+            // single logical tap, so those interactions live there instead.
+            // Panning stays here since it's a drag gesture that must start
+            // on press, not on release/click.
 
             // Drag handle — Dragula listens for this itself; don't treat it
             // as a selection tap.
@@ -1324,33 +1384,6 @@ function updateSandbox(block) {
                     const gPosParts = gPos.split(' ');
                     bgStartPosX = parseFloat(gPosParts[0]) || 50;
                     bgStartPosY = parseFloat(gPosParts[1]) || 50;
-                }
-                return;
-            }
-
-            // Sentry layer (filled items only) — "activates" the item,
-            // showing its overlay UI via CSS, and selects the gallery.
-            const gallerySentry = e.target.closest('.gallery-item .sentry-layer');
-            if (gallerySentry) {
-                const slot = gallerySentry.closest('.gallery-item');
-                const gallery = slot ? slot.closest('.photo_gallery') : null;
-                if (slot && gallery) {
-                    closeAllGalleryUI(gallery);
-                    slot.classList.add('active');
-                    pendingSelection = gallery;
-                }
-                return;
-            }
-
-            // Empty "add" slot — opens its own choice-menu directly (no
-            // sentry layer on empty slots, matching the original design).
-            const galleryEmptySlot = e.target.closest('.gallery-empty-slot');
-            if (galleryEmptySlot) {
-                const gallery = galleryEmptySlot.closest('.photo_gallery');
-                if (gallery) {
-                    closeAllGalleryUI(gallery);
-                    galleryEmptySlot.classList.add('menu-open');
-                    pendingSelection = gallery;
                 }
                 return;
             }
@@ -1423,6 +1456,10 @@ function updateSandbox(block) {
         doc.addEventListener('touchmove', moveInteraction, { passive: false });
         doc.addEventListener('mouseup', endInteraction);
         doc.addEventListener('touchend', endInteraction);
+        // Real click event (properly de-duplicated by the browser for a
+        // single tap, unlike touchstart+mousedown above) for discrete
+        // gallery tap-actions — see handleGalleryClick().
+        doc.addEventListener('click', handleGalleryClick);
         
         setDevice('iphone');
 
