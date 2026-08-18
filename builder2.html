@@ -889,8 +889,16 @@ function handleGalleryClick(e) {
 
 // Handles files picked via the choice-menu (camera/photos/files inputs) —
 // saves each through the central image function, then fills/inserts slots.
-async function handleGalleryFiles(files) {
-    if (!files || !files.length || !currentGalleryTargetSlot) return;
+async function handleGalleryFiles(fileList) {
+    // Snapshot into a plain array synchronously, before any `await` below.
+    // `fileList` is the input element's live FileList — the caller's
+    // onchange handler clears input.value right after invoking this
+    // function, which (since this function suspends at its first await)
+    // runs before the loop below finishes, truncating/emptying the SAME
+    // FileList object this loop reads from. A plain array copy is immune
+    // to that.
+    const files = Array.from(fileList || []);
+    if (!files.length || !currentGalleryTargetSlot) return;
     const doc = frame.contentDocument;
     const gallery = currentGalleryTargetSlot.closest('.photo_gallery');
     if (!gallery) return;
