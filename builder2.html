@@ -626,46 +626,65 @@ function updateMultiRowHeight(val) {
 
 
 
-// --- UPDATED: Uses Blobs and IMG tags for high resolution ---
+// Builds one multi-image-item's DOM (image + pan overlay) for a given
+// already-saved permanent path/preview URL. Shared by triggerMultiImageAdd
+// (one call per selected file) so adding several files at once doesn't
+// duplicate this markup per-call.
+function buildMultiImageItem(previewUrl, permanentSrc, ratio) {
+    const newItem = document.createElement('div');
+    newItem.className = 'multi-image-item';
+    newItem.setAttribute('data-permanent-src', permanentSrc);
+
+    const img = document.createElement('img');
+    img.src = previewUrl;
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = 'cover';
+    img.style.display = 'block';
+    newItem.appendChild(img);
+
+    // Pan handle — same pattern as gallery-component.html's .pan-overlay:
+    // a permanent, centered overlay icon, shown via CSS on hover/selection,
+    // that starts the pan gesture itself (see startInteraction()'s
+    // .multi-image-pan-overlay check) so it's distinct from tapping the
+    // item to select it.
+    const panOverlay = document.createElement('div');
+    panOverlay.className = 'multi-image-pan-overlay';
+    panOverlay.innerHTML = '<i class="fa-solid fa-arrows-up-down-left-right"></i>';
+    newItem.appendChild(panOverlay);
+
+    newItem.style.height = '100%';
+    newItem.style.aspectRatio = ratio.toString();
+    return newItem;
+}
+
+// --- UPDATED: Uses Blobs and IMG tags for high resolution; supports
+// selecting/adding several images in one go (mirrors the gallery's
+// multi-select add behavior) ---
 function triggerMultiImageAdd() {
     const input = document.getElementById('image-upload');
+    input.multiple = true;
     input.onchange = async function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const src = await saveImageToProject(file);
-        const previewUrl = URL.createObjectURL(file);
-        // Pre-populate the cache — the next render reuses this instantly.
-        resolvedImageCache.set(src, previewUrl);
-
-        const newItem = document.createElement('div');
-        newItem.className = 'multi-image-item';
-        newItem.setAttribute('data-permanent-src', src);
-
-        const img = document.createElement('img');
-        img.src = previewUrl;
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.objectFit = 'cover';
-        img.style.display = 'block';
-        newItem.appendChild(img);
-
-        // Pan handle — same pattern as gallery-component.html's
-        // .pan-overlay: a permanent, centered overlay icon, shown via
-        // CSS on hover/selection, that starts the pan gesture itself
-        // (see startInteraction()'s .multi-image-pan-overlay check) so
-        // it's distinct from tapping the item to select it.
-        const panOverlay = document.createElement('div');
-        panOverlay.className = 'multi-image-pan-overlay';
-        panOverlay.innerHTML = '<i class="fa-solid fa-arrows-up-down-left-right"></i>';
-        newItem.appendChild(panOverlay);
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
 
         const ratio = parseFloat(selectedEl.getAttribute('data-ratio-val')) || 1;
-        newItem.style.height = '100%';
-        newItem.style.aspectRatio = ratio.toString();
 
-        selectedEl.appendChild(newItem);
+        // Saved sequentially (not Promise.all) so each file gets its
+        // number from project.meta.nextImageNumber in the order picked,
+        // rather than racing for it.
+        for (const file of files) {
+            const src = await saveImageToProject(file);
+            const previewUrl = URL.createObjectURL(file);
+            // Pre-populate the cache — the next render reuses this instantly.
+            resolvedImageCache.set(src, previewUrl);
+
+            const newItem = buildMultiImageItem(previewUrl, src, ratio);
+            selectedEl.appendChild(newItem);
+        }
+
         input.value = "";
+        input.multiple = false;
 
         recalculateMultiLimits();
         renderToolbar();
@@ -675,6 +694,8 @@ function triggerMultiImageAdd() {
 
 function triggerMultiImageReplace() {
     const input = document.getElementById('image-upload');
+    // Replace targets exactly one existing item — always single-select.
+    input.multiple = false;
     input.onchange = async function(e) {
         const file = e.target.files[0];
         if (!file) return;
@@ -2832,7 +2853,11 @@ function saveSelectedBlock(el) {
     } 
 }
 
-    function triggerImageUpload() { document.getElementById('image-upload').click(); }
+    function triggerImageUpload() {
+        const input = document.getElementById('image-upload');
+        input.multiple = false;
+        input.click();
+    }
     async function handleImageUpload(i) {
         const file = i.files[0];
         if (!file) return;
