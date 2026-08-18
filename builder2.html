@@ -6,7 +6,6 @@
     <title>Snoozing Builder | v5.5.1</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="editor.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.3/dragula.min.js"></script>
 <style>
         /* --- ADDED SETTINGS MODAL STYLES --- */
         #settings-overlay {
@@ -746,11 +745,15 @@ let galleryDrakes = new WeakMap(); // Dragula instance per gallery element
 
 // Builds one filled gallery item's DOM, mirroring gallery-component.html's
 // original fillSlot(). `previewSrc` is what's shown immediately (a blob:
-// URL); `permanentSrc` is the JSON-persisted path.
-function buildGalleryItem(doc, previewSrc, filename, permanentSrc, objectPosition) {
+// URL for the THUMBNAIL — the gallery grid always displays the thumbnail,
+// never the full-res image); `permanentSrc` is the full-res image's
+// JSON-persisted path (kept for a future export lightbox); `thumbSrc` is
+// the thumbnail's own JSON-persisted path.
+function buildGalleryItem(doc, previewSrc, filename, permanentSrc, objectPosition, thumbSrc) {
     const slot = doc.createElement('div');
     slot.className = 'gallery-item has-image';
     if (permanentSrc) slot.setAttribute('data-permanent-src', permanentSrc);
+    if (thumbSrc) slot.setAttribute('data-thumb-src', thumbSrc);
 
     const sentry = doc.createElement('div');
     sentry.className = 'sentry-layer';
@@ -906,11 +909,15 @@ async function handleGalleryFiles(fileList) {
     let insertAfter = currentGalleryTargetSlot;
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const src = await saveImageToProject(file);
-        const previewUrl = URL.createObjectURL(file);
-        resolvedImageCache.set(src, previewUrl);
+        const { src, thumb, thumbBlob } = await saveGalleryImageWithThumbnail(file);
 
-        const newItem = buildGalleryItem(doc, previewUrl, file.name, src, '50% 50%');
+        // Prefer previewing the thumbnail (matches what's actually shown
+        // once saved/reloaded); fall back to the full image if thumbnail
+        // generation failed.
+        const previewUrl = thumbBlob ? URL.createObjectURL(thumbBlob) : URL.createObjectURL(file);
+        resolvedImageCache.set(thumb || src, previewUrl);
+
+        const newItem = buildGalleryItem(doc, previewUrl, file.name, src, '50% 50%', thumb);
 
         if (i === 0) {
             insertAfter.replaceWith(newItem);
@@ -936,11 +943,12 @@ async function handleGalleryFiles(fileList) {
 // same page each get their own independent drake, and re-inserting items
 // doesn't leak old instances.
 function setupGalleryDragula(galleryEl) {
-    if (!galleryEl || typeof dragula !== 'function') return;
+    const iframeDragula = frame.contentWindow && frame.contentWindow.dragula;
+    if (!galleryEl || typeof iframeDragula !== 'function') return;
     const existing = galleryDrakes.get(galleryEl);
     if (existing) existing.destroy();
 
-    const drake = dragula([galleryEl], {
+    const drake = iframeDragula([galleryEl], {
         moves: (el, source, handle) => handle.classList.contains('drag-handle') || !!handle.closest('.drag-handle'),
         accepts: (el, target, source, sibling) => !sibling || !sibling.classList.contains('gallery-empty-slot'),
         invalid: (el) => el.classList.contains('gallery-empty-slot')
@@ -1096,12 +1104,84 @@ async function saveImageToProject(file) {
     const ext = extMatch ? extMatch[1].toLowerCase() : 'png';
     const filename = 'image-' + String(num).padStart(3, '0') + '.' + ext;
 
+    await writeFileToImagesFolder(filename, file);
+    return 'images/' + filename;
+}
+
+// Shared low-level disk write used by saveImageToProject() and the
+// thumbnail generator below — both just need "put this Blob/File at this
+// filename inside images/".
+async function writeFileToImagesFolder(filename, blobOrFile) {
+    if (!imagesDirHandle) {
+        throw new Error('No project folder is open.');
+    }
     const fileHandle = await imagesDirHandle.getFileHandle(filename, { create: true });
     const writable = await fileHandle.createWritable();
-    await writable.write(file);
+    await writable.write(blobOrFile);
     await writable.close();
+}
 
-    return 'images/' + filename;
+// Resizes `file` down to a max dimension of 800px (plenty sharp for a
+// phone-width gallery grid cell, without carrying full-resolution bytes)
+// and re-compresses it as a JPEG for a small file size. Always outputs
+// JPEG regardless of source format — gallery photos are the target use
+// case, so the loss of PNG transparency is an accepted tradeoff for a
+// smaller thumbnail. Returns null (not a rejected promise) if it fails,
+// so callers can fall back to the full image without a thumbnail.
+async function generateThumbnailBlob(file) {
+    const MAX_DIM = 800;
+    try {
+        const bitmap = await createImageBitmap(file);
+        const scale = Math.min(1, MAX_DIM / Math.max(bitmap.width, bitmap.height));
+        const outW = Math.max(1, Math.round(bitmap.width * scale));
+        const outH = Math.max(1, Math.round(bitmap.height * scale));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = outW;
+        canvas.height = outH;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(bitmap, 0, 0, outW, outH);
+        if (bitmap.close) bitmap.close();
+
+        return await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+    } catch (err) {
+        console.error('Thumbnail generation failed', err);
+        return null;
+    }
+}
+
+// Saves a gallery image plus its resized thumbnail companion, sharing the
+// same base filename — e.g. "images/image-007.jpg" (full) and
+// "images/image-007-thumbnail.jpg" (thumb) — so the two are easy to spot
+// as a pair when browsing the images/ folder. Returns:
+//   src       — full-res permanent path; not shown anywhere yet, but kept
+//               for a future export lightbox to load on click.
+//   thumb     — thumbnail permanent path; this is what the gallery grid
+//               actually displays, both while editing and once exported.
+//   thumbBlob — the same thumbnail bytes just written, handed back so the
+//               caller can build an instant local preview URL without a
+//               redundant disk read right after the write.
+// If thumbnail generation fails, thumb is '' and thumbBlob is null —
+// callers should fall back to showing/using the full-res `src` instead.
+async function saveGalleryImageWithThumbnail(file) {
+    const src = await saveImageToProject(file);
+    let thumb = '';
+    let thumbBlob = null;
+
+    thumbBlob = await generateThumbnailBlob(file);
+    if (thumbBlob) {
+        const dot = src.lastIndexOf('.');
+        const thumbPath = (dot === -1 ? src : src.slice(0, dot)) + '-thumbnail.jpg';
+        try {
+            await writeFileToImagesFolder(thumbPath.split('/').pop(), thumbBlob);
+            thumb = thumbPath;
+        } catch (err) {
+            console.error('Could not write thumbnail to disk', err);
+            thumbBlob = null;
+        }
+    }
+
+    return { src, thumb, thumbBlob };
 }
 
 // Cache of resolved image blob URLs, keyed by permanent path (e.g.
@@ -1259,6 +1339,7 @@ function updateSandbox(block) {
         <link rel="stylesheet" href="editor.css">
         <link rel="stylesheet" href="gallery.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.3/dragula.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dragula/3.7.3/dragula.min.js"><\/script>
         <script>
             // Recalculates a container div's image width/layout from its
             // current size and the image's data-scale-factor. Factored out
@@ -2156,10 +2237,12 @@ function renderPage() {
             el.setAttribute('data-block-id', block.id);
 
             (block.images || []).forEach(imgData => {
-                const item = buildGalleryItem(doc, '', imgData.originalName, imgData.src, imgData.pos);
+                const item = buildGalleryItem(doc, '', imgData.originalName, imgData.src, imgData.pos, imgData.thumb);
                 el.appendChild(item);
                 const img = item.querySelector('img');
-                applyResolvedImageSrc(img, imgData.src);
+                // Older projects saved before thumbnails existed have no
+                // `thumb` — fall back to the full-res src for those.
+                applyResolvedImageSrc(img, imgData.thumb || imgData.src);
             });
             el.appendChild(buildGalleryEmptySlot(doc));
 
@@ -2496,6 +2579,7 @@ function saveGalleryBlock(el) {
         const img = item.querySelector('img');
         return {
             src: item.getAttribute('data-permanent-src') || '',
+            thumb: item.getAttribute('data-thumb-src') || '',
             pos: img ? (img.style.objectPosition || '50% 50%') : '50% 50%',
             originalName: img ? (img.getAttribute('data-filename') || '') : ''
         };
@@ -3676,6 +3760,57 @@ async function browseForProjectFolder() {
     await loadProjectFromDirHandle(dirHandle, name);
 }
 
+// Collects every image filename (full-res AND thumbnail) currently
+// referenced anywhere in `proj`, so cleanupOrphanImages() knows what's
+// safe to keep. Mirrors the block schema used throughout render/save:
+// image.src, multiImage.items[].src, gallery.images[].src/.thumb,
+// container.image.src. Container children (text/spacer/button/customHtml)
+// never carry images, so they're not walked here.
+function collectUsedImageFilenames(proj) {
+    const used = new Set();
+    const addPath = (p) => { if (p) used.add(p.split('/').pop()); };
+
+    (proj && proj.body && proj.body.blocks || []).forEach(block => {
+        if (!block) return;
+        if (block.type === 'image') {
+            addPath(block.src);
+        } else if (block.type === 'multiImage') {
+            (block.items || []).forEach(item => addPath(item.src));
+        } else if (block.type === 'gallery') {
+            (block.images || []).forEach(imgData => { addPath(imgData.src); addPath(imgData.thumb); });
+        } else if (block.type === 'container' && block.image) {
+            addPath(block.image.src);
+        }
+    });
+    return used;
+}
+
+// Deletes every file in images/ that isn't referenced anywhere in the
+// currently loaded project. Run once right after a project finishes
+// loading — leftovers accumulate because saveImageToProject() never
+// reuses/overwrites a filename (each "replace" mints a fresh one and
+// abandons the old file), and because experimenting across sessions can
+// leave files from a project.json that's since moved on. Non-fatal on
+// individual failures (e.g. a locked file) — logs and keeps going.
+async function cleanupOrphanImages() {
+    if (!imagesDirHandle) return;
+    const used = collectUsedImageFilenames(project);
+    const orphans = [];
+    for await (const [entryName, handle] of imagesDirHandle.entries()) {
+        if (handle.kind === 'file' && !used.has(entryName)) orphans.push(entryName);
+    }
+    for (const name of orphans) {
+        try {
+            await imagesDirHandle.removeEntry(name);
+        } catch (err) {
+            console.error('Could not delete orphan image', name, err);
+        }
+    }
+    if (orphans.length) {
+        console.log('Deleted ' + orphans.length + ' orphan image file(s) not referenced by this project:', orphans);
+    }
+}
+
 async function loadProjectFromDirHandle(dirHandle, name) {
     projectDirHandle = dirHandle;
     imagesDirHandle = await projectDirHandle.getDirectoryHandle('images', { create: true });
@@ -3693,6 +3828,8 @@ async function loadProjectFromDirHandle(dirHandle, name) {
 
     project = loaded;
     if (!project.meta) project.meta = { name: name, nextImageNumber: 1 };
+
+    await cleanupOrphanImages();
 
     document.getElementById('project-picker-overlay').style.display = 'none';
     init();
