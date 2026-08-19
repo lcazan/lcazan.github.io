@@ -277,6 +277,65 @@ footer { text-align: center; color: #1A1A1A; padding: 3.75rem 1.25rem 2.5rem; bo
     background-color: #ffffff; border: 1.5px solid #151515; padding: 0.75rem 0.9375rem; border-radius: 4px; transition: 0.1s; 
 }
 .block_button:hover { background-color: #151515; color: #ffffff !important; }
+/* .block_button also gets applied directly to a real <button> element by
+   the Contact Form block's Send button (see buildContactFormFieldsHTML in
+   builder.html) — no separate button styling needed, it just works since
+   this rule isn't scoped to <a>. */
+.block_button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* --- Contact Form --- */
+.block_contact_form {
+    width: 100%;
+    max-width: 34rem;
+    margin: 0.625rem auto 1.875rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    box-sizing: border-box;
+}
+.contact-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+.contact-form-field label {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.05rem;
+    text-transform: uppercase;
+    color: var(--icon-brown);
+}
+.contact-form-field input,
+.contact-form-field textarea {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 1rem;
+    color: var(--text-dark);
+    border: 1.5px solid #ddd;
+    border-radius: 4px;
+    padding: 0.625rem 0.75rem;
+    box-sizing: border-box;
+    width: 100%;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s;
+}
+.contact-form-field input:focus,
+.contact-form-field textarea:focus {
+    border-color: var(--icon-brown);
+}
+.contact-form-field textarea {
+    min-height: 6.25rem;
+    resize: vertical;
+}
+/* Shown by window.validateContactForm (injected into the preview iframe —
+   see init() in builder.html) when neither Email nor Phone was filled in. */
+.contact-form-error {
+    color: #c0392b;
+    font-size: 0.8rem;
+    margin-top: -0.25rem;
+}
 
 /* --- Responsive --- */
 @media (max-width: 768px) {

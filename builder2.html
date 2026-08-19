@@ -217,12 +217,13 @@
     </button>
     <button class="insert-btn" onclick="insertElement('block_spacer')"><i class="fa-solid fa-arrows-up-down"></i></button>
     <button class="insert-btn" onclick="insertElement('block_custom_html')"><i class="fa-solid fa-code"></i></button>
+    <button class="insert-btn" onclick="insertElement('contact_form')" title="Contact Form"><i class="fa-solid fa-envelope"></i></button>
 
     <div style="margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: 10px; padding-bottom: 20px;">
         <button class="insert-btn" onclick="openMenuEditor()" title="Menu Editor" style="background: #2a2a2a; border-color: #555;">
             <i class="fa-solid fa-bars" style="color: #f1c40f;"></i>
         </button>
-        <button class="insert-btn" onclick="toggleSettings()" title="Settings" style="background: #2a2a2a; border-color: #555;">
+        <button class="insert-btn" onclick="openSettingsModal()" title="Settings" style="background: #2a2a2a; border-color: #555;">
             <i class="fa-solid fa-gear" style="color: #95a5a6;"></i>
         </button>
         <button class="insert-btn" onclick="openProjectPicker()" title="Switch Project" style="background: #2a2a2a; border-color: #555;">
@@ -271,11 +272,11 @@ autocomplete="off"
 
 
 
-<div id="settings-overlay" onclick="if(event.target===this) toggleSettings()">
+<div id="settings-overlay" onclick="if(event.target===this) closeSettingsModal()">
     <div class="settings-modal">
         <div class="settings-header">
             <h3 style="margin:0;">Project Settings</h3>
-            <span style="cursor:pointer; font-size:24px;" onclick="toggleSettings()">&times;</span>
+            <span style="cursor:pointer; font-size:24px;" onclick="closeSettingsModal()">&times;</span>
         </div>
         
         <div class="settings-body">
@@ -303,12 +304,46 @@ autocomplete="off"
 
             <div class="settings-form-group">
                 <label>Global Favicon</label>
-                <input type="file" id="favicon-upload" accept="image/x-icon,image/png">
+                <input type="file" id="favicon-upload" accept="image/x-icon,image/png,image/svg+xml" onchange="handleFaviconSelect(this)">
+                <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
+                    <img id="favicon-preview-img" style="display:none; width:32px; height:32px; object-fit:contain; background:#111; border:1px solid #444; border-radius:4px;">
+                    <span id="favicon-preview-name" style="font-size:12px; color:#888;">No favicon set.</span>
+                </div>
+            </div>
+
+            <div style="border-top:1px solid #333; margin:20px 0 15px; padding-top:15px;">
+                <h4 style="margin:0 0 15px; font-size:13px; color:#eee; text-transform:uppercase; letter-spacing:0.5px;">Footer</h4>
+            </div>
+
+            <div class="settings-form-group">
+                <label>Facebook URL</label>
+                <input type="text" id="set-footer-facebook" placeholder="https://facebook.com/yourpage">
+            </div>
+
+            <div class="settings-form-group">
+                <label>Instagram URL</label>
+                <input type="text" id="set-footer-instagram" placeholder="https://instagram.com/yourpage">
+            </div>
+
+            <div class="settings-form-group">
+                <label>TikTok URL</label>
+                <input type="text" id="set-footer-tiktok" placeholder="https://tiktok.com/@yourpage">
+            </div>
+
+            <div class="settings-form-group">
+                <label>Copyright Text</label>
+                <input type="text" id="set-footer-copyright" placeholder="Copyright © 2026 My Company - All Rights Reserved.">
+            </div>
+
+            <div class="settings-form-group">
+                <label>Disclaimer</label>
+                <textarea id="set-footer-disclaimer"></textarea>
             </div>
         </div> 
 
         <div class="settings-footer">
-            <button class="save-settings-btn" onclick="toggleSettings()">Save Changes</button>
+            <button class="save-settings-btn" style="background:#444; margin-right:10px;" onclick="closeSettingsModal()">Cancel</button>
+            <button class="save-settings-btn" onclick="saveSettingsChanges()">Save Changes</button>
         </div>
     </div>
 </div>
@@ -996,10 +1031,92 @@ function cycleAspectRatio() {
 
 
 
-function toggleSettings() {
-    const overlay = document.getElementById('settings-overlay');
-    const isVisible = overlay.style.display === 'flex';
-    overlay.style.display = isVisible ? 'none' : 'flex';
+// Pending favicon file selected but not yet saved — cleared/discarded by
+// closeSettingsModal() (Cancel), committed to disk by saveSettingsChanges().
+let pendingFaviconFile = null;
+
+// Populates the footer fields and favicon preview from current project
+// state, then shows the modal. Nothing is written back into `project`
+// until saveSettingsChanges() runs — Cancel/× just discard.
+function openSettingsModal() {
+    pendingFaviconFile = null;
+
+    const f = project.footer || {};
+    document.getElementById('set-footer-facebook').value = f.facebook || '';
+    document.getElementById('set-footer-instagram').value = f.instagram || '';
+    document.getElementById('set-footer-tiktok').value = f.tiktok || '';
+    document.getElementById('set-footer-copyright').value = f.copyright || '';
+    document.getElementById('set-footer-disclaimer').value = f.disclaimer || '';
+
+    renderFaviconPreview();
+
+    document.getElementById('settings-overlay').style.display = 'flex';
+}
+
+function closeSettingsModal() {
+    pendingFaviconFile = null;
+    document.getElementById('settings-overlay').style.display = 'none';
+}
+
+// Reads the just-picked favicon file and shows an instant local preview —
+// actually writing it to disk waits for Save (see saveSettingsChanges), so
+// Cancel can discard the selection with no side effects.
+function handleFaviconSelect(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+    pendingFaviconFile = file;
+
+    const previewImg = document.getElementById('favicon-preview-img');
+    const previewName = document.getElementById('favicon-preview-name');
+    previewImg.src = URL.createObjectURL(file);
+    previewImg.style.display = 'inline-block';
+    previewName.textContent = file.name;
+}
+
+// Shows the currently-saved favicon (project.head.faviconSrc), or a
+// placeholder if none has ever been set. Called when the modal opens.
+function renderFaviconPreview() {
+    const previewImg = document.getElementById('favicon-preview-img');
+    const previewName = document.getElementById('favicon-preview-name');
+    const head = project.head || {};
+
+    if (head.faviconSrc) {
+        previewName.textContent = head.faviconName || head.faviconSrc.split('/').pop();
+        previewImg.style.display = 'inline-block';
+        applyResolvedImageSrc(previewImg, head.faviconSrc);
+    } else {
+        previewImg.style.display = 'none';
+        previewImg.removeAttribute('src');
+        previewName.textContent = 'No favicon set.';
+    }
+}
+
+// Commits the footer fields into project.footer, saves a newly-picked
+// favicon to disk if one is pending (favicons are already tiny — saved as
+// their original file, no thumbnail generation needed), re-renders the
+// footer so changes are visible immediately, and closes the modal.
+async function saveSettingsChanges() {
+    if (!project.footer) project.footer = {};
+    project.footer.facebook = document.getElementById('set-footer-facebook').value.trim();
+    project.footer.instagram = document.getElementById('set-footer-instagram').value.trim();
+    project.footer.tiktok = document.getElementById('set-footer-tiktok').value.trim();
+    project.footer.copyright = document.getElementById('set-footer-copyright').value;
+    project.footer.disclaimer = document.getElementById('set-footer-disclaimer').value;
+
+    if (pendingFaviconFile) {
+        try {
+            if (!project.head) project.head = {};
+            const src = await saveImageToProject(pendingFaviconFile);
+            project.head.faviconSrc = src;
+            project.head.faviconName = pendingFaviconFile.name;
+            pendingFaviconFile = null;
+        } catch (err) {
+            alert('Could not save favicon: ' + ((err && err.message) || err));
+        }
+    }
+
+    renderFooter();
+    document.getElementById('settings-overlay').style.display = 'none';
 }
 
 // --- 1. GLOBAL VARIABLE DECLARATIONS ---
@@ -1047,15 +1164,22 @@ let imagesDirHandle = null;
 //   │                     optional single image) live inside that block's
 //   │                     own `children` array, not as separate top-level
 //   │                     entries here.
-//   └── footer  — shared/template-controlled (copyright text etc.), not yet
-//                 part of the editable block system. Reserved for later
-//                 (Project Settings).
+//   └── footer  — social links, copyright text, and disclaimer, edited via
+//                 the Project Settings modal. See renderFooter().
 let project = {
     meta: {
         name: '',
         nextImageNumber: 1
     },
-    head: {},
+    head: {
+        // Global favicon, set via the Project Settings modal — stored the
+        // same way any other project image is (a real file in images/,
+        // referenced by its permanent path). faviconName is kept alongside
+        // purely for display (the settings modal shows the original
+        // filename next to its thumbnail).
+        faviconSrc: '',
+        faviconName: ''
+    },
     body: {
         header: {
             logo: {
@@ -1081,7 +1205,13 @@ let project = {
         ],
         blocks: []
     },
-    footer: {}
+    footer: {
+        facebook: '',
+        instagram: '',
+        tiktok: '',
+        copyright: 'Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.',
+        disclaimer: 'My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.'
+    }
 };
 
 // ==========================================================
@@ -1410,6 +1540,31 @@ function updateSandbox(block) {
             });
             window.initDivLogic = () => { document.querySelectorAll('.block_container').forEach(d => observer.observe(d)); };
             window.applyDivImageLayout = applyDivImageLayout;
+
+            // Contact form: Email and Phone are each individually optional
+            // in the HTML (native \`required\` can't express "one of the
+            // two"), so that either/or rule is enforced here instead, on
+            // submit. Message's own \`required\` attribute is enforced by
+            // the browser natively before this handler ever runs.
+            window.validateContactForm = function(form) {
+                form.querySelectorAll('.contact-form-error').forEach(e => e.remove());
+
+                const emailField = form.querySelector('[name="Email"]');
+                const phoneField = form.querySelector('[name="Phone"]');
+                const emailVal = emailField ? emailField.value.trim() : '';
+                const phoneVal = phoneField ? phoneField.value.trim() : '';
+
+                if (!emailVal && !phoneVal) {
+                    const errorMsg = document.createElement('div');
+                    errorMsg.className = 'contact-form-error';
+                    errorMsg.textContent = 'Please provide either an email address or a phone number.';
+                    const fieldGroup = (phoneField && phoneField.closest('.contact-form-field')) || form;
+                    fieldGroup.appendChild(errorMsg);
+                    (emailField || phoneField || form).focus();
+                    return false;
+                }
+                return true;
+            };
         <\/script>
     </head>`);
 
@@ -1622,6 +1777,7 @@ function updateSandbox(block) {
         // an expanded dropdown's .active/.show state the instant after
         // toggleDropdown() set it.
         renderMenu();
+        renderFooter();
     };
 }
 
@@ -1719,6 +1875,7 @@ function resetToolbar() {
     const isSpacer    = selectedEl.classList.contains('block_spacer');
     const isDiv       = selectedEl.classList.contains('block_container');
     const isEditable  = selectedEl.contentEditable === "true";
+    const isContactForm = selectedEl.classList.contains('block_contact_form');
     
     // 1. Initialize logic and clean styles
     let html = resetToolbar();
@@ -1853,7 +2010,7 @@ function resetToolbar() {
     // explicit request (buttons are already centered by their own CSS, and
     // this toolbar space is reused for TEXT/LINK/APPLY instead).
     const inDiv = selectedEl.closest('.block_container');
-    if (!inDiv && !isDiv && !isSpacer && !isGallery && !isMultiRow && !isMultiItem && !isBtn) {
+    if (!inDiv && !isDiv && !isSpacer && !isGallery && !isMultiRow && !isMultiItem && !isBtn && !isContactForm) {
         html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
     }
 
@@ -1923,6 +2080,30 @@ window.updateHTML = function(btn) {
 
 
 
+function buildContactFormFieldsHTML() {
+    return `
+        <div class="contact-form-field">
+            <label>Name</label>
+            <input type="text" name="Name">
+        </div>
+        <div class="contact-form-field">
+            <label>Email *</label>
+            <input type="email" name="Email">
+        </div>
+        <div class="contact-form-field">
+            <label>Phone *</label>
+            <input type="tel" name="Phone">
+        </div>
+        <div class="contact-form-field">
+            <label>Message *</label>
+            <textarea name="Message" required></textarea>
+        </div>
+        <div class="block_button_container">
+            <button type="submit" class="block_button">SEND</button>
+        </div>
+    `;
+}
+
 function insertElement(type, data) {
     const doc = frame.contentDocument; 
     const root = doc.getElementById('editor-root');
@@ -1934,6 +2115,7 @@ function insertElement(type, data) {
     if (safeReferenceEl) {
         const restrictedParent = safeReferenceEl.closest('.block_multi_image') || 
                                  safeReferenceEl.closest('.block_button_container') ||
+                                 safeReferenceEl.closest('.block_contact_form') ||
                                  safeReferenceEl.closest('.photo_gallery');
         
         if (restrictedParent) {
@@ -1981,7 +2163,29 @@ function insertElement(type, data) {
         return;
     }
 
-    // 3. STANDARD ELEMENTS
+    // 3. CONTACT FORM
+    if (type === 'contact_form') {
+        const el = doc.createElement('form');
+        el.className = 'editable block_contact_form';
+        el.setAttribute('action', 'mailto:lcazan.old@gmail.com');
+        el.setAttribute('method', 'post');
+        el.setAttribute('enctype', 'text/plain');
+        el.setAttribute('onsubmit', 'return window.validateContactForm(this)');
+        // Tag with a stable ID so saveContactFormBlock() can find/update its
+        // entry in project.body.blocks.
+        el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
+        el.innerHTML = buildContactFormFieldsHTML();
+
+        if (safeReferenceEl && safeReferenceEl.parentNode === root) {
+            safeReferenceEl.after(el);
+        } else {
+            root.appendChild(el);
+        }
+        setTimeout(() => selectElement(el), 50);
+        return;
+    }
+
+    // 4. STANDARD ELEMENTS
     const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
     const el = doc.createElement(tagMap[type] || 'div');
     el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
@@ -2291,6 +2495,17 @@ function renderPage() {
 
             root.appendChild(el);
             setupGalleryDragula(el);
+        }
+        else if (block.type === 'contactForm') {
+            const el = doc.createElement('form');
+            el.className = 'editable block_contact_form';
+            el.setAttribute('action', 'mailto:lcazan.old@gmail.com');
+            el.setAttribute('method', 'post');
+            el.setAttribute('enctype', 'text/plain');
+            el.setAttribute('onsubmit', 'return window.validateContactForm(this)');
+            el.setAttribute('data-block-id', block.id);
+            el.innerHTML = buildContactFormFieldsHTML();
+            root.appendChild(el);
         }
         else if (block.type === 'container') {
             const el = doc.createElement('div');
@@ -2748,6 +2963,31 @@ function renderChildBlock(doc, block) {
 // straight from the DOM, and writes it into project.body.blocks. Does NOT
 // render. Children are rebuilt fresh as a full array each save (same
 // pattern as a multi-image row's items) rather than tracked positionally.
+// The contact form's fields are fixed (not author-edited per-instance
+// content, unlike a button's label/link) — there's nothing to read off the
+// DOM yet beyond identity. Recipient is hardcoded in
+// buildContactFormFieldsHTML() for now; if that becomes editable later,
+// add it here too.
+function saveContactFormBlock(el) {
+    let blockId = el.getAttribute('data-block-id');
+    if (!blockId) {
+        blockId = 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+        el.setAttribute('data-block-id', blockId);
+    }
+
+    const blockData = {
+        id: blockId,
+        type: 'contactForm'
+    };
+
+    const existingIndex = project.body.blocks.findIndex(b => b.id === blockId);
+    if (existingIndex !== -1) {
+        project.body.blocks[existingIndex] = blockData;
+    } else {
+        project.body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData);
+    }
+}
+
 function saveContainerBlock(el) {
     let blockId = el.getAttribute('data-block-id');
     if (!blockId) {
@@ -2839,6 +3079,8 @@ function saveSelectedBlock(el) {
         if (row) saveMultiImageBlock(row);
     } else if (el.classList.contains('photo_gallery')) {
         saveGalleryBlock(el);
+    } else if (el.classList.contains('block_contact_form')) {
+        saveContactFormBlock(el);
     }
 }
 
@@ -2922,6 +3164,7 @@ function saveSelectedBlock(el) {
                                  selectedEl.classList.contains('block_image') ||
                                  selectedEl.classList.contains('block_multi_image') ||
                                  selectedEl.classList.contains('photo_gallery') ||
+                                 selectedEl.classList.contains('block_contact_form') ||
                                  selectedEl.classList.contains('block_container');
         const blockId = selectedEl.getAttribute('data-block-id');
 
@@ -3204,6 +3447,7 @@ function renderMenuEditor() {
     if (!expandedKey) {
         footer.innerHTML = `
             <button class="save-settings-btn" style="background:#444; margin-right:10px;" onclick="addMenuItem()">+ Add Menu Item</button>
+            <button class="save-settings-btn" style="background:#444; margin-right:10px;" onclick="closeMenuEditor()">Cancel</button>
             <button class="save-settings-btn" onclick="saveMenuChanges()">Save Menu</button>
         `;
     }
@@ -3306,6 +3550,29 @@ function saveMenuChanges() {
     project.body.menu = JSON.parse(JSON.stringify(menuData));
     renderMenu();
     closeMenuEditor();
+}
+
+// Builds the footer's actual on-page content from project.footer — the
+// three social icon links, the copyright line, and the disclaimer
+// paragraph. Only touches attributes/text content, not the surrounding
+// markup/classes, so msb.css's existing footer styling is untouched.
+function renderFooter() {
+    const doc = frame.contentDocument;
+    if (!doc) return;
+    const footerEl = doc.querySelector('footer');
+    if (!footerEl) return;
+
+    const f = project.footer || {};
+    const socialLinks = footerEl.querySelectorAll('.social-icons a');
+    if (socialLinks[0]) socialLinks[0].setAttribute('href', f.facebook || '#');
+    if (socialLinks[1]) socialLinks[1].setAttribute('href', f.instagram || '#');
+    if (socialLinks[2]) socialLinks[2].setAttribute('href', f.tiktok || '#');
+
+    const copyrightEl = footerEl.querySelector('.copyright-text');
+    if (copyrightEl && f.copyright) copyrightEl.textContent = f.copyright;
+
+    const disclaimerEl = footerEl.querySelector('.disclaimer');
+    if (disclaimerEl && f.disclaimer) disclaimerEl.textContent = f.disclaimer;
 }
 
 function closeMenuEditor() {
@@ -3818,6 +4085,8 @@ async function browseForProjectFolder() {
 function collectUsedImageFilenames(proj) {
     const used = new Set();
     const addPath = (p) => { if (p) used.add(p.split('/').pop()); };
+
+    addPath(proj && proj.head && proj.head.faviconSrc);
 
     (proj && proj.body && proj.body.blocks || []).forEach(block => {
         if (!block) return;
