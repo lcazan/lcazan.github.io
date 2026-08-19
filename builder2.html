@@ -163,6 +163,13 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        .layer-delete-btn {
+            color: #ff6b6b;
+            cursor: pointer;
+            padding: 4px;
+            flex-shrink: 0;
+        }
+        .layer-delete-btn:hover { color: #ff4040; }
         .layers-panel-footer {
             padding: 15px 20px;
             background: #252525;
@@ -177,6 +184,29 @@
             text-align: center;
             padding: 30px 10px;
         }
+
+        /* --- DRAWER TABS (Layers / Pages, inside #layers-panel) --- */
+        .drawer-tab-switcher { display: flex; gap: 6px; }
+        .drawer-tab-btn {
+            background: transparent;
+            border: 1px solid #444;
+            color: #999;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            padding: 6px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .drawer-tab-btn.active { background: var(--brand-pink); border-color: var(--brand-pink); color: #151515; }
+        #drawer-tab-layers, #drawer-tab-pages {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+        .layer-row.active-page-row { border-color: var(--brand-pink); background: #332a26; }
     </style>
 </head>
 <body class="builder-ui-body">
@@ -371,19 +401,33 @@ autocomplete="off"
     </div>
 </div>
 
-<div id="layers-tab" onclick="toggleLayersPanel()" title="Layers">
+<div id="layers-tab" onclick="toggleLayersPanel()" title="Layers / Pages">
     <i class="fa-solid fa-layer-group"></i>
 </div>
 <div id="layers-panel">
     <div class="layers-panel-header">
-        <h3>Layers</h3>
+        <div class="drawer-tab-switcher">
+            <button class="drawer-tab-btn active" id="drawer-tab-btn-layers" onclick="switchDrawerTab('layers')">Layers</button>
+            <button class="drawer-tab-btn" id="drawer-tab-btn-pages" onclick="switchDrawerTab('pages')">Pages</button>
+        </div>
         <span class="close-settings" onclick="closeLayersPanel()">&times;</span>
     </div>
-    <div class="layers-panel-hint">Drag the handle to reorder. Nothing changes on the page until you press Save.</div>
-    <div class="layers-list" id="layers-list"></div>
-    <div class="layers-panel-footer">
-        <button class="save-settings-btn" style="background:#444;" onclick="closeLayersPanel()">Cancel</button>
-        <button class="save-settings-btn" onclick="saveLayersOrder()">Save</button>
+
+    <div id="drawer-tab-layers">
+        <div class="layers-panel-hint">Drag the handle to reorder. Nothing changes on the page until you press Save. The trash icon deletes immediately.</div>
+        <div class="layers-list" id="layers-list"></div>
+        <div class="layers-panel-footer">
+            <button class="save-settings-btn" style="background:#444;" onclick="closeLayersPanel()">Cancel</button>
+            <button class="save-settings-btn" onclick="saveLayersOrder()">Save</button>
+        </div>
+    </div>
+
+    <div id="drawer-tab-pages" style="display:none;">
+        <div class="layers-panel-hint">Tap a page to switch to it. New pages start from the same blank template.</div>
+        <div class="layers-list" id="pages-list"></div>
+        <div class="layers-panel-footer" style="justify-content:center;">
+            <button class="save-settings-btn" onclick="addNewPage()">+ Add Page</button>
+        </div>
     </div>
 </div>
 
@@ -1035,11 +1079,19 @@ function cycleAspectRatio() {
 // closeSettingsModal() (Cancel), committed to disk by saveSettingsChanges().
 let pendingFaviconFile = null;
 
-// Populates the footer fields and favicon preview from current project
-// state, then shows the modal. Nothing is written back into `project`
-// until saveSettingsChanges() runs — Cancel/× just discard.
+// Populates every settings field — page-specific (title/slug/meta
+// description/header scripts, from the currently open page) and global
+// (footer, favicon) — from current project state, then shows the modal.
+// Nothing is written back into `project` until saveSettingsChanges() runs
+// — Cancel/× just discard.
 function openSettingsModal() {
     pendingFaviconFile = null;
+
+    const page = getCurrentPage();
+    document.getElementById('set-page-title').value = page.title || '';
+    document.getElementById('set-page-name').value = page.slug || '';
+    document.getElementById('set-meta-desc').value = page.metaDescription || '';
+    document.getElementById('set-head-code').value = page.headCode || '';
 
     const f = project.footer || {};
     document.getElementById('set-footer-facebook').value = f.facebook || '';
@@ -1091,11 +1143,21 @@ function renderFaviconPreview() {
     }
 }
 
-// Commits the footer fields into project.footer, saves a newly-picked
-// favicon to disk if one is pending (favicons are already tiny — saved as
-// their original file, no thumbnail generation needed), re-renders the
-// footer so changes are visible immediately, and closes the modal.
+// Commits every settings field into `project` — page-specific fields onto
+// getCurrentPage(), footer/favicon globally — saves a newly-picked favicon
+// to disk if one is pending (favicons are already tiny — saved as their
+// original file, no thumbnail generation needed), re-renders the footer so
+// changes are visible immediately, and closes the modal. Title and header
+// scripts aren't applied live anywhere yet (no export/preview-<head> pass
+// exists to consume them) — they're just persisted for when that's built.
 async function saveSettingsChanges() {
+    const page = getCurrentPage();
+    page.title = document.getElementById('set-page-title').value;
+    page.slug = document.getElementById('set-page-name').value.toLowerCase().replace(/\s+/g, '-');
+    page.metaDescription = document.getElementById('set-meta-desc').value;
+    page.headCode = document.getElementById('set-head-code').value;
+    renderPagesList(); // slug/name shown there may have just changed
+
     if (!project.footer) project.footer = {};
     project.footer.facebook = document.getElementById('set-footer-facebook').value.trim();
     project.footer.instagram = document.getElementById('set-footer-instagram').value.trim();
@@ -1152,20 +1214,57 @@ let imagesDirHandle = null;
 //   │   ├── header
 //   │   │   └── logo   — { text, class } rendered into template.html's
 //   │   │                 <header>. Not yet independently selectable/
-//   │   │                 editable in the iframe UI — just proves this is
-//   │   │                 the source of truth for the header's content.
-//   │   ├── menu       — reserved; the interactive menu-editor tie-in is
-//   │   │                 separate, later work.
-//   │   └── blocks     — the flat, ordered array of page-content blocks
-//   │                     (text, spacer, button, customHtml, image,
-//   │                     multiImage, gallery, container/div). Array order =
-//   │                     page order. A "container" block's own children
-//   │                     (nested text/spacer/button/customHtml, plus an
-//   │                     optional single image) live inside that block's
-//   │                     own `children` array, not as separate top-level
-//   │                     entries here.
-//   └── footer  — social links, copyright text, and disclaimer, edited via
-//                 the Project Settings modal. See renderFooter().
+//   ├── menu    — GLOBAL (shared across every page, like a real site nav).
+//   │              Same shape the menu editor's own working list (menuData)
+//   │              already uses: { label, url, children }.
+//   ├── footer  — GLOBAL. Social links, copyright text, and disclaimer,
+//   │              edited via the Project Settings modal. See renderFooter().
+//   └── pages   — one entry per page. Each page has its own `body`
+//                  (header/blocks) plus its own title/slug/meta description/
+//                  header scripts — these were the settings-modal fields
+//                  that used to live directly on `project` before multi-page
+//                  support; now they're per-page, since each page needs its
+//                  own <title>/slug/meta tags. currentPageId (a plain JS
+//                  variable, not part of `project` — see below) tracks which
+//                  page's body is currently shown in the preview iframe.
+//                    ├── id      — stable id, generated once per page
+//                    ├── name    — display name shown in the Pages tab list
+//                    ├── slug    — URL slug (was "Page Name" in Settings)
+//                    ├── title   — browser tab title (was "Page Title")
+//                    ├── metaDescription
+//                    ├── headCode
+//                    └── body
+//                          ├── header.logo — proves this is the source of
+//                          │     truth for the header's content; not yet
+//                          │     editable in the iframe UI.
+//                          └── blocks — the flat, ordered array of
+//                                page-content blocks (text, spacer, button,
+//                                customHtml, image, multiImage, gallery,
+//                                container/div, contactForm). Array order =
+//                                page order. A "container" block's own
+//                                children live inside that block's own
+//                                `children` array, not as separate top-level
+//                                entries here.
+function makeBlankPage(name, slug) {
+    return {
+        id: 'page_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        name: name || 'New Page',
+        slug: slug || '',
+        title: '',
+        metaDescription: '',
+        headCode: '',
+        body: {
+            header: {
+                logo: {
+                    text: 'My Snoozing Baby',
+                    class: 'logo'
+                }
+            },
+            blocks: []
+        }
+    };
+}
+
 let project = {
     meta: {
         name: '',
@@ -1180,39 +1279,44 @@ let project = {
         faviconSrc: '',
         faviconName: ''
     },
-    body: {
-        header: {
-            logo: {
-                text: 'My Snoozing Baby',
-                class: 'logo'
-            }
-        },
-        // Same shape the menu editor's own working list (menuData) already
-        // uses: { label, url, children }. Seeded to match template.html's
-        // current static nav-sidebar content, so nothing changes visually
-        // on first load — see renderMenu() for how this gets applied.
-        menu: [
-            { label: 'Home', url: 'https://mysnoozingbaby.com/', children: [] },
-            { label: 'Snoo Smart Sleeper', url: '#', children: [
-                { label: 'SNOO Rental', url: 'https://mysnoozingbaby.com/snoo-rental' },
-                { label: 'SNOO Cleaning/Repair', url: 'https://mysnoozingbaby.com/snoo-cleaning-and-repairs' }
-            ] },
-            { label: 'Baby Gear Rentals', url: 'https://mysnoozingbaby.com/baby-gear-rentals', children: [] },
-            { label: 'Toddler Party Rentals', url: 'https://mysnoozingbaby.com/toddler-party-rentals', children: [] },
-            { label: 'About Us', url: 'https://mysnoozingbaby.com/about-us', children: [] },
-            { label: 'Contact Us', url: 'https://mysnoozingbaby.com/contact-us', children: [] },
-            { label: 'FAQs', url: 'https://mysnoozingbaby.com/faqs', children: [] }
-        ],
-        blocks: []
-    },
+    // Seeded to match template.html's current static nav-sidebar content,
+    // so nothing changes visually on first load — see renderMenu().
+    menu: [
+        { label: 'Home', url: 'https://mysnoozingbaby.com/', children: [] },
+        { label: 'Snoo Smart Sleeper', url: '#', children: [
+            { label: 'SNOO Rental', url: 'https://mysnoozingbaby.com/snoo-rental' },
+            { label: 'SNOO Cleaning/Repair', url: 'https://mysnoozingbaby.com/snoo-cleaning-and-repairs' }
+        ] },
+        { label: 'Baby Gear Rentals', url: 'https://mysnoozingbaby.com/baby-gear-rentals', children: [] },
+        { label: 'Toddler Party Rentals', url: 'https://mysnoozingbaby.com/toddler-party-rentals', children: [] },
+        { label: 'About Us', url: 'https://mysnoozingbaby.com/about-us', children: [] },
+        { label: 'Contact Us', url: 'https://mysnoozingbaby.com/contact-us', children: [] },
+        { label: 'FAQs', url: 'https://mysnoozingbaby.com/faqs', children: [] }
+    ],
     footer: {
         facebook: '',
         instagram: '',
         tiktok: '',
         copyright: 'Copyright © 2022-2026 My Snoozing Baby - All Rights Reserved.',
         disclaimer: 'My Snoozing Baby, LLC is an independent service provider and is not affiliated with, sponsored by, or endorsed by Happiest Baby, Inc. or any other brand listed on this site. All trademarks, including SNOO®, remain the property of their respective owners. These marks are used solely to identify the products we repair, clean, or rent and are considered nominative fair use under trademark law.'
-    }
+    },
+    pages: [ makeBlankPage('Home', 'index') ]
 };
+
+// Which page is currently open in the editor/preview. A plain JS variable
+// (not saved into project.json) — every load simply opens pages[0].
+let currentPageId = project.pages[0].id;
+
+function getPageById(id) {
+    return project.pages.find(p => p.id === id) || null;
+}
+
+// Single point of truth for "which page's body/settings are active right
+// now". Falls back to the first page if currentPageId is somehow stale
+// (e.g. its page got deleted) so callers never have to null-check.
+function getCurrentPage() {
+    return getPageById(currentPageId) || project.pages[0];
+}
 
 // ==========================================================
 // CENTRAL IMAGE STORAGE
@@ -2128,7 +2232,7 @@ function insertElement(type, data) {
         const el = doc.createElement('div');
         el.className = 'block_multi_image';
         // Tag with a stable ID so saveMultiImageBlock() can find/update its
-        // entry in project.body.blocks.
+        // entry in getCurrentPage().body.blocks.
         el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
         const handle = doc.createElement('div');
         handle.className = 'multi-image-handle';
@@ -2149,7 +2253,7 @@ function insertElement(type, data) {
         const el = doc.createElement('div'); 
         el.className = 'editable photo_gallery';
         // Tag with a stable ID so saveGalleryBlock() can find/update its
-        // entry in project.body.blocks.
+        // entry in getCurrentPage().body.blocks.
         el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
         el.appendChild(buildGalleryEmptySlot(doc));
         
@@ -2172,7 +2276,7 @@ function insertElement(type, data) {
         el.setAttribute('enctype', 'text/plain');
         el.setAttribute('onsubmit', 'return window.validateContactForm(this)');
         // Tag with a stable ID so saveContactFormBlock() can find/update its
-        // entry in project.body.blocks.
+        // entry in getCurrentPage().body.blocks.
         el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
         el.innerHTML = buildContactFormFieldsHTML();
 
@@ -2199,20 +2303,20 @@ function insertElement(type, data) {
         if (data && data.src) el.setAttribute('data-permanent-src', data.src);
         if (data && data.thumb) el.setAttribute('data-thumb-src', data.thumb);
         // Tag with a stable ID so saveImageBlock() can find/update its
-        // entry in project.body.blocks.
+        // entry in getCurrentPage().body.blocks.
         el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
     } else if (type === 'block_button') { 
         el.innerHTML = `<a href="#" class="block_button" onclick="return false;">FIND OUT MORE</a>`;
         el.contentEditable = "false"; 
         // Tag with a stable ID so saveButtonBlock() can find/update its
-        // entry in project.body.blocks.
+        // entry in getCurrentPage().body.blocks.
         el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
     } else if (type === 'block_custom_html') {
         el.setAttribute('data-html-code', '');
         el.className = 'editable block_custom_html'; 
         el.id = 'custom-html-' + Date.now(); 
         // Tag with a stable ID so saveCustomHtmlBlock() can find/update its
-        // entry in project.body.blocks.
+        // entry in getCurrentPage().body.blocks.
         el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
         el.innerHTML = `
             <div class="custom-html-ui-container" contenteditable="false">
@@ -2232,19 +2336,19 @@ function insertElement(type, data) {
     } else if (type === 'block_spacer') {
         el.contentEditable = "false"; 
         // Tag with a stable ID so saveSpacerBlock() can find/update its
-        // entry in project.body.blocks.
+        // entry in getCurrentPage().body.blocks.
         el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
     } else if (type === 'block_container') { 
         el.contentEditable = "false"; 
         // Tag with a stable ID so saveContainerBlock() can find/update its
-        // entry in project.body.blocks.
+        // entry in getCurrentPage().body.blocks.
         el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
     } else { 
         el.innerText = ""; 
         el.setAttribute('data-placeholder', 'Type here...'); 
         el.contentEditable = "true"; 
         // Tag this new text block with a stable ID so saveTextBlock() can
-        // later find and update its entry in project.body.blocks.
+        // later find and update its entry in getCurrentPage().body.blocks.
         if (type === 'section_heading' || type === 'block_heading' || type === 'block_text') {
             el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
         }
@@ -2280,12 +2384,12 @@ function insertElement(type, data) {
     setTimeout(() => selectElement(el), 150);
 }
 
-// Determines where a brand-new block should land in project.body.blocks, based
+// Determines where a brand-new block should land in getCurrentPage().body.blocks, based
 // on its live DOM position — NOT just appended to the end. insertElement()
 // already places the new element right after whatever was selected (or at
 // the end of #editor-root if nothing was selected), so this walks backward
 // through preceding siblings to find the nearest one already tracked in
-// project.body.blocks, and returns the index right after it. If no tracked
+// getCurrentPage().body.blocks, and returns the index right after it. If no tracked
 // sibling precedes it (nothing was selected, or everything before it is an
 // untracked/ephemeral block type), it belongs at the very end — matching the
 // "nothing selected" case.
@@ -2294,15 +2398,15 @@ function getInsertIndexForNewBlock(el) {
     while (sib) {
         const sibId = sib.getAttribute('data-block-id');
         if (sibId) {
-            const idx = project.body.blocks.findIndex(b => b.id === sibId);
+            const idx = getCurrentPage().body.blocks.findIndex(b => b.id === sibId);
             if (idx !== -1) return idx + 1;
         }
         sib = sib.previousElementSibling;
     }
-    return project.body.blocks.length;
+    return getCurrentPage().body.blocks.length;
 }
 
-// Rebuilds #editor-root FROM project.body.blocks, and only from project.body.blocks.
+// Rebuilds #editor-root FROM getCurrentPage().body.blocks, and only from getCurrentPage().body.blocks.
 // This wipes whatever is currently in the DOM and redraws purely off the
 // data. This is ONLY called from deselectAll() (i.e. when clicking to empty
 // space) — see saveSelectedBlock()/selectElement() for why saving and
@@ -2314,15 +2418,15 @@ function renderPage() {
 
     // --- HEADER / LOGO ---
     // Lives outside #editor-root (it's part of template.html's fixed
-    // <header>), so it's synced here rather than as a project.body.blocks
+    // <header>), so it's synced here rather than as a getCurrentPage().body.blocks
     // entry. Not yet independently selectable/editable in the iframe UI —
-    // this just makes project.body.header.logo the source of truth for
+    // this just makes getCurrentPage().body.header.logo the source of truth for
     // what's currently a simple div+text, matching template.html's
     // previously-static markup exactly.
     const logoEl = doc.querySelector('header .logo');
-    if (logoEl && project.body.header && project.body.header.logo) {
-        logoEl.className = project.body.header.logo.class || 'logo';
-        logoEl.textContent = project.body.header.logo.text || '';
+    if (logoEl && getCurrentPage().body.header && getCurrentPage().body.header.logo) {
+        logoEl.className = getCurrentPage().body.header.logo.class || 'logo';
+        logoEl.textContent = getCurrentPage().body.header.logo.text || '';
     }
 
     // NOTE: the menu (nav-sidebar) is deliberately NOT re-synced here.
@@ -2338,7 +2442,7 @@ function renderPage() {
 
     root.innerHTML = '';
 
-    project.body.blocks.forEach(block => {
+    getCurrentPage().body.blocks.forEach(block => {
         if (block.type === 'text') {
             const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p' };
             const el = doc.createElement(tagMap[block.variant] || 'p');
@@ -2550,7 +2654,7 @@ function renderPage() {
 }
 
 // Reads a text block's current content and formatting straight from the DOM
-// and writes it into project.body.blocks — updating the existing entry if this
+// and writes it into getCurrentPage().body.blocks — updating the existing entry if this
 // block was already saved (matched by data-block-id), or inserting a new
 // entry at its current DOM position if this is its first save. Does NOT
 // render — see saveSelectedBlock() for why saving and rendering are
@@ -2574,11 +2678,11 @@ function saveTextBlock(el) {
         align: el.style.textAlign || ''
     };
 
-    const existingIndex = project.body.blocks.findIndex(b => b.id === blockId);
+    const existingIndex = getCurrentPage().body.blocks.findIndex(b => b.id === blockId);
     if (existingIndex !== -1) {
-        project.body.blocks[existingIndex] = blockData; // update in place, order unchanged
+        getCurrentPage().body.blocks[existingIndex] = blockData; // update in place, order unchanged
     } else {
-        project.body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData); // new block, inserted at its DOM position
+        getCurrentPage().body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData); // new block, inserted at its DOM position
     }
 }
 
@@ -2610,7 +2714,7 @@ function changeTextVariant(newVariant) {
 }
 
 // Reads a spacer block's current line-visibility state (set via
-// toggleSpacerLine()) and writes it into project.body.blocks. Does NOT render.
+// toggleSpacerLine()) and writes it into getCurrentPage().body.blocks. Does NOT render.
 function saveSpacerBlock(el) {
     let blockId = el.getAttribute('data-block-id');
     if (!blockId) {
@@ -2624,17 +2728,17 @@ function saveSpacerBlock(el) {
         showLine: !!(el.style.borderBottom && el.style.borderBottom !== 'none')
     };
 
-    const existingIndex = project.body.blocks.findIndex(b => b.id === blockId);
+    const existingIndex = getCurrentPage().body.blocks.findIndex(b => b.id === blockId);
     if (existingIndex !== -1) {
-        project.body.blocks[existingIndex] = blockData;
+        getCurrentPage().body.blocks[existingIndex] = blockData;
     } else {
-        project.body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData);
+        getCurrentPage().body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData);
     }
 }
 
 // Reads a button block's current label and link straight from the DOM
 // (already synced live by openPill/syncRealTime/applyAndClosePill) and
-// writes it into project.body.blocks. Does NOT render. Alignment is no longer
+// writes it into getCurrentPage().body.blocks. Does NOT render. Alignment is no longer
 // tracked — the align/center toolbar buttons were removed for this block
 // type (see renderToolbar()).
 function saveButtonBlock(el) {
@@ -2652,17 +2756,17 @@ function saveButtonBlock(el) {
         href: link ? (link.getAttribute('href') || '#') : '#'
     };
 
-    const existingIndex = project.body.blocks.findIndex(b => b.id === blockId);
+    const existingIndex = getCurrentPage().body.blocks.findIndex(b => b.id === blockId);
     if (existingIndex !== -1) {
-        project.body.blocks[existingIndex] = blockData;
+        getCurrentPage().body.blocks[existingIndex] = blockData;
     } else {
-        project.body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData);
+        getCurrentPage().body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData);
     }
 }
 
 // Reads a custom-html block's current code (already synced live into
 // data-html-code by the textarea's oninput handler) and writes it into
-// project.body.blocks. Does NOT render, and does NOT activate the sandbox —
+// getCurrentPage().body.blocks. Does NOT render, and does NOT activate the sandbox —
 // saving the typed/pasted code and running it are now two separate actions;
 // only the Activate button (updateHTML) runs the code.
 function saveCustomHtmlBlock(el) {
@@ -2681,11 +2785,11 @@ function saveCustomHtmlBlock(el) {
         code: code
     };
 
-    const existingIndex = project.body.blocks.findIndex(b => b.id === blockId);
+    const existingIndex = getCurrentPage().body.blocks.findIndex(b => b.id === blockId);
     if (existingIndex !== -1) {
-        project.body.blocks[existingIndex] = blockData;
+        getCurrentPage().body.blocks[existingIndex] = blockData;
     } else {
-        project.body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData);
+        getCurrentPage().body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData);
     }
 }
 
@@ -2752,7 +2856,7 @@ function activateCustomHtml(container) {
 }
 
 // Reads a single image block's current src, width, scale-factor, and
-// alignment straight from the DOM and writes it into project.body.blocks.
+// alignment straight from the DOM and writes it into getCurrentPage().body.blocks.
 // Does NOT render. "src" is the permanent project-relative path (e.g.
 // "images/image-003.jpg") already written to disk via saveImageToProject()
 // — see data-permanent-src.
@@ -2776,17 +2880,17 @@ function saveImageBlock(el) {
         alt: img ? (img.getAttribute('alt') || '') : ''
     };
 
-    const existingIndex = project.body.blocks.findIndex(b => b.id === blockId);
+    const existingIndex = getCurrentPage().body.blocks.findIndex(b => b.id === blockId);
     if (existingIndex !== -1) {
-        project.body.blocks[existingIndex] = blockData;
+        getCurrentPage().body.blocks[existingIndex] = blockData;
     } else {
-        project.body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData);
+        getCurrentPage().body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData);
     }
 }
 
 // Reads a multi-image row's current width/gap/aspect-ratio plus every
 // item's src/link/alt/pan-position straight from the DOM and writes it into
-// project.body.blocks. Does NOT render.
+// getCurrentPage().body.blocks. Does NOT render.
 function saveMultiImageBlock(el) {
     let blockId = el.getAttribute('data-block-id');
     if (!blockId) {
@@ -2814,17 +2918,17 @@ function saveMultiImageBlock(el) {
         items: items
     };
 
-    const existingIndex = project.body.blocks.findIndex(b => b.id === blockId);
+    const existingIndex = getCurrentPage().body.blocks.findIndex(b => b.id === blockId);
     if (existingIndex !== -1) {
-        project.body.blocks[existingIndex] = blockData;
+        getCurrentPage().body.blocks[existingIndex] = blockData;
     } else {
-        project.body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData);
+        getCurrentPage().body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData);
     }
 }
 
 // Reads a gallery block's current mode (square/masonry) and image order
 // /position straight from its nested iframe's DOM and writes it into
-// project.body.blocks. Does NOT render. Each image's "src" is the
+// getCurrentPage().body.blocks. Does NOT render. Each image's "src" is the
 // permanent project-relative path (e.g. "images/image-003.jpg") already
 // written to disk via saveImageToProject() — see data-permanent-src.
 function saveGalleryBlock(el) {
@@ -2853,11 +2957,11 @@ function saveGalleryBlock(el) {
         images: images
     };
 
-    const existingIndex = project.body.blocks.findIndex(b => b.id === blockId);
+    const existingIndex = getCurrentPage().body.blocks.findIndex(b => b.id === blockId);
     if (existingIndex !== -1) {
-        project.body.blocks[existingIndex] = blockData;
+        getCurrentPage().body.blocks[existingIndex] = blockData;
     } else {
-        project.body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData);
+        getCurrentPage().body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData);
     }
 }
 
@@ -2868,7 +2972,7 @@ function saveGalleryBlock(el) {
 // handled here. Mirrors the same field shapes used for top-level blocks of
 // the same type — deliberately a separate function rather than reusing
 // saveTextBlock() etc. directly, since those write straight into
-// project.body.blocks (top-level array bookkeeping) which doesn't apply to
+// getCurrentPage().body.blocks (top-level array bookkeeping) which doesn't apply to
 // a container's nested children (rebuilt fresh as a plain array each save,
 // same pattern as a multi-image row's items).
 function extractChildBlockData(el) {
@@ -2960,7 +3064,7 @@ function renderChildBlock(doc, block) {
 
 // Reads a container (div) block's current background color, its single
 // optional prepended image, and every child inside .div-other-wrapper
-// straight from the DOM, and writes it into project.body.blocks. Does NOT
+// straight from the DOM, and writes it into getCurrentPage().body.blocks. Does NOT
 // render. Children are rebuilt fresh as a full array each save (same
 // pattern as a multi-image row's items) rather than tracked positionally.
 // The contact form's fields are fixed (not author-edited per-instance
@@ -2980,11 +3084,11 @@ function saveContactFormBlock(el) {
         type: 'contactForm'
     };
 
-    const existingIndex = project.body.blocks.findIndex(b => b.id === blockId);
+    const existingIndex = getCurrentPage().body.blocks.findIndex(b => b.id === blockId);
     if (existingIndex !== -1) {
-        project.body.blocks[existingIndex] = blockData;
+        getCurrentPage().body.blocks[existingIndex] = blockData;
     } else {
-        project.body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData);
+        getCurrentPage().body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData);
     }
 }
 
@@ -3025,11 +3129,11 @@ function saveContainerBlock(el) {
         children: children
     };
 
-    const existingIndex = project.body.blocks.findIndex(b => b.id === blockId);
+    const existingIndex = getCurrentPage().body.blocks.findIndex(b => b.id === blockId);
     if (existingIndex !== -1) {
-        project.body.blocks[existingIndex] = blockData;
+        getCurrentPage().body.blocks[existingIndex] = blockData;
     } else {
-        project.body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData);
+        getCurrentPage().body.blocks.splice(getInsertIndexForNewBlock(el), 0, blockData);
     }
 }
 
@@ -3047,7 +3151,7 @@ function saveSelectedBlock(el) {
 
     // If this element IS a container, or is nested inside one, any edit is
     // saved by re-serializing the WHOLE container fresh — nested children
-    // aren't tracked as independent top-level project.body.blocks entries,
+    // aren't tracked as independent top-level getCurrentPage().body.blocks entries,
     // same pattern as multi-image items being saved via their parent row.
     // el.closest() matches el itself if el already has the class, so this
     // correctly covers both "the container itself was edited" and "a child
@@ -3135,7 +3239,7 @@ function saveSelectedBlock(el) {
 
     // --- JSON SOURCE OF TRUTH: render only at this "empty space" checkpoint ---
     // This is the one point where #editor-root gets fully rebuilt from
-    // project.body.blocks, proving the screen is a pure reflection of the data.
+    // getCurrentPage().body.blocks, proving the screen is a pure reflection of the data.
     // Switching focus directly between two objects (selectElement) only
     // saves — it never rebuilds the DOM — so an in-progress edit elsewhere
     // on the page is never at risk of being wiped out mid-flow.
@@ -3154,7 +3258,7 @@ function saveSelectedBlock(el) {
         // 1. Check if we are deleting a Custom HTML block
         const isHTMLBlock = selectedEl.classList.contains('block_custom_html');
 
-        // --- JSON SOURCE OF TRUTH: flag migrated blocks for removal from project.body.blocks ---
+        // --- JSON SOURCE OF TRUTH: flag migrated blocks for removal from getCurrentPage().body.blocks ---
         const isMigratedBlock = selectedEl.classList.contains('section_heading') ||
                                  selectedEl.classList.contains('block_heading') ||
                                  selectedEl.classList.contains('block_text') ||
@@ -3172,12 +3276,12 @@ function saveSelectedBlock(el) {
         // entry inside its parent row's `items` array. Deleting one means
         // re-saving the parent row (without this item) and re-flowing the
         // remaining items to fill the space, rather than removing anything
-        // from project.body.blocks directly.
+        // from getCurrentPage().body.blocks directly.
         const isMultiImageItem = selectedEl.classList.contains('multi-image-item');
         const parentRow = isMultiImageItem ? selectedEl.closest('.block_multi_image') : null;
 
         // Similarly, anything nested inside a container (a child block, or
-        // the container's own image) isn't a top-level project.body.blocks
+        // the container's own image) isn't a top-level getCurrentPage().body.blocks
         // entry either — deleting it means re-saving the PARENT container
         // fresh, without this child. el.closest() only matches ancestors,
         // so this is false when selectedEl IS the container itself (that
@@ -3196,12 +3300,12 @@ function saveSelectedBlock(el) {
             console.log("Widget infection obliterated.");
         }
 
-        // Remove from project.body.blocks so it doesn't come back on next
+        // Remove from getCurrentPage().body.blocks so it doesn't come back on next
         // render. Skipped for nested-in-container children — they were
         // never top-level entries, so this filter would be a harmless
         // no-op for them anyway; the real fix is saveContainerBlock() below.
         if (isMigratedBlock && blockId && !isNestedInContainer) {
-            project.body.blocks = project.body.blocks.filter(b => b.id !== blockId);
+            getCurrentPage().body.blocks = getCurrentPage().body.blocks.filter(b => b.id !== blockId);
         }
 
         if (parentRow) {
@@ -3424,8 +3528,8 @@ let expandedKey = null;
 function openMenuEditor() {
     // Deep copy so in-progress edits only live in menuData until Save is
     // pressed — closing without saving (or reopening later) just re-derives
-    // menuData fresh from project.body.menu, discarding anything unsaved.
-    menuData = JSON.parse(JSON.stringify(project.body.menu || []));
+    // menuData fresh from project.menu, discarding anything unsaved.
+    menuData = JSON.parse(JSON.stringify(project.menu || []));
 
     expandedKey = null; 
     renderMenuEditor();
@@ -3512,7 +3616,7 @@ function addMenuItem() {
     renderMenuEditor();
 }
 
-// Builds the nav-sidebar's menu HTML from project.body.menu and writes it
+// Builds the nav-sidebar's menu HTML from project.menu and writes it
 // into the live page. This is the exact same HTML-generation logic
 // saveMenuChanges() always used — factored out so it can also run as part
 // of the normal render pipeline (renderPage()), keeping the on-page menu in
@@ -3527,7 +3631,7 @@ function renderMenu() {
     if (!navContent) return;
 
     let html = '';
-    (project.body.menu || []).forEach(item => {
+    (project.menu || []).forEach(item => {
         if (!item.children || item.children.length === 0) {
             html += `<a href="${item.url}">${item.label}</a>\n`;
         } else {
@@ -3545,9 +3649,9 @@ function renderMenu() {
 
 function saveMenuChanges() {
     // JSON SOURCE OF TRUTH: menuData (the editor's working copy) becomes
-    // the real project.body.menu here — deep-copied so later in-editor
+    // the real project.menu here — deep-copied so later in-editor
     // edits can't accidentally alias back into the saved data.
-    project.body.menu = JSON.parse(JSON.stringify(menuData));
+    project.menu = JSON.parse(JSON.stringify(menuData));
     renderMenu();
     closeMenuEditor();
 }
@@ -3586,12 +3690,12 @@ function closeMenuEditor() {
 // LAYERS PANEL
 // ==========================================================
 // Shows a reorderable list of the page's top-level sections, one row per
-// entry in project.body.blocks. Dragging rows only edits a LOCAL working copy of
-// the order (layersWorkingOrder) — project.body.blocks itself, and the live
+// entry in getCurrentPage().body.blocks. Dragging rows only edits a LOCAL working copy of
+// the order (layersWorkingOrder) — getCurrentPage().body.blocks itself, and the live
 // page, are untouched until the Save button is pressed. Closing the panel
 // (Cancel, the × icon, or the edge tab while open) discards the working
 // copy with no effect on the page. Note: block_container (div) isn't
-// migrated into project.body.blocks yet, so it won't appear here — same
+// migrated into getCurrentPage().body.blocks yet, so it won't appear here — same
 // limitation as everywhere else JSON-as-source-of-truth doesn't yet cover.
 
 let layersWorkingOrder = []; // array of block ids, in the panel's pending order
@@ -3619,6 +3723,7 @@ function getBlockLabel(block) {
             if (childCount) parts.push(`${childCount} item${childCount === 1 ? '' : 's'}`);
             return `Div${parts.length ? ' (' + parts.join(', ') + ')' : ' (empty)'}`;
         }
+        case 'contactForm': return 'Contact Form';
         default: return block.type;
     }
 }
@@ -3634,18 +3739,20 @@ function getBlockIcon(type) {
         image: 'fa-image',
         multiImage: 'fa-images',
         gallery: 'fa-images',
-        container: 'fa-vector-square'
+        container: 'fa-vector-square',
+        contactForm: 'fa-envelope'
     };
     return icons[type] || 'fa-cube';
 }
 
 function openLayersPanel() {
     // Save (but not necessarily render) whatever's currently selected, and
-    // clear selection, so the panel's snapshot of project.body.blocks is fully
+    // clear selection, so the panel's snapshot of getCurrentPage().body.blocks is fully
     // up to date. deselectAll() also renders, which is fine/expected here.
     if (selectedEl) deselectAll();
 
-    layersWorkingOrder = project.body.blocks.map(b => b.id);
+    switchDrawerTab('layers');
+    layersWorkingOrder = getCurrentPage().body.blocks.map(b => b.id);
     renderLayersList();
     document.getElementById('layers-panel').classList.add('open');
 }
@@ -3664,7 +3771,16 @@ function toggleLayersPanel() {
     }
 }
 
-// Rebuilds the row list from layersWorkingOrder + project.body.blocks (for
+function switchDrawerTab(tab) {
+    const isLayers = tab === 'layers';
+    document.getElementById('drawer-tab-btn-layers').classList.toggle('active', isLayers);
+    document.getElementById('drawer-tab-btn-pages').classList.toggle('active', !isLayers);
+    document.getElementById('drawer-tab-layers').style.display = isLayers ? 'flex' : 'none';
+    document.getElementById('drawer-tab-pages').style.display = isLayers ? 'none' : 'flex';
+    if (!isLayers) renderPagesList();
+}
+
+// Rebuilds the row list from layersWorkingOrder + getCurrentPage().body.blocks (for
 // labels/icons). Called on open, and after every completed drag, so drag
 // state (transforms, etc.) always resets cleanly.
 function renderLayersList() {
@@ -3678,7 +3794,7 @@ function renderLayersList() {
     }
 
     layersWorkingOrder.forEach(id => {
-        const block = project.body.blocks.find(b => b.id === id);
+        const block = getCurrentPage().body.blocks.find(b => b.id === id);
         if (!block) return;
 
         const row = document.createElement('div');
@@ -3688,6 +3804,7 @@ function renderLayersList() {
             <span class="layer-drag-handle"><i class="fa-solid fa-grip-lines"></i></span>
             <span class="layer-icon"><i class="fa-solid ${getBlockIcon(block.type)}"></i></span>
             <span class="layer-label"></span>
+            <span class="layer-delete-btn" title="Delete"><i class="fa-solid fa-trash"></i></span>
         `;
         // Set label via textContent (not innerHTML) so block content/labels
         // containing "<" or "&" can't break the row's markup.
@@ -3695,6 +3812,9 @@ function renderLayersList() {
 
         const handle = row.querySelector('.layer-drag-handle');
         handle.addEventListener('pointerdown', (e) => startLayerDrag(e, row));
+
+        row.querySelector('.layer-delete-btn').addEventListener('click', (e) => deleteBlockFromLayersPanel(id, e));
+
         container.appendChild(row);
     });
 }
@@ -3752,24 +3872,99 @@ function startLayerDrag(e, row) {
     document.addEventListener('pointerup', onUp);
 }
 
-// Applies the panel's pending order to project.body.blocks for real, re-renders
+// Applies the panel's pending order to getCurrentPage().body.blocks for real, re-renders
 // the live page to match, and closes the panel. This is the ONLY point
 // where dragging in the layers panel actually affects the page.
 function saveLayersOrder() {
     const reordered = layersWorkingOrder
-        .map(id => project.body.blocks.find(b => b.id === id))
+        .map(id => getCurrentPage().body.blocks.find(b => b.id === id))
         .filter(Boolean);
 
     // Defensive: anything somehow missing from the working order (should
     // not normally happen) is kept, appended at the end, rather than
     // silently dropped.
-    project.body.blocks.forEach(b => {
+    getCurrentPage().body.blocks.forEach(b => {
         if (!reordered.includes(b)) reordered.push(b);
     });
 
-    project.body.blocks = reordered;
+    getCurrentPage().body.blocks = reordered;
     renderPage();
     closeLayersPanel();
+}
+
+// Deletes a block directly from the Layers list — immediate (confirm-
+// gated), not staged like drag-reordering is. Removes it from both
+// getCurrentPage().body.blocks and the panel's own working order, clears
+// selection if the deleted block was selected, then re-renders both the
+// live page and the list.
+function deleteBlockFromLayersPanel(blockId, event) {
+    if (event) event.stopPropagation();
+    if (!confirm('Delete this section? This cannot be undone.')) return;
+
+    getCurrentPage().body.blocks = getCurrentPage().body.blocks.filter(b => b.id !== blockId);
+    layersWorkingOrder = layersWorkingOrder.filter(id => id !== blockId);
+
+    if (selectedEl && selectedEl.getAttribute && selectedEl.getAttribute('data-block-id') === blockId) {
+        selectedEl = null;
+        toolbarContent.style.visibility = 'hidden';
+    }
+
+    renderPage();
+    renderLayersList();
+}
+
+// --- PAGES TAB ---
+
+// Renders the Pages tab's list — one row per project.pages entry, with the
+// currently-open page highlighted, and a click-to-switch handler. Called
+// whenever the Pages tab is opened, and after anything that might change a
+// page's displayed name/slug (e.g. Settings being saved, a page being added).
+function renderPagesList() {
+    const container = document.getElementById('pages-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    project.pages.forEach(page => {
+        const row = document.createElement('div');
+        row.className = 'layer-row' + (page.id === currentPageId ? ' active-page-row' : '');
+        row.innerHTML = `
+            <span class="layer-icon"><i class="fa-solid fa-file"></i></span>
+            <span class="layer-label"></span>
+        `;
+        row.querySelector('.layer-label').textContent = page.name + (page.slug ? ' (' + page.slug + ')' : '');
+        row.addEventListener('click', () => switchToPage(page.id));
+        container.appendChild(row);
+    });
+}
+
+// Switches which page is being edited/previewed: commits/discards whatever
+// was mid-edit on the OLD page first (deselectAll() also saves+renders it),
+// then swaps currentPageId and renders the NEW page's blocks/header into
+// the iframe. Menu and footer are GLOBAL, so they don't need to change.
+function switchToPage(pageId) {
+    if (pageId === currentPageId) return;
+    if (selectedEl) deselectAll();
+    currentPageId = pageId;
+    renderPagesList();
+    renderPage();
+    closeLayersPanel();
+}
+
+// Creates a new page — starting from the same blank template every project
+// starts with (see makeBlankPage()) — switches to it immediately, and
+// refreshes the Pages list.
+function addNewPage() {
+    const name = prompt('Name for the new page:', 'New Page');
+    if (!name) return;
+    const slug = name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+
+    if (selectedEl) deselectAll();
+
+    const page = makeBlankPage(name.trim(), slug);
+    project.pages.push(page);
+    currentPageId = page.id;
+    renderPagesList();
+    renderPage();
 }
 
 
@@ -4088,19 +4283,21 @@ function collectUsedImageFilenames(proj) {
 
     addPath(proj && proj.head && proj.head.faviconSrc);
 
-    (proj && proj.body && proj.body.blocks || []).forEach(block => {
-        if (!block) return;
-        if (block.type === 'image') {
-            addPath(block.src);
-            addPath(block.thumb);
-        } else if (block.type === 'multiImage') {
-            (block.items || []).forEach(item => { addPath(item.src); addPath(item.thumb); });
-        } else if (block.type === 'gallery') {
-            (block.images || []).forEach(imgData => { addPath(imgData.src); addPath(imgData.thumb); });
-        } else if (block.type === 'container' && block.image) {
-            addPath(block.image.src);
-            addPath(block.image.thumb);
-        }
+    (proj && proj.pages || []).forEach(page => {
+        (page && page.body && page.body.blocks || []).forEach(block => {
+            if (!block) return;
+            if (block.type === 'image') {
+                addPath(block.src);
+                addPath(block.thumb);
+            } else if (block.type === 'multiImage') {
+                (block.items || []).forEach(item => { addPath(item.src); addPath(item.thumb); });
+            } else if (block.type === 'gallery') {
+                (block.images || []).forEach(imgData => { addPath(imgData.src); addPath(imgData.thumb); });
+            } else if (block.type === 'container' && block.image) {
+                addPath(block.image.src);
+                addPath(block.image.thumb);
+            }
+        });
     });
     return used;
 }
@@ -4148,6 +4345,24 @@ async function loadProjectFromDirHandle(dirHandle, name) {
 
     project = loaded;
     if (!project.meta) project.meta = { name: name, nextImageNumber: 1 };
+
+    // MIGRATION: projects saved before multi-page support have
+    // project.body.{header,menu,blocks} directly, no project.pages at all.
+    // Wrap that single page into the new pages[] array so old projects keep
+    // working instead of losing their content.
+    if (!project.pages) {
+        const legacyBody = project.body || { header: { logo: { text: 'My Snoozing Baby', class: 'logo' } }, blocks: [] };
+        if (project.body && project.body.menu) project.menu = project.body.menu;
+        const migratedPage = makeBlankPage('Home', 'index');
+        migratedPage.body = legacyBody;
+        project.pages = [migratedPage];
+        delete project.body;
+    }
+    if (!project.menu) project.menu = [];
+    if (!project.footer) project.footer = {};
+    if (!project.head) project.head = { faviconSrc: '', faviconName: '' };
+
+    currentPageId = project.pages[0].id;
 
     await cleanupOrphanImages();
 
