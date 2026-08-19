@@ -628,11 +628,14 @@ function updateMultiRowHeight(val) {
 // Builds one multi-image-item's DOM (image + pan overlay) for a given
 // already-saved permanent path/preview URL. Shared by triggerMultiImageAdd
 // (one call per selected file) so adding several files at once doesn't
-// duplicate this markup per-call.
-function buildMultiImageItem(previewUrl, permanentSrc, ratio) {
+// duplicate this markup per-call. `previewUrl` is the THUMBNAIL's preview
+// (the row always displays the thumbnail); `thumbSrc` is the thumbnail's
+// own JSON-persisted path, kept separately from the full-res `permanentSrc`.
+function buildMultiImageItem(previewUrl, permanentSrc, ratio, thumbSrc) {
     const newItem = document.createElement('div');
     newItem.className = 'multi-image-item';
     newItem.setAttribute('data-permanent-src', permanentSrc);
+    if (thumbSrc) newItem.setAttribute('data-thumb-src', thumbSrc);
 
     const img = document.createElement('img');
     img.src = previewUrl;
@@ -657,9 +660,10 @@ function buildMultiImageItem(previewUrl, permanentSrc, ratio) {
     return newItem;
 }
 
-// --- UPDATED: Uses Blobs and IMG tags for high resolution; supports
-// selecting/adding several images in one go (mirrors the gallery's
-// multi-select add behavior) ---
+// Adding/replacing images in a multi-image row saves+displays a resized
+// thumbnail (never the full-resolution file) — see saveImageWithThumbnail.
+// Supports selecting/adding several images in one go (mirrors the
+// gallery's multi-select add behavior).
 function triggerMultiImageAdd() {
     const input = document.getElementById('image-upload');
     input.multiple = true;
@@ -673,12 +677,12 @@ function triggerMultiImageAdd() {
         // number from project.meta.nextImageNumber in the order picked,
         // rather than racing for it.
         for (const file of files) {
-            const src = await saveImageToProject(file);
-            const previewUrl = URL.createObjectURL(file);
+            const { src, thumb, thumbBlob } = await saveImageWithThumbnail(file, THUMBNAIL_BASE_DIM.block);
+            const previewUrl = thumbBlob ? URL.createObjectURL(thumbBlob) : URL.createObjectURL(file);
             // Pre-populate the cache — the next render reuses this instantly.
-            resolvedImageCache.set(src, previewUrl);
+            resolvedImageCache.set(thumb || src, previewUrl);
 
-            const newItem = buildMultiImageItem(previewUrl, src, ratio);
+            const newItem = buildMultiImageItem(previewUrl, src, ratio, thumb);
             selectedEl.appendChild(newItem);
         }
 
@@ -702,10 +706,12 @@ function triggerMultiImageReplace() {
         if (selectedEl && selectedEl.classList.contains('multi-image-item')) {
             // Always a fresh, unique path (see saveImageToProject) — the
             // old file is left in place on disk, just no longer referenced.
-            const src = await saveImageToProject(file);
-            const previewUrl = URL.createObjectURL(file);
-            resolvedImageCache.set(src, previewUrl);
+            const { src, thumb, thumbBlob } = await saveImageWithThumbnail(file, THUMBNAIL_BASE_DIM.block);
+            const previewUrl = thumbBlob ? URL.createObjectURL(thumbBlob) : URL.createObjectURL(file);
+            resolvedImageCache.set(thumb || src, previewUrl);
             selectedEl.setAttribute('data-permanent-src', src);
+            if (thumb) selectedEl.setAttribute('data-thumb-src', thumb);
+            else selectedEl.removeAttribute('data-thumb-src');
 
             let img = selectedEl.querySelector('img');
             if (!img) {
@@ -909,7 +915,7 @@ async function handleGalleryFiles(fileList) {
     let insertAfter = currentGalleryTargetSlot;
     for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const { src, thumb, thumbBlob } = await saveGalleryImageWithThumbnail(file);
+        const { src, thumb, thumbBlob } = await saveImageWithThumbnail(file, THUMBNAIL_BASE_DIM.gallery);
 
         // Prefer previewing the thumbnail (matches what's actually shown
         // once saved/reloaded); fall back to the full image if thumbnail
@@ -1081,12 +1087,12 @@ let project = {
 // ==========================================================
 // CENTRAL IMAGE STORAGE
 // ==========================================================
-// The ONLY place in the whole app that writes an image file to disk.
-// Every image-bearing block type (single image, div image, multi-image,
-// gallery) funnels through saveImageToProject() directly — the gallery
-// used to live in a nested iframe and need a postMessage bridge to reach
-// this, but it's embedded directly in the page now (see the GALLERY
-// section below), so it just calls this like everything else.
+// The ONLY place in the whole app that writes a full-resolution image file
+// to disk. Every image-bearing block type (single image, div image,
+// multi-image, gallery) now goes through saveImageWithThumbnail() below,
+// which calls this for the full-res file and also generates/writes a
+// resized thumbnail companion — the editor itself never works with the
+// full-res file after this point, only the thumbnail.
 
 // Saves `file` into the project's images/ folder under a brand-new, unique
 // filename (e.g. "images/image-007.jpg") and returns that permanent,
@@ -1121,18 +1127,16 @@ async function writeFileToImagesFolder(filename, blobOrFile) {
     await writable.close();
 }
 
-// Resizes `file` down to a max dimension of 800px (plenty sharp for a
-// phone-width gallery grid cell, without carrying full-resolution bytes)
-// and re-compresses it as a JPEG for a small file size. Always outputs
-// JPEG regardless of source format — gallery photos are the target use
-// case, so the loss of PNG transparency is an accepted tradeoff for a
-// smaller thumbnail. Returns null (not a rejected promise) if it fails,
-// so callers can fall back to the full image without a thumbnail.
-async function generateThumbnailBlob(file) {
-    const MAX_DIM = 800;
+// Resizes `file` down to a max dimension of `maxDim` and re-compresses it
+// as a JPEG for a small file size. Always outputs JPEG regardless of
+// source format — an accepted tradeoff (loses PNG transparency) for a
+// consistently small thumbnail. Returns null (not a rejected promise) if
+// it fails, so callers can fall back to the full image without a
+// thumbnail.
+async function generateThumbnailBlob(file, maxDim) {
     try {
         const bitmap = await createImageBitmap(file);
-        const scale = Math.min(1, MAX_DIM / Math.max(bitmap.width, bitmap.height));
+        const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
         const outW = Math.max(1, Math.round(bitmap.width * scale));
         const outH = Math.max(1, Math.round(bitmap.height * scale));
 
@@ -1150,25 +1154,59 @@ async function generateThumbnailBlob(file) {
     }
 }
 
-// Saves a gallery image plus its resized thumbnail companion, sharing the
-// same base filename — e.g. "images/image-007.jpg" (full) and
+// Base thumbnail dimensions (longest side, before device-pixel-ratio
+// scaling — see getThumbnailMaxDim()) for each editing context. The editor
+// never works with a full-resolution image once one's been added — every
+// live preview (gallery grid, single image, div image, multi-image row)
+// displays a resized/compressed copy; only the untouched original stays on
+// disk, for a future export/lightbox to use.
+//   gallery — grid cells are always small (2-3 per row), regardless of how
+//             big the overall gallery block is.
+//   block   — single image / div image / multi-image row items: these can
+//             be resized up toward the full preview width, so they get a
+//             larger base size than a gallery cell.
+const THUMBNAIL_BASE_DIM = {
+    gallery: 800,
+    block: 1200
+};
+
+// Scales a base thumbnail dimension by the current device's pixel ratio
+// (capped at 2x) so a retina/high-DPI screen gets a correspondingly
+// sharper thumbnail — this is the one legitimate "device" factor that
+// actually affects how many real pixels a given CSS size needs to look
+// sharp. General screen/monitor resolution (e.g. laptop vs external
+// display) is deliberately NOT used: it doesn't determine how large an
+// image renders on the page — the page's own CSS layout does that, and
+// the preview iframe here is already scaled down to simulate phone/
+// desktop widths regardless of the actual monitor. Tying thumbnail size to
+// whichever screen happens to be open would just make output inconsistent
+// across sessions/devices for the same project.
+function getThumbnailMaxDim(baseDim) {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    return Math.round(baseDim * dpr);
+}
+
+// Saves an image plus its resized thumbnail companion, sharing the same
+// base filename — e.g. "images/image-007.jpg" (full) and
 // "images/image-007-thumbnail.jpg" (thumb) — so the two are easy to spot
-// as a pair when browsing the images/ folder. Returns:
+// as a pair when browsing the images/ folder. `baseDim` should be one of
+// THUMBNAIL_BASE_DIM's values, picked by the caller for its context.
+// Returns:
 //   src       — full-res permanent path; not shown anywhere yet, but kept
 //               for a future export lightbox to load on click.
-//   thumb     — thumbnail permanent path; this is what the gallery grid
-//               actually displays, both while editing and once exported.
+//   thumb     — thumbnail permanent path; this is what actually gets
+//               displayed, both while editing and (later) once exported.
 //   thumbBlob — the same thumbnail bytes just written, handed back so the
 //               caller can build an instant local preview URL without a
 //               redundant disk read right after the write.
 // If thumbnail generation fails, thumb is '' and thumbBlob is null —
 // callers should fall back to showing/using the full-res `src` instead.
-async function saveGalleryImageWithThumbnail(file) {
+async function saveImageWithThumbnail(file, baseDim) {
     const src = await saveImageToProject(file);
     let thumb = '';
     let thumbBlob = null;
 
-    thumbBlob = await generateThumbnailBlob(file);
+    thumbBlob = await generateThumbnailBlob(file, getThumbnailMaxDim(baseDim));
     if (thumbBlob) {
         const dot = src.lastIndexOf('.');
         const thumbPath = (dot === -1 ? src : src.slice(0, dot)) + '-thumbnail.jpg';
@@ -1955,6 +1993,7 @@ function insertElement(type, data) {
         el.style.width = "200px"; 
         el.setAttribute('data-scale-factor', '1.0');
         if (data && data.src) el.setAttribute('data-permanent-src', data.src);
+        if (data && data.thumb) el.setAttribute('data-thumb-src', data.thumb);
         // Tag with a stable ID so saveImageBlock() can find/update its
         // entry in project.body.blocks.
         el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
@@ -2170,6 +2209,7 @@ function renderPage() {
             el.setAttribute('data-block-id', block.id);
             el.setAttribute('data-scale-factor', block.scaleFactor || '1.0');
             if (block.src) el.setAttribute('data-permanent-src', block.src);
+            if (block.thumb) el.setAttribute('data-thumb-src', block.thumb);
             el.style.width = block.width || '200px';
             el.innerHTML = `<img>`;
             const img = el.querySelector('img');
@@ -2182,8 +2222,10 @@ function renderPage() {
             }
             root.appendChild(el);
             // Instant if already cached (the common case); only a genuine
-            // first-time disk read causes a brief resolve delay.
-            applyResolvedImageSrc(img, block.src);
+            // first-time disk read causes a brief resolve delay. Older
+            // projects saved before thumbnails existed have no `thumb` —
+            // fall back to the full-res src for those.
+            applyResolvedImageSrc(img, block.thumb || block.src);
         }
         else if (block.type === 'multiImage') {
             const el = doc.createElement('div');
@@ -2202,6 +2244,7 @@ function renderPage() {
                 const item = doc.createElement('div');
                 item.className = 'multi-image-item';
                 if (itemData.src) item.setAttribute('data-permanent-src', itemData.src);
+                if (itemData.thumb) item.setAttribute('data-thumb-src', itemData.thumb);
                 const img = doc.createElement('img');
                 img.style.width = '100%';
                 img.style.height = '100%';
@@ -2222,7 +2265,7 @@ function renderPage() {
                 item.style.aspectRatio = (block.aspectRatio || '1').toString();
                 el.appendChild(item);
 
-                applyResolvedImageSrc(img, itemData.src);
+                applyResolvedImageSrc(img, itemData.thumb || itemData.src);
             });
 
             root.appendChild(el);
@@ -2262,6 +2305,7 @@ function renderPage() {
                 imgWrapper.contentEditable = "false";
                 imgWrapper.setAttribute('data-scale-factor', block.image.scaleFactor || '1.0');
                 if (block.image.src) imgWrapper.setAttribute('data-permanent-src', block.image.src);
+                if (block.image.thumb) imgWrapper.setAttribute('data-thumb-src', block.image.thumb);
                 // Initial width — the ResizeObserver set up by initDivLogic()
                 // recalculates this proportionally once it observes the
                 // container, same as insertElement()'s original default.
@@ -2271,7 +2315,7 @@ function renderPage() {
                 if (block.image.alt && innerImg) innerImg.setAttribute('alt', block.image.alt);
                 if (block.image.link) imgWrapper.setAttribute('data-link', block.image.link);
                 el.appendChild(imgWrapper);
-                applyResolvedImageSrc(innerImg, block.image.src);
+                applyResolvedImageSrc(innerImg, block.image.thumb || block.image.src);
             }
 
             if (block.children && block.children.length) {
@@ -2509,6 +2553,7 @@ function saveImageBlock(el) {
         id: blockId,
         type: 'image',
         src: el.getAttribute('data-permanent-src') || '',
+        thumb: el.getAttribute('data-thumb-src') || '',
         width: el.style.width || '200px',
         scaleFactor: el.getAttribute('data-scale-factor') || '1.0',
         align: el.style.textAlign || '',
@@ -2538,6 +2583,7 @@ function saveMultiImageBlock(el) {
         const img = item.querySelector('img');
         return {
             src: item.getAttribute('data-permanent-src') || '',
+            thumb: item.getAttribute('data-thumb-src') || '',
             link: item.getAttribute('data-link') || '',
             alt: img ? (img.getAttribute('alt') || '') : '',
             objectPosition: img ? (img.style.objectPosition || '50% 50%') : '50% 50%'
@@ -2715,6 +2761,7 @@ function saveContainerBlock(el) {
         const img = imgWrapper.querySelector('img');
         image = {
             src: imgWrapper.getAttribute('data-permanent-src') || '',
+            thumb: imgWrapper.getAttribute('data-thumb-src') || '',
             scaleFactor: imgWrapper.getAttribute('data-scale-factor') || '1.0',
             link: imgWrapper.getAttribute('data-link') || '',
             alt: img ? (img.getAttribute('alt') || '') : ''
@@ -2954,21 +3001,23 @@ function saveSelectedBlock(el) {
         const file = i.files[0];
         if (!file) return;
 
-        const src = await saveImageToProject(file);
-        const previewUrl = URL.createObjectURL(file);
+        const { src, thumb, thumbBlob } = await saveImageWithThumbnail(file, THUMBNAIL_BASE_DIM.block);
+        const previewUrl = thumbBlob ? URL.createObjectURL(thumbBlob) : URL.createObjectURL(file);
         // Pre-populate the cache with the URL we already have — the very
         // next render (e.g. clicking away right after inserting) reuses
         // this instantly instead of re-reading the file from disk.
-        resolvedImageCache.set(src, previewUrl);
+        resolvedImageCache.set(thumb || src, previewUrl);
 
         if (selectedEl && selectedEl.classList.contains('block_image')) {
             // Replace: point at the newly-saved file (always a fresh,
             // unique path per saveImageToProject() — the old file is left
             // in place on disk, just no longer referenced).
             selectedEl.setAttribute('data-permanent-src', src);
+            if (thumb) selectedEl.setAttribute('data-thumb-src', thumb);
+            else selectedEl.removeAttribute('data-thumb-src');
             selectedEl.querySelector('img').src = previewUrl;
         } else {
-            insertElement('block_image', { previewUrl: previewUrl, src: src });
+            insertElement('block_image', { previewUrl: previewUrl, src: src, thumb: thumb });
         }
         i.value = '';
     }
@@ -3774,12 +3823,14 @@ function collectUsedImageFilenames(proj) {
         if (!block) return;
         if (block.type === 'image') {
             addPath(block.src);
+            addPath(block.thumb);
         } else if (block.type === 'multiImage') {
-            (block.items || []).forEach(item => addPath(item.src));
+            (block.items || []).forEach(item => { addPath(item.src); addPath(item.thumb); });
         } else if (block.type === 'gallery') {
             (block.images || []).forEach(imgData => { addPath(imgData.src); addPath(imgData.thumb); });
         } else if (block.type === 'container' && block.image) {
             addPath(block.image.src);
+            addPath(block.image.thumb);
         }
     });
     return used;
