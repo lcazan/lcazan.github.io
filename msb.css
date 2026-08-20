@@ -336,6 +336,15 @@ footer { text-align: center; color: #1A1A1A; padding: 3.75rem 1.25rem 2.5rem; bo
     font-size: 0.8rem;
     margin-top: -0.25rem;
 }
+/* Shown optimistically after a valid submit — see window.validateContactForm
+   for why this can't be a real server-confirmed success state. */
+.contact-form-success {
+    color: #2e7d32;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-align: center;
+    margin-top: 0.25rem;
+}
 
 /* --- Responsive --- */
 @media (max-width: 768px) {
