@@ -313,6 +313,9 @@
         <button class="insert-btn" onclick="openSettingsModal()" title="Settings" style="background: #2a2a2a; border-color: #555;">
             <i class="fa-solid fa-gear" style="color: #95a5a6;"></i>
         </button>
+        <button class="insert-btn" onclick="exportProject()" title="Export Site" style="background: #2a2a2a; border-color: #555;">
+            <i class="fa-solid fa-globe" style="color: #e67e22;"></i>
+        </button>
         <button class="insert-btn" onclick="openProjectPicker()" title="Switch Project" style="background: #2a2a2a; border-color: #555;">
             <i class="fa-solid fa-file-import" style="color: #2ecc71;"></i>
         </button>
@@ -4400,6 +4403,402 @@ function closeProjectPicker() {
 // mechanism for the project itself — the old zip-based export (masterSave)
 // has been removed entirely. Producing a final, publishable static HTML
 // export remains a separate, not-yet-built feature.
+// ============================================================
+// STATIC EXPORT
+// ============================================================
+
+function escapeHtml(str) {
+    return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function escapeHtmlAttr(str) {
+    return String(str == null ? '' : str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Matches a menu link's URL against the project's real pages by comparing
+// its last non-empty path segment to each page's slug. If a page matches,
+// rewrites to that page's local exported filename (per your choice);
+// otherwise (a genuine external link, or no matching local page) leaves
+// the URL untouched.
+function resolveMenuLinkForExport(url) {
+    if (!url || url === '#' || url.indexOf('javascript:') === 0) return url || '#';
+    const trimmed = url.replace(/\/+$/, '');
+    const candidate = (trimmed.split('/').pop() || '').toLowerCase();
+    const page = project.pages.find(p => (p.slug || '').toLowerCase() === candidate);
+    if (!page) return url;
+    return (page.slug || 'index') + '.html';
+}
+
+function buildExportMenuHTML() {
+    let html = '';
+    (project.menu || []).forEach(item => {
+        if (!item.children || item.children.length === 0) {
+            html += `<a href="${escapeHtmlAttr(resolveMenuLinkForExport(item.url))}">${escapeHtml(item.label)}</a>\n`;
+        } else {
+            html += `<a href="javascript:void(0)" class="dropdown-btn" onclick="toggleDropdown(this)">${escapeHtml(item.label)} <i class="fa-solid fa-caret-down"></i></a>\n`;
+            html += `<div class="sub-nav">\n`;
+            item.children.forEach(sub => {
+                html += `    <a href="${escapeHtmlAttr(resolveMenuLinkForExport(sub.url))}">${escapeHtml(sub.label)}</a>\n`;
+            });
+            html += `</div>\n`;
+        }
+    });
+    return html;
+}
+
+function buildExportFooterHTML() {
+    const f = project.footer || {};
+    return `
+    <div class="social-icons">
+        <a href="${escapeHtmlAttr(f.facebook || '#')}"><i class="fa-brands fa-facebook"></i></a>
+        <a href="${escapeHtmlAttr(f.instagram || '#')}"><i class="fa-brands fa-instagram"></i></a>
+        <a href="${escapeHtmlAttr(f.tiktok || '#')}"><i class="fa-brands fa-tiktok"></i></a>
+    </div>
+    <span class="copyright-text">${escapeHtml(f.copyright || '')}</span>
+    <div class="disclaimer">${escapeHtml(f.disclaimer || '')}</div>`;
+}
+
+// Export-side counterpart to renderPage()'s per-type DOM builders — returns
+// clean production HTML strings instead of live editor DOM. `galleryAcc` is
+// a shared mutable array every gallery block on the page pushes its
+// full-res image paths into, so the lightbox script gets one flat,
+// correctly-indexed list across ALL galleries on that page (matching how
+// the original lightbox worked).
+function renderBlockToStaticHTML(block, galleryAcc) {
+    if (!block) return '';
+    switch (block.type) {
+        case 'text': {
+            const tagMap = { section_heading: 'h2', block_heading: 'h3', block_text: 'p' };
+            const tag = tagMap[block.variant] || 'p';
+            const style = block.align ? ` style="text-align:${escapeHtmlAttr(block.align)};"` : '';
+            return `<${tag} class="${block.variant || 'block_text'}"${style}>${block.contentHTML || ''}</${tag}>`;
+        }
+        case 'spacer': {
+            const style = block.showLine ? ' style="border-bottom:1px solid #eee;"' : '';
+            return `<div class="block_spacer"${style}></div>`;
+        }
+        case 'button': {
+            return `<div class="block_button_container"><a href="${escapeHtmlAttr(block.href || '#')}" class="block_button">${escapeHtml(block.label || '')}</a></div>`;
+        }
+        case 'customHtml': {
+            return `<div class="custom-html-output">${block.code || ''}</div>`;
+        }
+        case 'image': {
+            const src = block.thumb || block.src || '';
+            const width = block.width || '200px';
+            let wrapperStyle = `width:${width};`;
+            if (block.align === 'center') wrapperStyle += ' display:block; margin:0 auto; text-align:center;';
+            else if (block.align) wrapperStyle += ` text-align:${block.align};`;
+            let imgTag = `<img src="${escapeHtmlAttr(src)}" alt="${escapeHtmlAttr(block.alt || '')}">`;
+            if (block.link) imgTag = `<a href="${escapeHtmlAttr(block.link)}">${imgTag}</a>`;
+            return `<div class="block_image" style="${wrapperStyle}">${imgTag}</div>`;
+        }
+        case 'multiImage': {
+            const items = (block.items || []).map(item => {
+                const src = item.thumb || item.src || '';
+                let img = `<img src="${escapeHtmlAttr(src)}" alt="${escapeHtmlAttr(item.alt || '')}" style="object-position:${escapeHtmlAttr(item.objectPosition || '50% 50%')};">`;
+                if (item.link) img = `<a href="${escapeHtmlAttr(item.link)}">${img}</a>`;
+                return `<div class="multi-image-item">${img}</div>`;
+            }).join('');
+            return `<div class="block_multi_image" data-desired-w="${block.desiredWidth || 100}" data-gap="${block.gap || 0}" data-ratio-val="${block.aspectRatio || '1'}">${items}</div>`;
+        }
+        case 'gallery': {
+            const isMasonry = block.mode === 'masonry';
+            const items = (block.images || []).map(imgData => {
+                const thumbSrc = imgData.thumb || imgData.src || '';
+                const fullSrc = imgData.src || imgData.thumb || '';
+                const idx = galleryAcc.length;
+                galleryAcc.push(fullSrc); // lightbox always shows full resolution
+                return `<div class="photo-gallery-item"><img src="${escapeHtmlAttr(thumbSrc)}" style="object-position:${escapeHtmlAttr(imgData.pos || '50% 50%')};" onclick="openModal(${idx})"></div>`;
+            }).join('');
+            return `<div class="photo-gallery ${isMasonry ? 'masonry-mode' : ''}">${items}</div>`;
+        }
+        case 'contactForm': {
+            const config = {
+                actionUrl: block.actionUrl || DEFAULT_CONTACT_FORM_CONFIG.actionUrl,
+                entryName: block.entryName || DEFAULT_CONTACT_FORM_CONFIG.entryName,
+                entryEmail: block.entryEmail || DEFAULT_CONTACT_FORM_CONFIG.entryEmail,
+                entryPhone: block.entryPhone || DEFAULT_CONTACT_FORM_CONFIG.entryPhone,
+                entryMessage: block.entryMessage || DEFAULT_CONTACT_FORM_CONFIG.entryMessage
+            };
+            const iframeName = 'gform-target-' + block.id;
+            return `<form class="block_contact_form" action="${escapeHtmlAttr(config.actionUrl)}" method="POST" target="${iframeName}" onsubmit="return window.validateContactForm(this)">${buildContactFormFieldsHTML(block.id, config)}</form>`;
+        }
+        case 'container': {
+            let imgHTML = '';
+            if (block.image) {
+                const src = block.image.thumb || block.image.src || '';
+                let imgTag = `<img src="${escapeHtmlAttr(src)}" alt="${escapeHtmlAttr(block.image.alt || '')}">`;
+                if (block.image.link) imgTag = `<a href="${escapeHtmlAttr(block.image.link)}">${imgTag}</a>`;
+                imgHTML = `<div class="block_image" data-scale-factor="${escapeHtmlAttr(block.image.scaleFactor || '1.0')}">${imgTag}</div>`;
+            }
+            const childrenHTML = (block.children || []).map(child => renderBlockToStaticHTML(child, galleryAcc)).join('');
+            const otherHTML = childrenHTML ? `<div class="div-other-wrapper">${childrenHTML}</div>` : '';
+            const bgStyle = block.bgColor ? ` style="background-color:${escapeHtmlAttr(block.bgColor)};"` : '';
+            return `<div class="block_container"${bgStyle}>${imgHTML}${otherHTML}</div>`;
+        }
+        default:
+            return '';
+    }
+}
+
+// Re-implements recalculateMultiLimits()'s responsive width/gap math as a
+// standalone script for the exported page (no editor UI here — just fit
+// the block's stored "desired" width/gap against whatever the real
+// container width turns out to be, on load and on resize).
+const EXPORT_MULTI_IMAGE_SCRIPT = `
+function __layoutMultiImageRows() {
+    document.querySelectorAll('.block_multi_image').forEach(function(el) {
+        var items = el.querySelectorAll('.multi-image-item');
+        var n = items.length;
+        if (n === 0) return;
+        var cw = el.offsetWidth;
+        var w = parseFloat(el.getAttribute('data-desired-w')) || 100;
+        var gap = parseFloat(el.getAttribute('data-gap')) || 0;
+        var ratio = el.getAttribute('data-ratio-val') || '1';
+        if (n === 1) {
+            gap = 0;
+            if (w > cw) w = cw;
+        } else {
+            var maxGap = (cw - (w * n)) / (n - 1);
+            if (maxGap < 0) maxGap = 0;
+            if (gap > maxGap) gap = maxGap;
+            var maxW = (cw - (gap * (n - 1))) / n;
+            if (w > maxW) w = maxW;
+        }
+        el.style.gap = gap + 'px';
+        items.forEach(function(item) {
+            item.style.width = w + 'px';
+            item.style.aspectRatio = ratio;
+            item.style.height = 'auto';
+        });
+    });
+}
+window.addEventListener('load', __layoutMultiImageRows);
+window.addEventListener('resize', __layoutMultiImageRows);
+`;
+
+// Re-implements the div/container responsive image ResizeObserver (see
+// init() in this file) as a standalone script for the exported page.
+const EXPORT_DIV_IMAGE_SCRIPT = `
+function __initDivImageLayout() {
+    if (!window.ResizeObserver) return;
+    var observer = new ResizeObserver(function(entries) {
+        entries.forEach(function(entry) {
+            var div = entry.target;
+            var width = entry.contentRect.width;
+            var img = div.querySelector('.block_image');
+            var other = div.querySelector('.div-other-wrapper');
+            if (!img) return;
+            var factor = parseFloat(img.getAttribute('data-scale-factor') || '1.0');
+            if (width <= 744) {
+                div.style.flexDirection = 'column'; div.style.justifyContent = 'center';
+                img.style.width = (width * factor) + 'px'; img.style.margin = '0 auto';
+                if (other) other.style.width = '100%';
+            } else {
+                div.style.flexDirection = 'row'; div.style.justifyContent = 'flex-start';
+                var baseW = width * 0.618;
+                img.style.width = (baseW * factor) + 'px'; img.style.margin = '0';
+                if (other) other.style.width = 'auto';
+            }
+        });
+    });
+    document.querySelectorAll('.block_container').forEach(function(d) { observer.observe(d); });
+}
+window.addEventListener('load', __initDivImageLayout);
+`;
+
+// Verbatim reuse of the original lightbox design (per explicit request):
+// full-screen swipe carousel with a counter, lazy-loading neighboring
+// slides. `galleryImages` is the flat, page-wide list built while
+// rendering blocks (see renderBlockToStaticHTML's 'gallery' case).
+function buildLightboxHTML() {
+    return `<div id="imageModal" class="modal"><div class="counter" id="modalCounter">1 / 0</div><span class="close-modal" onclick="closeModal()">&times;</span><div id="sliderTrack" class="slider-track"></div></div>`;
+}
+function buildLightboxScriptBody(galleryImages) {
+    return `
+const galleryItems = ${JSON.stringify(galleryImages)};
+let currentIndex = 0, startX = 0, prevTranslate = 0, isDragging = false;
+const VELOCITY = 2500;
+function renderLightboxSlides() {
+    const track = document.getElementById('sliderTrack');
+    if (!track) return;
+    track.innerHTML = '';
+    galleryItems.forEach((src, index) => {
+        const slide = document.createElement('div');
+        slide.className = 'slide';
+        slide.innerHTML = '<div class="image-wrapper" data-index="' + index + '"><div class="loader"></div><img data-src="' + src + '"></div>';
+        track.appendChild(slide);
+    });
+}
+function loadImage(index) {
+    const slide = document.querySelector('.image-wrapper[data-index="' + index + '"]');
+    if (!slide) return;
+    const img = slide.querySelector('img'), loader = slide.querySelector('.loader');
+    if (img && img.dataset.src) {
+        img.src = img.dataset.src;
+        img.onload = () => { img.classList.add('loaded'); if (loader) loader.style.display = 'none'; };
+    }
+}
+function updateTrackPos(animate) {
+    const track = document.getElementById('sliderTrack');
+    const modal = document.getElementById('imageModal');
+    if (!track || !modal) return;
+    const width = modal.offsetWidth;
+    const currentTranslate = currentIndex * -width;
+    prevTranslate = currentTranslate;
+    track.style.transition = animate ? 'transform ' + (width / VELOCITY) + 's ease-out' : 'none';
+    track.style.transform = 'translateX(' + currentTranslate + 'px)';
+    document.getElementById('modalCounter').innerText = (currentIndex + 1) + ' / ' + galleryItems.length;
+}
+function openModal(index) {
+    if (!document.getElementById('sliderTrack').hasChildNodes()) renderLightboxSlides();
+    currentIndex = index;
+    document.getElementById('imageModal').style.display = "block";
+    updateTrackPos(false);
+    document.body.style.overflow = "hidden";
+    loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
+}
+function moveSlide(step) {
+    currentIndex = Math.max(0, Math.min(currentIndex + step, galleryItems.length - 1));
+    updateTrackPos(true);
+    loadImage(currentIndex); loadImage(currentIndex + 1); loadImage(currentIndex - 1);
+}
+function closeModal() {
+    document.getElementById('imageModal').style.display = "none";
+    document.body.style.overflow = "auto";
+}
+window.addEventListener('resize', () => { if (document.getElementById('imageModal') && document.getElementById('imageModal').style.display === "block") updateTrackPos(false); });
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('imageModal'), track = document.getElementById('sliderTrack');
+    if (!modal || !track) return;
+    modal.addEventListener('touchstart', e => { isDragging = true; startX = e.touches[0].clientX; track.style.transition = 'none'; });
+    modal.addEventListener('touchmove', e => { if (!isDragging) return; track.style.transform = 'translateX(' + (prevTranslate + (e.touches[0].clientX - startX)) + 'px)'; });
+    modal.addEventListener('touchend', e => { isDragging = false; const diff = e.changedTouches[0].clientX - startX; if (diff < -50) moveSlide(1); else if (diff > 50) moveSlide(-1); else moveSlide(0); });
+});`;
+}
+
+// Builds one page's complete exported HTML document. Starts from a fresh
+// DOMParser-parsed copy of template.html and mutates it with normal DOM
+// methods (far more robust than regex string surgery for nested markup
+// like the nav menu's sub-nav divs), then serializes back to a string.
+function buildPageHTML(page, templateHtml) {
+    const doc = new DOMParser().parseFromString(templateHtml, 'text/html');
+
+    const titleTag = doc.querySelector('title');
+    if (titleTag) titleTag.textContent = page.title || project.meta.name || 'My Snoozing Baby';
+
+    if (page.metaDescription) {
+        const meta = doc.createElement('meta');
+        meta.setAttribute('name', 'description');
+        meta.setAttribute('content', page.metaDescription);
+        doc.head.appendChild(meta);
+    }
+
+    if (project.head && project.head.faviconSrc) {
+        const link = doc.createElement('link');
+        link.setAttribute('rel', 'icon');
+        link.setAttribute('href', project.head.faviconSrc);
+        doc.head.appendChild(link);
+    }
+
+    // Raw author-provided header scripts/tags, appended as real nodes (not
+    // a string dump) so they parse/execute exactly as authored.
+    if (page.headCode) {
+        const wrapper = doc.createElement('div');
+        wrapper.innerHTML = page.headCode;
+        Array.from(wrapper.childNodes).forEach(node => doc.head.appendChild(node));
+    }
+
+    const navContent = doc.querySelector('.nav-content');
+    if (navContent) navContent.innerHTML = buildExportMenuHTML();
+
+    const logoEl = doc.querySelector('header .logo');
+    const logo = (page.body && page.body.header && page.body.header.logo) || {};
+    if (logoEl) {
+        logoEl.textContent = logo.text || 'My Snoozing Baby';
+        if (logo.class) logoEl.className = logo.class;
+    }
+
+    doc.body.setAttribute('data-page-id', page.slug || 'index');
+
+    const root = doc.getElementById('editor-root');
+    const galleryAcc = [];
+    if (root) {
+        root.removeAttribute('id'); // editor-only hook, not needed in export
+        root.innerHTML = (page.body.blocks || []).map(b => renderBlockToStaticHTML(b, galleryAcc)).join('\n');
+    }
+
+    const footerEl = doc.querySelector('footer');
+    if (footerEl) footerEl.innerHTML = buildExportFooterHTML();
+
+    if (galleryAcc.length > 0) {
+        const wrapper = doc.createElement('div');
+        wrapper.innerHTML = buildLightboxHTML();
+        doc.body.appendChild(wrapper.firstElementChild);
+
+        const galleryScript = doc.createElement('script');
+        galleryScript.textContent = buildLightboxScriptBody(galleryAcc);
+        doc.body.appendChild(galleryScript);
+    }
+
+    if ((page.body.blocks || []).some(b => b.type === 'multiImage')) {
+        const s = doc.createElement('script');
+        s.textContent = EXPORT_MULTI_IMAGE_SCRIPT;
+        doc.body.appendChild(s);
+    }
+
+    if ((page.body.blocks || []).some(b => b.type === 'container' && b.image)) {
+        const s = doc.createElement('script');
+        s.textContent = EXPORT_DIV_IMAGE_SCRIPT;
+        doc.body.appendChild(s);
+    }
+
+    return '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+}
+
+// The Export Site button's handler: writes one .html file per page, plus a
+// refreshed copy of msb.css, directly into the project's own folder (per
+// your choice — no separate export destination, no image copying, since
+// images/ is already sitting right there and every block's src/thumb path
+// already reads "images/...").
+async function exportProject() {
+    if (!projectDirHandle) {
+        alert('No project folder is open — load or create a project first.');
+        return;
+    }
+    if (selectedEl) deselectAll(); // commit whatever's mid-edit on the current page first
+
+    let templateHtml, cssText;
+    try {
+        templateHtml = await (await fetch('template.html')).text();
+        cssText = await (await fetch('msb.css')).text();
+    } catch (err) {
+        alert('Could not load template.html/msb.css for export: ' + ((err && err.message) || err));
+        return;
+    }
+
+    try {
+        const cssHandle = await projectDirHandle.getFileHandle('msb.css', { create: true });
+        const cssWritable = await cssHandle.createWritable();
+        await cssWritable.write(cssText);
+        await cssWritable.close();
+
+        for (const page of project.pages) {
+            const html = buildPageHTML(page, templateHtml);
+            const filename = (page.slug || 'index') + '.html';
+            const fileHandle = await projectDirHandle.getFileHandle(filename, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(html);
+            await writable.close();
+        }
+
+        alert('Exported ' + project.pages.length + ' page' + (project.pages.length === 1 ? '' : 's') + ' to the project folder.');
+    } catch (err) {
+        console.error(err);
+        alert('Export failed: ' + ((err && err.message) || err));
+    }
+}
+
 async function saveProjectToFolder() {
     if (!projectDirHandle) {
         alert('No project folder is open.');
