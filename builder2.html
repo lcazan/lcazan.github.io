@@ -1814,50 +1814,8 @@ function updateSandbox(block) {
             });
             window.initDivLogic = () => { document.querySelectorAll('.block_container').forEach(d => observer.observe(d)); };
             window.applyDivImageLayout = applyDivImageLayout;
-
-            // Contact form: Email and Phone are each individually optional
-            // in the HTML (native \`required\` can't express "one of the
-            // two"), so that either/or rule is enforced here instead, on
-            // submit. Message's own \`required\` attribute is enforced by
-            // the browser natively before this handler ever runs. Selected
-            // by input type, not name — field names are the form's own
-            // configurable Google Forms entry IDs (see
-            // applyContactFormConfig in builder.html), not fixed strings.
-            window.validateContactForm = function(form) {
-                form.querySelectorAll('.contact-form-error, .contact-form-success').forEach(e => e.remove());
-
-                const emailField = form.querySelector('input[type="email"]');
-                const phoneField = form.querySelector('input[type="tel"]');
-                const emailVal = emailField ? emailField.value.trim() : '';
-                const phoneVal = phoneField ? phoneField.value.trim() : '';
-
-                if (!emailVal && !phoneVal) {
-                    const errorMsg = document.createElement('div');
-                    errorMsg.className = 'contact-form-error';
-                    errorMsg.textContent = 'Please provide either an email address or a phone number.';
-                    const fieldGroup = (phoneField && phoneField.closest('.contact-form-field')) || form;
-                    fieldGroup.appendChild(errorMsg);
-                    (emailField || phoneField || form).focus();
-                    return false;
-                }
-
-                // Optimistic success feedback: the form submits into a
-                // hidden iframe (see buildContactFormFieldsHTML), so there's
-                // no reliable way to read Google's actual response. Deferred
-                // to right after this handler returns, so the real submit
-                // (which reads field values synchronously) isn't affected
-                // by then disabling those same fields.
-                setTimeout(() => {
-                    const successMsg = document.createElement('div');
-                    successMsg.className = 'contact-form-success';
-                    successMsg.textContent = "Thanks! We'll be in touch soon.";
-                    form.appendChild(successMsg);
-                    form.querySelectorAll('input, textarea, button').forEach(f => f.disabled = true);
-                }, 0);
-
-                return true;
-            };
         <\/script>
+        <script>${CONTACT_FORM_SCRIPT}<\/script>
     </head>`);
 
     // 2. THE RELAY: Handshake between Sandbox -> Preview -> Builder
@@ -2399,45 +2357,56 @@ function getContactFormConfig(el) {
     };
 }
 
-// Builds the form's field markup for a given config — each input's `name`
-// is the Google Form's entry ID for that field, which is how Google Forms
-// matches submitted values to its own fields. Includes a hidden iframe
-// (unique per block, named after its own blockId) that the form's own
-// `target` attribute points at — submitting into a hidden iframe instead
-// of the top window is what lets this work with zero backend/page reload,
-// on GitHub Pages or anywhere else purely static.
-function buildContactFormFieldsHTML(blockId, config) {
+// Builds the WHOLE contact form block's markup: a "MESSAGE US" toggle
+// button (visible by default — the actual fields start hidden via CSS,
+// see .contact-form-fields in msb.css) plus the real <form>, which
+// window.toggleContactForm reveals on tap. Each input's `name` is the
+// Google Form's entry ID for that field, which is how Google Forms
+// matches submitted values to its own fields. The hidden iframe (unique
+// per block, named after its own blockId) is what the form's `target`
+// points at — submitting into a hidden iframe instead of the top window
+// is what lets this work with zero backend/page reload, on GitHub Pages
+// or anywhere else purely static. Used by applyContactFormConfig()
+// (editor) and the static exporter, so they can't drift apart.
+function buildContactFormBlockHTML(blockId, config) {
+    const iframeName = 'gform-target-' + blockId;
     return `
-        <div class="contact-form-field">
-            <label>Name</label>
-            <input type="text" name="${config.entryName}">
-        </div>
-        <div class="contact-form-field">
-            <label>Email *</label>
-            <input type="email" name="${config.entryEmail}">
-        </div>
-        <div class="contact-form-field">
-            <label>Phone *</label>
-            <input type="tel" name="${config.entryPhone}">
-        </div>
-        <div class="contact-form-field">
-            <label>Message *</label>
-            <textarea name="${config.entryMessage}" required></textarea>
-        </div>
         <div class="block_button_container">
-            <button type="submit" class="block_button">SEND</button>
+            <button type="button" class="block_button contact-form-toggle-btn" onclick="window.toggleContactForm(this)">MESSAGE US</button>
         </div>
-        <iframe name="gform-target-${blockId}" style="display:none" title="form submission target"></iframe>
+        <form class="contact-form-fields" action="${escapeHtmlAttr(config.actionUrl)}" method="POST" target="${escapeHtmlAttr(iframeName)}" onsubmit="return window.submitContactForm(this)">
+            <div class="contact-form-field">
+                <label>Name</label>
+                <input type="text" name="${escapeHtmlAttr(config.entryName)}">
+            </div>
+            <div class="contact-form-field">
+                <label>Email *</label>
+                <input type="email" name="${escapeHtmlAttr(config.entryEmail)}">
+            </div>
+            <div class="contact-form-field">
+                <label>Phone *</label>
+                <input type="tel" name="${escapeHtmlAttr(config.entryPhone)}">
+            </div>
+            <div class="contact-form-field">
+                <label>Message *</label>
+                <textarea name="${escapeHtmlAttr(config.entryMessage)}" required></textarea>
+            </div>
+            <div class="block_button_container">
+                <button type="submit" class="block_button">SEND</button>
+            </div>
+            <iframe name="${escapeHtmlAttr(iframeName)}" style="display:none" title="form submission target"></iframe>
+        </form>
     `;
 }
 
-// Single point of truth for writing a config onto a contact form element —
-// sets the form-level attributes (action/method/target/onsubmit), stashes
-// the config itself as data- attributes (so saveContactFormBlock can read
-// it back off the DOM, same pattern as every other block type), and
-// rebuilds the field markup to match. Used by insertElement (new block,
-// default config), renderPage (reconstructing from saved JSON), and the
-// settings modal's Save (a config change on an existing block).
+// Single point of truth for writing a config onto a contact form block —
+// stashes the config as data- attributes on the outer wrapper (so
+// saveContactFormBlock can read it back off the DOM, same pattern as
+// every other block type) and rebuilds the block's markup to match (which
+// also resets it back to its default closed/"MESSAGE US" state). Used by
+// insertElement (new block, default config), renderPage (reconstructing
+// from saved JSON), and the settings modal's Save (a config change on an
+// existing block).
 function applyContactFormConfig(el, config) {
     let blockId = el.getAttribute('data-block-id');
     if (!blockId) {
@@ -2445,20 +2414,95 @@ function applyContactFormConfig(el, config) {
         el.setAttribute('data-block-id', blockId);
     }
 
-    el.setAttribute('action', config.actionUrl);
-    el.setAttribute('method', 'POST');
-    el.removeAttribute('enctype'); // was needed for the old mailto: approach only
-    el.setAttribute('target', 'gform-target-' + blockId);
-    el.setAttribute('onsubmit', 'return window.validateContactForm(this)');
-
     el.setAttribute('data-action-url', config.actionUrl);
     el.setAttribute('data-entry-name', config.entryName);
     el.setAttribute('data-entry-email', config.entryEmail);
     el.setAttribute('data-entry-phone', config.entryPhone);
     el.setAttribute('data-entry-message', config.entryMessage);
 
-    el.innerHTML = buildContactFormFieldsHTML(blockId, config);
+    el.innerHTML = buildContactFormBlockHTML(blockId, config);
 }
+
+const CONTACT_FORM_SCRIPT = `
+function __toggleContactForm(btn) {
+    var wrapper = btn.closest('.block_contact_form');
+    if (!wrapper) return;
+    var btnWrap = btn.closest('.block_button_container');
+    var form = wrapper.querySelector('.contact-form-fields');
+    if (!form) return;
+    if (btnWrap) btnWrap.style.display = 'none';
+    form.style.display = 'flex';
+}
+window.toggleContactForm = __toggleContactForm;
+
+function __resetContactForm(wrapper) {
+    if (!wrapper) return;
+    var form = wrapper.querySelector('.contact-form-fields');
+    var btnWrap = wrapper.querySelector(':scope > .block_button_container');
+    if (form) {
+        form.reset();
+        form.style.display = 'none';
+        form.querySelectorAll('.contact-form-error').forEach(function(e) { e.remove(); });
+        form.querySelectorAll('input, textarea, button').forEach(function(f) { f.disabled = false; });
+    }
+    if (btnWrap) btnWrap.style.display = '';
+}
+
+function __showContactFormThankYou() {
+    var overlay = document.getElementById('contact-thankyou-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'contact-thankyou-overlay';
+        overlay.className = 'contact-thankyou-overlay';
+        overlay.innerHTML = '<div class="contact-thankyou-box"><p>Thank you for your message! We will be in touch shortly.</p><button type="button" class="block_button" onclick="window.closeContactFormThankYou()">OK</button></div>';
+        document.body.appendChild(overlay);
+    }
+    overlay.style.display = 'flex';
+}
+window.closeContactFormThankYou = function() {
+    var overlay = document.getElementById('contact-thankyou-overlay');
+    if (overlay) overlay.style.display = 'none';
+};
+
+// Contact form: Email and Phone are each individually optional in the HTML
+// (native required can't express "one of the two"), so that either/or
+// rule is enforced here on submit, alongside Message's own real required
+// attribute (enforced natively by the browser before this handler ever
+// runs). Selected by input type, not name — field names are the form's
+// own configurable Google Forms entry IDs, not fixed strings.
+window.submitContactForm = function(form) {
+    form.querySelectorAll('.contact-form-error').forEach(function(e) { e.remove(); });
+
+    var emailField = form.querySelector('input[type="email"]');
+    var phoneField = form.querySelector('input[type="tel"]');
+    var emailVal = emailField ? emailField.value.trim() : '';
+    var phoneVal = phoneField ? phoneField.value.trim() : '';
+
+    if (!emailVal && !phoneVal) {
+        var errorMsg = document.createElement('div');
+        errorMsg.className = 'contact-form-error';
+        errorMsg.textContent = 'Please provide either an email address or a phone number.';
+        var fieldGroup = (phoneField && phoneField.closest('.contact-form-field')) || form;
+        fieldGroup.appendChild(errorMsg);
+        (emailField || phoneField || form).focus();
+        return false;
+    }
+
+    // The real submit proceeds into a hidden iframe (no page reload/nav) —
+    // there's no reliable way to read Google's actual response from it, so
+    // this is optimistic: deferred to right after this handler returns, so
+    // resetting fields doesn't strip them from the in-flight submission
+    // (disabled fields are excluded from form submission data per the HTML
+    // spec, and reset() during the synchronous submit would clear values
+    // before the browser has read them).
+    setTimeout(function() {
+        __resetContactForm(form.closest('.block_contact_form'));
+        __showContactFormThankYou();
+    }, 0);
+
+    return true;
+};
+`;
 
 function insertElement(type, data) {
     const doc = frame.contentDocument; 
@@ -2521,7 +2565,7 @@ function insertElement(type, data) {
 
     // 3. CONTACT FORM
     if (type === 'contact_form') {
-        const el = doc.createElement('form');
+        const el = doc.createElement('div');
         el.className = 'editable block_contact_form';
         applyContactFormConfig(el, DEFAULT_CONTACT_FORM_CONFIG);
 
@@ -2846,7 +2890,7 @@ function renderPage() {
             setupGalleryDragula(el);
         }
         else if (block.type === 'contactForm') {
-            const el = doc.createElement('form');
+            const el = doc.createElement('div');
             el.className = 'editable block_contact_form';
             el.setAttribute('data-block-id', block.id);
             applyContactFormConfig(el, {
@@ -4520,8 +4564,7 @@ function renderBlockToStaticHTML(block, galleryAcc) {
                 entryPhone: block.entryPhone || DEFAULT_CONTACT_FORM_CONFIG.entryPhone,
                 entryMessage: block.entryMessage || DEFAULT_CONTACT_FORM_CONFIG.entryMessage
             };
-            const iframeName = 'gform-target-' + block.id;
-            return `<form class="block_contact_form" action="${escapeHtmlAttr(config.actionUrl)}" method="POST" target="${iframeName}" onsubmit="return window.validateContactForm(this)">${buildContactFormFieldsHTML(block.id, config)}</form>`;
+            return `<div class="block_contact_form" data-block-id="${escapeHtmlAttr(block.id)}">${buildContactFormBlockHTML(block.id, config)}</div>`;
         }
         case 'container': {
             let imgHTML = '';
@@ -4750,6 +4793,12 @@ function buildPageHTML(page, templateHtml) {
     if ((page.body.blocks || []).some(b => b.type === 'container' && b.image)) {
         const s = doc.createElement('script');
         s.textContent = EXPORT_DIV_IMAGE_SCRIPT;
+        doc.body.appendChild(s);
+    }
+
+    if ((page.body.blocks || []).some(b => b.type === 'contactForm')) {
+        const s = doc.createElement('script');
+        s.textContent = CONTACT_FORM_SCRIPT;
         doc.body.appendChild(s);
     }
 

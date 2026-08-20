@@ -278,9 +278,9 @@ footer { text-align: center; color: #1A1A1A; padding: 3.75rem 1.25rem 2.5rem; bo
 }
 .block_button:hover { background-color: #151515; color: #ffffff !important; }
 /* .block_button also gets applied directly to a real <button> element by
-   the Contact Form block's Send button (see buildContactFormFieldsHTML in
-   builder.html) — no separate button styling needed, it just works since
-   this rule isn't scoped to <a>. */
+   the Contact Form block's toggle and Send buttons (see
+   buildContactFormBlockHTML in builder.html) — no separate button styling
+   needed, it just works since this rule isn't scoped to <a>. */
 .block_button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* --- Multi-Image Row (live site) --- */
@@ -294,9 +294,15 @@ footer { text-align: center; color: #1A1A1A; padding: 3.75rem 1.25rem 2.5rem; bo
     width: 100%;
     max-width: 34rem;
     margin: 0.625rem auto 1.875rem;
-    display: flex;
+    box-sizing: border-box;
+}
+.contact-form-toggle-btn { cursor: pointer; }
+.contact-form-fields {
+    display: none; /* revealed (display:flex) by window.toggleContactForm — see CONTACT_FORM_SCRIPT in builder.html */
     flex-direction: column;
     gap: 1rem;
+    margin-top: 1rem;
+    width: 100%;
     box-sizing: border-box;
 }
 .contact-form-field {
@@ -335,21 +341,44 @@ footer { text-align: center; color: #1A1A1A; padding: 3.75rem 1.25rem 2.5rem; bo
     min-height: 6.25rem;
     resize: vertical;
 }
-/* Shown by window.validateContactForm (injected into the preview iframe —
-   see init() in builder.html) when neither Email nor Phone was filled in. */
+/* Shown by window.submitContactForm (injected into the preview iframe and
+   every exported page with a contact form — see CONTACT_FORM_SCRIPT in
+   builder.html) when neither Email nor Phone was filled in. */
 .contact-form-error {
     color: #c0392b;
     font-size: 0.8rem;
     margin-top: -0.25rem;
 }
-/* Shown optimistically after a valid submit — see window.validateContactForm
-   for why this can't be a real server-confirmed success state. */
-.contact-form-success {
-    color: #2e7d32;
-    font-size: 0.9rem;
-    font-weight: 700;
+
+/* --- Contact Form: thank-you acknowledgement popup --- */
+/* Shown by window.showContactFormThankYou (CONTACT_FORM_SCRIPT) right
+   after a valid submit; the form itself is reset and hidden underneath at
+   the same time (see window.submitContactForm), so dismissing this just
+   leaves the page back at its normal "MESSAGE US" button state. */
+.contact-thankyou-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+}
+.contact-thankyou-box {
+    background: #fff;
+    border-radius: 8px;
+    padding: 2rem;
+    max-width: 24rem;
+    width: 100%;
     text-align: center;
-    margin-top: 0.25rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+.contact-thankyou-box p {
+    margin: 0 0 1.25rem;
+    color: var(--text-dark);
+    font-size: 1rem;
+    line-height: 1.6;
 }
 
 /* --- Responsive --- */
