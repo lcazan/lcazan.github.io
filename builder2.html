@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
-    <title>Snoozing Builder | v5.5.1</title>
+    <title>Snoozing Builder</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="editor.css">
 <style>
@@ -171,7 +171,15 @@
             cursor: grab;
             color: #888;
             touch-action: none;
-            padding: 4px;
+            padding: 12px;
+            margin: -12px 0;
+            font-size: 16px;
+            min-width: 44px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
         .layer-icon {
             color: var(--brand-pink);
@@ -215,6 +223,28 @@
             overflow: hidden;
         }
         .layer-row.active-page-row { border-color: var(--brand-pink); background: #332a26; }
+
+        /* --- Settings modal's Page/Global tab switcher --- */
+        .settings-tab-switcher {
+            display: flex;
+            gap: 8px;
+            padding: 12px 20px 0;
+            background: #111;
+            border-bottom: 1px solid #333;
+        }
+        .settings-tab-btn {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: #888;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            padding: 8px 4px 10px;
+            cursor: pointer;
+        }
+        .settings-tab-btn.active { color: var(--brand-pink); border-bottom-color: var(--brand-pink); }
 
         /* Contact Form Settings modal — same fixed full-viewport overlay
            pattern as #settings-overlay/#menu-editor-overlay (those get it
@@ -301,7 +331,7 @@
             <button class="device-btn" id="btn-iphone" onclick="setDevice('iphone')"><i class="fa-solid fa-mobile"></i></button>
         </div>
         <div class="header-right-controls">
-            <div class="version-status">v5.5.1</div>
+            <div class="version-status" id="version-status-display"></div>
             <div class="folder-tabs">
                 <div class="folder-tab" id="header-tab-layers" onclick="toggleDrawerTab('layers')" title="Layers">Layers</div>
                 <div class="folder-tab" id="header-tab-pages" onclick="toggleDrawerTab('pages')" title="Pages">Pages</div>
@@ -325,7 +355,7 @@ autocomplete="off"
 <div id="project-picker-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:30000; align-items:center; justify-content:center;">
     <div class="settings-modal" style="width:min(420px, 90vw);">
         <div class="settings-header">
-            <h3 style="margin:0;">My Snoozing Baby Builder</h3>
+            <h3 style="margin:0;">My Snoozing Baby Builder <span id="project-picker-version" style="font-size:11px; color:#777; font-weight:400;"></span></h3>
             <span id="project-picker-close" style="display:none; cursor:pointer; font-size:24px; color:#888;" onclick="closeProjectPicker()">&times;</span>
         </div>
         <div class="settings-body" id="project-picker-body">
@@ -341,8 +371,13 @@ autocomplete="off"
             <h3 style="margin:0;">Project Settings</h3>
             <span style="cursor:pointer; font-size:24px;" onclick="closeSettingsModal()">&times;</span>
         </div>
-        
-        <div class="settings-body">
+
+        <div class="settings-tab-switcher">
+            <button class="settings-tab-btn active" id="settings-tab-btn-page" onclick="switchSettingsTab('page')">This Page</button>
+            <button class="settings-tab-btn" id="settings-tab-btn-global" onclick="switchSettingsTab('global')">Global</button>
+        </div>
+
+        <div class="settings-body" id="settings-tab-page">
             <div class="settings-form-group">
                 <label>Page Title (Browser Tab)</label>
                 <input type="text" id="set-page-title" placeholder="My Snoozing Baby">
@@ -364,7 +399,9 @@ autocomplete="off"
                 <label>Header Scripts</label>
                 <textarea id="set-head-code"></textarea>
             </div>
+        </div>
 
+        <div class="settings-body" id="settings-tab-global" style="display:none;">
             <div class="settings-form-group">
                 <label>Global Favicon</label>
                 <input type="file" id="favicon-upload" accept="image/x-icon,image/png,image/svg+xml" onchange="handleFaviconSelect(this)">
@@ -402,7 +439,7 @@ autocomplete="off"
                 <label>Disclaimer</label>
                 <textarea id="set-footer-disclaimer"></textarea>
             </div>
-        </div> 
+        </div>
 
         <div class="settings-footer">
             <button class="save-settings-btn" style="background:#444; margin-right:10px;" onclick="closeSettingsModal()">Cancel</button>
@@ -500,6 +537,20 @@ autocomplete="off"
 
 
 <script>
+
+// Bump this on every future edit to this file — the single source of truth
+// for the version shown in the browser tab title, the header, and the
+// startup project-picker modal (see applyVersionDisplay below).
+const BUILDER_VERSION = 'v5.6.0';
+
+function applyVersionDisplay() {
+    document.title = 'Snoozing Builder | ' + BUILDER_VERSION;
+    const headerEl = document.getElementById('version-status-display');
+    if (headerEl) headerEl.textContent = BUILDER_VERSION;
+    const pickerEl = document.getElementById('project-picker-version');
+    if (pickerEl) pickerEl.textContent = BUILDER_VERSION;
+}
+applyVersionDisplay();
 
 
 // Opens the clicked menu and closes any others
@@ -1166,8 +1217,17 @@ function openSettingsModal() {
     document.getElementById('set-footer-disclaimer').value = f.disclaimer || '';
 
     renderFaviconPreview();
+    switchSettingsTab('page');
 
     document.getElementById('settings-overlay').style.display = 'flex';
+}
+
+function switchSettingsTab(tab) {
+    const isPage = tab === 'page';
+    document.getElementById('settings-tab-btn-page').classList.toggle('active', isPage);
+    document.getElementById('settings-tab-btn-global').classList.toggle('active', !isPage);
+    document.getElementById('settings-tab-page').style.display = isPage ? 'block' : 'none';
+    document.getElementById('settings-tab-global').style.display = isPage ? 'none' : 'block';
 }
 
 function closeSettingsModal() {
