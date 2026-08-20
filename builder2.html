@@ -2464,6 +2464,17 @@ window.closeContactFormThankYou = function() {
     if (overlay) overlay.style.display = 'none';
 };
 
+// Clears the "provide either an email or phone" error as soon as the
+// person starts typing in either field again, rather than leaving it
+// stuck on screen until their next submit attempt.
+document.addEventListener('input', function(e) {
+    var target = e.target;
+    if (!target.matches || !target.matches('input[type="email"], input[type="tel"]')) return;
+    var form = target.closest('.contact-form-fields');
+    if (!form) return;
+    form.querySelectorAll('.contact-form-error').forEach(function(el) { el.remove(); });
+});
+
 // Contact form: Email and Phone are each individually optional in the HTML
 // (native required can't express "one of the two"), so that either/or
 // rule is enforced here on submit, alongside Message's own real required
@@ -4261,7 +4272,7 @@ function renderPagesList() {
             <span class="layer-label"></span>
             ${canDelete ? '<span class="layer-delete-btn" title="Delete page"><i class="fa-solid fa-trash"></i></span>' : ''}
         `;
-        row.querySelector('.layer-label').textContent = page.name + (page.slug ? ' (' + page.slug + ')' : '');
+        row.querySelector('.layer-label').textContent = page.slug || page.name;
         row.querySelector('.layer-label').addEventListener('click', () => switchToPage(page.id));
         row.querySelector('.layer-icon').addEventListener('click', () => switchToPage(page.id));
 
