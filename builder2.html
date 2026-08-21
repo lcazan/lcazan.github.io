@@ -293,11 +293,9 @@
             <i class="fa-solid fa-font"></i><i class="fa-solid fa-caret-right" style="font-size: 8px; margin-left: 5px; color: #888;"></i>
         </button>
         <div id="text-flyout" class="flyout-panel">
-            <button class="insert-btn" onclick="insertElement('section_heading'); closeAllFlyouts();" title="Section Heading">T<sub>1</sub></button>
-            <button class="insert-btn" onclick="insertElement('block_heading'); closeAllFlyouts();" title="Block Heading">T<sub>2</sub></button>
-            <button class="insert-btn" onclick="insertElement('block_text'); closeAllFlyouts();" title="Paragraph Text">T<sub>3</sub></button>
-            <button class="insert-btn" onclick="insertElement('block_heading_4'); closeAllFlyouts();" title="Sub-Heading">T<sub>4</sub></button>
-            <button class="insert-btn" onclick="insertElement('p1'); closeAllFlyouts();" title="Small Paragraph">P<sub>1</sub></button>
+            <button class="insert-btn" onclick="insertElement('text_L'); closeAllFlyouts();" title="Large text (Heading α / γ)">L</button>
+            <button class="insert-btn" onclick="insertElement('text_M'); closeAllFlyouts();" title="Medium text (Heading β / δ, Body α / β)">M</button>
+            <button class="insert-btn" onclick="insertElement('text_S'); closeAllFlyouts();" title="Small text (Details α / β / γ)">S</button>
         </div>
     </div>
 
@@ -546,7 +544,7 @@ autocomplete="off"
 // Bump this on every future edit to this file — the single source of truth
 // for the version shown in the browser tab title, the header, and the
 // startup project-picker modal (see applyVersionDisplay below).
-const BUILDER_VERSION = 'v5.7.0';
+const BUILDER_VERSION = 'v5.8.0';
 
 function applyVersionDisplay() {
     document.title = 'Snoozing Builder | ' + BUILDER_VERSION;
@@ -1362,6 +1360,32 @@ let currentMode = 'iphone';
 let isResizing = false;
 let activePillMode = null;
 
+// --- TYPOGRAPHY SYSTEM: L/M/S text block catalog ---
+// Every L/M/S text block carries a data-size attribute ("L"/"M"/"S") set
+// at insert time, which determines which entries from this catalog appear
+// in its toolbar dropdown (see renderToolbar()'s isTextBlock branch).
+// Each entry's "key" is the CSS class (defined in msb.css) that also
+// determines the block's HTML tag — swapping styles via the dropdown
+// rebuilds the element with the new tag (see changeTextStyle()), since
+// e.g. Heading α is an <h1> and Heading γ is an <h3>.
+const TEXT_STYLES = {
+    L: [
+        { key: 'heading-alpha', tag: 'h1', label: 'Heading α' },
+        { key: 'heading-gamma', tag: 'h3', label: 'Heading γ' }
+    ],
+    M: [
+        { key: 'heading-beta',  tag: 'h2', label: 'Heading β' },
+        { key: 'heading-delta', tag: 'h4', label: 'Heading δ' },
+        { key: 'body-alpha',    tag: 'p',  label: 'Body α' },
+        { key: 'body-beta',     tag: 'p',  label: 'Body β' }
+    ],
+    S: [
+        { key: 'details-alpha', tag: 'p', label: 'Details α' },
+        { key: 'details-beta',  tag: 'p', label: 'Details β' },
+        { key: 'details-gamma', tag: 'p', label: 'Details γ' }
+    ]
+};
+
 // --- FILE SYSTEM ACCESS: project folder handles ---
 // projectDirHandle is the picked/remembered project folder itself (holds
 // <project name>.json and the images/ subfolder). imagesDirHandle is that
@@ -2128,6 +2152,7 @@ function resetToolbar() {
     const isDiv       = selectedEl.classList.contains('block_container');
     const isEditable  = selectedEl.contentEditable === "true";
     const isContactForm = selectedEl.classList.contains('block_contact_form');
+    const isTextBlock = selectedEl.classList.contains('text-block');
     
     // 1. Initialize logic and clean styles
     let html = resetToolbar();
@@ -2241,33 +2266,20 @@ function resetToolbar() {
         else if (isSpacer) {
             html += `<button class="tool-btn" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
         } 
-        else if (isEditable) {
-            // For text blocks specifically (not other contentEditable cases),
-            // show a single style dropdown (T1/T2/T3/T4/P1) instead of one
-            // button per variant — regains toolbar space now that there are
-            // five variants. T3 additionally gets an "Aa" toggle for its
-            // alternate paragraph style.
-            const variant = selectedEl.classList.contains('section_heading') ? 'section_heading' :
-                             selectedEl.classList.contains('block_heading') ? 'block_heading' :
-                             selectedEl.classList.contains('block_text') ? 'block_text' :
-                             selectedEl.classList.contains('block_heading_4') ? 'block_heading_4' :
-                             selectedEl.classList.contains('p1') ? 'p1' : null;
-            if (variant) {
-                html += `
-                    <select class="tool-select" onchange="changeTextVariant(this.value)" title="Text style">
-                        <option value="section_heading" ${variant === 'section_heading' ? 'selected' : ''}>T1 · Section Heading</option>
-                        <option value="block_heading" ${variant === 'block_heading' ? 'selected' : ''}>T2 · Block Heading</option>
-                        <option value="block_text" ${variant === 'block_text' ? 'selected' : ''}>T3 · Paragraph</option>
-                        <option value="block_heading_4" ${variant === 'block_heading_4' ? 'selected' : ''}>T4 · Sub-Heading</option>
-                        <option value="p1" ${variant === 'p1' ? 'selected' : ''}>P1 · Small Paragraph</option>
-                    </select>
-                `;
-                if (variant === 'block_text') {
-                    const isAlt = selectedEl.classList.contains('text-alt');
-                    const active = 'background:var(--brand-pink); color:#000;';
-                    html += `<button class="tool-btn" style="font-size:11px; font-weight:900; ${isAlt ? active : ''}" onclick="toggleTextAltStyle()" title="Alternate paragraph style">Aa</button>`;
-                }
-            }
+        else if (isTextBlock) {
+            // L/M/S typography system. data-size ("L"/"M"/"S", set at
+            // insert time — see insertElement()) picks which entries from
+            // TEXT_STYLES show up here. Selecting a different style swaps
+            // both the class (the look) and the underlying tag, since e.g.
+            // Heading α is an <h1> and Body α is a <p> — see
+            // changeTextStyle().
+            const sizeKey = selectedEl.getAttribute('data-size');
+            const styles = TEXT_STYLES[sizeKey] || [];
+            const currentStyle = styles.find(s => selectedEl.classList.contains(s.key)) || styles[0];
+            const options = styles.map(s =>
+                `<option value="${s.key}" ${currentStyle && s.key === currentStyle.key ? 'selected' : ''}>${s.label}</option>`
+            ).join('');
+            html += `<select class="tool-select" onchange="changeTextStyle(this.value)" title="Text style">${options}</select>`;
             html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
         }
     }
@@ -2275,9 +2287,12 @@ function resetToolbar() {
     // --- 3. RESTORED BASELINE COMMON TOOLS (Align & Delete) ---
     // Button blocks no longer get align/center — they're excluded here per
     // explicit request (buttons are already centered by their own CSS, and
-    // this toolbar space is reused for TEXT/LINK/APPLY instead).
+    // this toolbar space is reused for TEXT/LINK/APPLY instead). Text
+    // blocks (L/M/S) always get align/center regardless of whether they're
+    // nested inside a <div> — that's the "|| isTextBlock" override below —
+    // see setAlign() for the matching change on the apply side.
     const inDiv = selectedEl.closest('.block_container');
-    if (!inDiv && !isDiv && !isSpacer && !isGallery && !isMultiRow && !isMultiItem && !isBtn && !isContactForm) {
+    if ((!inDiv || isTextBlock) && !isDiv && !isSpacer && !isGallery && !isMultiRow && !isMultiItem && !isBtn && !isContactForm) {
         html += `<button class="tool-btn" onclick="setAlign('left')"><i class="fa-solid fa-align-left"></i></button><button class="tool-btn" onclick="centerItem()"><i class="fa-solid fa-align-center"></i></button>`;
     }
 
@@ -2604,9 +2619,16 @@ function insertElement(type, data) {
     }
 
     // 4. STANDARD ELEMENTS
-    const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p', 'block_heading_4': 'h4', 'p1': 'p' };
-    const el = doc.createElement(tagMap[type] || 'div');
-    el.className = `editable ${type === 'block_button' ? 'block_button_container' : type}`;
+    // L/M/S text blocks pick their tag from TEXT_STYLES (each size's
+    // default is its first entry) rather than a fixed per-type tag, since
+    // the tag varies by chosen style, not by type.
+    const isNewTextBlock = type === 'text_L' || type === 'text_M' || type === 'text_S';
+    const textSizeKey = isNewTextBlock ? type.slice(-1) : null;
+    const defaultTextStyle = isNewTextBlock ? TEXT_STYLES[textSizeKey][0] : null;
+    const el = doc.createElement(isNewTextBlock ? defaultTextStyle.tag : 'div');
+    el.className = isNewTextBlock
+        ? `editable text-block ${defaultTextStyle.key}`
+        : `editable ${type === 'block_button' ? 'block_button_container' : type}`;
     
     if (type === 'block_image') { 
         const previewUrl = (data && data.previewUrl) ? data.previewUrl : 'https://via.placeholder.com/400x200';
@@ -2657,15 +2679,15 @@ function insertElement(type, data) {
         // Tag with a stable ID so saveContainerBlock() can find/update its
         // entry in getCurrentPage().body.blocks.
         el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
-    } else { 
-        el.innerText = ""; 
-        el.setAttribute('data-placeholder', 'Type here...'); 
-        el.contentEditable = "true"; 
+    } else if (isNewTextBlock) {
+        el.innerText = "";
+        el.setAttribute('data-placeholder', 'Type here...');
+        el.setAttribute('data-size', textSizeKey);
+        el.style.textAlign = 'left';
+        el.contentEditable = "true";
         // Tag this new text block with a stable ID so saveTextBlock() can
         // later find and update its entry in getCurrentPage().body.blocks.
-        if (type === 'section_heading' || type === 'block_heading' || type === 'block_text' || type === 'block_heading_4' || type === 'p1') {
-            el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
-        }
+        el.setAttribute('data-block-id', 'blk_' + Date.now() + '_' + Math.floor(Math.random() * 1000));
     }
 
     // 4. INSERTION LOGIC (Using the protected safeReferenceEl)
@@ -2758,14 +2780,19 @@ function renderPage() {
 
     getCurrentPage().body.blocks.forEach(block => {
         if (block.type === 'text') {
-            const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p', 'block_heading_4': 'h4', 'p1': 'p' };
-            const el = doc.createElement(tagMap[block.variant] || 'p');
-            el.className = `editable ${block.variant}${block.altStyle ? ' text-alt' : ''}`;
+            // L/M/S typography system: block.style (e.g. "heading-alpha")
+            // determines both the CSS class and, via TEXT_STYLES, the tag.
+            // Falls back to a plain <p> for any pre-rewrite project data
+            // (old T1–T4/P1 blocks aren't migrated — see project notes).
+            const styleEntry = Object.values(TEXT_STYLES).flat().find(s => s.key === block.style);
+            const el = doc.createElement(styleEntry ? styleEntry.tag : 'p');
+            el.className = `editable text-block ${block.style || ''}`.trim();
             el.contentEditable = "true";
             el.setAttribute('data-placeholder', 'Type here...');
             el.setAttribute('data-block-id', block.id);
+            if (block.size) el.setAttribute('data-size', block.size);
             el.innerHTML = block.contentHTML;
-            if (block.align) el.style.textAlign = block.align;
+            el.style.textAlign = block.align || 'left';
             root.appendChild(el);
         }
         else if (block.type === 'spacer') {
@@ -2976,11 +3003,9 @@ function renderPage() {
 // render — see saveSelectedBlock() for why saving and rendering are
 // deliberately separate steps now.
 function saveTextBlock(el) {
-    const variant = el.classList.contains('section_heading') ? 'section_heading' :
-                    el.classList.contains('block_heading') ? 'block_heading' :
-                    el.classList.contains('block_heading_4') ? 'block_heading_4' :
-                    el.classList.contains('p1') ? 'p1' :
-                    'block_text';
+    const sizeKey = el.getAttribute('data-size');
+    const styles = TEXT_STYLES[sizeKey] || [];
+    const styleInfo = styles.find(s => el.classList.contains(s.key)) || styles[0];
 
     let blockId = el.getAttribute('data-block-id');
     if (!blockId) {
@@ -2991,10 +3016,10 @@ function saveTextBlock(el) {
     const blockData = {
         id: blockId,
         type: 'text',
-        variant: variant,
+        size: sizeKey,
+        style: styleInfo ? styleInfo.key : null,
         contentHTML: el.innerHTML,
-        align: el.style.textAlign || '',
-        altStyle: el.classList.contains('text-alt')
+        align: el.style.textAlign || ''
     };
 
     const existingIndex = getCurrentPage().body.blocks.findIndex(b => b.id === blockId);
@@ -3005,25 +3030,30 @@ function saveTextBlock(el) {
     }
 }
 
-// Switches a text block between T1 (section_heading/h2), T2 (block_heading/h3),
-// and T3 (block_text/p). Since the tag itself changes, this rebuilds the
-// element with the new tag, carries over its current content and alignment,
-// and re-selects it so the toolbar reflects the new variant immediately.
-function changeTextVariant(newVariant) {
+// Switches a text block between styles within its L/M/S category (e.g.
+// Heading α -> Body α is invalid since Body α only lives under M — the
+// dropdown itself only ever offers same-category options, see
+// renderToolbar()). Since the tag itself changes per style (h1/h2/h3/h4/p),
+// this rebuilds the element with the new tag, carries over its current
+// content and alignment, and re-selects it so the toolbar reflects the new
+// style immediately.
+function changeTextStyle(newStyleKey) {
     if (!selectedEl) return;
-    const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p', 'block_heading_4': 'h4', 'p1': 'p' };
-    const newTag = tagMap[newVariant];
-    if (!newTag) return;
+    const sizeKey = selectedEl.getAttribute('data-size');
+    const styles = TEXT_STYLES[sizeKey] || [];
+    const newStyleInfo = styles.find(s => s.key === newStyleKey);
+    if (!newStyleInfo) return;
 
     const doc = frame.contentDocument;
-    const newEl = doc.createElement(newTag);
-    newEl.className = `editable ${newVariant}`;
+    const newEl = doc.createElement(newStyleInfo.tag);
+    newEl.className = `editable text-block ${newStyleInfo.key}`;
     newEl.contentEditable = "true";
     newEl.setAttribute('data-placeholder', 'Type here...');
+    newEl.setAttribute('data-size', sizeKey);
     const existingId = selectedEl.getAttribute('data-block-id');
     if (existingId) newEl.setAttribute('data-block-id', existingId);
     newEl.innerHTML = selectedEl.innerHTML;
-    newEl.style.textAlign = selectedEl.style.textAlign || '';
+    newEl.style.textAlign = selectedEl.style.textAlign || 'left';
 
     selectedEl.replaceWith(newEl);
     selectedEl = newEl;
@@ -3301,12 +3331,11 @@ function extractChildBlockData(el) {
         el.setAttribute('data-block-id', blockId);
     }
 
-    if (el.classList.contains('section_heading') || el.classList.contains('block_heading') || el.classList.contains('block_text') || el.classList.contains('block_heading_4') || el.classList.contains('p1')) {
-        const variant = el.classList.contains('section_heading') ? 'section_heading' :
-                        el.classList.contains('block_heading') ? 'block_heading' :
-                        el.classList.contains('block_heading_4') ? 'block_heading_4' :
-                        el.classList.contains('p1') ? 'p1' : 'block_text';
-        return { id: blockId, type: 'text', variant: variant, contentHTML: el.innerHTML, align: el.style.textAlign || '', altStyle: el.classList.contains('text-alt') };
+    if (el.classList.contains('text-block')) {
+        const sizeKey = el.getAttribute('data-size');
+        const styles = TEXT_STYLES[sizeKey] || [];
+        const styleInfo = styles.find(s => el.classList.contains(s.key)) || styles[0];
+        return { id: blockId, type: 'text', size: sizeKey, style: styleInfo ? styleInfo.key : null, contentHTML: el.innerHTML, align: el.style.textAlign || '' };
     }
     if (el.classList.contains('block_spacer')) {
         return { id: blockId, type: 'spacer', showLine: !!(el.style.borderBottom && el.style.borderBottom !== 'none') };
@@ -3329,14 +3358,15 @@ function extractChildBlockData(el) {
 // types that can nest inside a container.
 function renderChildBlock(doc, block) {
     if (block.type === 'text') {
-        const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p', 'block_heading_4': 'h4', 'p1': 'p' };
-        const el = doc.createElement(tagMap[block.variant] || 'p');
-        el.className = `editable ${block.variant}${block.altStyle ? ' text-alt' : ''}`;
+        const styleEntry = Object.values(TEXT_STYLES).flat().find(s => s.key === block.style);
+        const el = doc.createElement(styleEntry ? styleEntry.tag : 'p');
+        el.className = `editable text-block ${block.style || ''}`.trim();
         el.contentEditable = "true";
         el.setAttribute('data-placeholder', 'Type here...');
         el.setAttribute('data-block-id', block.id);
+        if (block.size) el.setAttribute('data-size', block.size);
         el.innerHTML = block.contentHTML;
-        if (block.align) el.style.textAlign = block.align;
+        el.style.textAlign = block.align || 'left';
         return el;
     }
     if (block.type === 'spacer') {
@@ -3489,11 +3519,7 @@ function saveSelectedBlock(el) {
         return;
     }
 
-    const isTextBlock = el.classList.contains('section_heading') ||
-                         el.classList.contains('block_heading') ||
-                         el.classList.contains('block_text') ||
-                         el.classList.contains('block_heading_4') ||
-                         el.classList.contains('p1');
+    const isTextBlock = el.classList.contains('text-block');
 
     if (isTextBlock) {
         saveTextBlock(el);
@@ -3588,11 +3614,7 @@ function saveSelectedBlock(el) {
         const isHTMLBlock = selectedEl.classList.contains('block_custom_html');
 
         // --- JSON SOURCE OF TRUTH: flag migrated blocks for removal from getCurrentPage().body.blocks ---
-        const isMigratedBlock = selectedEl.classList.contains('section_heading') ||
-                                 selectedEl.classList.contains('block_heading') ||
-                                 selectedEl.classList.contains('block_text') ||
-                                 selectedEl.classList.contains('block_heading_4') ||
-                                 selectedEl.classList.contains('p1') ||
+        const isMigratedBlock = selectedEl.classList.contains('text-block') ||
                                  selectedEl.classList.contains('block_spacer') ||
                                  selectedEl.classList.contains('block_button_container') ||
                                  selectedEl.classList.contains('block_custom_html') ||
@@ -3699,7 +3721,18 @@ function saveSelectedBlock(el) {
         }
         i.value = '';
     }
-    function setAlign(pos) { if (selectedEl && !selectedEl.closest('.block_container')) { selectedEl.style.textAlign = pos; if(selectedEl.classList.contains('block_image')) { selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block'; selectedEl.style.margin = pos === 'center' ? '0 auto' : '0'; } if (selectedEl.classList.contains('block_heading')) { selectedEl.style.marginLeft = pos === 'left' ? '0' : ''; selectedEl.style.marginRight = pos === 'left' ? '0' : ''; } } }
+    // Text blocks (L/M/S) can always be aligned, even nested inside a
+    // <div> — everything else keeps the old "not nested" restriction.
+    function setAlign(pos) {
+        if (!selectedEl) return;
+        const isTextBlock = selectedEl.classList.contains('text-block');
+        if (!isTextBlock && selectedEl.closest('.block_container')) return;
+        selectedEl.style.textAlign = pos;
+        if (selectedEl.classList.contains('block_image')) {
+            selectedEl.style.display = pos === 'center' ? 'block' : 'inline-block';
+            selectedEl.style.margin = pos === 'center' ? '0 auto' : '0';
+        }
+    }
     function centerItem() { setAlign('center'); }
 
 
@@ -3842,7 +3875,6 @@ function syncRealTime() {
         }
     }
     function toggleSpacerLine() { if (!selectedEl) return; const currentLine = selectedEl.style.borderBottom; selectedEl.style.borderBottom = (currentLine === 'none' || !currentLine) ? '1px solid #eee' : 'none'; }
-    function toggleTextAltStyle() { if (!selectedEl || !selectedEl.classList.contains('block_text')) return; selectedEl.classList.toggle('text-alt'); renderToolbar(); }
     function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function callGalleryToggle() {
@@ -4039,10 +4071,8 @@ function getBlockLabel(block) {
     switch (block.type) {
         case 'text': {
             const plain = (block.contentHTML || '').replace(/<[^>]*>/g, '').trim();
-            const variantLabel = block.variant === 'section_heading' ? 'T1' :
-                                  block.variant === 'block_heading' ? 'T2' :
-                                  block.variant === 'block_heading_4' ? 'T4' :
-                                  block.variant === 'p1' ? 'P1' : 'T3';
+            const styleEntry = Object.values(TEXT_STYLES).flat().find(s => s.key === block.style);
+            const variantLabel = (block.size || '?') + ' · ' + (styleEntry ? styleEntry.label : block.style || 'Text');
             const excerpt = plain.length > 26 ? plain.slice(0, 26) + '…' : plain;
             return `Text (${variantLabel})${excerpt ? ': "' + excerpt + '"' : ''}`;
         }
@@ -4548,10 +4578,10 @@ function renderBlockToStaticHTML(block, galleryAcc) {
     if (!block) return '';
     switch (block.type) {
         case 'text': {
-            const tagMap = { section_heading: 'h2', block_heading: 'h3', block_text: 'p', block_heading_4: 'h4', p1: 'p' };
-            const tag = tagMap[block.variant] || 'p';
-            const style = block.align ? ` style="text-align:${escapeHtmlAttr(block.align)};"` : '';
-            const cls = (block.variant || 'block_text') + (block.altStyle ? ' text-alt' : '');
+            const styleEntry = Object.values(TEXT_STYLES).flat().find(s => s.key === block.style);
+            const tag = styleEntry ? styleEntry.tag : 'p';
+            const style = ` style="text-align:${escapeHtmlAttr(block.align || 'left')};"`;
+            const cls = `text-block ${block.style || ''}`.trim();
             return `<${tag} class="${cls}"${style}>${block.contentHTML || ''}</${tag}>`;
         }
         case 'spacer': {

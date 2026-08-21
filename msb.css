@@ -4,6 +4,16 @@
     --brand-pink: #ebd5c9;    
     --icon-brown: #927B73; 
     --text-dark: #151515;
+
+    /* --- Typography System (L/M/S text blocks + logo) ---
+       --text-dark above is reused for headings and the logo (matches the
+       #151515 value the original spec had under --text-logo, so no need
+       for a second identical variable). */
+    --font-body: "Source Sans Pro", Arial, sans-serif;
+    --font-display: "Cinzel", Georgia, serif;
+    --text-body: #5e5e5e;
+    --text-detail: #595959;
+    --text-accent: #877267;
 }
 
 
@@ -121,58 +131,103 @@ body {
 .loader { width: 30px; height: 30px; border: 3px solid #333; border-top-color: #fff; border-radius: 50%; animation: spin 1s infinite linear; position: absolute; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Typography */
-h2, h3, p { display: block; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
-h3 { font-weight: 400; }
+/* =========================================================
+   TYPOGRAPHY SYSTEM — L / M / S text blocks
+   Replaces the old T1–T4/P1 system. Every text block inserted from the
+   builder's L/M/S sidebar buttons gets two classes: "text-block" (shared
+   spacing/behavior below) and one style key from the lists underneath
+   (e.g. "heading-alpha"). The HTML tag itself also changes per style
+   (h1/h2/h3/h4/p) — see changeTextStyle() in builder2.html, which rebuilds
+   the element when the dropdown selection changes.
+   ========================================================= */
 
-.section_heading { 
-    font-family: 'Source Sans Pro', sans-serif; 
-    font-size: 0.989rem; letter-spacing: 0.14rem; color: var(--icon-brown); 
-    margin: 0.625rem 0; text-transform: uppercase;
-}
+h1, h2, h3, h4, p { display: block; margin: 0 0 0.9375rem 0; padding-bottom: 0.625rem; color: inherit; font-family: inherit; }
 
-.block_heading { 
-    font-family: 'Cinzel', serif; font-size: 2.01rem; color: #1A1A1A;
-    margin: 0; text-align: center; 
-    padding-bottom: 0;
-}
+/* Shared behavior for every L/M/S text block, regardless of style.
+   Left-aligned by default (JS sets text-align:left on insert); the
+   align-left/center toolbar buttons just toggle that inline style. */
+.text-block { text-align: left; }
 
-.block_text { 
-    font-family: 'Source Sans Pro', sans-serif; font-size: 1.05rem; color: #5F5F5F; 
-    line-height: 1.8; letter-spacing: 0.1rem; margin: 0.625rem auto 1.875rem; text-align: center; 
-}
-
-.block_text.text-alt {
-    font-family: "Source Sans Pro", Arial, sans-serif;
-    font-size: 1.05rem;
+/* --- L: Heading α / Heading γ --- */
+.heading-alpha { /* H1 */
+    font-family: var(--font-display);
+    font-size: 1.375rem;
     font-weight: 400;
-    font-style: normal;
-    line-height: 1.5;
-    letter-spacing: normal;
-    color: #5f5f5f
-    text-transform: none;
-    text-decoration: none;
+    line-height: 1.2;
+    letter-spacing: 0.023em;
+    color: var(--text-dark);
 }
 
-.block_heading_4 {
-    font-family: "Source Sans Pro", Arial, sans-serif;
+.heading-gamma { /* H3 */
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 400;
+    line-height: 1.25;
+    letter-spacing: 0.031em;
+    color: var(--text-dark);
+}
+
+/* --- M: Heading β / Heading δ / Body α / Body β --- */
+.heading-beta { /* H2 */
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: 0.125em;
+    text-transform: uppercase;
+    color: var(--text-accent);
+}
+
+.heading-delta { /* H4 */
+    font-family: var(--font-body);
     font-size: 1.375rem;
     font-weight: 400;
     line-height: 1.25;
     letter-spacing: 0.045em;
-    color: #1b1b1b;
-    margin: 0;
+    color: var(--text-dark);
 }
 
-.p1 {
-    font-family: "Source Sans Pro", Arial, sans-serif;
-    font-size: 0.876rem;
+.body-alpha { /* P — normal body text */
+    font-family: var(--font-body);
+    font-size: 1rem;
     font-weight: 400;
     line-height: 1.5;
-    color: #595959;
-    margin-top: 0;
-    margin-bottom: 0;
-    padding-bottom: 0;
+    color: var(--text-body);
+}
+
+.body-beta { /* P — larger text / prices */
+    font-family: var(--font-body);
+    font-size: 1.375rem;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--text-dark);
+}
+
+/* --- S: Details α / Details β / Details γ --- */
+.details-alpha { /* P — small descriptive text */
+    font-family: var(--font-body);
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--text-detail);
+}
+
+.details-beta { /* P — larger detail text */
+    font-family: var(--font-body);
+    font-size: 1.375rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--text-detail);
+}
+
+.details-gamma { /* P — small footer text */
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.5;
+    letter-spacing: 0.083em;
+    text-transform: uppercase;
+    color: var(--text-detail);
 }
 
 /* --- Header & Navigation --- */
@@ -186,11 +241,26 @@ header {
     flex-shrink: 0;           
 }
 
-.logo { 
+/* Old logo font styling — kept only for reference in case you want to
+   revert; not applied anywhere. The structural properties (border,
+   padding, layout) live on .logo below regardless of which font style
+   is active. */
+.logo-beta {
     font-family: 'Cinzel', serif; 
     font-size: 1.35rem;            
     font-weight: 550;              
-    letter-spacing: 0.05046rem;        
+    letter-spacing: 0.05046rem;
+}
+
+.logo { 
+    /* Font values from Logo α */
+    font-family: var(--font-display); 
+    font-size: 1.75rem;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: 0.031em;
+    color: var(--text-dark);
+
     border: 1px solid var(--text-dark); 
     padding: 0.266rem 1.012rem;       
     display: inline-block; 
@@ -418,11 +488,27 @@ footer { text-align: center; color: #1A1A1A; padding: 3.75rem 1.25rem 2.5rem; bo
 
 /* --- Responsive --- */
 @media (max-width: 768px) {
-    .block_heading { font-size: 1.4rem; } 
     .photo-gallery { grid-template-columns: repeat(2, 1fr); }
     .photo-gallery.masonry-mode { column-count: 2; }
 }
 
+/* Editorial column width on large screens — centers the text-block's own
+   box on the page (readability), independent of the left/center toggle
+   which only affects the text alignment *inside* that box. */
 @media (min-width: 64rem) {
-    .block_heading, .block_text { max-width: 46.35rem; margin-left: auto !important; margin-right: auto !important; }
+    .text-block { max-width: 46.35rem; margin-left: auto !important; margin-right: auto !important; }
+}
+
+/* Scaled-up type sizes at large screens, per the typography spec. */
+@media (min-width: 1536px) {
+    .heading-alpha { font-size: 1.5rem; }
+    .heading-beta { font-size: 1.125rem; }
+    .heading-gamma { font-size: 1.5rem; }
+    .heading-delta { font-size: 1.5rem; }
+    .body-alpha { font-size: 1.125rem; }
+    .body-beta { font-size: 1.5rem; }
+    .details-alpha { font-size: 1rem; }
+    .details-beta { font-size: 1.5rem; }
+    .details-gamma { font-size: 0.875rem; }
+    .logo { font-size: 2.25rem; }
 }
