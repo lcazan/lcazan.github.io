@@ -2267,19 +2267,33 @@ function resetToolbar() {
             html += `<button class="tool-btn" onclick="toggleSpacerLine()"><i class="fa-solid fa-underline"></i></button>`;
         } 
         else if (isTextBlock) {
-            // L/M/S typography system. data-size ("L"/"M"/"S", set at
-            // insert time — see insertElement()) picks which entries from
-            // TEXT_STYLES show up here. Selecting a different style swaps
-            // both the class (the look) and the underlying tag, since e.g.
-            // Heading α is an <h1> and Body α is a <p> — see
-            // changeTextStyle().
-            const sizeKey = selectedEl.getAttribute('data-size');
+            // L/M/S typography system, two dropdowns:
+            //  1) SIZE — L/M/S. Changing this jumps to that size's default
+            //     style (see changeTextSize()). Legacy text blocks from
+            //     pre-rewrite projects land here with no data-size at all
+            //     (see renderPage()'s fallback) — the size dropdown shows
+            //     a "Size…" placeholder for those until one is picked,
+            //     which is how an old block gets converted onto the new
+            //     system: pick a size, then a style.
+            //  2) STYLE — the entries from TEXT_STYLES for the current
+            //     size. Selecting one swaps both the class (the look) and
+            //     the underlying tag, since e.g. Heading α is an <h1> and
+            //     Body α is a <p> — see changeTextStyle().
+            const sizeKey = selectedEl.getAttribute('data-size') || '';
+            const sizeOptions = ['L', 'M', 'S'].map(k =>
+                `<option value="${k}" ${k === sizeKey ? 'selected' : ''}>${k}</option>`
+            ).join('');
+            const sizeSelectHtml = sizeKey
+                ? sizeOptions
+                : `<option value="" disabled selected>Size…</option>${sizeOptions}`;
+            html += `<select class="tool-select" onchange="changeTextSize(this.value)" title="Text size">${sizeSelectHtml}</select>`;
+
             const styles = TEXT_STYLES[sizeKey] || [];
             const currentStyle = styles.find(s => selectedEl.classList.contains(s.key)) || styles[0];
-            const options = styles.map(s =>
+            const styleOptions = styles.map(s =>
                 `<option value="${s.key}" ${currentStyle && s.key === currentStyle.key ? 'selected' : ''}>${s.label}</option>`
             ).join('');
-            html += `<select class="tool-select" onchange="changeTextStyle(this.value)" title="Text style">${options}</select>`;
+            html += `<select class="tool-select" onchange="changeTextStyle(this.value)" title="Text style">${styleOptions}</select>`;
             html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
         }
     }
@@ -3060,6 +3074,22 @@ function changeTextStyle(newStyleKey) {
     selectedEl.classList.add('selected-item');
 
     renderToolbar();
+}
+
+// Switches (or, for a legacy pre-rewrite block with no data-size yet,
+// assigns for the first time) a text block's L/M/S category. Jumps
+// straight to that category's default style — e.g. picking "M" lands on
+// Heading β — since a size alone isn't a renderable style. This is also
+// how an old T1–T4/P1 block gets converted onto the new system: selecting
+// a size here gives it a data-size and a real style/tag, at which point
+// it behaves exactly like any other L/M/S block.
+function changeTextSize(newSizeKey) {
+    if (!selectedEl) return;
+    const styles = TEXT_STYLES[newSizeKey];
+    if (!styles || !styles.length) return;
+
+    selectedEl.setAttribute('data-size', newSizeKey);
+    changeTextStyle(styles[0].key);
 }
 
 // Reads a spacer block's current line-visibility state (set via

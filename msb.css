@@ -241,10 +241,9 @@ header {
     flex-shrink: 0;           
 }
 
-/* Old logo font styling — kept only for reference in case you want to
-   revert; not applied anywhere. The structural properties (border,
-   padding, layout) live on .logo below regardless of which font style
-   is active. */
+/* Old logo font styling — this is what .logo actually uses right now.
+   Kept as its own named class too, in case you want to point something
+   else at it later. */
 .logo-beta {
     font-family: 'Cinzel', serif; 
     font-size: 1.35rem;            
@@ -252,14 +251,24 @@ header {
     letter-spacing: 0.05046rem;
 }
 
-.logo { 
-    /* Font values from Logo α */
+/* Logo α font styling — defined but not currently applied anywhere.
+   Swap .logo's font-* properties below for these (or add "logo-alpha"
+   as a second class on the logo element) if you want to switch back. */
+.logo-alpha {
     font-family: var(--font-display); 
     font-size: 1.75rem;
     font-weight: 400;
     line-height: 1;
     letter-spacing: 0.031em;
     color: var(--text-dark);
+}
+
+.logo { 
+    /* Font values from Logo β (the original logo styling) */
+    font-family: 'Cinzel', serif; 
+    font-size: 1.35rem;            
+    font-weight: 550;              
+    letter-spacing: 0.05046rem;
 
     border: 1px solid var(--text-dark); 
     padding: 0.266rem 1.012rem;       
@@ -510,5 +519,5 @@ footer { text-align: center; color: #1A1A1A; padding: 3.75rem 1.25rem 2.5rem; bo
     .details-alpha { font-size: 1rem; }
     .details-beta { font-size: 1.5rem; }
     .details-gamma { font-size: 0.875rem; }
-    .logo { font-size: 2.25rem; }
+    .logo-alpha { font-size: 2.25rem; }
 }
