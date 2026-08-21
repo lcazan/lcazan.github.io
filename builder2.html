@@ -546,7 +546,7 @@ autocomplete="off"
 // Bump this on every future edit to this file — the single source of truth
 // for the version shown in the browser tab title, the header, and the
 // startup project-picker modal (see applyVersionDisplay below).
-const BUILDER_VERSION = 'v5.6.0';
+const BUILDER_VERSION = 'v5.7.0';
 
 function applyVersionDisplay() {
     document.title = 'Snoozing Builder | ' + BUILDER_VERSION;
@@ -2243,22 +2243,30 @@ function resetToolbar() {
         } 
         else if (isEditable) {
             // For text blocks specifically (not other contentEditable cases),
-            // show T1/T2/T3 heading-level buttons with the active one
-            // highlighted, in addition to the existing Bold button.
+            // show a single style dropdown (T1/T2/T3/T4/P1) instead of one
+            // button per variant — regains toolbar space now that there are
+            // five variants. T3 additionally gets an "Aa" toggle for its
+            // alternate paragraph style.
             const variant = selectedEl.classList.contains('section_heading') ? 'section_heading' :
                              selectedEl.classList.contains('block_heading') ? 'block_heading' :
                              selectedEl.classList.contains('block_text') ? 'block_text' :
                              selectedEl.classList.contains('block_heading_4') ? 'block_heading_4' :
                              selectedEl.classList.contains('p1') ? 'p1' : null;
             if (variant) {
-                const active = 'background:var(--brand-pink); color:#000;';
                 html += `
-                    <button class="tool-btn" style="font-size:10px; font-weight:900; ${variant === 'section_heading' ? active : ''}" onclick="changeTextVariant('section_heading')">T1</button>
-                    <button class="tool-btn" style="font-size:10px; font-weight:900; ${variant === 'block_heading' ? active : ''}" onclick="changeTextVariant('block_heading')">T2</button>
-                    <button class="tool-btn" style="font-size:10px; font-weight:900; ${variant === 'block_text' ? active : ''}" onclick="changeTextVariant('block_text')">T3</button>
-                    <button class="tool-btn" style="font-size:10px; font-weight:900; ${variant === 'block_heading_4' ? active : ''}" onclick="changeTextVariant('block_heading_4')">T4</button>
-                    <button class="tool-btn" style="font-size:10px; font-weight:900; ${variant === 'p1' ? active : ''}" onclick="changeTextVariant('p1')">P1</button>
+                    <select class="tool-select" onchange="changeTextVariant(this.value)" title="Text style">
+                        <option value="section_heading" ${variant === 'section_heading' ? 'selected' : ''}>T1 · Section Heading</option>
+                        <option value="block_heading" ${variant === 'block_heading' ? 'selected' : ''}>T2 · Block Heading</option>
+                        <option value="block_text" ${variant === 'block_text' ? 'selected' : ''}>T3 · Paragraph</option>
+                        <option value="block_heading_4" ${variant === 'block_heading_4' ? 'selected' : ''}>T4 · Sub-Heading</option>
+                        <option value="p1" ${variant === 'p1' ? 'selected' : ''}>P1 · Small Paragraph</option>
+                    </select>
                 `;
+                if (variant === 'block_text') {
+                    const isAlt = selectedEl.classList.contains('text-alt');
+                    const active = 'background:var(--brand-pink); color:#000;';
+                    html += `<button class="tool-btn" style="font-size:11px; font-weight:900; ${isAlt ? active : ''}" onclick="toggleTextAltStyle()" title="Alternate paragraph style">Aa</button>`;
+                }
             }
             html += `<button class="tool-btn" onmousedown="event.preventDefault(); execCmd('bold')"><i class="fa-solid fa-bold"></i></button>`;
         }
@@ -2752,7 +2760,7 @@ function renderPage() {
         if (block.type === 'text') {
             const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p', 'block_heading_4': 'h4', 'p1': 'p' };
             const el = doc.createElement(tagMap[block.variant] || 'p');
-            el.className = `editable ${block.variant}`;
+            el.className = `editable ${block.variant}${block.altStyle ? ' text-alt' : ''}`;
             el.contentEditable = "true";
             el.setAttribute('data-placeholder', 'Type here...');
             el.setAttribute('data-block-id', block.id);
@@ -2985,7 +2993,8 @@ function saveTextBlock(el) {
         type: 'text',
         variant: variant,
         contentHTML: el.innerHTML,
-        align: el.style.textAlign || ''
+        align: el.style.textAlign || '',
+        altStyle: el.classList.contains('text-alt')
     };
 
     const existingIndex = getCurrentPage().body.blocks.findIndex(b => b.id === blockId);
@@ -3297,7 +3306,7 @@ function extractChildBlockData(el) {
                         el.classList.contains('block_heading') ? 'block_heading' :
                         el.classList.contains('block_heading_4') ? 'block_heading_4' :
                         el.classList.contains('p1') ? 'p1' : 'block_text';
-        return { id: blockId, type: 'text', variant: variant, contentHTML: el.innerHTML, align: el.style.textAlign || '' };
+        return { id: blockId, type: 'text', variant: variant, contentHTML: el.innerHTML, align: el.style.textAlign || '', altStyle: el.classList.contains('text-alt') };
     }
     if (el.classList.contains('block_spacer')) {
         return { id: blockId, type: 'spacer', showLine: !!(el.style.borderBottom && el.style.borderBottom !== 'none') };
@@ -3322,7 +3331,7 @@ function renderChildBlock(doc, block) {
     if (block.type === 'text') {
         const tagMap = { 'section_heading': 'h2', 'block_heading': 'h3', 'block_text': 'p', 'block_heading_4': 'h4', 'p1': 'p' };
         const el = doc.createElement(tagMap[block.variant] || 'p');
-        el.className = `editable ${block.variant}`;
+        el.className = `editable ${block.variant}${block.altStyle ? ' text-alt' : ''}`;
         el.contentEditable = "true";
         el.setAttribute('data-placeholder', 'Type here...');
         el.setAttribute('data-block-id', block.id);
@@ -3833,6 +3842,7 @@ function syncRealTime() {
         }
     }
     function toggleSpacerLine() { if (!selectedEl) return; const currentLine = selectedEl.style.borderBottom; selectedEl.style.borderBottom = (currentLine === 'none' || !currentLine) ? '1px solid #eee' : 'none'; }
+    function toggleTextAltStyle() { if (!selectedEl || !selectedEl.classList.contains('block_text')) return; selectedEl.classList.toggle('text-alt'); renderToolbar(); }
     function updateColor(val) { if(selectedEl) selectedEl.style.backgroundColor = val; }
     function execCmd(cmd) { frame.contentDocument.execCommand(cmd, false, null); }
     function callGalleryToggle() {
@@ -4541,7 +4551,8 @@ function renderBlockToStaticHTML(block, galleryAcc) {
             const tagMap = { section_heading: 'h2', block_heading: 'h3', block_text: 'p', block_heading_4: 'h4', p1: 'p' };
             const tag = tagMap[block.variant] || 'p';
             const style = block.align ? ` style="text-align:${escapeHtmlAttr(block.align)};"` : '';
-            return `<${tag} class="${block.variant || 'block_text'}"${style}>${block.contentHTML || ''}</${tag}>`;
+            const cls = (block.variant || 'block_text') + (block.altStyle ? ' text-alt' : '');
+            return `<${tag} class="${cls}"${style}>${block.contentHTML || ''}</${tag}>`;
         }
         case 'spacer': {
             const style = block.showLine ? ' style="border-bottom:1px solid #eee;"' : '';

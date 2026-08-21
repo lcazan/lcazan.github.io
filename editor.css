@@ -142,6 +142,7 @@ body.builder-ui-body {
 /* --- BUTTONS & TOOLS --- */
 .insert-btn { width: 3.75rem; height: 2rem; background: #444; border: 0.0625rem solid #666; color: #fff; margin-bottom: 0.625rem; border-radius: 0.25rem; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; font-weight: bold; flex-shrink: 0; }
 .tool-btn { background: #444; border: 0.0625rem solid #666; color: white; min-width: 2.2rem; height: 2.2rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem; cursor: pointer; font-size: 1.1rem; }
+.tool-select { background: #444; border: 0.0625rem solid #666; color: white; height: 2.2rem; border-radius: 0.25rem; cursor: pointer; font-size: 0.7rem; font-weight: 700; padding: 0 0.4rem; max-width: 8rem; }
 .btn-teal { background: #008080 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
 .btn-blue { background: #0056b3 !important; border: none; font-size: 0.7rem; font-weight: 800; padding: 0 10px; }
 .export-btn { width: 3.75rem; height: 3.75rem; background: var(--brand-pink); border: none; color: #000; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
@@ -228,51 +229,34 @@ body.builder-ui-body {
 /* --- MULTI-IMAGE ROW --- */
 .block_multi_image { display: flex; flex-direction: row; padding-top: 20px; justify-content: center; align-items: center; width: 100%; height: 150px; overflow: hidden; position: relative; box-sizing: border-box; background: rgba(255, 255, 255, 0.05); margin: 0; pointer-events: auto; }
 .multi-image-handle { position: absolute; top: 2px; left: 2px; background: #e67e22; color: white; padding: 2px 8px; font-size: 10px; font-weight: 900; border-radius: 3px; cursor: pointer; z-index: 100; }
-.multi-image-item { position: relative; flex: 0 0 auto; height: 100%; width: auto; background-size: cover; background-position: center; background-repeat: no-repeat; cursor: pointer; box-sizing: border-box; }
-
-/* Pan handle — mirrors gallery-component.html's .pan-overlay: a permanent,
-   centered overlay icon that starts the pan gesture (see startInteraction()
-   in builder.html), shown only on hover or while the item is selected so it
-   doesn't clutter the row the rest of the time. */
-.multi-image-pan-overlay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    background: rgba(0,0,0,0.45);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 15px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.15s ease;
-    z-index: 5;
-    cursor: grab;
-    touch-action: none;
-}
-.multi-image-item:hover .multi-image-pan-overlay,
-.multi-image-item.selected-item .multi-image-pan-overlay {
-    opacity: 1;
-    pointer-events: auto;
-}
+.multi-image-item { flex: 0 0 auto; height: 100%; width: auto; background-size: cover; background-position: center; background-repeat: no-repeat; cursor: pointer; box-sizing: border-box; }
 
 /* --- PHOTO GALLERY --- */
-/* Base wrapper sizing/overflow only — the actual grid/item styling
-   (.gallery-item, .choice-menu, .pan-overlay, etc.) comes from gallery.css,
-   now loaded directly into the preview iframe's head alongside this file.
-   The gallery used to be a nested iframe (hence the old iframe/sentry
-   rules here); it's embedded directly in the page now. */
 .photo_gallery { 
     position: relative; 
     width: 100%; 
     margin: 0; 
     height: auto !important; 
     overflow: visible !important;
+}
+.photo_gallery iframe { 
+    width: 100%; 
+    height: 100%; 
+    border: none; 
+    display: block; 
+    overflow: hidden; 
+}
+.gallery-sentry { 
+    position: absolute; 
+    inset: 0; 
+    background: transparent; 
+    z-index: 10; 
+    cursor: pointer; 
+    touch-action: pan-y !important; 
+}
+
+.selected-item .gallery-sentry { 
+    pointer-events: none; 
 }
 
 

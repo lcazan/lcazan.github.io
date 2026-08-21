@@ -133,12 +133,24 @@ h3 { font-weight: 400; }
 
 .block_heading { 
     font-family: 'Cinzel', serif; font-size: 2.01rem; color: #1A1A1A;
-    margin: 0.625rem auto; text-align: center; 
+    margin: 0; text-align: center; 
 }
 
 .block_text { 
     font-family: 'Source Sans Pro', sans-serif; font-size: 1.05rem; color: #5F5F5F; 
     line-height: 1.8; letter-spacing: 0.1rem; margin: 0.625rem auto 1.875rem; text-align: center; 
+}
+
+.block_text.text-alt {
+    font-family: "Source Sans Pro", Arial, sans-serif;
+    font-size: 1rem;
+    font-weight: 400;
+    font-style: normal;
+    line-height: 1.5;
+    letter-spacing: normal;
+    color: #5e5e5e;
+    text-transform: none;
+    text-decoration: none;
 }
 
 .block_heading_4 {
