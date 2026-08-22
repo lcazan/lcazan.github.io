@@ -4867,50 +4867,22 @@ header h1{flex:1 1 auto!important;min-width:0!important;max-width:none!important
 })();
 </script>
 
-<style id="v53-fill-remaining-height">
-/* v53: Rental history, Maintenance history, and DSC "Service invoice
-   history" panels stretch to fill any leftover vertical space down to the
-   bottom of the visible window, instead of stopping short and leaving
-   blank space beneath a short list (most noticeable on tall desktop
-   windows).
-
-   Safety rule used throughout this patch: every section is given
-   flex-shrink:0 (never shrink below its own natural content height).
-   Only the LAST section in a pane is also given flex-grow:1, so it grows
-   to soak up extra room when the list is short, but a long list is simply
-   left at its natural (possibly-taller-than-the-pane) height exactly like
-   before — which is what lets the existing overflow:auto scroll container
-   keep scrolling normally instead of clipping content.
-
-   Part 1 — Inventory tabs. #tabContent already fills the full scroll pane
-   height (v32's flex:1 1 auto) and already scrolls (overflow-y:auto); we
-   only change how its own two .section children are laid out inside it. */
-#detail .detail-lower-panel > #tabContent{
-  display:flex;
-  flex-direction:column;
-}
-#detail .detail-lower-panel > #tabContent > .section{
-  flex:0 0 auto;
-}
-#detail .detail-lower-panel > #tabContent > .section:last-child{
-  flex:1 0 auto;
-}
-
-/* Part 2 — the DSC page. It renders in its own sibling pane
-   ([data-pane="dsc"], not #detail), so it never picked up any of the
-   fill-to-bottom treatment written for #detail. Give it the same
-   never-shrink / grow-the-last-card treatment, using the existing `main`
-   scroll (overflow-y:auto) as the fallback for long invoice lists, exactly
-   as before. */
-.detail-pane[data-pane="dsc"]{
-  display:flex;
-  flex-direction:column;
-  flex:1 0 auto;
-}
-.detail-pane[data-pane="dsc"] > .title-row{
-  flex:0 0 auto;
-}
-.detail-pane[data-pane="dsc"] > .dsc-history{
-  flex:1 0 auto;
+<style id="v53-desktop-full-height-fix">
+/* v53: On wider (desktop) screens, several bottom paddings that exist purely
+   to clear mobile browser chrome / iOS safe-area / home-indicator (the
+   90px reserve on .detail-lower-panel, the 30px on .content, and the 60px
+   on main) were also being applied on desktop, where none of that is
+   needed. That stacked up to ~180px of dead, non-scrolling blank space
+   below the last rental/maintenance/service card, well short of the
+   actual bottom of the browser window. Mobile keeps its original spacing;
+   on desktop these are trimmed back so #tabContent (and the DSC service
+   history list) can actually extend from the bottom of the tab bar all
+   the way down to the bottom of main. */
+@media (min-width: 761px) {
+  main { padding-bottom: 16px; }
+  .content { padding-bottom: 0; }
+  #detail .detail-lower-panel { padding-bottom: 0 !important; }
+  #detail .detail-lower-panel > #tabContent { padding-bottom: 16px !important; }
+  #detail .detail-lower-panel > .dsc-history > .section-body { padding-bottom: 16px !important; }
 }
 </style>
